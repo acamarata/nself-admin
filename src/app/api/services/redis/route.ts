@@ -1,0 +1,26 @@
+import { NextResponse } from 'next/server'
+import { getRedisCollector } from '@/services/RedisCollector'
+
+export async function GET() {
+  try {
+    const collector = getRedisCollector()
+    const stats = await collector.collect()
+    
+    return NextResponse.json({
+      success: true,
+      data: stats,
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    console.error('[API] Redis stats error:', error)
+    
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Failed to fetch Redis stats',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  }
+}

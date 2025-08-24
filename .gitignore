@@ -1,0 +1,80 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# nself backend
+.backend/
+
+# IDEs
+.claude/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Docker volumes
+docker-data/
+volumes/
+
+# Logs
+*.log
+logs/
+
+# nself project files (when used for development)
+docker-compose.yml
+docker-compose.*.yml
+.env
+.env.example
+ssl/
+data/
+backups/
+pg_data/
+
+# Development database
+postgres-data/
+redis-data/
+minio-data/
+
+# Temporary files
+.tmp/
+tmp/

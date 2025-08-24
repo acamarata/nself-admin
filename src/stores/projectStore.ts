@@ -1,0 +1,463 @@
+import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
+
+export type ProjectStatus = 'not_initialized' | 'initialized' | 'built' | 'running' | 'stopped' | 'error'
+
+interface SystemMetrics {
+  system?: {
+    cpu: number
+    memory: {
+      used: number
+      total: number
+      percentage: number
+    }
+    disk: {
+      used: number
+      total: number
+      percentage: number
+    }
+    network: {
+      rx: number
+      tx: number
+      maxSpeed?: number
+    }
+  }
+  docker?: {
+    cpu: number
+    memory: {
+      used: number
+      total: number
+      percentage: number
+    }
+    network: {
+      rx: number
+      tx: number
+    }
+    storage: {
+      used: number
+      total: number
+    }
+    containers: number
+  }
+  timestamp?: string
+}
+
+interface ContainerStats {
+  id: string
+  name: string
+  image: string
+  state: string
+  status: string
+  ports: any[]
+  stats?: {
+    cpu: { percentage: number }
+    memory: { usage: number; limit: number; percentage: number }
+    network: { rx: number; tx: number }
+    blockIO: { read: number; write: number }
+  }
+  health?: string
+  category?: string
+  serviceType?: string
+}
+
+interface DatabaseStats {
+  size: string
+  tables: number
+  views: number
+  connections: number
+  uptime: string
+  version: string
+}
+
+interface DatabaseTable {
+  name: string
+  schema: string
+  type: 'table' | 'view'
+  rowCount: number
+  size: string
+  columns: number
+}
+
+interface ProjectState {
+  // Project setup state
+  projectStatus: ProjectStatus
+  projectSetup: boolean
+  lastChecked: Date | null
+  isChecking: boolean
+  projectInfo: any | null
+  
+  // Environment state
+  hasEnvFile: boolean
+  hasDockerCompose: boolean
+  containersRunning: number
+  totalContainers: number
+  servicesRunning: boolean
+  
+  // Cached data - always available
+  systemMetrics: SystemMetrics | null
+  containerStats: ContainerStats[]
+  containersByCategory: Record<string, ContainerStats[]>
+  databaseStats: DatabaseStats | null
+  databaseTables: DatabaseTable[]
+  lastDataUpdate: Date | null
+  
+  // Loading states for UI
+  isLoadingMetrics: boolean
+  isLoadingContainers: boolean
+  isLoadingDatabase: boolean
+  
+  // Background refresh
+  refreshInterval: NodeJS.Timeout | null
+  pollingRate: number // milliseconds
+  
+  // Actions
+  checkProjectStatus: () => Promise<void>
+  updateProjectStatus: (status: Partial<ProjectState>) => void
+  setProjectSetup: (setup: boolean) => void
+  setProjectInfo: (info: any) => void
+  setProjectStatus: (status: ProjectStatus) => void
+  
+  // Data fetching
+  fetchSystemMetrics: () => Promise<void>
+  fetchContainerStats: () => Promise<void>
+  fetchDatabaseStats: () => Promise<void>
+  fetchAllData: () => Promise<void>
+  
+  // Cache management
+  updateCachedData: (data: Partial<{
+    systemMetrics: SystemMetrics | null
+    containerStats: ContainerStats[]
+    databaseStats: DatabaseStats | null
+    databaseTables: DatabaseTable[]
+    lastDockerUpdate?: number
+  }>) => void
+  
+  // Background polling
+  startBackgroundRefresh: (intervalMs?: number) => void
+  stopBackgroundRefresh: () => void
+  setPollingRate: (ms: number) => void
+  
+  reset: () => void
+}
+
+const initialState = {
+  projectStatus: 'not_initialized' as ProjectStatus,
+  projectSetup: false,
+  lastChecked: null,
+  isChecking: false,
+  projectInfo: null,
+  hasEnvFile: false,
+  hasDockerCompose: false,
+  containersRunning: 0,
+  totalContainers: 0,
+  servicesRunning: false,
+  systemMetrics: null,
+  containerStats: [],
+  containersByCategory: {},
+  databaseStats: null,
+  databaseTables: [],
+  lastDataUpdate: null,
+  isLoadingMetrics: false,
+  isLoadingContainers: false,
+  isLoadingDatabase: false,
+  refreshInterval: null,
+  pollingRate: 2000, // Default 2 seconds
+}
+
+export const useProjectStore = create<ProjectState>()(
+  persist(
+    (set, get) => ({
+      ...initialState,
+      
+      checkProjectStatus: async () => {
+        set({ isChecking: true })
+        
+        try {
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+          
+          const statusRes = await fetch('/api/project/status', {
+            signal: controller.signal
+          }).catch(error => {
+            if (error.name === 'AbortError') {
+              return null
+            }
+            throw error
+          })
+          
+          clearTimeout(timeoutId)
+          
+          if (!statusRes) {
+            set({ isChecking: false })
+            return
+          }
+          
+          const statusData = await statusRes.json()
+          
+          let projectStatus: ProjectStatus = 'not_initialized'
+          
+          // Use servicesRunning and dockerContainers from the API response
+          const isRunning = statusData.servicesRunning || (statusData.dockerContainers && statusData.dockerContainers.length > 0)
+          const containerCount = statusData.dockerContainers ? statusData.dockerContainers.length : 0
+          
+          console.log('Project status check:', {
+            hasEnvFile: statusData.hasEnvFile,
+            isRunning,
+            containerCount,
+            servicesRunning: statusData.servicesRunning
+          })
+          
+          // If we have running containers, consider it running regardless of env file
+          if (isRunning && containerCount > 0) {
+            projectStatus = 'running'
+          } else if (statusData.hasEnvFile && isRunning) {
+            projectStatus = 'running'
+          } else if (statusData.hasEnvFile && statusData.summary?.built) {
+            projectStatus = 'stopped'
+          } else if (statusData.hasEnvFile && statusData.config?.projectName) {
+            projectStatus = 'built'
+          } else if (statusData.hasEnvFile) {
+            projectStatus = 'initialized'
+          }
+          
+          set({
+            projectStatus,
+            projectSetup: projectStatus !== 'not_initialized',
+            hasEnvFile: statusData.hasEnvFile,
+            hasDockerCompose: statusData.summary?.built || false,
+            containersRunning: containerCount,
+            totalContainers: containerCount,
+            servicesRunning: statusData.servicesRunning,
+            lastChecked: new Date(),
+            isChecking: false
+          })
+          
+          // Pages now handle their own data fetching with deduplication
+          // We don't automatically fetch all data here anymore
+          console.log('Final projectStatus:', projectStatus)
+          // if (projectStatus === 'running') {
+          //   console.log('Project is running, fetching all data...')
+          //   get().fetchAllData()
+          // }
+        } catch (error) {
+          console.error('Failed to check project status:', error)
+          set({
+            projectStatus: 'error',
+            isChecking: false,
+            lastChecked: new Date()
+          })
+        }
+      },
+      
+      fetchSystemMetrics: async () => {
+        const state = get()
+        console.log('[Store] fetchSystemMetrics called, projectStatus:', state.projectStatus)
+        if (state.projectStatus !== 'running') {
+          console.log('[Store] Skipping metrics fetch - project not running')
+          return
+        }
+        
+        set({ isLoadingMetrics: true })
+        
+        try {
+          const controller = new AbortController()
+          const response = await fetch('/api/system/metrics', {
+            signal: controller.signal
+          }).catch(error => {
+            if (error.name === 'AbortError') return null
+            console.error('[Store] Metrics fetch error:', error)
+            throw error
+          })
+          
+          if (response && response.ok) {
+            const data = await response.json()
+            if (data.success) {
+              console.log('[Store] System metrics fetched successfully:', {
+                dockerCpu: data.data?.docker?.cpu,
+                dockerMemory: data.data?.docker?.memory?.used,
+                containers: data.data?.docker?.containers
+              })
+              set({ 
+                systemMetrics: data.data,
+                isLoadingMetrics: false
+              })
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch system metrics:', error)
+          set({ isLoadingMetrics: false })
+        }
+      },
+      
+      fetchContainerStats: async () => {
+        const state = get()
+        if (state.projectStatus !== 'running') return
+        
+        set({ isLoadingContainers: true })
+        
+        try {
+          const controller = new AbortController()
+          const response = await fetch('/api/docker/containers?detailed=true&stats=true', {
+            signal: controller.signal
+          }).catch(error => {
+            if (error.name === 'AbortError') return null
+            throw error
+          })
+          
+          if (response && response.ok) {
+            const data = await response.json()
+            if (data.success) {
+              // Group containers by category
+              const byCategory: Record<string, ContainerStats[]> = {}
+              data.data.forEach((container: ContainerStats) => {
+                const category = container.category || 'services'
+                if (!byCategory[category]) {
+                  byCategory[category] = []
+                }
+                byCategory[category].push(container)
+              })
+              
+              set({ 
+                containerStats: data.data,
+                containersByCategory: byCategory,
+                isLoadingContainers: false
+              })
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch container stats:', error)
+          set({ isLoadingContainers: false })
+        }
+      },
+      
+      fetchDatabaseStats: async () => {
+        const state = get()
+        if (state.projectStatus !== 'running') return
+        
+        set({ isLoadingDatabase: true })
+        
+        try {
+          const controller = new AbortController()
+          
+          // Fetch both stats and tables in parallel with abort support
+          const [statsRes, tablesRes] = await Promise.all([
+            fetch('/api/database?action=stats', { signal: controller.signal })
+              .catch(e => e.name === 'AbortError' ? null : Promise.reject(e)),
+            fetch('/api/database?action=tables', { signal: controller.signal })
+              .catch(e => e.name === 'AbortError' ? null : Promise.reject(e))
+          ])
+          
+          if (statsRes && statsRes.ok) {
+            const statsData = await statsRes.json()
+            if (statsData.success) {
+              set({ databaseStats: statsData.data })
+            }
+          }
+          
+          if (tablesRes && tablesRes.ok) {
+            const tablesData = await tablesRes.json()
+            if (tablesData.success) {
+              set({ databaseTables: tablesData.data })
+            }
+          }
+          
+          set({ isLoadingDatabase: false })
+        } catch (error) {
+          console.error('Failed to fetch database stats:', error)
+          set({ isLoadingDatabase: false })
+        }
+      },
+      
+      fetchAllData: async () => {
+        const state = get()
+        
+        console.log('fetchAllData called, projectStatus:', state.projectStatus)
+        
+        // Only fetch if project is running
+        if (state.projectStatus !== 'running') {
+          console.log('Project not running, skipping data fetch')
+          return
+        }
+        
+        console.log('Fetching all data in parallel...')
+        // Fetch all data in parallel
+        await Promise.all([
+          state.fetchSystemMetrics(),
+          state.fetchContainerStats(),
+          state.fetchDatabaseStats()
+        ])
+        
+        set({ lastDataUpdate: new Date() })
+        console.log('All data fetched successfully')
+      },
+      
+      updateProjectStatus: (status) => set(status),
+      
+      setProjectSetup: (setup) => set({ projectSetup: setup }),
+      
+      setProjectInfo: (info) => set({ projectInfo: info }),
+      
+      setProjectStatus: (status) => set({ projectStatus: status }),
+      
+      updateCachedData: (data) => set({
+        ...data,
+        lastDataUpdate: new Date()
+      }),
+      
+      setPollingRate: (ms) => {
+        set({ pollingRate: ms })
+        // Restart polling with new rate if active
+        const state = get()
+        if (state.refreshInterval) {
+          state.stopBackgroundRefresh()
+          state.startBackgroundRefresh(ms)
+        }
+      },
+      
+      startBackgroundRefresh: (intervalMs) => {
+        const state = get()
+        const { refreshInterval, stopBackgroundRefresh, fetchAllData, pollingRate } = state
+        
+        // Clear existing interval
+        if (refreshInterval) {
+          stopBackgroundRefresh()
+        }
+        
+        // Use provided interval or default polling rate
+        const interval = intervalMs || pollingRate
+        
+        // Start immediate fetch
+        fetchAllData()
+        
+        // Start new interval
+        const newInterval = setInterval(() => {
+          fetchAllData()
+        }, interval)
+        
+        set({ refreshInterval: newInterval })
+      },
+      
+      stopBackgroundRefresh: () => {
+        const { refreshInterval } = get()
+        if (refreshInterval) {
+          clearInterval(refreshInterval)
+          set({ refreshInterval: null })
+        }
+      },
+      
+      reset: () => {
+        const { stopBackgroundRefresh } = get()
+        stopBackgroundRefresh()
+        set(initialState)
+      }
+    }),
+    {
+      name: 'nself-project-store',
+      partialize: (state) => ({
+        projectSetup: state.projectSetup,
+        projectStatus: state.projectStatus,
+        pollingRate: state.pollingRate,
+      })
+    }
+  )
+)
