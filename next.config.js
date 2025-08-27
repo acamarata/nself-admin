@@ -8,14 +8,19 @@ const nextConfig = {
     domains: [],
   },
   
-  // Speed up dev compilation
-  swcMinify: true,
+  // Production optimizations
+  output: 'standalone',
   
-  // Experimental optimizations
+  // Code splitting and optimization
   experimental: {
     // Optimize CSS
     optimizeCss: true,
   },
+  
+  // Performance optimizations
+  compress: true,
+  poweredByHeader: false,
+  generateEtags: true,
   
   // Module transpilation for optimization
   transpilePackages: ['lucide-react'],

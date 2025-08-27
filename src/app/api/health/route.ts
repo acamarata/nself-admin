@@ -162,7 +162,7 @@ export async function GET() {
     const health: HealthStatus = {
       status,
       timestamp: new Date().toISOString(),
-      version: process.env.ADMIN_VERSION || require('../../../package.json').version,
+      version: process.env.ADMIN_VERSION || '0.0.1',
       uptime: process.uptime(),
       checks,
       resources: {

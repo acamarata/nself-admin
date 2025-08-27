@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
 import { getProjectPath } from '@/lib/paths'
+import { executeNselfCommand } from '@/lib/nselfCLI'
+import { envUpdateSchema, validateRequest } from '@/lib/validation'
 
 // Smart defaults following nself template order
 const SMART_DEFAULTS = {

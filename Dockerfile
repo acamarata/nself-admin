@@ -1,6 +1,7 @@
 # Multi-stage production Dockerfile for nself-admin
+# Supports multi-arch: linux/amd64, linux/arm64
 # Stage 1: Dependencies
-FROM node:20-alpine AS deps
+FROM --platform=$BUILDPLATFORM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -54,25 +55,29 @@ RUN mkdir -p /project /data \
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
-ENV PORT=3001
-ENV ADMIN_VERSION=0.0.1
+ENV PORT=3021
+ENV ADMIN_VERSION=0.2.0
 
 # Add labels for container metadata
 LABEL org.opencontainers.image.title="nself-admin"
 LABEL org.opencontainers.image.description="Web-based administration interface for nself CLI"
-LABEL org.opencontainers.image.version="0.0.1"
+LABEL org.opencontainers.image.version="0.2.0"
 LABEL org.opencontainers.image.vendor="nself"
 LABEL org.opencontainers.image.source="https://github.com/acamarata/nself-admin"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3001/api/health || exit 1
+  CMD curl -f http://localhost:3021/api/health || exit 1
+
+# Add user to docker group for socket access (read-only)
+# Note: The socket is mounted read-only, so write operations will fail
+RUN addgroup nextjs docker || true
 
 # Switch to non-root user
 USER nextjs
 
-# Expose port
-EXPOSE 3001
+# Expose port (3021 reserved for nself admin)
+EXPOSE 3021
 
 # Start the application
 CMD ["node", "server.js"]

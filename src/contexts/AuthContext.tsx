@@ -7,6 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (password: string) => Promise<boolean>
   logout: () => void
+  checkAuth: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -16,13 +17,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
-  useEffect(() => {
-    // Check if user is already authenticated
-    const token = localStorage.getItem('nadmin_token')
-    if (token) {
-      setIsAuthenticated(true)
+  const checkAuth = async () => {
+    try {
+      // Check if we have a valid session by calling a protected endpoint
+      const response = await fetch('/api/auth/check', {
+        method: 'GET',
+        credentials: 'include' // Include cookies
+      })
+      
+      if (response.ok) {
+        setIsAuthenticated(true)
+      } else {
+        setIsAuthenticated(false)
+      }
+    } catch (error) {
+      console.error('Auth check error:', error)
+      setIsAuthenticated(false)
     }
-    setIsLoading(false)
+  }
+
+  useEffect(() => {
+    // Check authentication status on mount
+    checkAuth().finally(() => {
+      setIsLoading(false)
+    })
   }, [])
 
   const login = async (password: string): Promise<boolean> => {
@@ -30,14 +48,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({ password }),
       })
 
       if (response.ok) {
-        const { token } = await response.json()
-        localStorage.setItem('nadmin_token', token)
-        setIsAuthenticated(true)
-        return true
+        const data = await response.json()
+        if (data.success) {
+          setIsAuthenticated(true)
+          return true
+        }
       }
       return false
     } catch (error) {
@@ -46,18 +66,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const logout = () => {
-    localStorage.removeItem('nadmin_token')
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/login', {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+    
     setIsAuthenticated(false)
     router.push('/login')
   }
 
   if (isLoading) {
-    return null // Or a loading spinner
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    )
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, checkAuth }}>
       {children}
     </AuthContext.Provider>
   )

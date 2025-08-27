@@ -1,8 +1,8 @@
 # nself-admin
 
 [![License](https://img.shields.io/badge/license-Personal%20Free%20%7C%20Commercial-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](https://github.com/acamarata/nself-admin/releases)
-[![Docker](https://img.shields.io/badge/docker-nself%2Fadmin-blue.svg)](https://hub.docker.com/r/nself/admin)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/acamarata/nself-admin/releases)
+[![Docker](https://img.shields.io/badge/docker-acamarata%2Fnself--admin-blue.svg)](https://hub.docker.com/r/acamarata/nself-admin)
 
 A modern, web-based administration interface for the [nself CLI](https://github.com/acamarata/nself) backend stack.
 
@@ -17,11 +17,11 @@ Or run directly with Docker:
 
 ```bash
 docker run -d \
-  -p 3001:3001 \
-  -v /var/run/docker.sock:/var/run/docker.sock \
+  -p 3021:3021 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -v $(pwd):/project \
   --name nself-admin \
-  nself/admin:latest
+  acamarata/nself-admin:latest
 ```
 
 ## 📋 Features

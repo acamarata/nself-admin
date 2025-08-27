@@ -7,6 +7,9 @@ import { GlobalDataProvider } from '@/components/GlobalDataProvider'
 import { SSEProvider } from '@/components/SSEProvider'
 import { ErrorSuppressor } from '@/components/ErrorSuppressor'
 import { PWARegister } from '@/components/PWARegister'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ToastProvider } from '@/components/Toast'
+import { ConfirmProvider } from '@/components/ConfirmDialog'
 import '@/styles/tailwind.css'
 // DEV ONLY - REMOVE FOR PRODUCTION
 import '@/services/DevLogger'
@@ -48,19 +51,25 @@ export default function RootLayout({
       <body className="flex min-h-full antialiased bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800 bg-fixed">
         <ErrorSuppressor />
         <PWARegister />
-        <AuthProvider>
-          <Providers>
-            <ProjectStateWrapper>
-              <GlobalDataProvider>
-                <SSEProvider>
-                  <div className="w-full">
-                    <Layout allSections={allSections}>{children}</Layout>
-                  </div>
-                </SSEProvider>
-              </GlobalDataProvider>
-            </ProjectStateWrapper>
-          </Providers>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <ToastProvider>
+              <ConfirmProvider>
+                <Providers>
+                  <ProjectStateWrapper>
+                    <GlobalDataProvider>
+                      <SSEProvider>
+                        <div className="w-full">
+                          <Layout allSections={allSections}>{children}</Layout>
+                        </div>
+                      </SSEProvider>
+                    </GlobalDataProvider>
+                  </ProjectStateWrapper>
+                </Providers>
+              </ConfirmProvider>
+            </ToastProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )
