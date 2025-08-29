@@ -11,11 +11,9 @@ class DockerPollingService {
   // Start polling Docker stats every second
   start() {
     if (this.isPolling) {
-      console.log('[DockerPolling] Already polling')
       return
     }
     
-    console.log('[DockerPolling] Starting Docker polling service (1s interval)')
     this.isPolling = true
     
     // Initial fetch
@@ -30,7 +28,6 @@ class DockerPollingService {
   // Stop polling
   stop() {
     if (this.intervalId) {
-      console.log('[DockerPolling] Stopping Docker polling service')
       clearInterval(this.intervalId)
       this.intervalId = null
       this.isPolling = false
@@ -79,18 +76,11 @@ class DockerPollingService {
           
           // Log only occasionally to avoid spam
           if (Math.random() < 0.1 && metricsData) { // 10% chance
-            console.log('[DockerPolling] Updated metrics:', {
-              dockerCpu: metricsData.data?.docker?.cpu,
-              dockerMemory: metricsData.data?.docker?.memory?.used,
-              network: metricsData.data?.system?.network?.rx,
-              containerCount: containersData.data?.length,
-              timestamp: new Date().toISOString()
-            })
+            // Metrics logging removed
           }
         }
       }
     } catch (error) {
-      console.error('[DockerPolling] Failed to fetch Docker stats:', error)
     }
   }
   
@@ -106,16 +96,18 @@ export const dockerPollingService = new DockerPollingService()
 // Auto-start when project is running
 if (typeof window !== 'undefined') {
   // Subscribe to project status changes
-  const unsubscribe = useProjectStore.subscribe(
-    (state) => state.projectStatus,
-    (status) => {
+  let previousStatus: string | null = null
+  const unsubscribe = useProjectStore.subscribe((state) => {
+    const status = state.projectStatus
+    if (status !== previousStatus) {
+      previousStatus = status
       if (status === 'running' && !dockerPollingService.isRunning()) {
         dockerPollingService.start()
       } else if (status !== 'running' && dockerPollingService.isRunning()) {
         dockerPollingService.stop()
       }
     }
-  )
+  })
   
   // Start if already running
   const currentStatus = useProjectStore.getState().projectStatus

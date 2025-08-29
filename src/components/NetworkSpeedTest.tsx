@@ -19,7 +19,6 @@ export default function NetworkSpeedTest() {
         setSpeedInfo(data.data)
       }
     } catch (error) {
-      console.error('Failed to fetch speed info:', error)
     }
   }
 
@@ -80,7 +79,6 @@ export default function NetworkSpeedTest() {
         await fetchSpeedInfo()
       }
     } catch (error) {
-      console.error('Speed test failed:', error)
     } finally {
       setTesting(false)
     }

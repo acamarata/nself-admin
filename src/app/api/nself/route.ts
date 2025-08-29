@@ -55,13 +55,12 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error: any) {
-    console.error('nself command error:', error)
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to execute nself command',
-        details: error.message,
+        details: error?.message || "Unknown error",
         stderr: error.stderr || '',
         stdout: error.stdout || ''
       },
@@ -72,9 +71,10 @@ export async function POST(request: NextRequest) {
 
 // GET endpoint for common status queries
 export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const action = searchParams.get('action') || 'status'
+  
   try {
-    const { searchParams } = new URL(request.url)
-    const action = searchParams.get('action') || 'status'
 
     const projectPath = process.env.PROJECT_PATH || '/project'
     
@@ -123,13 +123,12 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error: any) {
-    console.error('nself GET error:', error)
     
     return NextResponse.json(
       { 
         success: false, 
-        error: `Failed to get ${searchParams.get('action')} data`,
-        details: error.message
+        error: `Failed to get ${action} data`,
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )

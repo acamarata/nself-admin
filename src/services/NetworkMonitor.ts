@@ -52,7 +52,6 @@ class NetworkMonitor {
       this.lastSystemSnapshot = currentSnapshot
       return { rx: 0, tx: 0 }
     } catch (error) {
-      console.error('Failed to get system network stats:', error)
       return { rx: 0, tx: 0 }
     }
   }
@@ -105,7 +104,6 @@ class NetworkMonitor {
       this.lastDockerSnapshot = currentSnapshot
       return { rx: 0, tx: 0 }
     } catch (error) {
-      console.error('Failed to get Docker network stats:', error)
       return { rx: 0, tx: 0 }
     }
   }

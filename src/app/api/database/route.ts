@@ -155,13 +155,12 @@ export async function GET(request: NextRequest) {
           { status: 400 }
         )
     }
-  } catch (error) {
-    console.error('Database API error:', error)
+  } catch (error: any) {
     return NextResponse.json(
       { 
         success: false, 
         error: 'Database operation failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error?.message || "Unknown error" : 'Unknown error'
       },
       { status: 500 }
     )
@@ -200,7 +199,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          columns: result.fields.map(field => field.name),
+          columns: result.fields.map((field: any) => field.name),
           rows: result.rows,
           rowCount: result.rowCount,
           executionTime: `${executionTime}ms`
@@ -216,13 +215,12 @@ export async function POST(request: NextRequest) {
         }
       })
     }
-  } catch (error) {
-    console.error('Query execution error:', error)
+  } catch (error: any) {
     return NextResponse.json(
       { 
         success: false,
         error: 'Query execution failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error?.message || "Unknown error" : 'Unknown error'
       },
       { status: 500 }
     )

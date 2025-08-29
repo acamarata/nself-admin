@@ -223,14 +223,14 @@ export function ServiceListView({
                       <button
                         onClick={() => onAction('restart', container.id)}
                         className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                        title="Restart"
+                       
                       >
                         <Icons.RotateCw className="w-3 h-3" />
                       </button>
                       <button
                         onClick={() => onAction('stop', container.id)}
                         className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                        title="Stop"
+                       
                       >
                         <Icons.Square className="w-3 h-3" />
                       </button>
@@ -239,7 +239,7 @@ export function ServiceListView({
                     <button
                       onClick={() => onAction('start', container.id)}
                       className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                      title="Start"
+                     
                     >
                       <Icons.Play className="w-3 h-3" />
                     </button>
@@ -247,7 +247,7 @@ export function ServiceListView({
                   <button
                     onClick={() => onAction('logs', container.id)}
                     className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                    title="Logs"
+                   
                   >
                     <Icons.FileText className="w-3 h-3" />
                   </button>

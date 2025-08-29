@@ -10,7 +10,7 @@ import {
   UserCheck, UserX, Mail, Phone, Calendar, MapPin, Building,
   ExternalLink, Copy, Save, BarChart3, TrendingUp, TrendingDown,
   Smartphone, Monitor, Tablet, Server, Chrome, Github, Twitter,
-  Facebook, Google, FileText, History, Bell, Zap, Database
+  Facebook, FileText, History, Bell, Zap, Database
 } from 'lucide-react'
 
 interface AuthStats {
@@ -208,7 +208,7 @@ function UserManagement({ users }: { users: User[] }) {
 
   const getProviderIcon = (providerId: string) => {
     switch (providerId) {
-      case 'google.com': return Google
+      case 'google.com': return Chrome
       case 'github.com': return Github
       case 'facebook.com': return Facebook
       case 'twitter.com': return Twitter
@@ -217,7 +217,6 @@ function UserManagement({ users }: { users: User[] }) {
   }
 
   const handleBulkAction = (action: string) => {
-    console.log(`Performing ${action} on users:`, selectedUsers)
     setSelectedUsers([])
   }
 
@@ -374,7 +373,7 @@ function UserManagement({ users }: { users: User[] }) {
                           </span>
                         )}
                         {user.mfaEnabled && (
-                          <Shield className="w-4 h-4 text-green-500" title="MFA Enabled" />
+                          <Shield className="w-4 h-4 text-green-500" />
                         )}
                       </div>
                     </td>
@@ -395,7 +394,7 @@ function UserManagement({ users }: { users: User[] }) {
                         {user.providerData.slice(0, 3).map((provider, i) => {
                           const Icon = getProviderIcon(provider.providerId)
                           return (
-                            <Icon key={i} className="w-4 h-4 text-zinc-500" title={provider.providerId} />
+                            <Icon key={i} className="w-4 h-4 text-zinc-500" />
                           )
                         })}
                       </div>
@@ -677,7 +676,7 @@ function OAuthConfiguration({ providers }: { providers: OAuthProvider[] }) {
 
   const getProviderIcon = (providerId: string) => {
     switch (providerId) {
-      case 'google': return Google
+      case 'google': return Chrome
       case 'github': return Github
       case 'facebook': return Facebook
       case 'twitter': return Twitter
@@ -979,7 +978,9 @@ function JWTConfiguration({ settings }: { settings: JWTSettings }) {
                 try {
                   const parsed = JSON.parse(e.target.value)
                   setConfig(prev => ({ ...prev, claims: parsed }))
-                } catch {}
+                } catch {
+                  // Invalid JSON, ignore
+                }
               }}
               className="w-full h-32 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 font-mono text-sm"
             />
@@ -1212,7 +1213,6 @@ function SecuritySettings({ settings }: { settings: SecuritySetting[] }) {
   }
 
   const saveSettings = () => {
-    console.log('Saving settings:', editingSettings)
     setHasChanges(false)
     setEditingSettings({})
   }

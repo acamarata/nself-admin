@@ -74,7 +74,6 @@ export class DockerStatsCollector {
       
       return result
     } catch (error) {
-      console.error('[DockerStats] Collection failed:', error)
       
       // Return empty stats on error
       return {
@@ -120,7 +119,6 @@ export class DockerStatsCollector {
         unhealthy
       }
     } catch (error) {
-      console.error('[DockerStats] Container count failed:', error)
       return { total: 0, running: 0, stopped: 0, healthy: 0, unhealthy: 0 }
     }
   }
@@ -197,7 +195,6 @@ export class DockerStatsCollector {
           }
         } catch (e) {
           // Fallback to single container memory if sum fails
-          console.log('[DockerStats] Failed to sum memory, using single container:', e)
         }
       }
       
@@ -210,7 +207,6 @@ export class DockerStatsCollector {
         }
       }
     } catch (error) {
-      console.error('[DockerStats] Resource stats failed:', error)
       return {
         cpu: 0,
         memory: { used: 0, total: 8, percentage: 0 }
@@ -266,7 +262,6 @@ export class DockerStatsCollector {
         percentage: Math.round((totalSize / totalAvailable) * 100)
       }
     } catch (error) {
-      console.error('[DockerStats] Storage stats failed:', error)
       return { used: 0, total: 50, percentage: 0 }
     }
   }
@@ -321,7 +316,6 @@ export class DockerStatsCollector {
         tx: Math.round(totalTx * 10) / 10
       }
     } catch (error) {
-      console.error('[DockerStats] Network stats failed:', error)
       return { rx: 0, tx: 0 }
     }
   }

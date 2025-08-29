@@ -12,7 +12,6 @@ declare global {
 
 export function getGlobalDockerCollector(): DockerAPICollector {
   if (!global.__dockerCollector) {
-    console.log('[GlobalCollectors] Creating new Docker API collector')
     global.__dockerCollector = new DockerAPICollector()
   }
   return global.__dockerCollector

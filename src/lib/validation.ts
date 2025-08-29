@@ -79,6 +79,7 @@ export const cliCommandSchema = z.object({
 // Sanitization helpers
 export function sanitizeHtml(input: string): string {
   return input
+    .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
@@ -87,13 +88,74 @@ export function sanitizeHtml(input: string): string {
 }
 
 export function sanitizePath(path: string): string {
+  // Normalize path first
+  let sanitized = path.trim()
+  
+  // Remove any null bytes
+  sanitized = sanitized.replace(/\0/g, '')
+  
   // Remove any directory traversal attempts
-  return path.replace(/\.\./g, '').replace(/\/\//g, '/')
+  sanitized = sanitized.replace(/\.\.\/|\.\.\\/g, '')
+  
+  // Remove double slashes
+  sanitized = sanitized.replace(/\/+/g, '/')
+  
+  // Ensure path doesn't escape allowed directories
+  const allowedPrefixes = ['/project', '/backups', '/data', '/tmp']
+  const hasAllowedPrefix = allowedPrefixes.some(prefix => sanitized.startsWith(prefix))
+  
+  if (!hasAllowedPrefix && !sanitized.startsWith('./')) {
+    // Force path to be relative to project directory
+    sanitized = `/project/${sanitized.replace(/^\//, '')}`
+  }
+  
+  return sanitized
 }
 
 export function sanitizeCommand(command: string): string {
-  // Remove dangerous characters that could lead to command injection
-  return command.replace(/[;&|`$()<>]/g, '')
+  // This function is deprecated - use structured command execution instead
+  // Only kept for backward compatibility
+  return command.replace(/[;&|`$()<>\n\r]/g, '')
+}
+
+// Shell argument escaping for safe execution
+export function escapeShellArg(arg: string): string {
+  // If arg is empty, return empty quotes
+  if (!arg) return "''"
+  
+  // If arg contains no special characters, return as-is
+  if (/^[a-zA-Z0-9_\-\/\.]+$/.test(arg)) {
+    return arg
+  }
+  
+  // Otherwise, wrap in single quotes and escape any single quotes
+  return "'" + arg.replace(/'/g, "'\\'") + "'"
+}
+
+// Validate container/service names
+export function isValidContainerName(name: string): boolean {
+  // Docker container names must match [a-zA-Z0-9][a-zA-Z0-9_.-]*
+  return /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(name)
+}
+
+// Validate environment variable names
+export function isValidEnvVarName(name: string): boolean {
+  // Environment variables should be uppercase with underscores
+  return /^[A-Z][A-Z0-9_]*$/.test(name)
+}
+
+// Validate file paths
+export function isValidFilePath(path: string): boolean {
+  // Check for directory traversal
+  if (path.includes('..')) return false
+  
+  // Check for null bytes
+  if (path.includes('\0')) return false
+  
+  // Check for shell metacharacters
+  if (/[;&|`$()<>]/.test(path)) return false
+  
+  return true
 }
 
 // Validation middleware helper

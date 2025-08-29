@@ -19,7 +19,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      // Check if we have a valid session by calling a protected endpoint
+      // First check if we have a session cookie at all
+      // This avoids making unnecessary API calls that result in 401 errors
+      const hasCookie = document.cookie.includes('nself-session')
+      
+      if (!hasCookie) {
+        // No session cookie, so don't even try to authenticate
+        setIsAuthenticated(false)
+        return
+      }
+      
+      // We have a cookie, now check if it's valid
       const response = await fetch('/api/auth/check', {
         method: 'GET',
         credentials: 'include' // Include cookies
@@ -28,10 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         setIsAuthenticated(true)
       } else {
+        // Session cookie exists but is invalid or expired
         setIsAuthenticated(false)
       }
     } catch (error) {
-      console.error('Auth check error:', error)
+      // Network error - also treat as not authenticated
       setIsAuthenticated(false)
     }
   }
@@ -61,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return false
     } catch (error) {
-      console.error('Login error:', error)
       return false
     }
   }
@@ -73,7 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: 'include'
       })
     } catch (error) {
-      console.error('Logout error:', error)
     }
     
     setIsAuthenticated(false)

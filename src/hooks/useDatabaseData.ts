@@ -20,7 +20,6 @@ export function useDatabaseData() {
   
   // Manual refresh - just a placeholder since BackgroundDataService handles updates
   const refresh = () => {
-    console.log('Data refreshes automatically via BackgroundDataService')
   }
 
   // Execute a custom query
@@ -42,7 +41,6 @@ export function useDatabaseData() {
       
       return data.data
     } catch (err) {
-      console.error('Query execution failed:', err)
       throw err
     }
   }
@@ -67,7 +65,6 @@ export function useDatabaseData() {
       
       return data.data
     } catch (err) {
-      console.error('Failed to fetch table data:', err)
       throw err
     }
   }

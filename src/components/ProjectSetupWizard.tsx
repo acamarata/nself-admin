@@ -92,7 +92,7 @@ export function ProjectSetupWizard() {
   useEffect(() => {
     // Check project status on mount
     checkProjectStatus()
-  }, [])
+  }, [checkProjectStatus])
 
   useEffect(() => {
     // Auto-advance steps based on project status
@@ -108,7 +108,7 @@ export function ProjectSetupWizard() {
     } else {
       setCurrentStep(1) // Ready to init
     }
-  }, [projectStatus])
+  }, [projectStatus, setProjectSetup])
 
   const executeCommand = async (command: string) => {
     setIsExecuting(true)
@@ -164,7 +164,6 @@ export function ProjectSetupWizard() {
         setCurrentStep(2)
       }
     } catch (error) {
-      console.error('Failed to save env config:', error)
     } finally {
       setIsExecuting(false)
     }
@@ -211,7 +210,7 @@ export function ProjectSetupWizard() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Project Setup Wizard</h1>
         <p className="text-zinc-600 dark:text-zinc-400">
-          Let's get your nself project up and running
+          Let&apos;s get your nself project up and running
         </p>
       </div>
 
@@ -324,7 +323,7 @@ export function ProjectSetupWizard() {
                 Use CLI Instead
               </Button>
               <Button
-                variant="solid"
+                variant="primary"
                 onClick={saveEnvConfig}
                 disabled={isExecuting}
               >
@@ -380,7 +379,7 @@ export function ProjectSetupWizard() {
             </div>
 
             <Button
-              variant="solid"
+              variant="primary"
               onClick={() => executeCommand('nself build')}
               disabled={isExecuting}
               className="w-full"
@@ -428,7 +427,7 @@ export function ProjectSetupWizard() {
             </div>
 
             <Button
-              variant="solid"
+              variant="primary"
               onClick={() => executeCommand('nself start')}
               disabled={isExecuting}
               className="w-full"

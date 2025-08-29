@@ -7,8 +7,15 @@ import {
   Server, Zap, Copy, Download, Settings, Terminal, Search,
   Eye, Edit3, Trash2, BarChart3, Shield, Network, AlertTriangle
 } from 'lucide-react'
-import { HeroPattern } from '@/components/ui/hero-pattern'
 import { Button } from '@/components/Button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface DatabaseStats {
   version: string
@@ -105,26 +112,34 @@ export default function PostgreSQLPage() {
       setStats({
         version: 'PostgreSQL 15.3',
         uptime: '7 days 14:23:45',
+        status: 'healthy',
         databases: 5,
         tables: 47,
         size: '1.2 GB',
         connections: {
           active: 8,
           idle: 4,
-          max: 100
+          max: 100,
+          utilization: 12
         },
-        cache: {
+        performance: {
           hitRatio: 98.7,
-          size: '256 MB'
+          cacheSize: '256 MB',
+          qps: 150,
+          avgQueryTime: 2.5
         },
         replication: {
           status: 'streaming',
           lag: 0.002,
-          slaves: 1
+          replicas: 1
+        },
+        memory: {
+          used: '512 MB',
+          total: '2 GB',
+          utilization: 25
         }
       })
     } catch (error) {
-      console.error('Failed to fetch stats:', error)
     } finally {
       setLoading(false)
     }
@@ -134,14 +149,13 @@ export default function PostgreSQLPage() {
     try {
       // Mock data
       setTables([
-        { name: 'users', schema: 'public', rows: 15234, size: '12.5 MB', indexes: 3 },
-        { name: 'sessions', schema: 'public', rows: 45821, size: '35.2 MB', indexes: 2 },
-        { name: 'products', schema: 'public', rows: 823, size: '5.8 MB', indexes: 4 },
-        { name: 'orders', schema: 'public', rows: 9521, size: '18.3 MB', indexes: 5 },
-        { name: 'auth_migrations', schema: 'auth', rows: 28, size: '128 KB', indexes: 1 }
+        { id: '1', name: 'users', schema: 'public', rows: 15234, size: '12.5 MB', indexes: 3, lastAccess: '2 min ago', status: 'active' },
+        { id: '2', name: 'sessions', schema: 'public', rows: 45821, size: '35.2 MB', indexes: 2, lastAccess: '1 min ago', status: 'active' },
+        { id: '3', name: 'products', schema: 'public', rows: 823, size: '5.8 MB', indexes: 4, lastAccess: '15 min ago', status: 'active' },
+        { id: '4', name: 'orders', schema: 'public', rows: 9521, size: '18.3 MB', indexes: 5, lastAccess: '5 min ago', status: 'active' },
+        { id: '5', name: 'auth_migrations', schema: 'auth', rows: 28, size: '128 KB', indexes: 1, lastAccess: '2 hours ago', status: 'inactive' }
       ])
     } catch (error) {
-      console.error('Failed to fetch tables:', error)
     }
   }
 
@@ -163,7 +177,6 @@ export default function PostgreSQLPage() {
         }
       ])
     } catch (error) {
-      console.error('Failed to fetch slow queries:', error)
     }
   }
 
@@ -182,7 +195,6 @@ export default function PostgreSQLPage() {
         }
       ])
     } catch (error) {
-      console.error('Failed to fetch locks:', error)
     }
   }
 
@@ -247,15 +259,15 @@ export default function PostgreSQLPage() {
           <p className="text-muted-foreground mt-1">Database management and query console</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline">
             <Settings className="h-4 w-4 mr-1" />
             Configure
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline">
             <Terminal className="h-4 w-4 mr-1" />
             psql
           </Button>
-          <Button size="sm" onClick={fetchDatabaseStats}>
+          <Button onClick={fetchDatabaseStats}>
             <RefreshCw className="h-4 w-4 mr-1" />
             Refresh
           </Button>
@@ -288,10 +300,10 @@ export default function PostgreSQLPage() {
               <CardTitle className="text-sm">Cache Hit Ratio</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.cache.hitRatio}%</div>
-              <Progress value={stats.cache.hitRatio} className="mt-2" />
+              <div className="text-2xl font-bold">{stats.performance.hitRatio}%</div>
+              <Progress value={stats.performance.hitRatio} className="mt-2" />
               <p className="text-xs text-muted-foreground mt-1">
-                Cache size: {stats.cache.size}
+                Cache size: {stats.performance.cacheSize}
               </p>
             </CardContent>
           </Card>
@@ -318,7 +330,7 @@ export default function PostgreSQLPage() {
                 <span className="text-lg font-bold capitalize">{stats.replication.status}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Lag: {stats.replication.lag}s • {stats.replication.slaves} slaves
+                Lag: {stats.replication.lag}s • {stats.replication.replicas} replicas
               </p>
             </CardContent>
           </Card>
@@ -391,7 +403,7 @@ export default function PostgreSQLPage() {
                         <div className="text-sm text-muted-foreground">
                           {queryResult.rowCount} rows • {queryResult.executionTime}s
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline">
                           <Download className="h-4 w-4 mr-1" />
                           Export
                         </Button>
@@ -451,8 +463,8 @@ export default function PostgreSQLPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">{table.indexes} indexes</Badge>
-                      <Button variant="ghost" size="sm">View</Button>
-                      <Button variant="ghost" size="sm">Query</Button>
+                      <Button variant="outline">View</Button>
+                      <Button variant="outline">Query</Button>
                     </div>
                   </div>
                 ))}

@@ -130,11 +130,11 @@ const mockTables: Table[] = [
 ]
 
 const mockRelationships: Relationship[] = [
-  { id: '1', fromTable: 'projects', fromColumn: 'owner_id', toTable: 'users', toColumn: 'id', type: 'many-to-one' },
-  { id: '2', fromTable: 'tasks', fromColumn: 'project_id', toTable: 'projects', toColumn: 'id', type: 'many-to-one' },
-  { id: '3', fromTable: 'tasks', fromColumn: 'assignee_id', toTable: 'users', toColumn: 'id', type: 'many-to-one' },
-  { id: '4', fromTable: 'comments', fromColumn: 'task_id', toTable: 'tasks', toColumn: 'id', type: 'many-to-one' },
-  { id: '5', fromTable: 'comments', fromColumn: 'author_id', toTable: 'users', toColumn: 'id', type: 'many-to-one' }
+  { id: '1', fromTable: 'projects', fromColumn: 'owner_id', toTable: 'users', toColumn: 'id', type: 'one-to-many' },
+  { id: '2', fromTable: 'tasks', fromColumn: 'project_id', toTable: 'projects', toColumn: 'id', type: 'one-to-many' },
+  { id: '3', fromTable: 'tasks', fromColumn: 'assignee_id', toTable: 'users', toColumn: 'id', type: 'one-to-many' },
+  { id: '4', fromTable: 'comments', fromColumn: 'task_id', toTable: 'tasks', toColumn: 'id', type: 'one-to-many' },
+  { id: '5', fromTable: 'comments', fromColumn: 'author_id', toTable: 'users', toColumn: 'id', type: 'one-to-many' }
 ]
 
 function getTypeIcon(type: string) {
@@ -161,6 +161,36 @@ function TableCard({
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [showColumns, setShowColumns] = useState(true)
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true)
+    setDragStart({ x: e.clientX - table.position.x, y: e.clientY - table.position.y })
+    onSelect(table.id)
+  }
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (isDragging) {
+      onMove(table.id, {
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      })
+    }
+  }, [isDragging, dragStart, table.id, onMove])
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false)
+  }, [])
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp])
 
   if (viewMode === 'list') {
     return (
@@ -199,36 +229,6 @@ function TableCard({
       </tr>
     )
   }
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true)
-    setDragStart({ x: e.clientX - table.position.x, y: e.clientY - table.position.y })
-    onSelect(table.id)
-  }
-
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (isDragging) {
-      onMove(table.id, {
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
-      })
-    }
-  }, [isDragging, dragStart, table.id, onMove])
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false)
-  }, [])
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
-      }
-    }
-  }, [isDragging, handleMouseMove, handleMouseUp])
 
   const tableRelationships = relationships.filter(
     rel => rel.fromTable === table.name || rel.toTable === table.name
@@ -306,8 +306,8 @@ function TableCard({
                     <span className="text-sm font-medium text-zinc-900 dark:text-white">
                       {column.name}
                     </span>
-                    {column.primaryKey && <Key className="w-3 h-3 text-yellow-500" title="Primary Key" />}
-                    {column.foreignKey && <Link className="w-3 h-3 text-blue-500" title="Foreign Key" />}
+                    {column.primaryKey && <Key className="w-3 h-3 text-yellow-500" />}
+                    {column.foreignKey && <Link className="w-3 h-3 text-blue-500" />}
                   </div>
                   {!column.nullable && <span className="text-xs text-red-500">NOT NULL</span>}
                 </div>

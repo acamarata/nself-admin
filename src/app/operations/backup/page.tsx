@@ -240,8 +240,8 @@ function BackupCard({ backup, onAction }: { backup: Backup; onAction: (action: s
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${typeConfig[backup.type].color}`}>
                 {typeConfig[backup.type].label}
               </span>
-              {backup.encryption && <Shield className="w-3 h-3 text-zinc-500" title="Encrypted" />}
-              {backup.compression && <Archive className="w-3 h-3 text-zinc-500" title="Compressed" />}
+              {backup.encryption && <Shield className="w-3 h-3 text-zinc-500" />}
+              {backup.compression && <Archive className="w-3 h-3 text-zinc-500" />}
             </div>
           </div>
         </div>
@@ -394,14 +394,14 @@ function JobCard({ job, onAction }: { job: BackupJob; onAction: (action: string,
           <button
             onClick={() => onAction('run', job.id)}
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-            title="Run Now"
+           
           >
             <Zap className="w-4 h-4" />
           </button>
           <button
             onClick={() => onAction('edit', job.id)}
             className="p-1.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-            title="Edit"
+           
           >
             <Edit3 className="w-4 h-4" />
           </button>
@@ -450,14 +450,12 @@ export default function BackupsPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   const handleBackupAction = async (action: string, id: string) => {
-    console.log(`Backup action: ${action} for ${id}`)
     // Simulate API call
     setLoading(true)
     setTimeout(() => setLoading(false), 1000)
   }
 
   const handleJobAction = async (action: string, id: string) => {
-    console.log(`Job action: ${action} for ${id}`)
     
     if (action === 'pause' || action === 'resume') {
       setJobs(prev => prev.map(job => 
@@ -504,7 +502,6 @@ export default function BackupsPage() {
             </div>
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => console.log('Manual backup')}
                 variant="filled"
                 className="flex items-center gap-2"
               >
@@ -670,7 +667,6 @@ export default function BackupsPage() {
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Scheduled Backup Jobs</h2>
               <Button
-                onClick={() => console.log('Create job')}
                 variant="filled"
                 className="flex items-center gap-2"
               >

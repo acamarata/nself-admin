@@ -60,7 +60,6 @@ class BackgroundDataService {
     if (this.isRunning) return
     this.isRunning = true
 
-    console.log('[BackgroundDataService] Starting background data fetching...')
 
     // Start SSE connection for real-time updates if available
     this.connectSSE()
@@ -69,9 +68,7 @@ class BackgroundDataService {
     this.configs.forEach((config, key) => {
       if (config.enabled) {
         // Initial fetch
-        config.fetcher().catch(err => 
-          console.error(`[BackgroundDataService] Error fetching ${key}:`, err)
-        )
+        config.fetcher().catch(() => {})
         
         // Set up interval
         const intervalId = setInterval(async () => {
@@ -79,7 +76,6 @@ class BackgroundDataService {
             await config.fetcher()
             config.lastFetch = Date.now()
           } catch (err) {
-            console.error(`[BackgroundDataService] Error in ${key} interval:`, err)
           }
         }, config.interval)
         
@@ -93,7 +89,6 @@ class BackgroundDataService {
     if (!this.isRunning) return
     this.isRunning = false
 
-    console.log('[BackgroundDataService] Stopping background data fetching...')
 
     // Clear all intervals
     this.intervals.forEach(interval => clearInterval(interval))
@@ -118,14 +113,12 @@ class BackgroundDataService {
       }
 
       this.eventSource.onerror = () => {
-        console.log('[BackgroundDataService] SSE connection failed, falling back to polling')
         if (this.eventSource) {
           this.eventSource.close()
           this.eventSource = null
         }
       }
     } catch (err) {
-      console.log('[BackgroundDataService] SSE not available, using polling only')
     }
   }
 
@@ -181,8 +174,7 @@ class BackgroundDataService {
           })
           
           store.updateCachedData({ 
-            containerStats: data.data.containers,
-            containersByCategory: byCategory
+            containerStats: data.data.containers
           })
         }
       }
@@ -306,7 +298,6 @@ class BackgroundDataService {
             await config.fetcher()
             config.lastFetch = Date.now()
           } catch (err) {
-            console.error(`[BackgroundDataService] Error in ${key} interval:`, err)
           }
         }, interval)
         
@@ -324,16 +315,13 @@ class BackgroundDataService {
       if (this.isRunning) {
         if (enabled && !this.intervals.has(key)) {
           // Start this data source
-          config.fetcher().catch(err => 
-            console.error(`[BackgroundDataService] Error fetching ${key}:`, err)
-          )
+          config.fetcher().catch(() => {})
           
           const intervalId = setInterval(async () => {
             try {
               await config.fetcher()
               config.lastFetch = Date.now()
             } catch (err) {
-              console.error(`[BackgroundDataService] Error in ${key} interval:`, err)
             }
           }, config.interval)
           

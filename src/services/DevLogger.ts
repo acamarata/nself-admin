@@ -64,7 +64,7 @@ class DevLogger {
     const methods = ['log', 'info', 'warn', 'error', 'debug']
     methods.forEach(method => {
       this.originalConsole[method] = console[method as keyof Console]
-      console[method as keyof Console] = (...args: any[]) => {
+      ;(console as any)[method] = (...args: any[]) => {
         // Call original console method
         this.originalConsole[method](...args)
         
@@ -81,7 +81,7 @@ class DevLogger {
     this.originalFetch = window.fetch
     window.fetch = async (...args: Parameters<typeof fetch>) => {
       const [input, init] = args
-      const url = typeof input === 'string' ? input : input.url
+      const url = typeof input === 'string' ? input : (input instanceof Request ? input.url : input.toString())
       const method = init?.method || 'GET'
       const startTime = performance.now()
       

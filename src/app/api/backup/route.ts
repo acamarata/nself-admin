@@ -38,8 +38,7 @@ export async function GET(request: NextRequest) {
             })
           }
         }
-      } catch (error) {
-        console.error('Failed to list backup files:', error)
+      } catch (error: any) {
       }
       
       return NextResponse.json({
@@ -55,7 +54,6 @@ export async function GET(request: NextRequest) {
       data: backups
     })
   } catch (error: any) {
-    console.error('Backup list error:', error)
     return NextResponse.json(
       { 
         success: false, 
@@ -218,12 +216,11 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     )
   } catch (error: any) {
-    console.error('Backup operation error:', error)
     return NextResponse.json(
       { 
         success: false, 
         error: 'Backup operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )

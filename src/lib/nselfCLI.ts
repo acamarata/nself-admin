@@ -1,8 +1,8 @@
-import { exec, spawn } from 'child_process'
+import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
-import { sanitizeCommand } from './validation'
+import { escapeShellArg } from './validation'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
 
 // Path to nself CLI
 const NSELF_CLI_PATH = process.env.NSELF_CLI_PATH || '/usr/local/bin/nself'
@@ -24,16 +24,24 @@ export async function executeNselfCommand(
   options: Record<string, any> = {}
 ): Promise<CLIResult> {
   try {
-    // Sanitize inputs
-    const sanitizedCommand = sanitizeCommand(command)
-    const sanitizedArgs = args.map(arg => sanitizeCommand(arg))
+    // Validate command
+    const allowedCommands = [
+      'init', 'build', 'start', 'stop', 'restart', 'status',
+      'logs', 'doctor', 'backup', 'restore', 'monitor',
+      'config', 'db', 'deploy', 'update', 'version', 'help',
+      'urls', 'apply', 'secrets'
+    ]
     
-    // Build command string
-    const fullCommand = `${NSELF_CLI_PATH} ${sanitizedCommand} ${sanitizedArgs.join(' ')}`
+    if (!allowedCommands.includes(command)) {
+      throw new Error(`Invalid nself command: ${command}`)
+    }
     
-    // Execute with timeout
+    // Build arguments safely
+    const cmdArgs = [command, ...args.filter(arg => arg && typeof arg === 'string')]
+    
+    // Execute with timeout using execFile for safety
     const timeout = options.timeout || 30000
-    const { stdout, stderr } = await execAsync(fullCommand, {
+    const { stdout, stderr } = await execFileAsync(NSELF_CLI_PATH, cmdArgs, {
       timeout,
       maxBuffer: 10 * 1024 * 1024, // 10MB
       env: { ...process.env, ...options.env }
@@ -66,10 +74,16 @@ export function streamNselfCommand(
   onError?: (error: string) => void,
   onClose?: (code: number) => void
 ): () => void {
-  const sanitizedCommand = sanitizeCommand(command)
-  const sanitizedArgs = args.map(arg => sanitizeCommand(arg))
+  // Validate command
+  const allowedCommands = [
+    'logs', 'monitor', 'watch', 'tail'
+  ]
   
-  const child = spawn(NSELF_CLI_PATH, [sanitizedCommand, ...sanitizedArgs])
+  if (!allowedCommands.includes(command)) {
+    throw new Error(`Invalid streaming command: ${command}`)
+  }
+  
+  const child = spawn(NSELF_CLI_PATH, [command, ...args])
   
   child.stdout.on('data', (data) => {
     onData(data.toString())
@@ -128,7 +142,7 @@ export async function nselfRestore(backupPath: string): Promise<CLIResult> {
 }
 
 export async function nselfConfig(action: 'get' | 'set', key?: string, value?: string): Promise<CLIResult> {
-  const args = [action]
+  const args: string[] = [action]
   if (key) args.push(key)
   if (value) args.push(value)
   return executeNselfCommand('config', args)
@@ -159,4 +173,47 @@ export async function nselfVersion(): Promise<CLIResult> {
 export async function nselfHelp(command?: string): Promise<CLIResult> {
   const args = command ? [command] : []
   return executeNselfCommand('help', args)
+}
+
+// Additional missing commands
+
+export async function nselfDoctor(fix: boolean = false): Promise<CLIResult> {
+  const args = fix ? ['--fix'] : []
+  return executeNselfCommand('doctor', args)
+}
+
+export async function nselfMonitor(action?: 'enable' | 'disable' | 'status'): Promise<CLIResult> {
+  const args = action ? [`--${action}`] : []
+  return executeNselfCommand('monitor', args)
+}
+
+export async function nselfUrls(format?: 'json' | 'table'): Promise<CLIResult> {
+  const args = format ? ['--format', format] : []
+  return executeNselfCommand('urls', args)
+}
+
+export async function nselfApply(configPath?: string): Promise<CLIResult> {
+  const args = configPath ? ['--config', configPath] : []
+  return executeNselfCommand('apply', args)
+}
+
+export async function nselfSecrets(action: 'generate' | 'rotate', service?: string): Promise<CLIResult> {
+  const args: string[] = [action]
+  if (service) args.push(service)
+  return executeNselfCommand('secrets', args)
+}
+
+export async function nselfExport(format: 'compose' | 'kubernetes', outputPath?: string): Promise<CLIResult> {
+  const args = ['--format', format]
+  if (outputPath) args.push('--output', outputPath)
+  return executeNselfCommand('export', args)
+}
+
+export async function nselfScale(service: string, replicas: number): Promise<CLIResult> {
+  return executeNselfCommand('scale', [service, String(replicas)])
+}
+
+export async function nselfHealthcheck(service?: string): Promise<CLIResult> {
+  const args = service ? [service] : ['--all']
+  return executeNselfCommand('healthcheck', args)
 }

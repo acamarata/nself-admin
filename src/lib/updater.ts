@@ -40,7 +40,6 @@ class AutoUpdater {
         return packageJson.version
       }
     } catch (e) {
-      console.error('Failed to read package.json:', e)
     }
     
     // Fallback to environment variable
@@ -71,7 +70,6 @@ class AutoUpdater {
         publishedAt: versions?.[0]?.last_updated
       }
     } catch (error) {
-      console.error('Failed to check for updates:', error)
       return {
         current,
         latest: current,
@@ -97,7 +95,6 @@ class AutoUpdater {
         publishedAt: data.published_at
       }
     } catch (error) {
-      console.error('Failed to check GitHub releases:', error)
       return {
         current,
         latest: current,
@@ -231,7 +228,6 @@ class AutoUpdater {
       }
       
       // Log to console
-      console.log(`Update available: ${versionInfo.current} -> ${versionInfo.latest}`)
     }
   }
 }

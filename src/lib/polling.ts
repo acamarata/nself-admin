@@ -38,7 +38,6 @@ class PollingManager {
       try {
         await callback()
       } catch (error) {
-        console.error(`Polling task ${id} error:`, error)
       }
     }
 
@@ -144,8 +143,8 @@ export function usePolling(
   interval: number | null,
   deps: any[] = []
 ): void {
-  const savedCallback = useRef<PollingCallback>()
-  const taskId = useRef<string>()
+  const savedCallback = useRef<PollingCallback | undefined>(undefined)
+  const taskId = useRef<string | undefined>(undefined)
 
   // Remember the latest callback
   useEffect(() => {

@@ -465,7 +465,6 @@ export default function TerminalPage() {
   const activeSession = sessions.find(s => s.id === activeSessionId)
 
   const handleSessionAction = (action: string, sessionId: string) => {
-    console.log(`Session action: ${action} for ${sessionId}`)
     
     if (action === 'start' || action === 'stop') {
       setSessions(prev => prev.map(session =>
@@ -602,7 +601,6 @@ Use 'man <command>' for more information.`
                 {showSidebar ? 'Hide' : 'Show'} Sidebar
               </Button>
               <Button
-                onClick={() => console.log('Terminal settings')}
                 variant="outline"
                 className="flex items-center gap-2"
               >

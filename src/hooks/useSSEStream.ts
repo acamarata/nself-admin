@@ -37,7 +37,6 @@ export function useSSEStream() {
     // Clean up existing connection
     disconnect()
     
-    console.log('[SSE Client] Connecting to stream...')
     setState(prev => ({ ...prev, reconnecting: true, error: null }))
     
     try {
@@ -46,7 +45,6 @@ export function useSSEStream() {
       
       // Handle connection open
       eventSource.onopen = () => {
-        console.log('[SSE Client] Connected successfully')
         setState({
           connected: true,
           reconnecting: false,
@@ -62,13 +60,11 @@ export function useSSEStream() {
           const message = JSON.parse(event.data)
           handleMessage(message)
         } catch (error) {
-          console.error('[SSE Client] Failed to parse message:', error)
         }
       }
       
       // Handle errors
       eventSource.onerror = (error) => {
-        console.error('[SSE Client] Connection error:', error)
         
         // Check if this is a connection failure
         if (eventSource.readyState === EventSource.CLOSED) {
@@ -88,7 +84,6 @@ export function useSSEStream() {
         }
       }
     } catch (error) {
-      console.error('[SSE Client] Failed to create EventSource:', error)
       setState(prev => ({
         ...prev,
         connected: false,
@@ -109,7 +104,6 @@ export function useSSEStream() {
     }
     
     if (eventSourceRef.current) {
-      console.log('[SSE Client] Disconnecting...')
       eventSourceRef.current.close()
       eventSourceRef.current = null
     }
@@ -127,7 +121,6 @@ export function useSSEStream() {
    */
   const scheduleReconnect = () => {
     if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-      console.error('[SSE Client] Max reconnection attempts reached')
       setState(prev => ({
         ...prev,
         reconnecting: false,
@@ -142,7 +135,6 @@ export function useSSEStream() {
       30000
     )
     
-    console.log(`[SSE Client] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`)
     
     reconnectTimeoutRef.current = setTimeout(() => {
       reconnectAttemptsRef.current++
@@ -166,12 +158,10 @@ export function useSSEStream() {
         
       case 'dockerEvent':
         // Handle Docker events if needed
-        console.log('[SSE Client] Docker event:', data)
         break
         
       case 'serviceUpdate':
         // Handle service-specific updates
-        console.log('[SSE Client] Service update:', data)
         break
         
       case 'ping':
@@ -191,9 +181,7 @@ export function useSSEStream() {
     try {
       const response = await fetch('/api/sse/stream', { method: 'POST' })
       const result = await response.json()
-      console.log('[SSE Client] Manual refresh:', result)
     } catch (error) {
-      console.error('[SSE Client] Refresh failed:', error)
     }
   }
   
@@ -204,9 +192,7 @@ export function useSSEStream() {
     // Handle page visibility changes
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        console.log('[SSE Client] Page hidden, maintaining connection')
       } else {
-        console.log('[SSE Client] Page visible, checking connection')
         // If not connected and not already reconnecting, try to reconnect
         if (!eventSourceRef.current && !reconnectTimeoutRef.current) {
           reconnectAttemptsRef.current = 0 // Reset attempts on page return
@@ -217,13 +203,11 @@ export function useSSEStream() {
     
     // Handle online/offline
     const handleOnline = () => {
-      console.log('[SSE Client] Network online, reconnecting')
       reconnectAttemptsRef.current = 0
       connect()
     }
     
     const handleOffline = () => {
-      console.log('[SSE Client] Network offline')
       disconnect()
       setState(prev => ({
         ...prev,

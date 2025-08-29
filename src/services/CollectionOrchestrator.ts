@@ -98,7 +98,6 @@ export class CollectionOrchestrator extends EventEmitter {
   async start() {
     if (this.isRunning) return
     
-    console.log('[Orchestrator] Starting collection services...')
     this.isRunning = true
 
     try {
@@ -111,10 +110,8 @@ export class CollectionOrchestrator extends EventEmitter {
       // Schedule periodic service updates
       this.scheduleServiceUpdates()
       
-      console.log('[Orchestrator] All collectors started successfully')
       this.emit('started')
     } catch (error) {
-      console.error('[Orchestrator] Failed to start:', error)
       this.isRunning = false
       throw error
     }
@@ -126,7 +123,6 @@ export class CollectionOrchestrator extends EventEmitter {
   async stop() {
     if (!this.isRunning) return
     
-    console.log('[Orchestrator] Stopping collection services...')
     this.isRunning = false
 
     // Stop Docker collector
@@ -138,7 +134,6 @@ export class CollectionOrchestrator extends EventEmitter {
     }
     this.serviceIntervals.clear()
     
-    console.log('[Orchestrator] All collectors stopped')
     this.emit('stopped')
   }
 
@@ -164,7 +159,6 @@ export class CollectionOrchestrator extends EventEmitter {
       this.state.services.postgres = data
       this.emit('serviceUpdate', { service: 'postgres', data })
     } catch (error) {
-      console.error('[Orchestrator] Failed to load Postgres data:', error)
       this.state.services.postgres = null
     }
   }
@@ -178,7 +172,6 @@ export class CollectionOrchestrator extends EventEmitter {
       this.state.services.hasura = data
       this.emit('serviceUpdate', { service: 'hasura', data })
     } catch (error) {
-      console.error('[Orchestrator] Failed to load Hasura data:', error)
       this.state.services.hasura = null
     }
   }
@@ -192,7 +185,6 @@ export class CollectionOrchestrator extends EventEmitter {
       this.state.services.redis = data
       this.emit('serviceUpdate', { service: 'redis', data })
     } catch (error) {
-      console.error('[Orchestrator] Failed to load Redis data:', error)
       this.state.services.redis = null
     }
   }
@@ -303,7 +295,6 @@ export class CollectionOrchestrator extends EventEmitter {
    * Force refresh of all data
    */
   async refresh() {
-    console.log('[Orchestrator] Force refresh requested')
     await this.loadServiceData()
     const dockerSnapshot = this.dockerCollector.getSnapshot()
     this.state.docker.containers = dockerSnapshot.containers

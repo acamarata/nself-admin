@@ -1,46 +1,97 @@
-# Protocol
+# nAdmin Documentation
 
-Protocol is a [Tailwind Plus](https://tailwindcss.com/plus) site template built using [Tailwind CSS](https://tailwindcss.com) and [Next.js](https://nextjs.org).
+Welcome to the nAdmin documentation. nAdmin is a Docker-based administration dashboard for managing nself backend projects.
 
-## Getting started
+## 📚 Documentation Structure
 
-To get started with this template, first install the npm dependencies:
+### Getting Started
+- [Installation Guide](setup/installation.md) - How to install and run nAdmin
+- [Quick Start](setup/quick-start.md) - Get up and running in 5 minutes
+- [Configuration](setup/configuration.md) - Environment variables and settings
 
-```bash
-npm install
+### Architecture
+- [System Overview](architecture/overview.md) - High-level architecture
+- [Database Design](architecture/database.md) - LokiJS schema and collections
+- [Security Model](architecture/security.md) - Authentication and authorization
+- [Docker Architecture](architecture/docker.md) - Container design and volumes
+
+### Development
+- [Development Setup](development/setup.md) - Local development environment
+- [Project Structure](development/structure.md) - Code organization
+- [Contributing](development/contributing.md) - How to contribute
+- [Testing](development/testing.md) - Testing strategies
+
+### API Reference
+- [Authentication API](api/authentication.md) - Login, logout, sessions
+- [Project API](api/project.md) - Project management endpoints
+- [Services API](api/services.md) - Service control endpoints
+- [Database API](api/database.md) - Database operations
+
+### Deployment
+- [Docker Deployment](deployment/docker.md) - Production Docker setup
+- [Security Hardening](deployment/security.md) - Production security
+- [Monitoring](deployment/monitoring.md) - Logs and metrics
+- [Backup & Recovery](deployment/backup.md) - Data persistence
+
+### User Guides
+- [First Time Setup](guides/first-time-setup.md) - Initial configuration
+- [Managing Services](guides/managing-services.md) - Start, stop, restart
+- [Database Operations](guides/database-operations.md) - Migrations, backups
+- [Troubleshooting](guides/troubleshooting.md) - Common issues
+
+## 🚀 Quick Links
+
+- **Repository**: [github.com/your-org/nself-admin](https://github.com/your-org/nself-admin)
+- **Docker Hub**: [hub.docker.com/r/acamarata/nself-admin](https://hub.docker.com/r/acamarata/nself-admin)
+- **Issues**: [Report bugs or request features](https://github.com/your-org/nself-admin/issues)
+
+## 🎯 Key Features
+
+- **Zero Configuration**: Works out of the box with sensible defaults
+- **Docker Native**: Designed to run in containers
+- **Self-Contained**: All state stored in internal database
+- **Project Agnostic**: Manages any nself project structure
+- **Secure by Default**: Built-in authentication and session management
+
+## 📋 Prerequisites
+
+- Docker 20.10 or higher
+- nself CLI installed
+- A directory for your nself project
+
+## 🏗️ Architecture Overview
+
+```
+┌─────────────────────────────────────┐
+│          User Browser               │
+└────────────┬────────────────────────┘
+             │ HTTPS (Port 3021)
+┌────────────▼────────────────────────┐
+│       nAdmin Container              │
+│  ┌──────────────────────────────┐  │
+│  │     Next.js Application      │  │
+│  ├──────────────────────────────┤  │
+│  │     LokiJS Database          │  │
+│  └──────────────────────────────┘  │
+│            │                        │
+│            │ Volume Mount           │
+│            ▼                        │
+│  ┌──────────────────────────────┐  │
+│  │    /workspace (User Project) │  │
+│  └──────────────────────────────┘  │
+└─────────────────────────────────────┘
 ```
 
-Next, run the development server:
+## 📖 Version History
 
-```bash
-npm run dev
-```
+- **v1.0.0** - Initial release with core functionality
+- **v1.1.0** - Added LokiJS database support
+- **v1.2.0** - Enhanced security and session management
 
-Finally, open [http://localhost:3000](http://localhost:3000) in your browser to view the website.
+## 🤝 Contributing
 
-## Customizing
+We welcome contributions! Please see our [Contributing Guide](development/contributing.md) for details.
 
-You can start editing this template by modifying the files in the `/src` folder. The site will auto-update as you edit these files.
+## 📄 License
 
-## Global search
-
-This template includes a global search that's powered by the [FlexSearch](https://github.com/nextapps-de/flexsearch) library. It's available by clicking the search input or by using the `⌘K` shortcut.
-
-This feature requires no configuration, and works out of the box by automatically scanning your documentation pages to build its index. You can adjust the search parameters by editing the `/src/mdx/search.mjs` file.
-
-## License
-
-This site template is a commercial product and is licensed under the [Tailwind Plus license](https://tailwindcss.com/plus/license).
-
-## Learn more
-
-To learn more about the technologies used in this site template, see the following resources:
-
-- [Tailwind CSS](https://tailwindcss.com/docs) - the official Tailwind CSS documentation
-- [Next.js](https://nextjs.org/docs) - the official Next.js documentation
-- [Headless UI](https://headlessui.dev) - the official Headless UI documentation
-- [Framer Motion](https://www.framer.com/docs/) - the official Framer Motion documentation
-- [MDX](https://mdxjs.com/) - the official MDX documentation
-- [Algolia Autocomplete](https://www.algolia.com/doc/ui-libraries/autocomplete/introduction/what-is-autocomplete/) - the official Algolia Autocomplete documentation
-- [FlexSearch](https://github.com/nextapps-de/flexsearch) - the official FlexSearch documentation
-- [Zustand](https://docs.pmnd.rs/zustand/getting-started/introduction) - the official Zustand documentation
+nAdmin is licensed under the MIT License. See [LICENSE](../LICENSE) for details.

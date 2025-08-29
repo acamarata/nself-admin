@@ -59,9 +59,10 @@ class WebSocketService extends EventEmitter {
 
   constructor() {
     super()
-    if (typeof window !== 'undefined') {
-      this.connect()
-    }
+    // WebSocket is currently disabled - endpoint not available
+    // if (typeof window !== 'undefined') {
+    //   this.connect()
+    // }
   }
 
   private getWebSocketUrl(): string {
@@ -79,7 +80,6 @@ class WebSocketService extends EventEmitter {
       this.ws = new WebSocket(this.getWebSocketUrl())
 
       this.ws.onopen = () => {
-        console.log('WebSocket connected')
         this.isConnected = true
         this.reconnectAttempts = 0
         this.emit('connected')
@@ -96,24 +96,20 @@ class WebSocketService extends EventEmitter {
           const message: WebSocketMessage = JSON.parse(event.data)
           this.handleMessage(message)
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error)
         }
       }
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error)
         this.emit('error', error)
       }
 
       this.ws.onclose = () => {
-        console.log('WebSocket disconnected')
         this.isConnected = false
         this.emit('disconnected')
         this.stopPing()
         this.attemptReconnect()
       }
     } catch (error) {
-      console.error('Failed to create WebSocket connection:', error)
       this.attemptReconnect()
     }
   }
@@ -160,7 +156,6 @@ class WebSocketService extends EventEmitter {
 
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnection attempts reached')
       this.emit('max_reconnect_attempts')
       return
     }
@@ -176,7 +171,6 @@ class WebSocketService extends EventEmitter {
 
     this.reconnectTimer = setTimeout(() => {
       this.reconnectAttempts++
-      console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`)
       this.connect()
     }, delay)
   }

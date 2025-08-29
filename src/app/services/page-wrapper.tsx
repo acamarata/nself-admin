@@ -6,7 +6,7 @@
 import { Suspense, lazy } from 'react'
 
 // Lazy load the actual page component
-const ServicesPage = lazy(() => import('./ServicesPageContent'))
+const ServicesPage = lazy(() => import('./page'))
 
 export default function ServicesPageWrapper() {
   return (

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { useProjectStore } from '@/stores/projectStore'
+import type { ContainerStats } from '@/services/collectors/DockerAPICollector'
 import { PageShell, DataSection } from '@/components/PageShell'
 import { Button } from '@/components/Button'
 import * as Icons from '@/lib/icons'
@@ -166,10 +167,10 @@ function getServiceOrder(name: string | undefined): number {
 }
 
 // Apply default sorting to containers
-function applyDefaultSort(containers: Container[]): Container[] {
+function applyDefaultSort(containers: any[]): any[] {
   return [...containers].sort((a, b) => {
-    const orderA = getServiceOrder(a.name)
-    const orderB = getServiceOrder(b.name)
+    const orderA = getServiceOrder(a.name || '')
+    const orderB = getServiceOrder(b.name || '')
     if (orderA !== orderB) return orderA - orderB
     // If same order number, sort alphabetically
     return (a.name || '').localeCompare(b.name || '')
@@ -197,7 +198,37 @@ const serviceIcons: Record<string, any> = {
   default: Icons.Box
 }
 
-function getServiceDisplayName(container: Container): string {
+function getServiceIcon(name: string): any {
+  const iconMap: Record<string, any> = {
+    postgres: Icons.Database,
+    hasura: Icons.Layers,
+    auth: Icons.Shield,
+    minio: Icons.HardDrive,
+    redis: Icons.Database,
+    nginx: Icons.Globe,
+    mailhog: Icons.Mail
+  }
+  
+  for (const [key, icon] of Object.entries(iconMap)) {
+    if (name.toLowerCase().includes(key)) return icon
+  }
+  return Icons.Box
+}
+
+function getHealthColor(health: string): string {
+  switch (health) {
+    case 'healthy': return 'text-green-500'
+    case 'unhealthy': return 'text-red-500'
+    case 'starting': return 'text-yellow-500'
+    default: return 'text-zinc-400'
+  }
+}
+
+function getHealthText(health: string): string {
+  return health?.charAt(0).toUpperCase() + health?.slice(1) || 'Unknown'
+}
+
+function getServiceDisplayName(container: Container | ContainerStats | any): string {
   const nameMap: Record<string, string> = {
     'nself_postgres': 'PostgreSQL',
     'nself_hasura': 'Hasura GraphQL',
@@ -464,14 +495,14 @@ function EnhancedListView({
                 <button
                   onClick={() => onAction('restart', container.id)}
                   className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  title="Restart"
+                 
                 >
                   <Icons.RefreshCw className="w-4 h-4 text-zinc-500" />
                 </button>
                 <button
                   onClick={() => onAction('stop', container.id)}
                   className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  title="Stop"
+                 
                 >
                   <Icons.Square className="w-4 h-4 text-red-500" />
                 </button>
@@ -480,7 +511,7 @@ function EnhancedListView({
               <button
                 onClick={() => onAction('start', container.id)}
                 className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                title="Start"
+               
               >
                 <Icons.Play className="w-4 h-4 text-green-500" />
               </button>
@@ -488,7 +519,7 @@ function EnhancedListView({
             <button
               onClick={() => onAction('inspect', container.id)}
               className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              title="Inspect"
+             
             >
               <Icons.Info className="w-4 h-4 text-zinc-500" />
             </button>
@@ -702,14 +733,14 @@ function TreeView({
               <button
                 onClick={() => onAction('restart', container.id)}
                 className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                title="Restart"
+               
               >
                 <Icons.RefreshCw className="w-4 h-4 text-zinc-500" />
               </button>
               <button
                 onClick={() => onAction('stop', container.id)}
                 className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                title="Stop"
+               
               >
                 <Icons.Square className="w-4 h-4 text-red-500" />
               </button>
@@ -718,7 +749,7 @@ function TreeView({
             <button
               onClick={() => onAction('start', container.id)}
               className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800"
-              title="Start"
+             
             >
               <Icons.Play className="w-4 h-4 text-green-500" />
             </button>
@@ -838,7 +869,8 @@ function TreeView({
 
 export default function ServicesPage() {
   // Read from store - instant, never blocks
-  const containers = useProjectStore(state => state.containerStats) || [] as Container[]
+  const storeContainers = useProjectStore(state => state.containerStats)
+  const containers = useMemo(() => storeContainers || [] as Container[], [storeContainers])
   
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'tree'>('grid')
@@ -929,7 +961,6 @@ export default function ServicesPage() {
   
   const handleRefresh = () => {
     // Could emit an event to background service if needed
-    console.log('Manual refresh requested - background service will update')
   }
   
   const stats = useMemo(() => {
@@ -958,7 +989,7 @@ export default function ServicesPage() {
   
   return (
     <PageShell
-      title="Services"
+     
       description="Manage all containers and services in your nself stack"
       loading={false}
       error={error}
@@ -991,7 +1022,7 @@ export default function ServicesPage() {
           />
           
           <MetricCard
-            title="Service Types"
+            title="Stack vs User"
             value={`${stats.stack}/${stats.services}`}
             percentage={typeof stats.stack === 'number' && typeof stats.total === 'number' ? (stats.stack / stats.total) * 100 : undefined}
             description="Stack / User Services"
@@ -1046,21 +1077,21 @@ export default function ServicesPage() {
               <button
                 onClick={() => handleViewModeChange('grid')}
                 className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-500 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
-                title="Grid View"
+               
               >
                 <Icons.LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleViewModeChange('list')}
                 className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-500 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
-                title="List View"
+               
               >
                 <Icons.List className="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleViewModeChange('tree')}
                 className={`p-2 rounded ${viewMode === 'tree' ? 'bg-blue-500 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
-                title="Tree View"
+               
               >
                 <Icons.TreePine className="w-4 h-4" />
               </button>
@@ -1108,6 +1139,9 @@ export default function ServicesPage() {
                   key={container.id}
                   container={container}
                   onAction={handleContainerAction}
+                  getServiceIcon={getServiceIcon}
+                  getHealthColor={getHealthColor}
+                  getHealthText={getHealthText}
                 />
               ))
             ) : (

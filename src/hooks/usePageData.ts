@@ -14,7 +14,7 @@ interface PageDataOptions {
 
 export function usePageData(options: PageDataOptions) {
   const projectStatus = useProjectStore(state => state.projectStatus)
-  const intervalRef = useRef<NodeJS.Timeout>()
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
   
   // Fetch data based on options
   const fetchData = async () => {

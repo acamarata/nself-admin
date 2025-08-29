@@ -5,7 +5,7 @@ import { HeroPattern } from '@/components/HeroPattern'
 import { Loader2 } from 'lucide-react'
 
 interface PageShellProps {
-  title: string
+  title?: string
   description?: string
   children: ReactNode
   loading?: boolean
@@ -23,7 +23,7 @@ interface PageShellProps {
  * 4. Gracefully handles errors
  */
 export function PageShell({ 
-  title, 
+  title = 'Configuration', 
   description, 
   children, 
   loading = false,

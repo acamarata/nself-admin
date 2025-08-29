@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           controller.enqueue(
             encoder.encode(`event: heartbeat\ndata: ${JSON.stringify({ type: 'heartbeat', timestamp: new Date().toISOString() })}\n\n`)
           )
-        } catch (error) {
+        } catch (error: any) {
           // Connection closed
           clearInterval(heartbeatInterval)
         }
@@ -74,8 +74,7 @@ export async function GET(request: NextRequest) {
               encoder.encode(`event: update\ndata: ${JSON.stringify({ type: 'update', data: updates, timestamp: new Date().toISOString() })}\n\n`)
             )
           }
-        } catch (error) {
-          console.error('[SSE] Error fetching metrics:', error)
+        } catch (error: any) {
         }
       }, 2000) // Every 2 seconds
       

@@ -6,7 +6,7 @@ import { HeroPattern } from '@/components/HeroPattern'
 import { 
   Cpu, HardDrive, Activity, Network, MemoryStick, Gauge, 
   RefreshCw, Settings, Zap, AlertTriangle, TrendingUp,
-  TrendingDown, Server, Database, Clock, Eye, Stop,
+  TrendingDown, Server, Database, Clock, Eye, Square,
   Play, RotateCw, Trash2, Plus, Search, Filter,
   ChevronDown, ChevronUp, ExternalLink, Download,
   Bell, AlertCircle, CheckCircle, Info, X,
@@ -435,14 +435,14 @@ function ProcessManager({ processes, onProcessAction }: {
                     <button
                       onClick={() => onProcessAction('restart', process.pid)}
                       className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-                      title="Restart"
+                     
                     >
                       <RotateCw className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => onProcessAction('kill', process.pid)}
                       className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600"
-                      title="Kill"
+                     
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -783,7 +783,6 @@ export default function SystemResourcesPage() {
   }, [fetchMetrics, autoRefresh])
   
   const handleProcessAction = (action: string, pid: number) => {
-    console.log(`${action} process ${pid}`)
     // Process action logic would go here
   }
   
@@ -938,7 +937,7 @@ export default function SystemResourcesPage() {
               />
               
               <MetricsCard
-                title="Memory Usage"
+                title="Memory"
                 value={formatBytes(metrics.memory.used)}
                 percentage={metrics.memory.usage}
                 trend={metrics.memory.usage > 70 ? 'up' : 'stable'}
@@ -966,7 +965,7 @@ export default function SystemResourcesPage() {
               />
               
               <MetricsCard
-                title="Network I/O"
+                title="Network"
                 value={formatBytes(metrics.network.bytesIn + metrics.network.bytesOut)}
                 trend="up"
                 icon={Network}
@@ -981,7 +980,7 @@ export default function SystemResourcesPage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <ResourceChart
-                title="CPU Usage Over Time"
+                title="CPU History"
                 data={[
                   { timestamp: '10:00', value: 35 },
                   { timestamp: '10:15', value: 42 },
@@ -991,7 +990,7 @@ export default function SystemResourcesPage() {
               />
               
               <ResourceChart
-                title="Memory Usage Over Time"
+                title="Memory History"
                 data={[
                   { timestamp: '10:00', value: 48 },
                   { timestamp: '10:15', value: 52 },

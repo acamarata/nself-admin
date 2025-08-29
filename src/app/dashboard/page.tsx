@@ -363,7 +363,7 @@ export default function DashboardPage() {
         {/* System Metrics */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4 mb-8">
           <MetricCard
-            title="Docker CPU"
+            title="CPU Usage"
             value={`${Math.round(docker?.cpu || 0)}%`}
             percentage={docker?.cpu || 0}
             description={`System: ${Math.round(system?.cpu || 0)}%`}
@@ -371,7 +371,7 @@ export default function DashboardPage() {
           />
           
           <MetricCard
-            title="Docker Memory"
+            title="Memory Usage"
             value={`${docker?.memory?.percentage || 0}%`}
             percentage={docker?.memory?.percentage || 0}
             description={`${docker?.memory?.used || 0}GB / ${docker?.memory?.total || 0}GB`}
@@ -379,7 +379,7 @@ export default function DashboardPage() {
           />
           
           <MetricCard
-            title="Storage"
+            title="Storage Usage"
             value={`${docker?.storage?.percentage || 0}%`}
             percentage={docker?.storage?.percentage || 0}
             description={`${docker?.storage?.used || 0}GB / ${docker?.storage?.total || 0}GB`}
@@ -387,7 +387,7 @@ export default function DashboardPage() {
           />
           
           <MetricCard
-            title="Network"
+            title="Network Traffic"
             value={`${((docker?.network?.rx || 0) + (docker?.network?.tx || 0)).toFixed(1)} Mbps`}
             percentage={Math.min(((docker?.network?.rx || 0) + (docker?.network?.tx || 0)) / (docker?.network?.maxSpeed || 1000) * 100, 100)}
             description={`↓ ${docker?.network?.rx || 0} ↑ ${docker?.network?.tx || 0} Mbps`}

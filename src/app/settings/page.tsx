@@ -108,7 +108,6 @@ function UserPreferencesSection() {
       })
       // Handle response
     } catch (error) {
-      console.error('Failed to save preferences:', error)
     } finally {
       setSaving(false)
     }
@@ -116,7 +115,7 @@ function UserPreferencesSection() {
 
   return (
     <SettingsSection
-      title="User Preferences"
+      title="Settings"
       description="Customize your experience and interface settings"
       icon={User}
     >
@@ -254,7 +253,7 @@ function NotificationSettingsSection() {
 
   return (
     <SettingsSection
-      title="Notification Settings"
+      title="Notifications"
       description="Configure how and when you receive notifications"
       icon={Bell}
     >
@@ -454,7 +453,6 @@ function APITokensSection() {
         setShowCreateForm(false)
       }
     } catch (error) {
-      console.error('Failed to create token:', error)
     }
   }
 
@@ -463,13 +461,12 @@ function APITokensSection() {
       await fetch(`/api/settings/tokens/${tokenId}`, { method: 'DELETE' })
       setTokens(tokens.map(t => t.id === tokenId ? { ...t, status: 'revoked' as const } : t))
     } catch (error) {
-      console.error('Failed to revoke token:', error)
     }
   }
 
   return (
     <SettingsSection
-      title="API Tokens"
+      title="API Keys"
       description="Manage API tokens for programmatic access"
       icon={Key}
     >
@@ -619,7 +616,7 @@ function SecuritySettingsSection() {
 
   return (
     <SettingsSection
-      title="Security Settings"
+      title="Security"
       description="Configure security policies and access controls"
       icon={Shield}
     >
@@ -634,7 +631,7 @@ function SecuritySettingsSection() {
               </p>
             </div>
             <Button 
-              variant={security.twoFactorEnabled ? "outline" : "default"}
+              variant={security.twoFactorEnabled ? "outline" : "primary"}
               onClick={() => setSecurity({...security, twoFactorEnabled: !security.twoFactorEnabled})}
             >
               {security.twoFactorEnabled ? 'Disable 2FA' : 'Enable 2FA'}
@@ -770,7 +767,7 @@ function IntegrationSettingsSection() {
 
   return (
     <SettingsSection
-      title="Integration Settings"
+      title="Integrations"
       description="Configure external service integrations"
       icon={Globe}
     >
@@ -915,7 +912,6 @@ function ExportImportSection() {
         window.URL.revokeObjectURL(url)
       }
     } catch (error) {
-      console.error('Export failed:', error)
     }
   }
 
@@ -938,13 +934,12 @@ function ExportImportSection() {
         window.location.reload()
       }
     } catch (error) {
-      console.error('Import failed:', error)
     }
   }
 
   return (
     <SettingsSection
-      title="Export/Import Settings"
+      title="Backup & Restore"
       description="Backup and restore your configuration"
       icon={Database}
     >

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useCallback, createContext, useContext } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import * as Icons from '@/lib/icons'
 import { AnimatePresence, motion } from 'framer-motion'
 
 interface ConfirmOptions {
@@ -73,7 +73,7 @@ function ConfirmDialog({
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   confirmButtonClass,
-  icon: Icon = AlertTriangle,
+  icon: Icon = Icons.AlertTriangle,
   dangerous = false,
   onConfirm,
   onCancel

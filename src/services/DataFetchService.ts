@@ -36,18 +36,15 @@ class DataFetchService {
     
     // If there's an ongoing fetch, return that promise
     if (record?.promise) {
-      console.log(`[DataFetch] Reusing ongoing fetch for ${key}`)
       return record.promise
     }
     
     // If data is fresh, don't fetch
     if (this.isFresh(key, maxAge)) {
-      console.log(`[DataFetch] Cache hit for ${key} (age: ${Date.now() - record!.timestamp}ms)`)
       return Promise.resolve(null)
     }
     
     // Start new fetch
-    console.log(`[DataFetch] Fetching ${key}`)
     const promise = fetcher()
       .then(result => {
         // Update timestamp on success
@@ -101,8 +98,7 @@ class DataFetchService {
             })
             
             store.updateCachedData({ 
-              containerStats: data.data.containers,
-              containersByCategory: byCategory
+              containerStats: data.data.containers
             })
             
             return data.data
@@ -212,11 +208,6 @@ class DataFetchService {
         if (response.ok) {
           const data = await response.json()
           if (data.success) {
-            console.log('[DataFetch] Full metrics update:', {
-              network: data.data?.system?.network?.rx,
-              dockerCpu: data.data?.docker?.cpu,
-              timestamp: new Date().toISOString()
-            })
             store.updateCachedData({ systemMetrics: data.data })
             return data.data
           }

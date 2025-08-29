@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react'
 
 // Lazy load the heavy services page component
 const ServicesContent = dynamic(
-  () => import('./ServicesContent'),
+  () => import('./page').then(mod => ({ default: mod.default })),
   {
     loading: () => (
       <div className="flex items-center justify-center py-12">
@@ -19,8 +19,6 @@ const ServicesContent = dynamic(
 )
 
 export default function ServicesClient() {
-  // Get data from store immediately
-  const containers = useProjectStore(state => state.containerStats)
-  
-  return <ServicesContent containers={containers} />
+  // The page component handles its own data fetching
+  return <ServicesContent />
 }

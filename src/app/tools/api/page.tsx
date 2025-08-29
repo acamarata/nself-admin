@@ -254,7 +254,7 @@ function RequestBuilder({
                 value={request.auth.token || ''}
                 onChange={(e) => onRequestChange({
                   ...request,
-                  auth: { ...request.auth, token: e.target.value }
+                  auth: { type: 'bearer', ...request.auth, token: e.target.value }
                 })}
                 className="w-full px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
               />
@@ -268,7 +268,7 @@ function RequestBuilder({
                   value={request.auth.username || ''}
                   onChange={(e) => onRequestChange({
                     ...request,
-                    auth: { ...request.auth, username: e.target.value }
+                    auth: { type: 'basic', ...request.auth, username: e.target.value }
                   })}
                   className="px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
                 />
@@ -278,7 +278,7 @@ function RequestBuilder({
                   value={request.auth.password || ''}
                   onChange={(e) => onRequestChange({
                     ...request,
-                    auth: { ...request.auth, password: e.target.value }
+                    auth: { type: 'basic', ...request.auth, password: e.target.value }
                   })}
                   className="px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
                 />
@@ -293,7 +293,7 @@ function RequestBuilder({
                   value={request.auth.apiKeyHeader || ''}
                   onChange={(e) => onRequestChange({
                     ...request,
-                    auth: { ...request.auth, apiKeyHeader: e.target.value }
+                    auth: { type: 'api-key', ...request.auth, apiKeyHeader: e.target.value }
                   })}
                   className="px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
                 />
@@ -303,7 +303,7 @@ function RequestBuilder({
                   value={request.auth.apiKey || ''}
                   onChange={(e) => onRequestChange({
                     ...request,
-                    auth: { ...request.auth, apiKey: e.target.value }
+                    auth: { type: 'api-key', ...request.auth, apiKey: e.target.value }
                   })}
                   className="px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
                 />
@@ -954,7 +954,6 @@ export default function ApiExplorerPage() {
   
   const handleSaveRequest = () => {
     // Save request logic would go here
-    console.log('Saving request:', currentRequest)
   }
   
   return (
@@ -1032,7 +1031,10 @@ export default function ApiExplorerPage() {
               {activeTab === 'collections' && (
                 <CollectionManager
                   collections={collections}
-                  onCollectionSelect={(collection) => console.log('Selected collection:', collection)}
+                  onCollectionSelect={(collection) => {
+                    // Handle collection selection
+                    console.log('Collection selected:', collection)
+                  }}
                   onRequestSelect={handleRequestSelect}
                   requests={requestHistory}
                 />

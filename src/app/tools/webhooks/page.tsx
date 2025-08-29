@@ -222,7 +222,7 @@ function WebhookForm({
             <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Headers
             </label>
-            <Button onClick={addHeader} variant="outline" size="sm">
+            <Button onClick={addHeader} variant="outline">
               <Plus className="w-4 h-4 mr-1" />
               Add Header
             </Button>
@@ -244,7 +244,7 @@ function WebhookForm({
                   placeholder="Header value"
                   className="flex-1 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900"
                 />
-                <Button onClick={() => removeHeader(key)} variant="outline" size="sm">
+                <Button onClick={() => removeHeader(key)} variant="outline">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -357,13 +357,13 @@ function WebhookCard({ webhook, onEdit, onDelete, onToggle, onTest }: {
           </div>
           
           <div className="flex items-center gap-1">
-            <Button onClick={onTest} variant="outline" size="sm">
+            <Button onClick={onTest} variant="outline">
               <Send className="w-4 h-4" />
             </Button>
-            <Button onClick={onEdit} variant="outline" size="sm">
+            <Button onClick={onEdit} variant="outline">
               <Edit3 className="w-4 h-4" />
             </Button>
-            <Button onClick={onDelete} variant="outline" size="sm">
+            <Button onClick={onDelete} variant="outline">
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
@@ -426,7 +426,7 @@ function WebhookCard({ webhook, onEdit, onDelete, onToggle, onTest }: {
             <Button
               onClick={onToggle}
               variant="outline"
-              size="sm"
+             
               className={webhook.enabled ? 'text-red-600' : 'text-green-600'}
             >
               {webhook.enabled ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
@@ -593,7 +593,7 @@ function PayloadTemplatesSection() {
                 <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs rounded">
                   {template.event}
                 </span>
-                <Button variant="outline" size="sm">
+                <Button variant="outline">
                   <Edit3 className="w-4 h-4" />
                 </Button>
               </div>
@@ -729,7 +729,6 @@ export default function WebhooksPage() {
       setShowForm(false)
       setEditingWebhook(undefined)
     } catch (error) {
-      console.error('Failed to save webhook:', error)
     } finally {
       setLoading(false)
     }
@@ -742,7 +741,6 @@ export default function WebhooksPage() {
       await fetch(`/api/webhooks/${id}`, { method: 'DELETE' })
       setWebhooks(webhooks.filter(w => w.id !== id))
     } catch (error) {
-      console.error('Failed to delete webhook:', error)
     }
   }
 
@@ -761,7 +759,6 @@ export default function WebhooksPage() {
         setWebhooks(webhooks.map(w => w.id === id ? { ...w, enabled: !w.enabled } : w))
       }
     } catch (error) {
-      console.error('Failed to toggle webhook:', error)
     }
   }
 
@@ -776,7 +773,6 @@ export default function WebhooksPage() {
         alert(`Test failed: ${result.error}`)
       }
     } catch (error) {
-      console.error('Failed to test webhook:', error)
       alert('Test failed: Network error')
     }
   }

@@ -91,7 +91,6 @@ export default function ConfigPage() {
         refetch()
       }
     } catch (error) {
-      console.error('Failed to save environment variables:', error)
     } finally {
       setSaving(false)
     }
@@ -238,7 +237,7 @@ export default function ConfigPage() {
             <button
               onClick={() => copyToClipboard(displayValue)}
               className="p-0.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700"
-              title="Copy"
+             
             >
               <Icons.Copy className="h-3 w-3 text-zinc-500" />
             </button>
@@ -248,7 +247,7 @@ export default function ConfigPage() {
                 setTempValue(variable.value || variable.defaultValue || '')
               }}
               className="p-0.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700"
-              title="Edit"
+             
             >
               <Icons.Edit className="h-3 w-3 text-zinc-500" />
             </button>
@@ -256,7 +255,7 @@ export default function ConfigPage() {
               <button
                 onClick={() => updateVariable(variable.key, '')}
                 className="p-0.5 rounded hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                title="Clear"
+               
               >
                 <Icons.Trash2 className="h-3 w-3 text-red-500" />
               </button>
@@ -277,16 +276,15 @@ export default function ConfigPage() {
         </span>
       )}
       
-      <Button size="xs" variant="outline" onClick={exportEnvironment}>
+      <Button variant="outline" onClick={exportEnvironment}>
         <Icons.Download className="h-3 w-3" />
       </Button>
       
-      <Button size="xs" variant="outline" onClick={refetch}>
+      <Button variant="outline" onClick={refetch}>
         <Icons.RefreshCw className="h-3 w-3" />
       </Button>
       
       <Button 
-        size="xs" 
         onClick={saveEnvironmentVariables}
         disabled={!hasChanges || saving}
       >
@@ -298,7 +296,7 @@ export default function ConfigPage() {
 
   return (
     <PageShell
-      title="Configuration"
+     
       description="Manage environment variables across all environments"
       loading={loading}
       error={error}

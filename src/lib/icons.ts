@@ -50,5 +50,6 @@ export {
   Plus,
   Edit,
   X,
-  Check
+  Check,
+  AlertTriangle
 } from 'lucide-react'

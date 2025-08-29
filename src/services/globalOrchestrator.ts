@@ -13,7 +13,6 @@ declare global {
 // Create or get the singleton instance
 export function getGlobalOrchestrator(): CollectionOrchestrator {
   if (!global.__orchestrator) {
-    console.log('[GlobalOrchestrator] Creating new orchestrator instance')
     global.__orchestrator = new CollectionOrchestrator()
   }
   return global.__orchestrator

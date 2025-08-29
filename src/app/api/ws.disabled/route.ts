@@ -54,8 +54,7 @@ async function getSystemMetrics() {
         tx: 0
       }
     }
-  } catch (error) {
-    console.error('Error getting system metrics:', error)
+  } catch (error: any) {
     return {
       cpu: {
         usage: cpuUsage,
@@ -108,7 +107,7 @@ async function getContainerStats() {
             ports: container.Ports.map(p => `${p.PublicPort}:${p.PrivatePort}`).filter(p => !p.includes('null')),
             uptime: Math.floor((Date.now() - container.Created * 1000) / 1000)
           }
-        } catch (error) {
+        } catch (error: any) {
           return {
             id: container.Id.substring(0, 12),
             name: container.Names[0].replace('/', ''),
@@ -123,8 +122,7 @@ async function getContainerStats() {
       })
     )
     return containerData
-  } catch (error) {
-    console.error('Error getting container stats:', error)
+  } catch (error: any) {
     return []
   }
 }
@@ -141,7 +139,6 @@ function initializeWebSocket() {
   })
 
   io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id)
     
     const client: Client = {
       id: socket.id,
@@ -151,12 +148,10 @@ function initializeWebSocket() {
 
     socket.on('subscribe', (topic: string) => {
       client.subscriptions.add(topic)
-      console.log(`Client ${socket.id} subscribed to ${topic}`)
     })
 
     socket.on('unsubscribe', (topic: string) => {
       client.subscriptions.delete(topic)
-      console.log(`Client ${socket.id} unsubscribed from ${topic}`)
     })
 
     socket.on('ping', () => {
@@ -164,7 +159,6 @@ function initializeWebSocket() {
     })
 
     socket.on('disconnect', () => {
-      console.log('Client disconnected:', socket.id)
       clients.delete(socket.id)
     })
   })
@@ -188,7 +182,6 @@ function initializeWebSocket() {
   }, 10000)
 
   httpServer.listen(3002, () => {
-    console.log('WebSocket server listening on port 3002')
   })
 
   return io

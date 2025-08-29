@@ -28,12 +28,11 @@ export async function GET(request: NextRequest) {
         )
     }
   } catch (error: any) {
-    console.error('Hasura API error:', error)
     return NextResponse.json(
       { 
         success: false, 
         error: 'Hasura operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -58,12 +57,11 @@ export async function POST(request: NextRequest) {
       )
     }
   } catch (error: any) {
-    console.error('Hasura POST error:', error)
     return NextResponse.json(
       { 
         success: false, 
         error: 'Hasura operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -246,7 +244,7 @@ async function getPermissions() {
     const data = await response.json()
     
     const permissions = data.sources?.[0]?.tables?.flatMap((table: any) => {
-      const tablePermissions = []
+      const tablePermissions: any[] = []
       
       ;['select', 'insert', 'update', 'delete'].forEach(action => {
         const perms = table[`${action}_permissions`] || []
@@ -294,7 +292,7 @@ async function getRelationships() {
     const data = await response.json()
     
     const relationships = data.sources?.[0]?.tables?.flatMap((table: any) => {
-      const tableRelationships = []
+      const tableRelationships: any[] = []
       
       const objectRels = table.object_relationships || []
       const arrayRels = table.array_relationships || []
@@ -355,7 +353,7 @@ async function getStats() {
       mutationFields: types.find((t: any) => t.name === 'mutation_root')?.fields?.length || 0,
       subscriptionFields: types.find((t: any) => t.name === 'subscription_root')?.fields?.length || 0,
       roles: [...new Set(tables.flatMap((t: any) => {
-        const permissions = []
+        const permissions: any[] = []
         ;['select', 'insert', 'update', 'delete'].forEach(action => {
           const perms = t[`${action}_permissions`] || []
           perms.forEach((p: any) => permissions.push(p.role))

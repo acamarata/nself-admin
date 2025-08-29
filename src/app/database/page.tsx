@@ -219,7 +219,6 @@ export default function DatabasePage() {
       setTableData(data)
       setShowTableDetails(true)
     } catch (error) {
-      console.error('Failed to load table data:', error)
       setTableData(null)
     } finally {
       setLoadingTableData(false)
@@ -233,7 +232,6 @@ export default function DatabasePage() {
       setQueryResults(result)
       setExecuting(false)
     } catch (error: any) {
-      console.error('Query execution failed:', error)
       setQueryResults({
         columns: [],
         rows: [],
@@ -272,7 +270,7 @@ export default function DatabasePage() {
           <AlertCircle className="w-12 h-12 text-red-500" />
           <p className="text-lg text-zinc-600 dark:text-zinc-400">Failed to connect to database</p>
           <p className="text-sm text-zinc-500">{error}</p>
-          <Button variant="solid" onClick={refresh}>
+          <Button variant="primary" onClick={refresh}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Retry Connection
           </Button>
@@ -306,7 +304,7 @@ export default function DatabasePage() {
           />
           
           <MetricCard
-            title="Tables & Views"
+            title="Tables / Views"
             value={`${totalTables} / ${totalViews}`}
             percentage={stats ? 80 : undefined}
             description="Active database objects"
@@ -350,17 +348,17 @@ export default function DatabasePage() {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="xs" className="flex items-center gap-1">
+            <Button variant="outline" className="flex items-center gap-1">
               <Download className="w-3 h-3" />
               Backup
             </Button>
-            <Button variant="outline" size="xs" className="flex items-center gap-1">
+            <Button variant="outline" className="flex items-center gap-1">
               <Upload className="w-3 h-3" />
               Restore
             </Button>
             <Button 
               variant="outline" 
-              size="xs" 
+              
               className="flex items-center gap-1"
               onClick={refresh}
             >
@@ -422,7 +420,7 @@ export default function DatabasePage() {
                 className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
               />
             </div>
-            <Button variant="solid" className="flex items-center gap-2">
+            <Button variant="primary" className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Create Table
             </Button>
@@ -466,7 +464,7 @@ export default function DatabasePage() {
               <div className="flex items-center gap-2">
                 <Button 
                   variant="outline" 
-                  size="xs"
+                 
                   className="flex items-center gap-1"
                 >
                   <FileText className="w-3 h-3" />
@@ -474,7 +472,7 @@ export default function DatabasePage() {
                 </Button>
                 <Button 
                   variant="outline" 
-                  size="xs"
+                 
                   className="flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
@@ -495,7 +493,7 @@ export default function DatabasePage() {
                 Use Ctrl+Enter to execute query
               </div>
               <Button 
-                variant="solid"
+                variant="primary"
                 onClick={executeQuery}
                 disabled={executing || !query}
                 className="flex items-center gap-2"
@@ -531,7 +529,7 @@ export default function DatabasePage() {
                     )}
                   </div>
                   {!queryResults.error && (
-                    <Button variant="outline" size="xs" className="flex items-center gap-1">
+                    <Button variant="outline" className="flex items-center gap-1">
                       <Download className="w-3 h-3" />
                       Export
                     </Button>
@@ -607,7 +605,7 @@ export default function DatabasePage() {
                   <option>bzip2</option>
                 </select>
               </div>
-              <Button variant="solid" className="w-full">
+              <Button variant="primary" className="w-full">
                 Start Backup
               </Button>
             </div>
@@ -629,7 +627,7 @@ export default function DatabasePage() {
                   Drop existing database before restore
                 </label>
               </div>
-              <Button variant="solid" className="w-full" disabled>
+              <Button variant="primary" className="w-full" disabled>
                 Start Restore
               </Button>
             </div>

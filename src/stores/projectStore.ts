@@ -192,6 +192,12 @@ export const useProjectStore = create<ProjectState>()(
             return
           }
           
+          // Skip processing if we get a 401 (not authenticated)
+          if (statusRes.status === 401) {
+            set({ isChecking: false })
+            return
+          }
+          
           const statusData = await statusRes.json()
           
           let projectStatus: ProjectStatus = 'not_initialized'
@@ -199,13 +205,6 @@ export const useProjectStore = create<ProjectState>()(
           // Use servicesRunning and dockerContainers from the API response
           const isRunning = statusData.servicesRunning || (statusData.dockerContainers && statusData.dockerContainers.length > 0)
           const containerCount = statusData.dockerContainers ? statusData.dockerContainers.length : 0
-          
-          console.log('Project status check:', {
-            hasEnvFile: statusData.hasEnvFile,
-            isRunning,
-            containerCount,
-            servicesRunning: statusData.servicesRunning
-          })
           
           // If we have running containers, consider it running regardless of env file
           if (isRunning && containerCount > 0) {
@@ -234,13 +233,10 @@ export const useProjectStore = create<ProjectState>()(
           
           // Pages now handle their own data fetching with deduplication
           // We don't automatically fetch all data here anymore
-          console.log('Final projectStatus:', projectStatus)
           // if (projectStatus === 'running') {
-          //   console.log('Project is running, fetching all data...')
           //   get().fetchAllData()
           // }
         } catch (error) {
-          console.error('Failed to check project status:', error)
           set({
             projectStatus: 'error',
             isChecking: false,
@@ -251,9 +247,7 @@ export const useProjectStore = create<ProjectState>()(
       
       fetchSystemMetrics: async () => {
         const state = get()
-        console.log('[Store] fetchSystemMetrics called, projectStatus:', state.projectStatus)
         if (state.projectStatus !== 'running') {
-          console.log('[Store] Skipping metrics fetch - project not running')
           return
         }
         
@@ -265,18 +259,12 @@ export const useProjectStore = create<ProjectState>()(
             signal: controller.signal
           }).catch(error => {
             if (error.name === 'AbortError') return null
-            console.error('[Store] Metrics fetch error:', error)
             throw error
           })
           
           if (response && response.ok) {
             const data = await response.json()
             if (data.success) {
-              console.log('[Store] System metrics fetched successfully:', {
-                dockerCpu: data.data?.docker?.cpu,
-                dockerMemory: data.data?.docker?.memory?.used,
-                containers: data.data?.docker?.containers
-              })
               set({ 
                 systemMetrics: data.data,
                 isLoadingMetrics: false
@@ -284,7 +272,6 @@ export const useProjectStore = create<ProjectState>()(
             }
           }
         } catch (error) {
-          console.error('Failed to fetch system metrics:', error)
           set({ isLoadingMetrics: false })
         }
       },
@@ -325,7 +312,6 @@ export const useProjectStore = create<ProjectState>()(
             }
           }
         } catch (error) {
-          console.error('Failed to fetch container stats:', error)
           set({ isLoadingContainers: false })
         }
       },
@@ -363,7 +349,6 @@ export const useProjectStore = create<ProjectState>()(
           
           set({ isLoadingDatabase: false })
         } catch (error) {
-          console.error('Failed to fetch database stats:', error)
           set({ isLoadingDatabase: false })
         }
       },
@@ -371,15 +356,12 @@ export const useProjectStore = create<ProjectState>()(
       fetchAllData: async () => {
         const state = get()
         
-        console.log('fetchAllData called, projectStatus:', state.projectStatus)
         
         // Only fetch if project is running
         if (state.projectStatus !== 'running') {
-          console.log('Project not running, skipping data fetch')
           return
         }
         
-        console.log('Fetching all data in parallel...')
         // Fetch all data in parallel
         await Promise.all([
           state.fetchSystemMetrics(),
@@ -388,7 +370,6 @@ export const useProjectStore = create<ProjectState>()(
         ])
         
         set({ lastDataUpdate: new Date() })
-        console.log('All data fetched successfully')
       },
       
       updateProjectStatus: (status) => set(status),

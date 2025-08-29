@@ -19,13 +19,13 @@ export async function GET() {
       const content = await fs.readFile(envPath, 'utf8')
       hasEnvFile = true
       envContent = content
-    } catch (error) {
+    } catch (error: any) {
       hasEnvFile = false
     }
     
     // Check if services are running
     let servicesRunning = false
-    let runningServices = []
+    let runningServices: any[] = []
     
     // First try nself status command
     try {
@@ -54,13 +54,12 @@ export async function GET() {
       })
       
       servicesRunning = runningServices.length > 0
-    } catch (error) {
+    } catch (error: any) {
       // nself status failed, check Docker containers directly
-      console.log('nself status failed, checking Docker containers directly')
     }
     
     // Check Docker containers related to nself
-    let dockerContainers = []
+    let dockerContainers: any[] = []
     
     try {
       // Get all containers
@@ -103,15 +102,8 @@ export async function GET() {
       if (dockerContainers.length > 0 && !servicesRunning) {
         servicesRunning = dockerContainers.some(c => c.status.toLowerCase().includes('up'))
       }
-      
-      console.log('Docker status:', {
-        containersFound: dockerContainers.length,
-        servicesRunning,
-        hasEnvFile
-      })
-    } catch (error) {
+    } catch (error: any) {
       // Docker command failed or no containers
-      console.log('Docker check failed:', error.message)
       dockerContainers = []
     }
     
@@ -169,13 +161,12 @@ export async function GET() {
         running: servicesRunning
       }
     })
-  } catch (error) {
-    console.error('Error checking project status:', error)
+  } catch (error: any) {
     return NextResponse.json(
       {
         success: false,
         message: 'Failed to check project status',
-        error: error.message,
+        error: error?.message || 'Unknown error',
         projectState: 'unknown',
         needsSetup: true
       },

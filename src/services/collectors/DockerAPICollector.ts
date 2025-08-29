@@ -61,7 +61,6 @@ export class DockerAPICollector extends EventEmitter {
     
     // Determine Docker socket path based on platform
     const socketPath = this.getDockerSocketPath()
-    console.log(`[DockerAPI] Using Docker socket at: ${socketPath}`)
     
     // Connect to Docker via socket
     this.docker = new Docker({ 
@@ -101,7 +100,6 @@ export class DockerAPICollector extends EventEmitter {
   async start() {
     if (this.isRunning) return
     
-    console.log('[DockerAPI] Starting collection...')
     this.isRunning = true
 
     try {
@@ -117,12 +115,9 @@ export class DockerAPICollector extends EventEmitter {
       
       // Periodic system info refresh (every 10s)
       this.updateInterval = setInterval(() => {
-        this.loadSystemInfo().catch(console.error)
       }, 10000)
       
-      console.log('[DockerAPI] Collection started successfully')
     } catch (error) {
-      console.error('[DockerAPI] Failed to start:', error)
       this.isRunning = false
       throw error
     }
@@ -134,7 +129,6 @@ export class DockerAPICollector extends EventEmitter {
   async stop() {
     if (!this.isRunning) return
     
-    console.log('[DockerAPI] Stopping collection...')
     this.isRunning = false
 
     // Stop all stats streams
@@ -142,7 +136,6 @@ export class DockerAPICollector extends EventEmitter {
       try {
         stream.destroy()
       } catch (error) {
-        console.error(`[DockerAPI] Error stopping stream for ${id}:`, error)
       }
     }
     this.statsStreams.clear()
@@ -159,7 +152,6 @@ export class DockerAPICollector extends EventEmitter {
       this.updateInterval = null
     }
 
-    console.log('[DockerAPI] Collection stopped')
   }
 
   /**
@@ -195,7 +187,6 @@ export class DockerAPICollector extends EventEmitter {
 
       this.emit('systemInfo', this.systemInfo)
     } catch (error) {
-      console.error('[DockerAPI] Failed to load system info:', error)
     }
   }
 
@@ -205,7 +196,6 @@ export class DockerAPICollector extends EventEmitter {
   private async loadContainers() {
     try {
       const containers = await this.docker.listContainers({ all: true })
-      console.log(`[DockerAPI] Found ${containers.length} containers`)
       
       // Clear containers that no longer exist
       const currentIds = new Set(containers.map(c => c.Id))
@@ -241,10 +231,8 @@ export class DockerAPICollector extends EventEmitter {
       }
 
       const containerList = Array.from(this.containers.values())
-      console.log(`[DockerAPI] Emitting container list with ${containerList.length} containers`)
       this.emit('containers', containerList)
     } catch (error) {
-      console.error('[DockerAPI] Failed to load containers:', error)
     }
   }
 
@@ -273,21 +261,18 @@ export class DockerAPICollector extends EventEmitter {
               const event = JSON.parse(line)
               this.handleDockerEvent(event)
             } catch (error) {
-              console.error('[DockerAPI] Failed to parse event line:', line.substring(0, 100))
             }
           }
         }
       })
 
       this.eventStream.on('error', (error: Error) => {
-        console.error('[DockerAPI] Event stream error:', error)
         // Attempt to reconnect
         if (this.isRunning) {
           setTimeout(() => this.startEventStream(), 5000)
         }
       })
     } catch (error) {
-      console.error('[DockerAPI] Failed to start event stream:', error)
     }
   }
 
@@ -303,12 +288,10 @@ export class DockerAPICollector extends EventEmitter {
 
       switch (Action) {
         case 'start':
-          console.log(`[DockerAPI] Container started: ${containerId}`)
           this.loadContainers() // Reload to get new container
           break
         case 'stop':
         case 'die':
-          console.log(`[DockerAPI] Container stopped: ${containerId}`)
           this.stopStatsStream(containerId)
           if (this.containers.has(containerId)) {
             const container = this.containers.get(containerId)!
@@ -355,11 +338,9 @@ export class DockerAPICollector extends EventEmitter {
   private async startStatsStreamForContainer(containerId: string) {
     // Skip if already streaming
     if (this.statsStreams.has(containerId)) {
-      console.log(`[DockerAPI] Already streaming stats for ${containerId}`)
       return
     }
 
-    console.log(`[DockerAPI] Starting stats stream for container: ${containerId}`)
     
     try {
       const container = this.docker.getContainer(containerId)
@@ -372,12 +353,10 @@ export class DockerAPICollector extends EventEmitter {
           const stats = JSON.parse(chunk.toString())
           this.processContainerStats(containerId, stats)
         } catch (error) {
-          console.error(`[DockerAPI] Failed to parse stats for ${containerId}:`, error)
         }
       })
 
       stream.on('error', (error: Error) => {
-        console.error(`[DockerAPI] Stats stream error for ${containerId}:`, error)
         this.stopStatsStream(containerId)
       })
 
@@ -385,7 +364,6 @@ export class DockerAPICollector extends EventEmitter {
         this.statsStreams.delete(containerId)
       })
     } catch (error) {
-      console.error(`[DockerAPI] Failed to start stats stream for ${containerId}:`, error)
     }
   }
 
@@ -409,12 +387,10 @@ export class DockerAPICollector extends EventEmitter {
    */
   private processContainerStats(containerId: string, rawStats: any) {
     if (!this.containers.has(containerId)) {
-      console.log(`[DockerAPI] Container ${containerId} not found in map`)
       return
     }
 
     const container = this.containers.get(containerId)!
-    console.log(`[DockerAPI] Processing stats for ${container.name}`)
     
     // Calculate CPU percentage
     const cpuDelta = rawStats.cpu_stats.cpu_usage.total_usage - 

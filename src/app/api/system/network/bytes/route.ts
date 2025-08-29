@@ -55,8 +55,7 @@ export async function GET() {
         timestamp: Date.now()
       }
     })
-  } catch (error) {
-    console.error('Failed to get network bytes:', error)
+  } catch (error: any) {
     return NextResponse.json(
       { success: false, error: 'Failed to get network statistics' },
       { status: 500 }

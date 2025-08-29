@@ -130,7 +130,7 @@ export default function SQLConsolePage() {
 
     // Setup autocomplete
     setAutoComplete([...sampleTables, ...sampleColumns, 'SELECT', 'FROM', 'WHERE', 'JOIN', 'INSERT', 'UPDATE', 'DELETE'])
-  }, [])
+  }, [sampleColumns, sampleTables])
 
   const executeQuery = async (tabId: string) => {
     const tab = tabs.find(t => t.id === tabId)
@@ -240,14 +240,13 @@ export default function SQLConsolePage() {
     if (!activeTabData?.result) return
 
     // Mock export functionality
-    console.log(`Exporting as ${format}:`, activeTabData.result)
   }
 
   const activeTabData = tabs.find(t => t.id === activeTab)
 
   return (
     <PageTemplate 
-      title="SQL Console"
+     
       description="Execute SQL queries with multi-tab editor, query history, and results export"
     >
       <div className="space-y-6">
@@ -279,7 +278,7 @@ export default function SQLConsolePage() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                 
                   onClick={() => setShowHistory(!showHistory)}
                 >
                   <History className="h-4 w-4 mr-2" />
@@ -287,13 +286,13 @@ export default function SQLConsolePage() {
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
+                 
                   onClick={() => setShowSaved(!showSaved)}
                 >
                   <FolderOpen className="h-4 w-4 mr-2" />
                   Saved
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline">
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
                 </Button>
@@ -334,7 +333,7 @@ export default function SQLConsolePage() {
                   ))}
                   <Button 
                     variant="ghost" 
-                    size="sm" 
+                    
                     className="px-2"
                     onClick={addNewTab}
                   >
@@ -346,7 +345,7 @@ export default function SQLConsolePage() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                 
                   onClick={saveCurrentQuery}
                   disabled={!activeTabData?.query.trim()}
                 >
@@ -356,7 +355,7 @@ export default function SQLConsolePage() {
                 <Button
                   onClick={() => executeQuery(activeTab)}
                   disabled={!activeTabData?.query.trim() || activeTabData?.isExecuting}
-                  size="sm"
+                 
                 >
                   {activeTabData?.isExecuting ? (
                     <>
@@ -419,7 +418,7 @@ export default function SQLConsolePage() {
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
-                    size="sm"
+                   
                     onClick={() => exportResults('csv')}
                   >
                     <Download className="h-4 w-4 mr-2" />
@@ -427,7 +426,7 @@ export default function SQLConsolePage() {
                   </Button>
                   <Button
                     variant="outline"
-                    size="sm"
+                   
                     onClick={() => exportResults('json')}
                   >
                     <Download className="h-4 w-4 mr-2" />

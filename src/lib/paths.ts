@@ -4,10 +4,23 @@
 
 /**
  * Get the project path from environment variable
- * Defaults to current directory for development
+ * Uses PROJECT_PATH from .env.local or environment
  */
 export function getProjectPath(): string {
-  return process.env.PROJECT_PATH || './'
+  const projectPath = process.env.PROJECT_PATH || '.backend'
+  
+  // If it's a relative path, resolve it relative to the app root
+  if (!projectPath.startsWith('/')) {
+    // In development, resolve relative to the nself-admin directory
+    if (process.env.NODE_ENV === 'development') {
+      return `/Users/admin/Sites/nself-admin/${projectPath}`
+    }
+    // In production, relative paths are relative to the container's working directory
+    return `/app/${projectPath}`
+  }
+  
+  // Absolute path - use as-is
+  return projectPath
 }
 
 /**

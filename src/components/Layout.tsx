@@ -24,6 +24,11 @@ export function Layout({
   const { isAuthenticated } = useAuth()
   const router = useRouter()
   const isLoginPage = pathname === '/login'
+  const isBuildPage = pathname === '/build'
+  const isStartPage = pathname === '/start'
+  
+  // Pages that should render without navigation
+  const isFullscreenPage = isLoginPage || isBuildPage || isStartPage
 
   useEffect(() => {
     // Redirect to login if not authenticated and not already on login page
@@ -36,8 +41,8 @@ export function Layout({
     }
   }, [isAuthenticated, isLoginPage, router])
 
-  // If on login page, render children without navigation
-  if (isLoginPage) {
+  // If on a fullscreen page, render children without navigation
+  if (isFullscreenPage) {
     return <>{children}</>
   }
 

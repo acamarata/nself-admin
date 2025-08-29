@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isTokenExpired } from './lib/auth'
 import { validateCSRFToken, csrfErrorResponse, setCSRFCookie } from './lib/csrf'
 
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = [
   '/login',
   '/api/auth/login',
+  '/api/auth/setup',
   '/api/health',
   '/_next',
   '/favicon.ico',
@@ -54,9 +54,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
   
-  // Validate session (in production, check against database/Redis)
-  // For now, we'll accept any session token that exists
-  // This will be improved when we implement proper session storage
+  // For now, accept any session token that exists
+  // Validation happens in the API routes themselves since Edge Runtime
+  // doesn't support Node.js modules needed for database access
   
   // Check if it's a protected API route
   if (PROTECTED_API_ROUTES.some(route => pathname.startsWith(route))) {

@@ -149,13 +149,12 @@ export async function POST(request: NextRequest) {
       message: 'Configuration file generated successfully',
       path: envFilePath
     })
-  } catch (error) {
-    console.error('Error generating .env file:', error)
+  } catch (error: any) {
     return NextResponse.json(
       {
         success: false,
         message: 'Failed to generate configuration file',
-        error: error.message
+        error: error?.message || "Unknown error"
       },
       { status: 500 }
     )

@@ -1,10 +1,9 @@
-import { type Metadata } from 'next'
+import { type Metadata, type Viewport } from 'next'
 import { Providers } from '@/app/providers'
 import { Layout } from '@/components/Layout'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ProjectStateWrapper } from '@/components/ProjectStateWrapper'
 import { GlobalDataProvider } from '@/components/GlobalDataProvider'
-import { SSEProvider } from '@/components/SSEProvider'
 import { ErrorSuppressor } from '@/components/ErrorSuppressor'
 import { PWARegister } from '@/components/PWARegister'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -14,6 +13,14 @@ import '@/styles/tailwind.css'
 // DEV ONLY - REMOVE FOR PRODUCTION
 import '@/services/DevLogger'
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#0066CC',
+}
+
 export const metadata: Metadata = {
   title: {
     template: '%s - nAdmin',
@@ -21,8 +28,6 @@ export const metadata: Metadata = {
   },
   description: 'Web-based administration interface for the nself CLI backend stack',
   manifest: '/site.webmanifest',
-  themeColor: '#0066CC',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -58,11 +63,9 @@ export default function RootLayout({
                 <Providers>
                   <ProjectStateWrapper>
                     <GlobalDataProvider>
-                      <SSEProvider>
-                        <div className="w-full">
-                          <Layout allSections={allSections}>{children}</Layout>
-                        </div>
-                      </SSEProvider>
+                      <div className="w-full">
+                        <Layout allSections={allSections}>{children}</Layout>
+                      </div>
                     </GlobalDataProvider>
                   </ProjectStateWrapper>
                 </Providers>

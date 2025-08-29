@@ -55,13 +55,12 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('Storage API error:', error)
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Storage operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -134,13 +133,12 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('Storage POST error:', error)
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Storage operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -165,7 +163,7 @@ async function getStorageOverview() {
         endpoint: 'http://localhost:9000',
         console: 'http://localhost:9001'
       },
-      buckets: [],
+      buckets: [] as any[],
       usage: { total: 0, used: 0 },
       stats: { files: 0, folders: 0 }
     }
@@ -209,7 +207,7 @@ async function getStorageOverview() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get storage overview',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -238,7 +236,7 @@ async function listBuckets() {
     return NextResponse.json({
       success: false,
       error: 'Failed to list buckets',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -268,7 +266,7 @@ async function listFiles(bucketName: string, filePath: string) {
     return NextResponse.json({
       success: false,
       error: `Failed to list files in bucket '${bucketName}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -304,14 +302,14 @@ async function getStorageUsage() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get storage usage',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
 
 async function getStorageStats() {
   try {
-    const stats = {
+    const stats: any = {
       totalFiles: 0,
       totalFolders: 0,
       totalSize: 0,
@@ -352,7 +350,7 @@ async function getStorageStats() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get storage stats',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -394,7 +392,7 @@ async function createBucket(bucketName: string, options: any) {
     return NextResponse.json({
       success: false,
       error: `Failed to create bucket '${bucketName}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -423,7 +421,7 @@ async function deleteBucket(bucketName: string, options: any) {
     return NextResponse.json({
       success: false,
       error: `Failed to delete bucket '${bucketName}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -464,7 +462,7 @@ async function deleteFile(bucket: string, filePath: string) {
     return NextResponse.json({
       success: false,
       error: `Failed to delete file '${filePath}' from bucket '${bucket}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -492,7 +490,7 @@ async function createFolder(bucket: string, folderName: string, parentPath: stri
     return NextResponse.json({
       success: false,
       error: `Failed to create folder '${folderName}' in bucket '${bucket}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -506,7 +504,7 @@ async function getMinIOBuckets() {
     )
     
     return parseBucketsList(stdout)
-  } catch (error) {
+  } catch (error: any) {
     return []
   }
 }
@@ -544,7 +542,7 @@ async function getProjectFileStorage() {
       size,
       type: 'project-files'
     }
-  } catch (error) {
+  } catch (error: any) {
     return {
       path: getProjectPath(),
       size: 'Unknown',
@@ -575,7 +573,7 @@ async function getProjectDirectoryUsage() {
       directories,
       total: directories.length
     }
-  } catch (error) {
+  } catch (error: any) {
     return {
       directories: [],
       total: 0
@@ -675,7 +673,7 @@ async function getFileInfo(bucket: string, filePath: string) {
     return NextResponse.json({
       success: false,
       error: `Failed to get file info for '${filePath}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }

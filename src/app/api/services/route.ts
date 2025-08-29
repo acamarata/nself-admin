@@ -50,13 +50,12 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('Services API error:', error)
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Services operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -97,13 +96,12 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('Services POST error:', error)
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Service operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -197,7 +195,7 @@ async function getServicesList() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get services list',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -233,7 +231,7 @@ async function getServiceDetails(serviceName: string) {
     return NextResponse.json({
       success: false,
       error: `Failed to get details for service '${serviceName}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -277,7 +275,7 @@ async function getServiceLogs(serviceName: string, searchParams: URLSearchParams
     return NextResponse.json({
       success: false,
       error: `Failed to get logs for service '${serviceName}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -297,11 +295,11 @@ async function getServicesStats() {
           stats: stat,
           timestamp: new Date().toISOString()
         }
-      } catch (error) {
+      } catch (error: any) {
         return {
           id: container.Id,
           name: container.Names[0]?.replace(/^\//, ''),
-          error: error.message,
+          error: error?.message || "Unknown error",
           timestamp: new Date().toISOString()
         }
       }
@@ -316,7 +314,7 @@ async function getServicesStats() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get services stats',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -348,7 +346,7 @@ async function getServicesHealth() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get services health',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -399,7 +397,7 @@ async function controlService(serviceName: string, operation: string) {
     return NextResponse.json({
       success: false,
       error: `Failed to ${operation} service '${serviceName}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -427,7 +425,7 @@ async function scaleService(serviceName: string, replicas: number) {
     return NextResponse.json({
       success: false,
       error: `Failed to scale service '${serviceName}' to ${replicas} replicas`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -446,7 +444,7 @@ async function batchServiceControl(services: string[], operation: string) {
         const result = await controlService(service, operation)
         return { service, success: true, result }
       } catch (error: any) {
-        return { service, success: false, error: error.message }
+        return { service, success: false, error: error?.message || "Unknown error" }
       }
     })
   )
@@ -485,7 +483,7 @@ async function updateService(serviceName: string, options: any) {
     return NextResponse.json({
       success: false,
       error: `Failed to update service '${serviceName}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }

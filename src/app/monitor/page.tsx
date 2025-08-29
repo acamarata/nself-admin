@@ -120,7 +120,6 @@ export default function MonitorPage() {
       ])
 
     } catch (error) {
-      console.error('Failed to fetch monitoring data:', error)
     } finally {
       setLoading(false)
     }
@@ -428,7 +427,7 @@ export default function MonitorPage() {
                         </div>
                       </div>
                       {!alert.acknowledged && (
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline">
                           Acknowledge
                         </Button>
                       )}

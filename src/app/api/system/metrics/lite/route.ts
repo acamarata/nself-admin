@@ -110,7 +110,7 @@ export async function GET() {
       data: metrics,
       cached: false
     })
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json(
       { 
         success: false, 

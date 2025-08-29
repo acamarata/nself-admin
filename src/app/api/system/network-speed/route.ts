@@ -185,13 +185,12 @@ export async function GET() {
       },
       cached: false
     })
-  } catch (error) {
-    console.error('Network speed detection error:', error)
+  } catch (error: any) {
     return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to detect network speed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error?.message || "Unknown error" : 'Unknown error'
       },
       { status: 500 }
     )
@@ -229,7 +228,7 @@ export async function POST(request: Request) {
       message: 'ISP speed saved',
       data: config
     })
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json(
       { success: false, error: 'Failed to save ISP speed' },
       { status: 500 }

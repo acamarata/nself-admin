@@ -1,12 +1,12 @@
 import { HeroPattern } from '@/components/HeroPattern'
 
 interface PageTemplateProps {
-  title: string
+  title?: string
   description: string
   children?: React.ReactNode
 }
 
-export function PageTemplate({ title, description, children }: PageTemplateProps) {
+export function PageTemplate({ title = 'Page', description, children }: PageTemplateProps) {
   return (
     <>
       <HeroPattern />

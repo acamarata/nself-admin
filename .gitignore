@@ -37,6 +37,11 @@ next-env.d.ts
 # nself backend
 .backend/
 
+# Database files
+data/
+*.db
+nadmin.db
+
 # IDEs
 .claude/
 .vscode/

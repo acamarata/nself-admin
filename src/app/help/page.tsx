@@ -84,7 +84,6 @@ function SearchSection() {
       const data = await response.json()
       setSearchResults(data.results || [])
     } catch (error) {
-      console.error('Search failed:', error)
     } finally {
       setSearching(false)
     }
@@ -430,7 +429,6 @@ function FAQSection() {
         body: JSON.stringify({ helpful })
       })
     } catch (error) {
-      console.error('Failed to submit feedback:', error)
     }
   }
 
@@ -526,7 +524,6 @@ function SupportContactSection() {
         })
       }
     } catch (error) {
-      console.error('Failed to submit support request:', error)
     } finally {
       setSubmitting(false)
     }
@@ -546,7 +543,7 @@ function SupportContactSection() {
             Support Request Submitted
           </h3>
           <p className="text-zinc-600 dark:text-zinc-400">
-            We've received your message and will get back to you within 24 hours.
+            We&apos;ve received your message and will get back to you within 24 hours.
           </p>
         </div>
       ) : (

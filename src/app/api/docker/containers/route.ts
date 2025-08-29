@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { promisify } from 'util'
+import { z } from 'zod'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
+
+// Schema for query parameters
+const querySchema = z.object({
+  detailed: z.enum(['true', 'false']).optional(),
+  stats: z.enum(['true', 'false']).optional(),
+  all: z.enum(['true', 'false']).optional()
+})
 
 function getServiceType(name: string, labels: any): string {
   const n = name.toLowerCase()
@@ -36,12 +44,23 @@ function getHealthStatus(status: string, state: string): string {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const detailed = searchParams.get('detailed') === 'true'
-    const withStats = searchParams.get('stats') === 'true'
     
-    // Get container list using docker ps
-    const { stdout: containerJson } = await execAsync(
-      `docker ps -a --format '{{json .}}'`
+    // Validate query parameters
+    const params = {
+      detailed: searchParams.get('detailed'),
+      stats: searchParams.get('stats'),
+      all: searchParams.get('all')
+    }
+    
+    const validation = querySchema.safeParse(params)
+    const detailed = params.detailed === 'true'
+    const withStats = params.stats === 'true'
+    
+    // Get container list using docker ps safely
+    const { stdout: containerJson } = await execFileAsync(
+      'docker',
+      ['ps', '-a', '--format', '{{json .}}'],
+      { timeout: 10000 }
     )
     
     const containers = containerJson
@@ -68,9 +87,11 @@ export async function GET(request: NextRequest) {
     let statsMap = new Map()
     if (withStats && nselfContainers.length > 0) {
       try {
-        const containerIds = nselfContainers.map(c => c.ID).join(' ')
-        const { stdout: statsOutput } = await execAsync(
-          `docker stats --no-stream --format '{{json .}}' ${containerIds}`
+        const containerIds = nselfContainers.map(c => c.ID)
+        const { stdout: statsOutput } = await execFileAsync(
+          'docker',
+          ['stats', '--no-stream', '--format', '{{json .}}', ...containerIds],
+          { timeout: 5000 }
         )
         
         statsOutput
@@ -92,8 +113,7 @@ export async function GET(request: NextRequest) {
               // Ignore parse errors
             }
           })
-      } catch (error) {
-        console.error('Failed to get container stats:', error)
+      } catch (error: any) {
       }
     }
     
@@ -106,14 +126,14 @@ export async function GET(request: NextRequest) {
         image: container.Image,
         state: container.State === 'running' ? 'running' : 'stopped',
         status: container.Status,
-        ports: container.Ports?.split(',').map(p => {
+        ports: container.Ports?.split(',').map((p: any) => {
           const match = p.match(/(\d+)->(\d+)/)
           return match ? {
             private: parseInt(match[2]),
             public: parseInt(match[1]),
             type: 'tcp'
           } : null
-        }).filter(p => p),
+        }).filter((p: any) => p),
         created: container.CreatedAt,
         serviceType: getServiceType(container.Names, {}),
         category: getServiceCategory(container.Names, {}),
@@ -129,13 +149,12 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString()
     })
     
-  } catch (error) {
-    console.error('Docker containers API error:', error)
+  } catch (error: any) {
     return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to fetch container status',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error?.message || "Unknown error" : 'Unknown error'
       },
       { status: 500 }
     )

@@ -1,30 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { promisify } from 'util'
+import { getProjectPath } from '@/lib/paths'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
 
 export async function POST(request: NextRequest) {
   try {
-    const projectPath = process.env.PROJECT_PATH || '/project'
+    const projectPath = getProjectPath()
+    console.log('Starting nself services in:', projectPath)
+    console.log('PROJECT_PATH env:', process.env.PROJECT_PATH)
+    console.log('NODE_ENV:', process.env.NODE_ENV)
     
-    console.log(`Executing: nself start in ${projectPath}`)
+    // Execute nself start in the project directory safely
+    // Try to find nself in common locations
+    const nselfPaths = [
+      '/Users/admin/Sites/nself/bin/nself',
+      '/usr/local/bin/nself',
+      'nself'
+    ]
     
-    // Execute nself start in the project directory
-    const { stdout, stderr } = await execAsync('nself start', {
-      cwd: projectPath,
-      env: {
-        ...process.env,
-        PATH: process.env.PATH + ':/usr/local/bin',
-        NSELF_PROJECT_PATH: projectPath
-      },
-      timeout: 300000 // 5 minute timeout
-    })
+    let nselfPath = 'nself'
+    for (const path of nselfPaths) {
+      try {
+        await execFileAsync('/bin/sh', ['-c', `test -x "${path}"`])
+        nselfPath = path
+        break
+      } catch {
+        // Continue to next path
+      }
+    }
+    
+    const { stdout, stderr } = await execFileAsync(
+      '/bin/sh',
+      ['-c', `cd "${projectPath}" && "${nselfPath}" start`],
+      {
+        env: {
+          ...process.env,
+          PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin',
+          NSELF_PROJECT_PATH: projectPath
+        },
+        timeout: 300000 // 5 minute timeout
+      }
+    )
     
     // Parse the output to extract service information
     const lines = stdout.split('\n').filter(line => line.trim())
-    const services = []
-    const urls = []
+    const services: any[] = []
+    const urls: string[] = []
     
     lines.forEach(line => {
       // Look for service status lines
@@ -50,19 +73,22 @@ export async function POST(request: NextRequest) {
     
     // Additional service status check
     try {
-      const { stdout: statusOutput } = await execAsync('nself status', {
-        cwd: projectPath,
-        env: {
-          ...process.env,
-          PATH: process.env.PATH + ':/usr/local/bin',
-          NSELF_PROJECT_PATH: projectPath
-        },
-        timeout: 30000
-      })
+      const { stdout: statusOutput } = await execFileAsync(
+        '/bin/sh',
+        ['-c', `cd "${projectPath}" && "${nselfPath}" status`],
+        {
+          env: {
+            ...process.env,
+            PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin',
+            NSELF_PROJECT_PATH: projectPath
+          },
+          timeout: 30000
+        }
+      )
       
       // Parse status output for more detailed service info
       const statusLines = statusOutput.split('\n').filter(line => line.trim())
-      statusLines.forEach(line => {
+      statusLines.forEach((line: string) => {
         if (line.includes('running') || line.includes('healthy')) {
           const parts = line.split(/\s+/)
           if (parts.length > 1) {
@@ -70,7 +96,7 @@ export async function POST(request: NextRequest) {
             const status = line.includes('healthy') ? 'healthy' : 'running'
             
             // Update existing service or add new one
-            const existingService = services.find(s => s.name === serviceName)
+            const existingService = services.find((s: any) => s.name === serviceName)
             if (existingService) {
               existingService.status = status
             } else {
@@ -83,8 +109,8 @@ export async function POST(request: NextRequest) {
           }
         }
       })
-    } catch (statusError) {
-      console.warn('Could not get detailed status:', statusError.message)
+    } catch (statusError: any) {
+      console.warn('Could not get detailed status:', statusError?.message)
     }
     
     return NextResponse.json({
@@ -97,11 +123,14 @@ export async function POST(request: NextRequest) {
         stderr: stderr ? stderr.split('\n').filter(line => line.trim()) : []
       }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('nself start error:', error)
+    console.error('Error message:', error?.message)
+    console.error('Error stdout:', error?.stdout)
+    console.error('Error stderr:', error?.stderr)
     
     // Parse error output for user-friendly messages
-    const errorMessage = error.message || 'Start failed'
+    const errorMessage = error?.message || 'Start failed'
     const isTimeout = errorMessage.includes('timeout')
     const isPortConflict = errorMessage.includes('port') && errorMessage.includes('already')
     const isMissingDependency = errorMessage.includes('command not found') || errorMessage.includes('nself')
@@ -113,10 +142,10 @@ export async function POST(request: NextRequest) {
       userMessage = 'Port conflict detected - some required ports may already be in use'
     } else if (isMissingDependency) {
       userMessage = 'nself CLI not found - please ensure nself is installed'
-    } else if (error.stdout || error.stderr) {
-      const errorOutput = error.stderr || error.stdout || ''
-      const lines = errorOutput.split('\n').filter(line => line.trim())
-      const errorLines = lines.filter(line => 
+    } else if (error?.stdout || error?.stderr) {
+      const errorOutput = error?.stderr || error?.stdout || ''
+      const lines = errorOutput.split('\n').filter((line: string) => line.trim())
+      const errorLines = lines.filter((line: string) => 
         line.includes('error') || 
         line.includes('Error') || 
         line.includes('failed') || 
@@ -135,8 +164,8 @@ export async function POST(request: NextRequest) {
         message: userMessage,
         error: errorMessage,
         output: {
-          stdout: error.stdout ? error.stdout.split('\n') : [],
-          stderr: error.stderr ? error.stderr.split('\n') : []
+          stdout: error?.stdout ? error.stdout.split('\n') : [],
+          stderr: error?.stderr ? error.stderr.split('\n') : []
         },
         suggestions: [
           'Check if Docker is running',

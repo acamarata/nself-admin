@@ -11,14 +11,13 @@ export async function GET() {
       data: stats,
       timestamp: new Date().toISOString()
     })
-  } catch (error) {
-    console.error('[API] PostgreSQL stats error:', error)
+  } catch (error: any) {
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to fetch PostgreSQL stats',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error?.message || "Unknown error" : 'Unknown error'
       },
       { status: 500 }
     )

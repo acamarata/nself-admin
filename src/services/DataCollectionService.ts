@@ -83,11 +83,9 @@ export class DataCollectionService {
   // Start all collection schedules
   start() {
     if (this.isRunning) {
-      console.log('[DataCollection] Already running')
       return
     }
     
-    console.log('[DataCollection] Starting data collection service')
     this.isRunning = true
     
     // Clear any existing intervals
@@ -109,7 +107,6 @@ export class DataCollectionService {
   
   // Stop all collection
   stop() {
-    console.log('[DataCollection] Stopping data collection service')
     
     // Cancel all pending requests
     if (this.abortController) {
@@ -136,7 +133,6 @@ export class DataCollectionService {
         ])
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('[DataCollection] Critical fetch error:', error)
         }
       }
     }
@@ -155,7 +151,6 @@ export class DataCollectionService {
         ])
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('[DataCollection] High priority fetch error:', error)
         }
       }
     }
@@ -175,7 +170,6 @@ export class DataCollectionService {
         ])
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('[DataCollection] Medium priority fetch error:', error)
         }
       }
     }
@@ -185,7 +179,6 @@ export class DataCollectionService {
   
   // Fetch all data at once (for initial load)
   async fetchAllData() {
-    console.log('[DataCollection] Fetching all data')
     
     try {
       await Promise.allSettled([
@@ -197,7 +190,6 @@ export class DataCollectionService {
         this.fetchRedisMetrics()
       ])
     } catch (error) {
-      console.error('[DataCollection] Failed to fetch all data:', error)
     }
   }
   
@@ -254,7 +246,6 @@ export class DataCollectionService {
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('[DataCollection] Failed to fetch Docker stats:', error)
         }
       }
     })
@@ -318,7 +309,6 @@ export class DataCollectionService {
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('[DataCollection] Failed to fetch system metrics:', error)
         }
       }
     })
@@ -358,7 +348,6 @@ export class DataCollectionService {
             else if (container.health === 'unhealthy') counts.unhealthy++
           })
           
-          console.log('[DataCollection] Container counts:', counts)
           
           // Update Docker metrics with container counts
           const currentDocker = this.store.docker
@@ -380,7 +369,6 @@ export class DataCollectionService {
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('[DataCollection] Failed to fetch container health:', error)
         }
       }
     })
@@ -467,7 +455,6 @@ export class DataCollectionService {
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
-          console.error('[DataCollection] Failed to fetch container details:', error)
         }
       }
     })

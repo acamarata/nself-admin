@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface ProjectStatus {
   success: boolean
@@ -28,12 +29,19 @@ const PROJECT_SETUP_KEY = 'nself_project_setup_confirmed'
 export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const { isAuthenticated } = useAuth()
   const [projectStatus, setProjectStatus] = useState<ProjectStatus | null>(null)
   // Start with loading false to avoid blocking page loads
   const [loading, setLoading] = useState(false)
   const [skipInitialCheck, setSkipInitialCheck] = useState(false)
 
   useEffect(() => {
+    // Only check project status if authenticated
+    if (!isAuthenticated) {
+      setLoading(false)
+      return
+    }
+    
     // Check if we've previously confirmed the project is set up
     const projectSetupConfirmed = localStorage.getItem(PROJECT_SETUP_KEY)
     
@@ -52,11 +60,18 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
       setLoading(false)
       checkProjectStatus()
     }
-  }, [])
+  }, [isAuthenticated])
 
   const checkProjectStatus = async () => {
     try {
       const response = await fetch('/api/project/status')
+      
+      // Skip processing if we get a 401 (not authenticated)
+      if (response.status === 401) {
+        setLoading(false)
+        return
+      }
+      
       const status = await response.json()
       setProjectStatus(status)
       
@@ -79,7 +94,6 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
       }
       
     } catch (error) {
-      console.error('Failed to check project status:', error)
       localStorage.removeItem(PROJECT_SETUP_KEY) // Clear cached status on error
       // On error, assume setup is needed unless we're already on setup page
       if (!pathname.startsWith('/setup')) {
@@ -93,6 +107,12 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
   const checkProjectStatusSilently = async () => {
     try {
       const response = await fetch('/api/project/status')
+      
+      // Skip processing if we get a 401 (not authenticated)
+      if (response.status === 401) {
+        return
+      }
+      
       const status = await response.json()
       setProjectStatus(status)
       
@@ -109,7 +129,6 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
       }
       
     } catch (error) {
-      console.error('Silent project status check failed:', error)
       // On silent check failure, clear cache but don't redirect immediately
       localStorage.removeItem(PROJECT_SETUP_KEY)
     }

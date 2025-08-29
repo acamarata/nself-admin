@@ -87,7 +87,6 @@ export class PostgresCollector {
       
       return result
     } catch (error) {
-      console.error('[PostgresCollector] Collection failed:', error)
       return this.getEmptyStats('unhealthy')
     }
   }
@@ -136,7 +135,6 @@ export class PostgresCollector {
         percentage: Math.round((total / max) * 100)
       }
     } catch (error) {
-      console.error('[PostgresCollector] Connection stats failed:', error)
       return { active: 0, idle: 0, max: 100, percentage: 0 }
     }
   }
@@ -202,7 +200,6 @@ export class PostgresCollector {
         list: databases
       }
     } catch (error) {
-      console.error('[PostgresCollector] Database stats failed:', error)
       return { count: 0, totalSize: '0 MB', list: [] }
     }
   }
@@ -238,7 +235,6 @@ export class PostgresCollector {
         transactionsPerSecond: Math.round(tps * 10) / 10
       }
     } catch (error) {
-      console.error('[PostgresCollector] Performance stats failed:', error)
       return {
         activeQueries: 0,
         slowQueries: 0,

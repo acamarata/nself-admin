@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
 import { 
@@ -296,7 +296,7 @@ function KeyDetails({ redisKey, onClose }: { redisKey: RedisKey, onClose: () => 
 
   useEffect(() => {
     setValue(mockValues[redisKey.type])
-  }, [redisKey])
+  }, [redisKey, mockValues])
 
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">

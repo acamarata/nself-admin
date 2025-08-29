@@ -80,7 +80,6 @@ export class RedisCollector {
       
       return result
     } catch (error) {
-      console.error('[RedisCollector] Collection failed:', error)
       return this.getEmptyStats('unhealthy')
     }
   }

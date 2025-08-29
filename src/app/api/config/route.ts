@@ -1,11 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { getProjectPath, getDockerSocketPath } from '@/lib/paths'
+import { z } from 'zod'
+import { sanitizePath, isValidFilePath } from '@/lib/validation'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
+
+// Schema for file operations
+const fileOperationSchema = z.object({
+  action: z.enum(['list', 'read', 'write', 'update', 'validate', 'backup', 'restore', 'create-env', 'apply', 'env-template']),
+  file: z.string().optional(),
+  content: z.string().optional(),
+  options: z.object({
+    backup: z.boolean().optional(),
+    apply: z.boolean().optional(),
+    restart: z.boolean().optional(),
+    rebuild: z.boolean().optional(),
+    environment: z.string().optional(),
+    variables: z.record(z.string(), z.string()).optional(),
+    backup_path: z.string().optional()
+  }).optional()
+})
+
+// Allowed configuration files
+const ALLOWED_CONFIG_FILES = [
+  '.env.local', 
+  '.env.example', 
+  '.env.production', 
+  '.env.development',
+  'docker-compose.yml', 
+  'docker-compose.override.yml', 
+  'docker-compose.prod.yml'
+]
+
+// Validate and sanitize file path
+function validateFilePath(fileName: string): { valid: boolean; sanitized: string; error?: string } {
+  // Remove any path components, we only want filenames
+  const baseName = path.basename(fileName)
+  
+  // Check if it's in the allowed list
+  if (!ALLOWED_CONFIG_FILES.includes(baseName)) {
+    return { 
+      valid: false, 
+      sanitized: baseName,
+      error: `File '${baseName}' is not in the allowed list` 
+    }
+  }
+  
+  // Check for path traversal attempts
+  if (fileName.includes('..') || fileName.includes('//')) {
+    return { 
+      valid: false, 
+      sanitized: baseName,
+      error: 'Path traversal detected' 
+    }
+  }
+  
+  return { valid: true, sanitized: baseName }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,13 +93,12 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('Config API error:', error)
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Configuration operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -93,13 +147,12 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('Config POST error:', error)
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Configuration operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -132,7 +185,7 @@ async function getConfigFiles() {
             line.trim() && !line.trim().startsWith('#')
           ).length
         })
-      } catch (error) {
+      } catch (error: any) {
         configFiles.push({
           name: envFile,
           type: 'environment',
@@ -161,7 +214,7 @@ async function getConfigFiles() {
           lines: content.split('\n').length,
           services: (content.match(/^\s{2}[a-zA-Z0-9_-]+:/gm) || []).length
         })
-      } catch (error) {
+      } catch (error: any) {
         configFiles.push({
           name: dockerFile,
           type: 'docker-compose',
@@ -189,7 +242,7 @@ async function getConfigFiles() {
           fileCount: files.filter(f => f.isFile()).length,
           subdirCount: files.filter(f => f.isDirectory()).length
         })
-      } catch (error) {
+      } catch (error: any) {
         // Directory doesn't exist, which is normal
       }
     }
@@ -212,7 +265,7 @@ async function getConfigFiles() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get configuration files',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -220,34 +273,32 @@ async function getConfigFiles() {
 async function readConfigFile(fileName: string) {
   const backendPath = getProjectPath()
   
-  // Security: Only allow specific config files
-  const allowedFiles = [
-    '.env.local', '.env.example', '.env.production', '.env.development',
-    'docker-compose.yml', 'docker-compose.override.yml', 'docker-compose.prod.yml'
-  ]
-
-  if (!allowedFiles.includes(fileName)) {
+  // Validate file path
+  const validation = validateFilePath(fileName)
+  if (!validation.valid) {
     return NextResponse.json({
       success: false,
-      error: `File '${fileName}' is not allowed to be read`
+      error: validation.error
     }, { status: 403 })
   }
+  
+  const safeFileName = validation.sanitized
 
   try {
-    const filePath = path.join(backendPath, fileName)
+    const filePath = path.join(backendPath, safeFileName)
     const content = await fs.readFile(filePath, 'utf-8')
     const stats = await fs.stat(filePath)
 
     // Parse environment variables if it's an env file
     let parsed = null
-    if (fileName.startsWith('.env')) {
+    if (safeFileName.startsWith('.env')) {
       parsed = parseEnvContent(content)
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        file: fileName,
+        file: safeFileName,
         content,
         parsed,
         stats: {
@@ -262,8 +313,8 @@ async function readConfigFile(fileName: string) {
   } catch (error: any) {
     return NextResponse.json({
       success: false,
-      error: `Failed to read file '${fileName}'`,
-      details: error.message
+      error: `Failed to read file '${safeFileName}'`,
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -271,21 +322,19 @@ async function readConfigFile(fileName: string) {
 async function writeConfigFile(fileName: string, content: string, options: any) {
   const backendPath = getProjectPath()
   
-  // Security: Only allow specific config files
-  const allowedFiles = [
-    '.env.local', '.env.example', '.env.production', '.env.development',
-    'docker-compose.yml', 'docker-compose.override.yml', 'docker-compose.prod.yml'
-  ]
-
-  if (!allowedFiles.includes(fileName)) {
+  // Validate file path
+  const validation = validateFilePath(fileName)
+  if (!validation.valid) {
     return NextResponse.json({
       success: false,
-      error: `File '${fileName}' is not allowed to be written`
+      error: validation.error
     }, { status: 403 })
   }
+  
+  const safeFileName = validation.sanitized
 
   try {
-    const filePath = path.join(backendPath, fileName)
+    const filePath = path.join(backendPath, safeFileName)
     
     // Create backup if file exists and backup option is enabled
     if (options.backup !== false) {
@@ -293,7 +342,7 @@ async function writeConfigFile(fileName: string, content: string, options: any) 
         const existingContent = await fs.readFile(filePath, 'utf-8')
         const backupPath = `${filePath}.backup.${Date.now()}`
         await fs.writeFile(backupPath, existingContent)
-      } catch (error) {
+      } catch (error: any) {
         // File doesn't exist, no backup needed
       }
     }
@@ -303,14 +352,14 @@ async function writeConfigFile(fileName: string, content: string, options: any) 
     const stats = await fs.stat(filePath)
 
     // Apply configuration if requested
-    if (options.apply && fileName.startsWith('.env')) {
+    if (options.apply && safeFileName.startsWith('.env')) {
       await applyEnvironmentChanges()
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        file: fileName,
+        file: safeFileName,
         size: stats.size,
         modified: stats.mtime,
         applied: options.apply || false,
@@ -321,8 +370,8 @@ async function writeConfigFile(fileName: string, content: string, options: any) 
   } catch (error: any) {
     return NextResponse.json({
       success: false,
-      error: `Failed to write file '${fileName}'`,
-      details: error.message
+      error: `Failed to write file '${safeFileName}'`,
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -330,11 +379,22 @@ async function writeConfigFile(fileName: string, content: string, options: any) 
 async function updateConfigFile(fileName: string, options: any) {
   const backendPath = getProjectPath()
   
+  // Validate file path
+  const validation = validateFilePath(fileName)
+  if (!validation.valid) {
+    return NextResponse.json({
+      success: false,
+      error: validation.error
+    }, { status: 403 })
+  }
+  
+  const safeFileName = validation.sanitized
+  
   try {
-    const filePath = path.join(backendPath, fileName)
+    const filePath = path.join(backendPath, safeFileName)
     let content = await fs.readFile(filePath, 'utf-8')
 
-    if (fileName.startsWith('.env')) {
+    if (safeFileName.startsWith('.env')) {
       // Update environment variables
       if (options.variables) {
         for (const [key, value] of Object.entries(options.variables)) {
@@ -355,7 +415,7 @@ async function updateConfigFile(fileName: string, options: any) {
     return NextResponse.json({
       success: true,
       data: {
-        file: fileName,
+        file: safeFileName,
         updated: Object.keys(options.variables || {}).length,
         size: stats.size,
         modified: stats.mtime,
@@ -366,8 +426,8 @@ async function updateConfigFile(fileName: string, options: any) {
   } catch (error: any) {
     return NextResponse.json({
       success: false,
-      error: `Failed to update file '${fileName}'`,
-      details: error.message
+      error: `Failed to update file '${safeFileName}'`,
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -377,14 +437,18 @@ async function validateConfiguration() {
   
   try {
     // Validate using nself doctor
-    const { stdout: nselfValidation, stderr } = await execAsync(
-      `cd ${backendPath} && nself doctor`
+    const { stdout: nselfValidation, stderr } = await execFileAsync(
+      '/bin/sh',
+      ['-c', `cd "${backendPath}" && nself doctor`],
+      { timeout: 30000 }
     )
 
     // Validate Docker Compose
-    const { stdout: dockerValidation } = await execAsync(
-      `cd ${backendPath} && docker-compose config --quiet`
-    ).catch(error => ({ stdout: '', stderr: error.message }))
+    const { stdout: dockerValidation } = await execFileAsync(
+      '/bin/sh',
+      ['-c', `cd "${backendPath}" && docker-compose config --quiet`],
+      { timeout: 30000 }
+    ).catch(error => ({ stdout: '', stderr: error?.message || "Unknown error" }))
 
     // Check for required environment variables
     const envPath = path.join(backendPath, '.env.local')
@@ -399,7 +463,7 @@ async function validateConfiguration() {
       envValidation = missing.length === 0 
         ? 'All required variables present'
         : `Missing required variables: ${missing.join(', ')}`
-    } catch (error) {
+    } catch (error: any) {
       // Already handled above
     }
 
@@ -427,7 +491,7 @@ async function validateConfiguration() {
     return NextResponse.json({
       success: false,
       error: 'Configuration validation failed',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -440,24 +504,30 @@ async function applyConfiguration(options: any) {
 
     // Restart services if requested
     if (options.restart) {
-      const { stdout, stderr } = await execAsync(
-        `cd ${backendPath} && docker-compose restart`
+      const { stdout, stderr } = await execFileAsync(
+        '/bin/sh',
+        ['-c', `cd "${backendPath}" && docker-compose restart`],
+        { timeout: 60000 }
       )
       results.push({ action: 'restart', stdout, stderr })
     }
 
     // Rebuild services if requested
     if (options.rebuild) {
-      const { stdout, stderr } = await execAsync(
-        `cd ${backendPath} && docker-compose build`
+      const { stdout, stderr } = await execFileAsync(
+        '/bin/sh',
+        ['-c', `cd "${backendPath}" && docker-compose build`],
+        { timeout: 300000 }
       )
       results.push({ action: 'rebuild', stdout, stderr })
     }
 
     // Apply nself configuration
-    const { stdout: nselfOutput, stderr: nselfError } = await execAsync(
-      `cd ${backendPath} && nself apply`
-    ).catch(error => ({ stdout: '', stderr: error.message }))
+    const { stdout: nselfOutput, stderr: nselfError } = await execFileAsync(
+        '/bin/sh',
+        ['-c', `cd "${backendPath}" && nself apply`],
+        { timeout: 30000 }
+    ).catch(error => ({ stdout: '', stderr: error?.message || "Unknown error" }))
 
     results.push({ action: 'nself-apply', stdout: nselfOutput, stderr: nselfError })
 
@@ -473,14 +543,25 @@ async function applyConfiguration(options: any) {
     return NextResponse.json({
       success: false,
       error: 'Failed to apply configuration',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
 
 async function createEnvironmentFile(options: any) {
   const backendPath = getProjectPath()
-  const fileName = options.environment || '.env.local'
+  const requestedFile = options.environment || '.env.local'
+  
+  // Validate file path
+  const validation = validateFilePath(requestedFile)
+  if (!validation.valid) {
+    return NextResponse.json({
+      success: false,
+      error: validation.error
+    }, { status: 403 })
+  }
+  
+  const fileName = validation.sanitized
   
   try {
     // Get template from .env.example
@@ -489,7 +570,7 @@ async function createEnvironmentFile(options: any) {
     
     try {
       template = await fs.readFile(templatePath, 'utf-8')
-    } catch (error) {
+    } catch (error: any) {
       // Create basic template if .env.example doesn't exist
       template = `# nself Configuration
 PROJECT_ID=my-project
@@ -540,7 +621,7 @@ EMAIL_FROM=admin@localhost
     return NextResponse.json({
       success: false,
       error: `Failed to create environment file '${fileName}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -567,7 +648,7 @@ async function backupConfiguration() {
         
         await fs.copyFile(sourcePath, destPath)
         backedUp.push(file)
-      } catch (error) {
+      } catch (error: any) {
         // File doesn't exist, skip
       }
     }
@@ -585,7 +666,7 @@ async function backupConfiguration() {
     return NextResponse.json({
       success: false,
       error: 'Failed to backup configuration',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -611,7 +692,7 @@ async function getEnvTemplate() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get environment template',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -623,19 +704,32 @@ async function restoreConfiguration(options: any) {
       error: 'Backup path is required'
     }, { status: 400 })
   }
+  
+  // Validate backup path - must be under config-backups
+  const backupPath = sanitizePath(options.backup_path)
+  if (!backupPath.startsWith(path.join(getProjectPath(), 'config-backups'))) {
+    return NextResponse.json({
+      success: false,
+      error: 'Invalid backup path'
+    }, { status: 403 })
+  }
 
   const backendPath = getProjectPath()
   
   try {
     const restored = []
-    const files = await fs.readdir(options.backup_path)
+    const files = await fs.readdir(backupPath)
     
     for (const file of files) {
-      const sourcePath = path.join(options.backup_path, file)
-      const destPath = path.join(backendPath, file)
-      
-      await fs.copyFile(sourcePath, destPath)
-      restored.push(file)
+      // Validate each file before restoring
+      const validation = validateFilePath(file)
+      if (validation.valid) {
+        const sourcePath = path.join(backupPath, validation.sanitized)
+        const destPath = path.join(backendPath, validation.sanitized)
+        
+        await fs.copyFile(sourcePath, destPath)
+        restored.push(validation.sanitized)
+      }
     }
 
     return NextResponse.json({
@@ -650,7 +744,7 @@ async function restoreConfiguration(options: any) {
     return NextResponse.json({
       success: false,
       error: 'Failed to restore configuration',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -660,13 +754,15 @@ async function applyEnvironmentChanges() {
   
   try {
     // Restart containers to pick up new environment variables
-    const { stdout, stderr } = await execAsync(
-      `cd ${backendPath} && docker-compose restart`
+    const { stdout, stderr } = await execFileAsync(
+      '/bin/sh',
+      ['-c', `cd "${backendPath}" && docker-compose restart`],
+      { timeout: 60000 }
     )
 
     return { success: true, stdout, stderr }
   } catch (error: any) {
-    return { success: false, error: error.message }
+    return { success: false, error: error?.message || "Unknown error" }
   }
 }
 

@@ -326,7 +326,6 @@ export default function DatabaseSeedPage() {
         })
         setShowImportDialog(true)
       } catch (error) {
-        console.error('Failed to parse file:', error)
       }
     }
     reader.readAsText(file)
@@ -388,7 +387,7 @@ export default function DatabaseSeedPage() {
 
   return (
     <PageTemplate 
-      title="Database Seeding"
+     
       description="Generate test data, import datasets, and manage database seeding operations"
     >
       <div className="space-y-6">
@@ -424,13 +423,13 @@ export default function DatabaseSeedPage() {
                 />
                 <Button
                   variant="outline"
-                  size="sm"
+                 
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Import Data
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button variant="outline">
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
                 </Button>
@@ -525,7 +524,7 @@ export default function DatabaseSeedPage() {
                             />
                             <span className="text-sm text-muted-foreground">records</span>
                             <Button
-                              size="sm"
+                             
                               variant="outline"
                               onClick={() => generatePreview(selectedTemplate)}
                             >
@@ -665,11 +664,11 @@ for (let i = 0; i < count; i++) {
 
                 <div className="flex justify-between">
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline">
                       <Eye className="h-4 w-4 mr-2" />
                       Preview
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline">
                       <Save className="h-4 w-4 mr-2" />
                       Save Template
                     </Button>

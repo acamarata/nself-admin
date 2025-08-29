@@ -8,7 +8,7 @@ import {
   RefreshCw, Download, Terminal, Shield, Database, Server,
   HardDrive, Network, Settings, FileText, Activity, AlertCircle, 
   Info, Play, Copy, ExternalLink, Zap, Eye, Search, Filter, 
-  Stethoscope, Plus, Tool
+  Stethoscope, Plus, Wrench
 } from 'lucide-react'
 
 interface DiagnosticCheck {
@@ -270,7 +270,6 @@ export default function DoctorPage() {
       setDiagnosticLogs(prev => [...prev, '', `Diagnostics completed. Health score: ${score}%`])
 
     } catch (error) {
-      console.error('Diagnostics failed:', error)
       setDiagnosticLogs(prev => [...prev, `❌ Diagnostics failed: ${error}`])
     } finally {
       setRunning(false)
@@ -439,7 +438,7 @@ export default function DoctorPage() {
               {[
                 { key: 'overview', label: 'Overview', icon: Eye },
                 { key: 'checks', label: 'All Checks', icon: Activity },
-                { key: 'fixes', label: 'Quick Fixes', icon: Tool },
+                { key: 'fixes', label: 'Quick Fixes', icon: Wrench },
                 { key: 'history', label: 'History', icon: Clock }
               ].map(({ key, label, icon: TabIcon }) => (
                 <button
@@ -582,7 +581,7 @@ export default function DoctorPage() {
                         )}
                       </div>
                       {check.status !== 'pass' && check.fixCommand && (
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline">
                           Quick Fix
                         </Button>
                       )}
@@ -610,7 +609,7 @@ export default function DoctorPage() {
                           ? 'bg-red-50 dark:bg-red-900/20' 
                           : 'bg-yellow-50 dark:bg-yellow-900/20'
                       }`}>
-                        <Tool className={`w-5 h-5 ${
+                        <Wrench className={`w-5 h-5 ${
                           check.status === 'fail' 
                             ? 'text-red-600 dark:text-red-400' 
                             : 'text-yellow-600 dark:text-yellow-400'
@@ -634,12 +633,12 @@ export default function DoctorPage() {
                             <div className="flex items-center gap-2">
                               <Button
                                 variant="outline"
-                                size="sm"
+                               
                                 onClick={() => navigator.clipboard.writeText(check.fixCommand!)}
                               >
                                 <Copy className="w-3 h-3" />
                               </Button>
-                              <Button variant="outline" size="sm">
+                              <Button variant="outline">
                                 <Play className="w-3 h-3" />
                               </Button>
                             </div>

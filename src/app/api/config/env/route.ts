@@ -310,7 +310,7 @@ export async function GET(request: NextRequest) {
             category: getCategory(key),
           })
         }
-      } catch (error) {
+      } catch (error: any) {
         // File doesn't exist, that's okay
       }
     }
@@ -348,8 +348,7 @@ export async function GET(request: NextRequest) {
         hasChanges: false,
       }
     })
-  } catch (error) {
-    console.error('Failed to read environment variables:', error)
+  } catch (error: any) {
     return NextResponse.json(
       { success: false, error: 'Failed to read environment variables' },
       { status: 500 }
@@ -406,8 +405,7 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Failed to save environment variables:', error)
+  } catch (error: any) {
     return NextResponse.json(
       { success: false, error: 'Failed to save environment variables' },
       { status: 500 }

@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyPassword, generateSessionToken, getAdminPasswordHash } from '@/lib/auth'
-import { sessions } from '@/lib/sessions'
 import { isRateLimited, getRateLimitInfo, clearRateLimit } from '@/lib/rateLimiter'
+import { z } from 'zod'
+import { validateRequest } from '@/lib/validation'
+import { 
+  checkPasswordExists, 
+  verifyAdminLogin, 
+  createLoginSession,
+  logout as deleteSessionToken
+} from '@/lib/auth-db'
+
+// Schema for login request
+const loginSchema = z.object({
+  password: z.string().min(1, 'Password is required').max(256, 'Password too long')
+})
 
 export async function POST(request: NextRequest) {
   // Check rate limiting
@@ -26,44 +37,68 @@ export async function POST(request: NextRequest) {
   }
   
   try {
-    // Input validation
-    const body = await request.json()
-    const { password } = body
+    // Parse and validate request body
+    const body = await request.json().catch(() => null)
     
-    if (!password || typeof password !== 'string') {
+    if (!body) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Password is required' 
+        error: 'Invalid request body' 
       }, { status: 400 })
     }
     
-    // Get the hashed admin password
-    const adminPasswordHash = await getAdminPasswordHash()
+    // Validate input with schema
+    const validation = await validateRequest(body, loginSchema)
+    if (!validation.success) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Validation failed',
+          details: validation.errors.format()
+        },
+        { status: 400 }
+      )
+    }
     
-    // Verify password using bcrypt
-    const isValid = await verifyPassword(password, adminPasswordHash)
+    const { password } = validation.data
+    
+    // Check if password is set
+    const passwordExists = await checkPasswordExists()
+    if (!passwordExists) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'No password configured. Please set up your password first.',
+          needsSetup: true
+        },
+        { status: 401 }
+      )
+    }
+    
+    // Verify password
+    const isValid = await verifyAdminLogin(password)
     
     if (isValid) {
       // Clear rate limit on successful login
       clearRateLimit(request, 'auth')
       
-      // Generate secure session token
-      const session = generateSessionToken()
+      // Get client info
+      const ip = request.headers.get('x-forwarded-for') || 
+                 request.headers.get('x-real-ip') || 
+                 'unknown'
+      const userAgent = request.headers.get('user-agent') || undefined
       
-      // Store session (in production, use Redis/database)
-      sessions.set(session.token, {
-        expiresAt: session.expiresAt,
-        userId: 'admin'
-      })
+      // Create session in database
+      const sessionToken = await createLoginSession(ip, userAgent)
       
       // Create response with secure cookie
       const response = NextResponse.json({ 
         success: true,
-        expiresAt: session.expiresAt.toISOString()
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
       })
       
       // Set httpOnly cookie for security
-      response.cookies.set('nself-session', session.token, {
+      response.cookies.set('nself-session', sessionToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -74,15 +109,19 @@ export async function POST(request: NextRequest) {
       return response
     }
     
-    // Invalid password - add delay to prevent brute force
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Invalid password - add progressive delay to prevent brute force
+    const info = getRateLimitInfo(request, 'auth')
+    const delay = Math.min(1000 * (5 - info.remaining), 5000) // Progressive delay up to 5 seconds
+    await new Promise(resolve => setTimeout(resolve, delay))
     
     return NextResponse.json({ 
       success: false, 
       error: 'Invalid credentials' 
     }, { status: 401 })
-  } catch (error) {
-    console.error('Authentication error:', error)
+  } catch (error: any) {
+    console.error('Login error:', error?.message || error)
+    
+    // Don't leak internal errors
     return NextResponse.json({ 
       success: false, 
       error: 'Authentication failed' 
@@ -95,7 +134,7 @@ export async function DELETE(request: NextRequest) {
   const token = request.cookies.get('nself-session')?.value
   
   if (token) {
-    sessions.delete(token)
+    await deleteSessionToken(token)
   }
   
   const response = NextResponse.json({ success: true })

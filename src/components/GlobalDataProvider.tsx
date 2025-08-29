@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useProjectStore } from '@/stores/projectStore'
 import { usePathname } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import { backgroundDataService } from '@/services/BackgroundDataService'
 // import { dockerPollingService } from '@/services/DockerPollingService'
 import { simplifiedPolling } from '@/services/SimplifiedPolling'
@@ -10,37 +11,45 @@ import { simplifiedPolling } from '@/services/SimplifiedPolling'
 export function GlobalDataProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const projectStatus = useProjectStore(state => state.projectStatus)
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     // NOTE: Centralized polling service fetches data
     // Pages just read from the store - single source of truth
     
-    // Initial project status check
-    const store = useProjectStore.getState()
-    store.checkProjectStatus().then(() => {
-      // After checking status, start polling if running
-      const currentState = useProjectStore.getState()
-      console.log('[GlobalDataProvider] Project status:', currentState.projectStatus)
-      if (currentState.projectStatus === 'running') {
-        console.log('[GlobalDataProvider] Starting polling service')
-        simplifiedPolling.start()
-      }
-    })
+    // Only check project status and start polling if authenticated
+    if (isAuthenticated) {
+      // Initial project status check
+      const store = useProjectStore.getState()
+      store.checkProjectStatus().then(() => {
+        // After checking status, start polling if running
+        const currentState = useProjectStore.getState()
+        if (currentState.projectStatus === 'running') {
+          simplifiedPolling.start()
+        }
+      })
+    }
 
     // Cleanup on unmount (app close)
     return () => {
       simplifiedPolling.stop()
     }
-  }, [])
+  }, [isAuthenticated])
   
   // React to project status changes
   useEffect(() => {
-    if (projectStatus === 'running') {
-      simplifiedPolling.start()
+    // Only manage polling if authenticated
+    if (isAuthenticated) {
+      if (projectStatus === 'running') {
+        simplifiedPolling.start()
+      } else {
+        simplifiedPolling.stop()
+      }
     } else {
+      // Stop polling if not authenticated
       simplifiedPolling.stop()
     }
-  }, [projectStatus])
+  }, [projectStatus, isAuthenticated])
 
   // Commented out - pages now handle their own data fetching
   // useEffect(() => {

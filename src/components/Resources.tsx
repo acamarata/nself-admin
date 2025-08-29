@@ -36,7 +36,7 @@ function ResourcePattern({
   mouseX: MotionValue<number>
   mouseY: MotionValue<number>
   y: number
-  squares: number[][]
+  squares: Array<[x: number, y: number]>
 }) {
   let maskImage = useMotionTemplate`radial-gradient(180px at ${mouseX}px ${mouseY}px, white, transparent)`
   let style = { maskImage, WebkitMaskImage: maskImage }
@@ -88,7 +88,7 @@ function ResourceCard({
   percentage: number
   description: string
   icon: React.ComponentType<{ className?: string }>
-  pattern: { y: number; squares: number[][] }
+  pattern: { y: number; squares: Array<[x: number, y: number]> }
 }) {
   let mouseX = useMotionValue(0)
   let mouseY = useMotionValue(0)
@@ -147,7 +147,7 @@ export function Resources({ systemMetrics, dockerMetrics }: ResourcesProps) {
       <div className="not-prose grid grid-cols-2 gap-8 sm:grid-cols-4">
         {/* Docker CPU */}
         <ResourceCard
-          title="Docker CPU"
+          title="CPU Usage"
           value={`${cpuUsage.toFixed(1)}%`}
           percentage={cpuUsage}
           description="of system CPU"
@@ -157,7 +157,7 @@ export function Resources({ systemMetrics, dockerMetrics }: ResourcesProps) {
 
         {/* Docker RAM */}
         <ResourceCard
-          title="Docker RAM"
+          title="Memory"
           value={`${memoryPercentage}%`}
           percentage={memoryPercentage}
           description={`${dockerMetrics?.memory.used || 0}GB / ${systemMetrics?.memory.total || 0}GB`}
@@ -167,7 +167,7 @@ export function Resources({ systemMetrics, dockerMetrics }: ResourcesProps) {
 
         {/* Docker Storage */}
         <ResourceCard
-          title="Docker Storage"
+          title="Storage"
           value={`${diskPercentage}%`}
           percentage={diskPercentage}
           description={`${dockerMetrics?.storage.used || 0}GB / ${systemMetrics?.disk.total || 0}GB`}

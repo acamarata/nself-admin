@@ -83,7 +83,6 @@ export class HasuraCollector {
       
       return result
     } catch (error) {
-      console.error('[HasuraCollector] Collection failed:', error)
       return this.getEmptyStats('unhealthy')
     }
   }
@@ -156,7 +155,6 @@ export class HasuraCollector {
         remoteSchemas
       }
     } catch (error) {
-      console.error('[HasuraCollector] Metadata stats failed:', error)
       return {
         tables: 0,
         relationships: 0,
@@ -214,7 +212,6 @@ export class HasuraCollector {
         version
       }
     } catch (error) {
-      console.error('[HasuraCollector] Health status failed:', error)
       return {
         inconsistentObjects: [],
         lastReload: new Date().toISOString(),

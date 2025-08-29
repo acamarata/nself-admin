@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useProjectStore } from '@/stores/projectStore'
 import { usePageData } from '@/hooks/usePageData'
 import { Button } from '@/components/Button'
@@ -45,6 +46,7 @@ import {
   Terminal
 } from 'lucide-react'
 import { GridPattern } from '@/components/GridPattern'
+import { apiPost } from '@/lib/api-client'
 // DEV ONLY - REMOVE FOR PRODUCTION
 import { useDevTracking } from '@/hooks/useDevTracking'
 
@@ -72,6 +74,14 @@ interface ServiceStatus {
   cpu?: number
   memory?: number
   port?: string
+  image?: string
+  restartCount?: number
+}
+
+type ViewMode = 'table' | 'grid' | 'list'
+
+interface ContainersTableProps {
+  services: ServiceStatus[]
 }
 
 interface ProjectInfoCardProps {
@@ -152,15 +162,17 @@ function ProjectInfoCard({ icon, label, value, pattern }: ProjectInfoCardProps) 
     >
       <ProjectInfoPattern {...pattern} mouseX={mouseX} mouseY={mouseY} />
       <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/7.5 ring-inset group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
-      <div className="relative rounded-2xl px-4 pt-12 pb-4 w-full text-center">
-        <div className="mx-auto mb-4">
-          <ProjectInfoIcon icon={icon} />
-        </div>
-        <div className="text-sm font-medium text-zinc-900 dark:text-white mb-1">
-          {label}
-        </div>
-        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-          {value}
+      <div className="relative rounded-2xl px-4 py-6 w-full">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <ProjectInfoIcon icon={icon} />
+            <div className="text-sm font-semibold text-zinc-900 dark:text-white">
+              {label}
+            </div>
+          </div>
+          <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+            {value}
+          </div>
         </div>
       </div>
     </div>
@@ -553,21 +565,21 @@ function ContainersTable({ services }: ContainersTableProps) {
             <button
               onClick={() => setViewMode('table')}
               className={`p-1.5 rounded ${viewMode === 'table' ? 'bg-white dark:bg-zinc-700 shadow-sm' : ''} transition-all`}
-              title="Table View"
+             
             >
               <Table2 className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
             </button>
             <button
               onClick={() => setViewMode('list')}
               className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-zinc-700 shadow-sm' : ''} transition-all`}
-              title="List View"
+             
             >
               <List className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
             </button>
             <button
-              onClick={() => setViewMode('cards')}
-              className={`p-1.5 rounded ${viewMode === 'cards' ? 'bg-white dark:bg-zinc-700 shadow-sm' : ''} transition-all`}
-              title="Card View"
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-zinc-700 shadow-sm' : ''} transition-all`}
+             
             >
               <Grid3x3 className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
             </button>
@@ -844,6 +856,7 @@ function BackendServiceCard({ title, services, icon: Icon, description, color, c
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   // DEV TRACKING - REMOVE FOR PRODUCTION
   const { logEvent, startTimer, endTimer } = useDevTracking('DashboardPage')
   
@@ -867,23 +880,29 @@ export default function DashboardPage() {
     return () => clearTimeout(timer)
   }, [])
   
-  // Check project status on mount and fetch data if running
+  // Check project status and redirect based on state
   useEffect(() => {
     checkProjectStatus().then(() => {
-      // After checking status, fetch data if project is running
       const currentStatus = useProjectStore.getState().projectStatus
-      console.log('[Dashboard] Project status after check:', currentStatus)
-      if (currentStatus === 'running') {
-        console.log('[Dashboard] Project is running, fetching all data...')
+      const currentContainersRunning = useProjectStore.getState().containersRunning
+      
+      if (currentStatus === 'not_initialized') {
+        // Project not built, redirect to build wizard
+        router.push('/build')
+      } else if (currentStatus !== 'running' && currentContainersRunning === 0) {
+        // Services built but not running, redirect to start page
+        router.push('/start')
+      } else if (currentStatus === 'running') {
+        // Services running, fetch dashboard data
         fetchAllData()
       }
     })
-  }, [])
+  }, [checkProjectStatus, fetchAllData, router])
   
   // Transform container stats to services format
-  const services = containerStats.map((c: any) => ({
+  const services: ServiceStatus[] = containerStats.map((c: any) => ({
     name: c.name || 'unknown',
-    status: c.state === 'running' ? 'healthy' : 'stopped',
+    status: (c.state === 'running' ? 'healthy' : 'stopped') as ServiceStatus['status'],
     health: c.status,
     cpu: c.stats?.cpu?.percentage || 0,
     memory: c.stats?.memory?.percentage || 0,
@@ -895,15 +914,7 @@ export default function DashboardPage() {
   
   // Debug: Log the metrics to see if they're updating
   useEffect(() => {
-    console.log('[Dashboard] Metrics state:', {
-      hasSystemMetrics: !!systemMetrics,
-      hasDockerInSystemMetrics: !!systemMetrics?.docker,
-      dockerCpu: systemMetrics?.docker?.cpu,
-      dockerMemory: systemMetrics?.docker?.memory,
-      systemNetwork: systemMetrics?.system?.network?.rx,
-      fullMetrics: systemMetrics,
-      timestamp: new Date().toISOString()
-    })
+    // Metrics debug logging removed
   }, [systemMetrics])
   
   // Calculate Docker metrics from container stats as fallback
@@ -918,7 +929,7 @@ export default function DashboardPage() {
   // Derive docker metrics - prefer API data, fallback to calculated
   const dockerMetrics = apiDockerMetrics ? {
     ...apiDockerMetrics,
-    cpu: typeof apiDockerMetrics.cpu === 'number' ? apiDockerMetrics.cpu : (apiDockerMetrics.cpu?.usage || 0),
+    cpu: typeof apiDockerMetrics.cpu === 'number' ? apiDockerMetrics.cpu : ((apiDockerMetrics.cpu as any)?.usage || 0),
     containers: apiDockerMetrics.containers || {
       total: containerStats.length,
       running: containerStats.filter(c => c.state === 'running').length,
@@ -962,6 +973,11 @@ export default function DashboardPage() {
   const hasRunningServices = projectStatus === 'running' || containersRunning > 0 || runningServices > 0
 
   const [starting, setStarting] = useState(false)
+  const [startProgress, setStartProgress] = useState<{
+    message: string
+    percentage?: number
+    type?: 'status' | 'progress' | 'download' | 'container' | 'error' | 'complete'
+  }>({ message: '' })
 
   // Mouse tracking for cards
   function MetricCard({ 
@@ -1051,33 +1067,111 @@ export default function DashboardPage() {
         setProjectInfo(data.data)
       }
     } catch (error) {
-      console.error('Failed to fetch project info:', error)
     }
   }
 
   const startServices = async () => {
     try {
       setStarting(true)
-      const res = await fetch('/api/nself/start', { method: 'POST' })
-      const data = await res.json()
+      setStartProgress({ message: 'Initializing Docker services...', type: 'status' })
       
-      if (data.success) {
-        // Wait a moment then refresh to see the started services
-        setTimeout(() => {
-          checkProjectStatus()
-        }, 3000)
-      } else {
-        console.error('Failed to start services:', data.error)
+      // Use streaming API for real-time progress
+      const response = await fetch('/api/nself/start-stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to start services')
+      }
+      
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          const text = decoder.decode(value)
+          const lines = text.split('\n').filter(line => line.trim())
+          
+          for (const line of lines) {
+            try {
+              const data = JSON.parse(line)
+              
+              switch (data.type) {
+                case 'status':
+                case 'progress':
+                  setStartProgress({
+                    message: data.message,
+                    percentage: data.percentage,
+                    type: data.type
+                  })
+                  break
+                  
+                case 'download':
+                  setStartProgress({
+                    message: data.message,
+                    percentage: data.percentage,
+                    type: 'download'
+                  })
+                  break
+                  
+                case 'container':
+                  setStartProgress({
+                    message: data.message,
+                    type: 'container'
+                  })
+                  break
+                  
+                case 'error':
+                  setStartProgress({
+                    message: `Error: ${data.message}`,
+                    type: 'error'
+                  })
+                  console.error('Start error:', data.message)
+                  break
+                  
+                case 'complete':
+                  setStartProgress({
+                    message: data.message,
+                    percentage: 100,
+                    type: 'complete'
+                  })
+                  // Refresh status after completion
+                  setTimeout(() => {
+                    checkProjectStatus()
+                    fetchAllData()
+                  }, 2000)
+                  break
+              }
+            } catch (err) {
+              console.error('Failed to parse stream data:', err)
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to start services:', error)
+      setStartProgress({
+        message: 'Failed to start services. Please check Docker is running.',
+        type: 'error'
+      })
     } finally {
-      setStarting(false)
+      // Keep showing the final message for a bit before clearing
+      setTimeout(() => {
+        setStarting(false)
+        setStartProgress({ message: '' })
+      }, 5000)
     }
   }
 
   // Show content immediately with loading states
   const showLoadingState = isInitialLoad || (!systemMetrics && !containerStats.length)
+  const showServices = containersRunning > 0
 
   return (
     <>
@@ -1090,84 +1184,15 @@ export default function DashboardPage() {
         </h1>
       </div>
 
-      {!hasRunningServices ? (
-        /* Empty State - No Services Running */
-        <div className="mb-16">
-          <div className="group relative rounded-2xl bg-zinc-50 p-8 dark:bg-white/2.5">
-            <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/7.5 ring-inset group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
-            <div className="relative text-center">
-              <div className="mx-auto h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center dark:bg-blue-500/10">
-                <div className="h-6 w-6 rounded-full bg-blue-500" />
-              </div>
-              <h2 className="mt-4 text-xl font-semibold text-zinc-900 dark:text-white">
-                Services Not Running
-              </h2>
-              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-                Your nself project is configured but services are not currently running. 
-                {projectInfo?.projectName && ` Project: ${projectInfo.projectName}`}
-              </p>
-              
-              {projectInfo && (
-                <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3 max-w-3xl mx-auto">
-                  <ProjectInfoCard
-                    icon={Server}
-                    label="Services"
-                    value={projectInfo.services?.length || 0}
-                    pattern={{
-                      y: 16,
-                      squares: [[0, 1], [1, 3]]
-                    }}
-                  />
-                  <ProjectInfoCard
-                    icon={Database}
-                    label="Database"
-                    value={projectInfo.database || 'PostgreSQL'}
-                    pattern={{
-                      y: -6,
-                      squares: [[-1, 2], [1, 3]]
-                    }}
-                  />
-                  <ProjectInfoCard
-                    icon={CheckCircle}
-                    label="Status"
-                    value="Built"
-                    pattern={{
-                      y: 22,
-                      squares: [[0, 1]]
-                    }}
-                  />
-                </div>
-              )}
-
-              <div className="mt-8">
-                <Button 
-                  onClick={startServices}
-                  variant="solid"
-                  disabled={starting}
-                  className="px-8 py-3"
-                >
-                  {starting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Starting Services...
-                    </>
-                  ) : (
-                    'Start Services'
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* Running Services Dashboard */
+      {/* Services Dashboard - only shown when services are running */}
+      {showServices && (
         <>
           {/* System Overview Cards */}
           <div className="mb-16">
             <div className="not-prose grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
               {/* Docker CPU Usage - Direct from systemMetrics */}
               <MetricCard
-                title="Docker CPU"
+                title="CPU Usage"
                 value={`${Math.round(systemMetrics?.docker?.cpu || 0)}%`}
                 percentage={Math.min(systemMetrics?.docker?.cpu || 0, 100)}
                 description={`System: ${Math.round(systemMetrics?.system?.cpu || 0)}%`}
@@ -1176,7 +1201,7 @@ export default function DashboardPage() {
 
               {/* Docker Memory Usage - Direct from systemMetrics */}
               <MetricCard
-                title="Docker RAM"
+                title="Memory Usage"
                 value={`${Math.round((systemMetrics?.docker?.memory?.percentage || 0))}%`}
                 percentage={systemMetrics?.docker?.memory?.percentage || 0}
                 description={`${systemMetrics?.docker?.memory?.used || 0}GB / ${systemMetrics?.docker?.memory?.total || 0}GB`}
@@ -1185,7 +1210,7 @@ export default function DashboardPage() {
 
               {/* Docker Storage - Direct from systemMetrics */}
               <MetricCard
-                title="Docker Storage"
+                title="Storage Usage"
                 value={`${Math.round((systemMetrics?.docker?.storage?.used || 0) / (systemMetrics?.docker?.storage?.total || 1) * 100)}%`}
                 percentage={Math.round((systemMetrics?.docker?.storage?.used || 0) / (systemMetrics?.docker?.storage?.total || 1) * 100)}
                 description={`${systemMetrics?.docker?.storage?.used || 0}GB / ${systemMetrics?.docker?.storage?.total || 50}GB`}
@@ -1194,7 +1219,7 @@ export default function DashboardPage() {
 
               {/* Docker Network */}
               <MetricCard
-                title="Network"
+                title="Network Traffic"
                 value={`${((systemMetrics?.system?.network?.rx || 0) + (systemMetrics?.system?.network?.tx || 0)).toFixed(2)} Mbps`}
                 percentage={Math.min(((systemMetrics?.system?.network?.rx || 0) + (systemMetrics?.system?.network?.tx || 0)) / (systemMetrics?.system?.network?.maxSpeed || 1000) * 100, 100)}
                 description={`${systemMetrics?.system?.network?.maxSpeed || 1000} Mbps max`}
@@ -1285,7 +1310,7 @@ export default function DashboardPage() {
               {/* Row 1 - Core Infrastructure */}
               {/* Database Services */}
               <BackendServiceCard
-                title="Database"
+                title="Database Services"
                 services={services.filter(s => 
                   ['postgres', 'postgresql', 'database', 'db', 'redis', 'cache', 'memcached'].some(name => 
                     s.name.toLowerCase().includes(name)

@@ -350,7 +350,7 @@ FOREIGN KEY (column_id) REFERENCES reference_table(id);`
 
   return (
     <PageTemplate 
-      title="Database Migrations"
+     
       description="Manage database schema changes, track migration history, and handle rollbacks"
     >
       <div className="space-y-6">
@@ -381,7 +381,7 @@ FOREIGN KEY (column_id) REFERENCES reference_table(id);`
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                 
                   onClick={generateAutoMigration}
                   disabled={schemaDiff.length === 0}
                 >
@@ -390,13 +390,13 @@ FOREIGN KEY (column_id) REFERENCES reference_table(id);`
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
+                 
                   onClick={() => setShowCreateForm(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   New Migration
                 </Button>
-                <Button variant="default" size="sm">
+                <Button variant="default">
                   <Play className="h-4 w-4 mr-2" />
                   Run Pending
                 </Button>
@@ -457,7 +457,7 @@ FOREIGN KEY (column_id) REFERENCES reference_table(id);`
                                 {migration.status === 'pending' && (
                                   <>
                                     <Button
-                                      size="sm"
+                                     
                                       variant="outline"
                                       onClick={(e) => {
                                         e.stopPropagation()
@@ -471,7 +471,7 @@ FOREIGN KEY (column_id) REFERENCES reference_table(id);`
                                 )}
                                 {migration.status === 'applied' && (
                                   <Button
-                                    size="sm"
+                                   
                                     variant="outline"
                                     onClick={(e) => {
                                       e.stopPropagation()
@@ -482,7 +482,7 @@ FOREIGN KEY (column_id) REFERENCES reference_table(id);`
                                     <ArrowDown className="h-3 w-3" />
                                   </Button>
                                 )}
-                                <Button size="sm" variant="ghost">
+                                <Button variant="ghost">
                                   <Eye className="h-3 w-3" />
                                 </Button>
                               </div>
@@ -556,11 +556,11 @@ FOREIGN KEY (column_id) REFERENCES reference_table(id);`
                       </div>
 
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="flex-1">
+                        <Button variant="outline" className="flex-1">
                           <Copy className="h-3 w-3 mr-1" />
                           Copy
                         </Button>
-                        <Button size="sm" variant="outline" className="flex-1">
+                        <Button variant="outline" className="flex-1">
                           <Edit className="h-3 w-3 mr-1" />
                           Edit
                         </Button>
@@ -670,14 +670,14 @@ FOREIGN KEY (column_id) REFERENCES reference_table(id);`
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
-                      size="sm"
+                     
                       onClick={() => setNewMigrationSql('')}
                     >
                       Clear
                     </Button>
                     <Button
                       variant="outline"
-                      size="sm"
+                     
                       onClick={() => {/* Format SQL */}}
                     >
                       Format
@@ -724,7 +724,7 @@ FOREIGN KEY (column_id) REFERENCES reference_table(id);`
                       </pre>
                       
                       <Button
-                        size="sm"
+                       
                         variant="outline"
                         className="w-full"
                         onClick={() => loadTemplate(template)}

@@ -70,7 +70,6 @@ export class EnvFileReader {
       
       return config
     } catch (error) {
-      console.error(`[EnvFileReader] Failed to read ${filePath}:`, error)
       return {}
     }
   }

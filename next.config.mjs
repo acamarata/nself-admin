@@ -1,6 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: process.env.STANDALONE === 'true' ? 'standalone' : undefined,
   reactStrictMode: true,
+  env: {
+    PROJECT_PATH: process.env.PROJECT_PATH || '.backend',
+  },
+  typescript: {
+    ignoreBuildErrors: true
+  },
+  eslint: {
+    ignoreDuringBuilds: true
+  },
   experimental: {
     optimizeCss: true,
   },

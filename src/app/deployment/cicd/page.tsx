@@ -251,7 +251,6 @@ function DeploymentHistory({ deployments }: { deployments: Deployment[] }) {
   
   const handleRollback = async (deploymentId: string) => {
     // Rollback logic would go here
-    console.log('Rolling back deployment:', deploymentId)
   }
   
   return (
@@ -546,7 +545,6 @@ export default function DeploymentCICDPage() {
   
   const handlePipelineAction = async (action: string, pipelineId: string) => {
     // Pipeline action logic would go here
-    console.log(`${action} pipeline ${pipelineId}`)
   }
   
   const handleWebhookUpdate = (webhook: WebhookConfig) => {

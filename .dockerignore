@@ -3,59 +3,133 @@ node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Testing
 coverage
 .nyc_output
+*.test.js
+*.spec.js
+__tests__
+test
 
-# Next.js
+# Next.js build output
 .next
 out
 build
 dist
 
-# Misc
-.DS_Store
-*.pem
+# Local database (will be created in container)
+data
+nadmin.db
+*.db
+
+# Environment files
+.env
 .env*.local
+.env.development
+.env.production
 
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# IDE
+# IDE and Editor files
 .vscode
 .idea
 *.swp
 *.swo
-.claude
+*~
+.DS_Store
+Thumbs.db
 
 # Git
 .git
 .gitignore
+.gitattributes
 .github
 
-# Docker
-Dockerfile
+# Docker files (not needed in build context)
+Dockerfile*
 docker-compose*.yml
 .dockerignore
 
-# Documentation
+# Documentation (reduce image size)
 *.md
 docs
 LICENSE
+VERSION
+CHANGELOG*
 
-# Development
+# CI/CD
+.claude
+.editorconfig
+.eslintrc*
+.prettierrc*
+
+# Development files
 .backend
 docker-data
 volumes
 logs
-
-# Scripts (except needed for build)
-scripts
-
-# Temporary files
 tmp
 temp
 *.tmp
+*.log
+
+# Scripts not needed in production
+scripts
+test-build.sh
+
+# Backup and archive files
+*.backup
+*.bak
+*.old
+*.orig
+*.tar
+*.tar.gz
+*.zip
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Security sensitive files
+*.pem
+*.key
+*.crt
+*.p12
+cookies.txt
+
+# Development dependencies and cache
+.npm
+.yarn
+.pnpm-store
+.cache
+.parcel-cache
+.turbo
+
+# Storybook
+.storybook
+storybook-static
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity

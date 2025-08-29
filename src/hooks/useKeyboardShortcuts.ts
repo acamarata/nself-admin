@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface ShortcutDefinition {
@@ -80,7 +80,10 @@ export function useKeyboardShortcuts(shortcuts: ShortcutDefinition[] = []) {
     }
   ]
   
-  const allShortcuts = [...globalShortcuts, ...navigationShortcuts, ...shortcuts]
+  const allShortcuts = useMemo(() => 
+    [...globalShortcuts, ...navigationShortcuts, ...shortcuts], 
+    [shortcuts]
+  )
   
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     // Ignore if user is typing in an input

@@ -18,14 +18,13 @@ export async function GET() {
         timestamp: new Date().toISOString()
       }
     })
-  } catch (error) {
-    console.error('[API] Docker stats error:', error)
+  } catch (error: any) {
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Failed to fetch Docker stats',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error?.message || "Unknown error" : 'Unknown error'
       },
       { status: 500 }
     )

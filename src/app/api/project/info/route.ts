@@ -30,8 +30,7 @@ export async function GET(request: NextRequest) {
           status: 'built'
         }
       }
-    } catch (error) {
-      console.error('Error reading nself.json:', error)
+    } catch (error: any) {
     }
 
     // Try to get more info from nself status
@@ -45,8 +44,23 @@ export async function GET(request: NextRequest) {
       if (stdout.includes('built') || stdout.includes('running')) {
         projectInfo.status = 'built'
       }
-    } catch (error) {
-      console.error('nself status failed:', error)
+    } catch (error: any) {
+    }
+
+    // Get actual service count from docker-compose
+    try {
+      const { stdout: servicesOutput } = await execAsync('docker-compose config --services', {
+        cwd: projectPath,
+        timeout: 5000
+      })
+      
+      const servicesList = servicesOutput.split('\n').filter(s => s.trim())
+      if (servicesList.length > 0) {
+        projectInfo.services = servicesList
+        projectInfo.totalServices = servicesList.length
+      }
+    } catch (error: any) {
+      // Fallback: count services another way
     }
 
     return NextResponse.json({
@@ -54,8 +68,7 @@ export async function GET(request: NextRequest) {
       data: projectInfo
     })
 
-  } catch (error) {
-    console.error('Project info error:', error)
+  } catch (error: any) {
     return NextResponse.json({
       success: false,
       error: 'Failed to get project info'

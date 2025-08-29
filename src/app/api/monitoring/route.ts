@@ -37,13 +37,12 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('Monitoring API error:', error)
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Monitoring operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -71,13 +70,12 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: any) {
-    console.error('Monitoring POST error:', error)
     
     return NextResponse.json(
       { 
         success: false, 
         error: 'Monitoring operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -123,7 +121,7 @@ async function getMonitoringDashboard() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get monitoring dashboard',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -152,7 +150,7 @@ async function getDetailedMetrics(timeRange: string) {
     return NextResponse.json({
       success: false,
       error: 'Failed to get detailed metrics',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -186,7 +184,7 @@ async function getAllLogs(searchParams: URLSearchParams) {
     return NextResponse.json({
       success: false,
       error: 'Failed to get logs',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -220,7 +218,7 @@ async function getServiceLogs(service: string, searchParams: URLSearchParams) {
     return NextResponse.json({
       success: false,
       error: `Failed to get logs for service '${service}'`,
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -290,7 +288,7 @@ async function getActiveAlerts() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get active alerts',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -311,7 +309,7 @@ async function getSystemHealth() {
     // Get nself doctor output
     const { stdout: doctorOutput, stderr: doctorError } = await execAsync(
       `cd ${projectPath} && nself doctor`
-    ).catch(error => ({ stdout: '', stderr: error.message }))
+    ).catch(error => ({ stdout: '', stderr: error?.message || "Unknown error" }))
 
     const overallHealth = healthChecks.every(check => check.status === 'healthy') 
       ? 'healthy' 
@@ -336,7 +334,7 @@ async function getSystemHealth() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get system health',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -365,7 +363,7 @@ async function getPerformanceMetrics(timeRange: string) {
     return NextResponse.json({
       success: false,
       error: 'Failed to get performance metrics',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -394,7 +392,7 @@ async function getResourceUsage() {
     return NextResponse.json({
       success: false,
       error: 'Failed to get resource usage',
-      details: error.message
+      details: error?.message || "Unknown error"
     }, { status: 500 })
   }
 }
@@ -423,7 +421,7 @@ async function getServiceHealthData() {
     )
     
     return JSON.parse(stdout)
-  } catch (error) {
+  } catch (error: any) {
     return []
   }
 }
@@ -540,7 +538,7 @@ async function checkDatabaseHealth() {
     return {
       name: 'Database',
       status: 'critical',
-      message: error.message,
+      message: error?.message || "Unknown error",
       timestamp: new Date().toISOString()
     }
   }
@@ -560,7 +558,7 @@ async function checkDockerHealth() {
     return {
       name: 'Docker',
       status: 'critical',
-      message: error.message,
+      message: error?.message || "Unknown error",
       timestamp: new Date().toISOString()
     }
   }

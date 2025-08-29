@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -39,31 +39,32 @@ RUN apk add --no-cache \
     && addgroup -g 1001 -S nodejs \
     && adduser -S nextjs -u 1001
 
-# Copy built application
+# Copy everything including node_modules
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-# Copy package.json for version info
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/next.config.mjs ./next.config.mjs
 
-# Create necessary directories
-RUN mkdir -p /project /data \
-    && chown -R nextjs:nodejs /app /project /data
+# Create necessary directories for project mount and database
+RUN mkdir -p /workspace /app/data \
+    && chown -R nextjs:nodejs /app /workspace /app/data
 
 # Set runtime environment variables
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3021
-ENV ADMIN_VERSION=0.2.0
+ENV ADMIN_VERSION=0.0.3
 
 # Add labels for container metadata
 LABEL org.opencontainers.image.title="nself-admin"
 LABEL org.opencontainers.image.description="Web-based administration interface for nself CLI"
-LABEL org.opencontainers.image.version="0.2.0"
-LABEL org.opencontainers.image.vendor="nself"
+LABEL org.opencontainers.image.version="0.0.3"
+LABEL org.opencontainers.image.vendor="nself.org"
 LABEL org.opencontainers.image.source="https://github.com/acamarata/nself-admin"
+LABEL org.opencontainers.image.licenses="Proprietary - Free for personal use, Commercial license required"
+LABEL org.opencontainers.image.documentation="https://github.com/acamarata/nself-admin/wiki"
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
@@ -80,4 +81,4 @@ USER nextjs
 EXPOSE 3021
 
 # Start the application
-CMD ["node", "server.js"]
+CMD ["npm", "start"]

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import * as Icons from '@/lib/icons'
+import type { ContainerStats } from '@/services/collectors/DockerAPICollector'
 
 interface Container {
   id: string
@@ -47,7 +48,7 @@ export function ServiceCard({
   getHealthColor,
   getHealthText 
 }: { 
-  container: Container
+  container: Container | ContainerStats | any
   onAction: (action: string, containerId: string) => void
   getServiceIcon: (name: string) => any
   getHealthColor: (health: string) => string
@@ -61,7 +62,7 @@ export function ServiceCard({
   const healthColor = getHealthColor(container.health || 'stopped')
   const healthText = getHealthText(container.health || 'stopped')
   const serviceUrl = getServiceUrl(container)
-  const primaryPort = container.ports?.find(p => p.public)
+  const primaryPort = container.ports?.find((p: { private: number; public: number; type: string }) => p.public)
   
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700 p-4 hover:ring-blue-400 dark:hover:ring-blue-600 transition-all">
@@ -270,14 +271,14 @@ export function ServiceCard({
               <button
                 onClick={() => onAction('restart', container.id)}
                 className="p-1.5 rounded-md bg-zinc-50 dark:bg-zinc-800 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all group"
-                title="Restart"
+               
               >
                 <Icons.RotateCw className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400 group-hover:text-yellow-600 dark:group-hover:text-yellow-400 transition-colors" />
               </button>
               <button
                 onClick={() => onAction('stop', container.id)}
                 className="p-1.5 rounded-md bg-zinc-50 dark:bg-zinc-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all group"
-                title="Stop"
+               
               >
                 <Icons.Square className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors" />
               </button>
@@ -286,7 +287,7 @@ export function ServiceCard({
             <button
               onClick={() => onAction('start', container.id)}
               className="p-1.5 rounded-md bg-zinc-50 dark:bg-zinc-800 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all group"
-              title="Start"
+             
             >
               <Icons.Play className="w-3.5 h-3.5 text-zinc-600 dark:text-zinc-400 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors" />
             </button>
@@ -299,7 +300,7 @@ export function ServiceCard({
           <div>
             <h4 className="text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1">Environment</h4>
             <div className="space-y-1">
-              {container.details?.env?.slice(0, 3).map((env, i) => {
+              {container.details?.env?.slice(0, 3).map((env: string, i: number) => {
                 const [key, value] = env.split('=')
                 return (
                   <div key={i} className="text-xs font-mono">

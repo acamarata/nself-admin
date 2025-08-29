@@ -9,7 +9,6 @@ class SimplifiedPollingService {
   start() {
     if (this.isActive) return
     this.isActive = true
-    console.log('[Polling] Starting simplified polling service')
     // Fetch immediately
     this.fetchData()
     // Then start regular polling
@@ -27,7 +26,6 @@ class SimplifiedPollingService {
       this.abortController.abort()
       this.abortController = null
     }
-    console.log('[Polling] Stopped polling')
   }
   
   private async pollOnce() {
@@ -48,7 +46,6 @@ class SimplifiedPollingService {
         }
       }
     } catch (error) {
-      console.error('[Polling] Error:', error)
     }
     
     // Schedule next poll
@@ -85,19 +82,11 @@ class SimplifiedPollingService {
         try {
           const data = await metricsRes.json()
           if (data.success && data.data) {
-            console.log('[Polling] Updating metrics:', {
-              hasSystem: !!data.data.system,
-              hasDocker: !!data.data.docker,
-              dockerCpu: data.data.docker?.cpu,
-              systemCpu: data.data.system?.cpu
-            })
             store.updateCachedData({ 
-              systemMetrics: data.data,
-              lastDataUpdate: Date.now()
+              systemMetrics: data.data
             })
           }
         } catch (e) {
-          console.error('[Polling] Failed to parse metrics:', e)
         }
       }
       
@@ -107,12 +96,10 @@ class SimplifiedPollingService {
           const data = await containersRes.json()
           if (data.success) {
             store.updateCachedData({ 
-              containerStats: data.data?.containers || [],
-              containersRunning: data.data?.summary?.running || 0
+              containerStats: data.data?.containers || []
             })
           }
         } catch (e) {
-          console.error('[Polling] Failed to parse containers:', e)
         }
       }
       
@@ -128,7 +115,6 @@ class SimplifiedPollingService {
             store.setProjectInfo(data.projectInfo || data.config)
           }
         } catch (e) {
-          console.error('[Polling] Failed to parse status:', e)
         }
       }
     } catch (error: any) {
@@ -140,14 +126,7 @@ class SimplifiedPollingService {
 
 export const simplifiedPolling = new SimplifiedPollingService()
 
-// Start when ready but don't block
-if (typeof window !== 'undefined') {
-  // Wait for page to be fully loaded before starting
-  if (document.readyState === 'complete') {
-    setTimeout(() => simplifiedPolling.start(), 1000)
-  } else {
-    window.addEventListener('load', () => {
-      setTimeout(() => simplifiedPolling.start(), 1000)
-    })
-  }
-}
+// Don't auto-start - let GlobalDataProvider manage polling based on auth state
+// The service will be started when:
+// 1. User is authenticated AND
+// 2. Project status is 'running'

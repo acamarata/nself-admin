@@ -45,7 +45,6 @@ export function useDockerStatus(refreshInterval = 5000) {
       }
     } catch (err) {
       setError('Failed to connect to Docker API')
-      console.error('Docker status fetch error:', err)
     } finally {
       setLoading(false)
     }

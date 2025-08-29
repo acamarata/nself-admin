@@ -19,11 +19,11 @@ export async function GET(request: NextRequest) {
       case 'buckets':
         return await getBuckets()
       case 'objects':
-        return await getObjects(bucket, prefix)
+        return await getObjects(bucket || undefined, prefix || undefined)
       case 'info':
         return await getStorageInfo()
       case 'policies':
-        return await getPolicies(bucket)
+        return await getPolicies(bucket || undefined)
       case 'users':
         return await getUsers()
       case 'stats':
@@ -35,12 +35,11 @@ export async function GET(request: NextRequest) {
         )
     }
   } catch (error: any) {
-    console.error('MinIO API error:', error)
     return NextResponse.json(
       { 
         success: false, 
         error: 'Storage operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -74,12 +73,11 @@ export async function POST(request: NextRequest) {
         )
     }
   } catch (error: any) {
-    console.error('MinIO POST error:', error)
     return NextResponse.json(
       { 
         success: false, 
         error: 'Storage operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -235,7 +233,6 @@ async function getStorageInfo() {
       }
     })
   } catch (error: any) {
-    console.error('Error getting storage info:', error)
     return NextResponse.json({
       success: true,
       data: {

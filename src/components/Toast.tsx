@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { AlertTriangle, CheckCircle, Info, XCircle } from 'lucide-react'
+import * as Icons from '@/lib/icons'
 import { AnimatePresence, motion } from 'framer-motion'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
@@ -36,26 +36,27 @@ export function useToast() {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
+  const hideToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }, [])
+
   const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
     const id = Date.now().toString()
+    const duration = toast.duration || 5000
     const newToast: Toast = {
       ...toast,
       id,
-      duration: toast.duration || 5000
+      duration
     }
     
     setToasts(prev => [...prev, newToast])
     
-    if (newToast.duration > 0) {
+    if (duration > 0) {
       setTimeout(() => {
         hideToast(id)
-      }, newToast.duration)
+      }, duration)
     }
-  }, [])
-
-  const hideToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id))
-  }, [])
+  }, [hideToast])
 
   return (
     <ToastContext.Provider value={{ showToast, hideToast }}>
@@ -79,10 +80,10 @@ function ToastContainer({ toasts, hideToast }: { toasts: Toast[]; hideToast: (id
 
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   const icons = {
-    success: CheckCircle,
-    error: XCircle,
-    warning: AlertTriangle,
-    info: Info
+    success: Icons.CheckCircle,
+    error: Icons.XCircle,
+    warning: Icons.AlertTriangle,
+    info: Icons.Info
   }
   
   const colors = {
@@ -128,7 +129,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
           onClick={onClose}
           className="ml-4 flex-shrink-0 rounded-lg p-1 hover:bg-black/10 dark:hover:bg-white/10"
         >
-          <XCircle className="w-4 h-4" />
+          <Icons.XCircle className="w-4 h-4" />
         </button>
       </div>
     </motion.div>

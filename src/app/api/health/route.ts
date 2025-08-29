@@ -162,7 +162,7 @@ export async function GET() {
     const health: HealthStatus = {
       status,
       timestamp: new Date().toISOString(),
-      version: process.env.ADMIN_VERSION || '0.0.1',
+      version: process.env.ADMIN_VERSION || '0.0.3',
       uptime: process.uptime(),
       checks,
       resources: {
@@ -188,7 +188,7 @@ export async function GET() {
       {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
-        error: error.message,
+        error: error?.message || "Unknown error",
         checks: {
           docker: false,
           filesystem: false,

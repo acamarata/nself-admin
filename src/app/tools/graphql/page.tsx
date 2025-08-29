@@ -579,7 +579,6 @@ export default function GraphQLToolsPage() {
   }, [activeQuery])
 
   const handleQueryAction = (action: string, queryId: string) => {
-    console.log(`Query action: ${action} for ${queryId}`)
     
     if (action === 'favorite') {
       setQueries(prev => prev.map(query =>
@@ -730,7 +729,6 @@ export default function GraphQLToolsPage() {
                 New Query
               </Button>
               <Button
-                onClick={() => console.log('Import queries')}
                 variant="outline"
                 className="flex items-center gap-2"
               >
@@ -738,7 +736,6 @@ export default function GraphQLToolsPage() {
                 Import
               </Button>
               <Button
-                onClick={() => console.log('Export queries')}
                 variant="outline"
                 className="flex items-center gap-2"
               >

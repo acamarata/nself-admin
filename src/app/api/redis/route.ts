@@ -29,12 +29,11 @@ export async function GET(request: NextRequest) {
         )
     }
   } catch (error: any) {
-    console.error('Redis API error:', error)
     return NextResponse.json(
       { 
         success: false, 
         error: 'Redis operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -62,12 +61,11 @@ export async function POST(request: NextRequest) {
         )
     }
   } catch (error: any) {
-    console.error('Redis POST error:', error)
     return NextResponse.json(
       { 
         success: false, 
         error: 'Redis operation failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )
@@ -199,7 +197,7 @@ async function getRedisKeys() {
             size: parseInt(sizeOutput.trim() || '0'),
             value: value?.substring(0, 100)
           }
-        } catch (error) {
+        } catch (error: any) {
           return {
             key,
             type: 'unknown',

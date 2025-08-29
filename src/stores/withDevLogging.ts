@@ -18,9 +18,9 @@ type LoggerImpl = <T extends unknown>(
 ) => StateCreator<T, [], []>
 
 const loggerImpl: LoggerImpl = (f, name) => (set, get, store) => {
-  const loggedSet: typeof set = (...args) => {
+  const loggedSet: typeof set = (partial: any, replace?: any) => {
     const prevState = get()
-    set(...args)
+    set(partial, replace)
     const nextState = get()
     
     // Log to DevLogger if available

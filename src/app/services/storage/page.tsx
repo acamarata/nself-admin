@@ -360,28 +360,28 @@ function ObjectRow({ object, onAction }: { object: StorageObject; onAction: (act
           <button
             onClick={() => onAction('download', object)}
             className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-            title="Download"
+           
           >
             <Download className="w-3 h-3" />
           </button>
           <button
             onClick={() => onAction('share', object)}
             className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-            title="Share"
+           
           >
             <Share className="w-3 h-3" />
           </button>
           <button
             onClick={() => onAction('edit', object)}
             className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-            title="Edit"
+           
           >
             <Edit3 className="w-3 h-3" />
           </button>
           <button
             onClick={() => onAction('delete', object)}
             className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-            title="Delete"
+           
           >
             <Trash2 className="w-3 h-3" />
           </button>
@@ -471,7 +471,6 @@ export default function StoragePage() {
   const [loading, setLoading] = useState(false)
 
   const handleBucketAction = async (action: string, id: string) => {
-    console.log(`Bucket action: ${action} for ${id}`)
     if (action === 'browse') {
       setSelectedBucket(id)
       setActiveTab('browser')
@@ -481,13 +480,11 @@ export default function StoragePage() {
   }
 
   const handleObjectAction = async (action: string, object: StorageObject) => {
-    console.log(`Object action: ${action} for ${object.name}`)
     setLoading(true)
     setTimeout(() => setLoading(false), 1000)
   }
 
   const handlePolicyAction = async (action: string, id: string) => {
-    console.log(`Policy action: ${action} for ${id}`)
     setLoading(true)
     setTimeout(() => setLoading(false), 1000)
   }
@@ -523,7 +520,6 @@ export default function StoragePage() {
             </div>
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => console.log('Upload files')}
                 variant="filled"
                 className="flex items-center gap-2"
               >
@@ -531,7 +527,6 @@ export default function StoragePage() {
                 Upload
               </Button>
               <Button
-                onClick={() => console.log('Create bucket')}
                 variant="outline"
                 className="flex items-center gap-2"
               >
@@ -731,7 +726,6 @@ export default function StoragePage() {
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Access Policies</h2>
               <Button
-                onClick={() => console.log('Create policy')}
                 variant="filled"
                 className="flex items-center gap-2"
               >

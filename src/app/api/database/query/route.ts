@@ -80,12 +80,11 @@ export async function POST(request: NextRequest) {
       })
     }
   } catch (error: any) {
-    console.error('Database query error:', error)
     return NextResponse.json(
       { 
         success: false, 
         error: 'Query execution failed',
-        details: error.message
+        details: error?.message || "Unknown error"
       },
       { status: 500 }
     )

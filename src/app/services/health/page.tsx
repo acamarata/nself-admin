@@ -190,7 +190,6 @@ export default function ServiceHealthPage() {
         timestamp: new Date().toISOString()
       })
     } catch (error) {
-      console.error('Failed to fetch health data:', error)
     } finally {
       setLoading(false)
     }
@@ -253,13 +252,13 @@ export default function ServiceHealthPage() {
         <div className="flex gap-2">
           <Button
             variant={autoRefresh ? 'default' : 'outline'}
-            size="sm"
+           
             onClick={() => setAutoRefresh(!autoRefresh)}
           >
             <RefreshCw className={cn("h-4 w-4", autoRefresh && "animate-spin")} />
             {autoRefresh ? 'Auto' : 'Manual'}
           </Button>
-          <Button variant="outline" size="sm" onClick={fetchHealthData}>
+          <Button variant="outline" onClick={fetchHealthData}>
             Refresh Now
           </Button>
         </div>

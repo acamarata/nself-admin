@@ -24,7 +24,6 @@ export class SSEManager {
   async initialize() {
     if (this.isInitialized) return
     
-    console.log('[SSE] Initializing manager...')
     
     // Start the orchestrator if not already running
     if (!this.orchestrator.isActive()) {
@@ -67,14 +66,12 @@ export class SSEManager {
     }, 30000) // Every 30 seconds
     
     this.isInitialized = true
-    console.log('[SSE] Manager initialized')
   }
 
   /**
    * Create SSE stream for a client
    */
   createStream(clientId: string): ReadableStream {
-    console.log(`[SSE] Creating stream for client: ${clientId}`)
     
     const stream = new ReadableStream({
       start: async (controller) => {
@@ -92,7 +89,6 @@ export class SSEManager {
           ...initialState  // Spread the state directly
         })
         
-        console.log(`[SSE] Client connected: ${clientId} (${this.clients.size} total)`)
       },
       
       cancel: () => {
@@ -116,7 +112,6 @@ export class SSEManager {
       const encoder = new TextEncoder()
       client.controller.enqueue(encoder.encode(data))
     } catch (error) {
-      console.error(`[SSE] Failed to send to client ${clientId}:`, error)
       this.removeClient(clientId)
     }
   }
@@ -133,7 +128,6 @@ export class SSEManager {
         const encoder = new TextEncoder()
         client.controller.enqueue(encoder.encode(data))
       } catch (error) {
-        console.error(`[SSE] Failed to send to client ${clientId}:`, error)
         deadClients.push(clientId)
       }
     }
@@ -161,7 +155,6 @@ export class SSEManager {
         // Ignore errors when closing
       }
       this.clients.delete(clientId)
-      console.log(`[SSE] Client disconnected: ${clientId} (${this.clients.size} remaining)`)
     }
   }
 
@@ -174,7 +167,6 @@ export class SSEManager {
     
     for (const [clientId, client] of this.clients) {
       if (now - client.lastPing > staleTimeout) {
-        console.log(`[SSE] Removing stale client: ${clientId}`)
         this.removeClient(clientId)
       }
     }
@@ -198,7 +190,6 @@ export class SSEManager {
    * Shutdown manager
    */
   async shutdown() {
-    console.log('[SSE] Shutting down manager...')
     
     // Clear ping interval
     if (this.pingInterval) {
@@ -215,7 +206,6 @@ export class SSEManager {
     await this.orchestrator.stop()
     
     this.isInitialized = false
-    console.log('[SSE] Manager shut down')
   }
 }
 
