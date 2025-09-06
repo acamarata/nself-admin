@@ -81,7 +81,7 @@ export default function InitStep6() {
             projectName: data.config.projectName || data.config.PROJECT_NAME || 'my_project',
             environment: data.config.environment || data.config.ENV || 'development',
             domain: data.config.domain || data.config.BASE_DOMAIN || 'localhost',
-            databaseName: data.config.databaseName || data.config.POSTGRES_DB || 'nhost',
+            databaseName: data.config.databaseName || data.config.POSTGRES_DB || 'nself',
             databasePassword: data.config.databasePassword || data.config.POSTGRES_PASSWORD || '',
             hasuraEnabled: data.config.hasuraEnabled !== false,  // Always true for required service
             authEnabled: data.config.authEnabled !== false,  // Always true for required service

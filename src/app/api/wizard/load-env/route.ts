@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         projectName: '',
         environment: 'development',  // nself default
         domain: 'local.nself.org',  // nself default  
-        databaseName: 'nhost',  // nself default
+        databaseName: 'nself',  // nself default
         backupSchedule: '0 2 * * *',
         optionalServices: {
           redis: false,

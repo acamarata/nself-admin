@@ -54,9 +54,9 @@ async function generateEnvContent(data: SetupData): Promise<string> {
   env.push(`POSTGRES_VERSION=${data.databaseConfig?.version || '16-alpine'}`)
   env.push('POSTGRES_HOST=postgres')
   env.push('POSTGRES_PORT=5432')
-  env.push('POSTGRES_DB=nhost')
+  env.push('POSTGRES_DB=nself')
   env.push('POSTGRES_USER=postgres')
-  env.push(`POSTGRES_PASSWORD=${data.databaseConfig?.customPassword && data.databaseConfig?.password ? data.databaseConfig.password : 'postgres-dev-password'}`)
+  env.push(`POSTGRES_PASSWORD=${data.databaseConfig?.customPassword && data.databaseConfig?.password ? data.databaseConfig.password : 'nself-dev-password'}`)
   env.push('POSTGRES_EXTENSIONS=uuid-ossp')
   env.push('')
   
@@ -86,7 +86,7 @@ async function generateEnvContent(data: SetupData): Promise<string> {
   env.push('MINIO_VERSION=latest')
   env.push(`S3_ACCESS_KEY=${data.storageConfig?.accessKey || generateSecureSecret(16)}`)
   env.push(`S3_SECRET_KEY=${data.storageConfig?.secretKey || generateSecureSecret(32)}`)
-  env.push(`S3_BUCKET=${data.storageConfig?.bucket || 'nhost'}`)
+  env.push(`S3_BUCKET=${data.storageConfig?.bucket || 'nself'}`)
   env.push('')
   
   // SSL/TLS Configuration
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     const setupData: SetupData = await request.json()
     
     // Get project path from environment or default
-    const projectPath = process.env.PROJECT_PATH || '/project'
+    const projectPath = process.env.NSELF_PROJECT_PATH || '/workspace'
     const envFilePath = path.join(projectPath, '.env.local')
     
     // Generate .env.local content

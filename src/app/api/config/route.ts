@@ -460,7 +460,7 @@ async function validateConfiguration() {
       const envContent = await fs.readFile(envPath, 'utf-8')
       const parsed = parseEnvContent(envContent)
       
-      const requiredVars = ['PROJECT_ID', 'BASE_DOMAIN', 'POSTGRES_PASSWORD']
+      const requiredVars = ['PROJECT_NAME', 'BASE_DOMAIN', 'POSTGRES_PASSWORD']
       const missing = requiredVars.filter(varName => !parsed[varName])
       
       envValidation = missing.length === 0 
@@ -576,16 +576,16 @@ async function createEnvironmentFile(options: any) {
     } catch (error: any) {
       // Create basic template if .env.example doesn't exist
       template = `# nself Configuration
-PROJECT_ID=my-project
+PROJECT_NAME=my-project
 BASE_DOMAIN=localhost
-MODE=dev
+ENV=dev
 
 # Database
 POSTGRES_PASSWORD=changeme
 
 # Authentication
 JWT_SECRET=changeme
-HASURA_ADMIN_SECRET=changeme
+HASURA_GRAPHQL_ADMIN_SECRET=changeme
 
 # Email
 EMAIL_FROM=admin@localhost

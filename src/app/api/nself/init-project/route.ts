@@ -60,9 +60,9 @@ export async function POST(request: NextRequest) {
     // Update with user's configuration
     envMap.set('PROJECT_NAME', config.projectName || 'my_project')
     envMap.set('PROJECT_DESCRIPTION', config.projectDescription || '')
-    envMap.set('ENVIRONMENT', config.environment || 'dev')
+    envMap.set('ENV', config.environment || 'dev')
     envMap.set('BASE_DOMAIN', config.domain || 'localhost')
-    envMap.set('DATABASE_NAME', config.databaseName || 'my_database')
+    envMap.set('POSTGRES_DB', config.databaseName || 'my_database')
     
     // Handle optional services
     if (config.services?.optional) {

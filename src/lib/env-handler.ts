@@ -96,7 +96,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
   const projectPath = getProjectPath()
   
   // Determine which file to write based on environment
-  const env = config.ENV || config.ENVIRONMENT || 'development'
+  const env = config.ENV || 'development'
   
   // Write to environment-specific file based on ENV setting
   // Per nself guidance: write to .env.dev for development, NOT .env (which is for local overrides only)
