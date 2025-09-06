@@ -130,7 +130,7 @@ export class EnvFileReader {
   /**
    * Find and read .env files in a directory
    */
-  async findAndRead(directory: string, patterns: string[] = ['.env', '.env.local', '.env.production']): Promise<EnvConfig> {
+  async findAndRead(directory: string, patterns: string[] = ['.env', '.env.local', '.env.dev', '.env.staging', '.env.prod']): Promise<EnvConfig> {
     const envFiles = patterns
       .map(pattern => path.join(directory, pattern))
       .filter(filePath => existsSync(filePath))

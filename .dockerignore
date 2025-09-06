@@ -25,11 +25,13 @@ data
 nadmin.db
 *.db
 
-# Environment files
+# Environment files (following nself CLI conventions)
 .env
 .env*.local
-.env.development
-.env.production
+.env.dev
+.env.staging
+.env.prod
+.env.secrets
 
 # IDE and Editor files
 .vscode

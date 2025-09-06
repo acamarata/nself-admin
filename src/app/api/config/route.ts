@@ -25,12 +25,15 @@ const fileOperationSchema = z.object({
   }).optional()
 })
 
-// Allowed configuration files
+// Allowed configuration files (following nself CLI conventions)
 const ALLOWED_CONFIG_FILES = [
+  '.env',
   '.env.local', 
   '.env.example', 
-  '.env.production', 
-  '.env.development',
+  '.env.dev',
+  '.env.staging',
+  '.env.prod',
+  '.env.secrets',
   'docker-compose.yml', 
   'docker-compose.override.yml', 
   'docker-compose.prod.yml'
@@ -165,8 +168,8 @@ async function getConfigFiles() {
   try {
     const configFiles = []
     
-    // Environment files
-    const envFiles = ['.env.local', '.env.example', '.env.production', '.env.development']
+    // Environment files (following nself CLI conventions)
+    const envFiles = ['.env', '.env.local', '.env.example', '.env.dev', '.env.staging', '.env.prod', '.env.secrets']
     for (const envFile of envFiles) {
       try {
         const filePath = path.join(backendPath, envFile)
@@ -636,7 +639,7 @@ async function backupConfiguration() {
     await fs.mkdir(backupDir, { recursive: true })
 
     const configFiles = [
-      '.env.local', '.env.production', '.env.development',
+      '.env', '.env.local', '.env.dev', '.env.staging', '.env.prod', '.env.secrets',
       'docker-compose.yml', 'docker-compose.override.yml'
     ]
 
