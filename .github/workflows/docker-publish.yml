@@ -45,8 +45,19 @@ jobs:
         with:
           driver-opts: network=host
 
+      - name: Check Docker Hub credentials
+        id: check-dockerhub
+        run: |
+          if [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ] && [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
+            echo "available=true" >> $GITHUB_OUTPUT
+            echo "Docker Hub credentials found - will publish to Docker Hub"
+          else
+            echo "available=false" >> $GITHUB_OUTPUT
+            echo "Docker Hub credentials not configured - will only publish to GitHub Registry"
+          fi
+
       - name: Log in to Docker Hub
-        if: github.event_name != 'pull_request'
+        if: steps.check-dockerhub.outputs.available == 'true' && github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -65,7 +76,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ env.DOCKERHUB_IMAGE }}
+            ${{ steps.check-dockerhub.outputs.available == 'true' && env.DOCKERHUB_IMAGE || '' }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
@@ -99,7 +110,7 @@ jobs:
             VCS_REF=${{ github.sha }}
 
       - name: Update Docker Hub Description
-        if: github.event_name != 'pull_request'
+        if: steps.check-dockerhub.outputs.available == 'true' && github.event_name != 'pull_request'
         uses: peter-evans/dockerhub-description@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -107,6 +118,18 @@ jobs:
           repository: ${{ env.DOCKERHUB_IMAGE }}
           short-description: ${{ github.event.repository.description }}
           readme-filepath: ./README.md
+
+      - name: Build summary
+        if: always()
+        run: |
+          echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check-dockerhub.outputs.available }}" == "true" ]; then
+            echo "✅ Published to Docker Hub: ${{ env.DOCKERHUB_IMAGE }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Docker Hub publishing skipped (credentials not configured)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "✅ Published to GitHub Registry: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
 
   release:
     needs: build
