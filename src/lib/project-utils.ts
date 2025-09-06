@@ -10,7 +10,7 @@ const execAsync = promisify(exec)
 export function getProjectPath(): string {
   // In development, use sibling directory
   if (process.env.NODE_ENV === 'development') {
-    return process.env.NSELF_PROJECT_PATH || path.join(process.cwd(), '..', 'nself')
+    return process.env.NSELF_PROJECT_PATH || path.join(process.cwd(), '..', 'nself-project')
   }
   
   // In production (container), use mounted volume
@@ -143,7 +143,7 @@ export async function getRunningContainers(): Promise<number> {
   }
 }
 
-// Initialize project (placeholder for nself init)
+// Initialize project with nself init --full
 export async function initializeProject(config: any): Promise<{
   success: boolean
   error?: string
@@ -160,12 +160,12 @@ export async function initializeProject(config: any): Promise<{
   }
   
   try {
-    // Run nself init with config
+    // Run nself init --full with config
     const envVars = Object.entries(config)
       .map(([key, value]) => `${key}="${value}"`)
       .join(' ')
     
-    await execAsync(`${envVars} ${nselfPath} init`, {
+    await execAsync(`${envVars} ${nselfPath} init --full`, {
       cwd: projectPath
     })
     

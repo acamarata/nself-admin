@@ -3,7 +3,7 @@ import { Heading } from '@/components/Heading'
 
 const guides = [
   {
-    href: '/setup',
+    href: '/init',
     name: 'Setup Wizard',
     description: 'Configure your nself stack with the interactive setup wizard.',
   },

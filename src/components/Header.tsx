@@ -51,8 +51,8 @@ function LogoutButton() {
 
 export const Header = forwardRef<
   React.ComponentRef<'div'>,
-  React.ComponentPropsWithoutRef<typeof motion.div>
->(function Header({ className, ...props }, ref) {
+  React.ComponentPropsWithoutRef<typeof motion.div> & { minimal?: boolean }
+>(function Header({ className, minimal = false, ...props }, ref) {
   let { isOpen: mobileNavIsOpen } = useMobileNavigationStore()
   let isInsideMobileNavigation = useIsInsideMobileNavigation()
   const { isAuthenticated } = useAuth()
@@ -61,6 +61,17 @@ export const Header = forwardRef<
   let bgOpacityLight = useTransform(scrollY, [0, 72], ['50%', '90%'])
   let bgOpacityDark = useTransform(scrollY, [0, 72], ['20%', '80%'])
 
+  // Minimal header for fullscreen pages (just theme toggle and logout)
+  if (minimal) {
+    return (
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
+        {isAuthenticated && <LogoutButton />}
+      </div>
+    )
+  }
+
+  // Full header for regular pages
   return (
     <motion.div
       {...props}

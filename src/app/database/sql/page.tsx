@@ -73,10 +73,11 @@ export default function SQLConsolePage() {
 
   // Mock data
   const databases = ['main', 'users', 'analytics', 'logs']
-  const sampleTables = ['users', 'posts', 'comments', 'categories', 'tags', 'user_profiles']
-  const sampleColumns = ['id', 'name', 'email', 'created_at', 'updated_at', 'title', 'content']
   
   useEffect(() => {
+    const sampleTables = ['users', 'posts', 'comments', 'categories', 'tags', 'user_profiles']
+    const sampleColumns = ['id', 'name', 'email', 'created_at', 'updated_at', 'title', 'content']
+    
     // Mock query history
     setQueryHistory([
       {
@@ -130,7 +131,7 @@ export default function SQLConsolePage() {
 
     // Setup autocomplete
     setAutoComplete([...sampleTables, ...sampleColumns, 'SELECT', 'FROM', 'WHERE', 'JOIN', 'INSERT', 'UPDATE', 'DELETE'])
-  }, [sampleColumns, sampleTables])
+  }, [])
 
   const executeQuery = async (tabId: string) => {
     const tab = tabs.find(t => t.id === tabId)

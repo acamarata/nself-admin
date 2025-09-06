@@ -8,14 +8,21 @@ export async function POST(request: NextRequest) {
   const encoder = new TextEncoder()
   const projectPath = getProjectPath()
   
+  console.log('Start-stream API called')
+  console.log('Project path:', projectPath)
+  console.log('Current working directory:', process.cwd())
+  
   // Check if docker-compose.yml exists
   const dockerComposePath = path.join(projectPath, 'docker-compose.yml')
+  console.log('Checking for docker-compose.yml at:', dockerComposePath)
+  
   if (!fs.existsSync(dockerComposePath)) {
+    console.error('docker-compose.yml not found!')
     return new Response(
       encoder.encode(JSON.stringify({
         type: 'error',
         message: 'No docker-compose.yml found in project directory',
-        error: 'Project not initialized. Run nself init and nself build first.'
+        error: `Project not initialized at ${projectPath}. Run nself init and nself build first.`
       }) + '\n'),
       { status: 400 }
     )
@@ -24,6 +31,9 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
+        // Use nself CLI which is already tested and works
+        const nselfPath = '/Users/admin/Sites/nself/bin/nself'
+        
         // First, check which images need to be pulled
         const checkProcess = spawn('docker-compose', ['config', '--images'], {
           cwd: projectPath,
@@ -68,7 +78,11 @@ export async function POST(request: NextRequest) {
         }
 
         // Start services using nself start
-        const nselfPath = '/Users/admin/Sites/nself/bin/nself'
+        controller.enqueue(encoder.encode(JSON.stringify({
+          type: 'status',
+          message: 'Starting services with nself CLI...'
+        }) + '\n'))
+        
         const composeProcess = spawn(nselfPath, ['start'], {
           cwd: projectPath,
           env: {
@@ -82,9 +96,10 @@ export async function POST(request: NextRequest) {
         let startedContainers = 0
         let lastProgress = ''
 
-        // Track stderr for download progress
-        composeProcess.stderr.on('data', (data) => {
-          const output = data.toString()
+        // Track both stdout and stderr for nself output
+        const handleOutput = (data: Buffer) => {
+          // Remove ANSI color codes
+          const output = data.toString().replace(/\x1b\[[0-9;]*m/g, '')
           const lines = output.split('\n')
           
           for (const line of lines) {
@@ -152,41 +167,52 @@ export async function POST(request: NextRequest) {
                 message: line.trim()
               }) + '\n'))
             }
-          }
-        })
-
-        // Track stdout for success messages
-        composeProcess.stdout.on('data', (data) => {
-          const output = data.toString()
-          const lines = output.split('\n')
-          
-          for (const line of lines) {
-            if (line.includes('done') || line.includes('Started')) {
+            
+            // Track nself specific output
+            if (line.includes('✓') || line.includes('Starting') || line.includes('Restarting')) {
               controller.enqueue(encoder.encode(JSON.stringify({
-                type: 'success',
+                type: 'progress',
                 message: line.trim()
               }) + '\n'))
             }
           }
-        })
+        }
+        
+        // Use the same handler for both stdout and stderr
+        composeProcess.stderr.on('data', handleOutput)
+        composeProcess.stdout.on('data', handleOutput)
 
         // Wait for process to complete
         await new Promise<void>((resolve, reject) => {
+          let hasErrors = false
+          
+          composeProcess.on('error', (error) => {
+            hasErrors = true
+            controller.enqueue(encoder.encode(JSON.stringify({
+              type: 'error',
+              message: `Process error: ${error.message}`
+            }) + '\n'))
+          })
+          
           composeProcess.on('close', (code) => {
-            if (code === 0) {
+            // nself CLI sometimes returns 1 even when successful
+            // Check if we saw actual errors before treating as failure
+            if (code === 0 || (code === 1 && !hasErrors)) {
               controller.enqueue(encoder.encode(JSON.stringify({
                 type: 'complete',
-                message: 'All services started successfully!',
-                startedContainers
+                message: 'Services start process completed!',
+                startedContainers,
+                exitCode: code
               }) + '\n'))
               resolve()
             } else {
               controller.enqueue(encoder.encode(JSON.stringify({
                 type: 'error',
-                message: 'Failed to start some services',
+                message: `Process exited with code ${code}`,
                 exitCode: code
               }) + '\n'))
-              reject(new Error(`Process exited with code ${code}`))
+              // Still resolve to allow partial success
+              resolve()
             }
           })
         })

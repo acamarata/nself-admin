@@ -44,6 +44,7 @@ export interface SessionItem {
   userId: string
   createdAt: Date
   expiresAt: Date
+  lastActivity?: Date
   ip?: string
   userAgent?: string
 }
@@ -64,7 +65,13 @@ export interface AuditLogItem {
 
 // Initialize database
 export async function initDatabase(): Promise<void> {
-  if (isInitialized) return
+  // Check if db exists and collections are initialized
+  if (isInitialized && db && configCollection) return
+  
+  // Reset initialization flag if db is null
+  if (!db) {
+    isInitialized = false
+  }
 
   // Ensure directory exists before initializing database
   ensureDataDir()
@@ -134,6 +141,9 @@ export async function setConfig(key: string, value: any): Promise<void> {
       updatedAt: new Date()
     })
   }
+  
+  // Force save to disk
+  db?.saveDatabase()
 }
 
 export async function deleteConfig(key: string): Promise<void> {
@@ -159,16 +169,24 @@ export async function setAdminPassword(passwordHash: string): Promise<void> {
   await addAuditLog('password_set', { method: 'initial_setup' }, true)
 }
 
+// Session configuration - can be customized
+const SESSION_DURATION_HOURS = 7 * 24 // 7 days by default
+const SESSION_EXTEND_ON_ACTIVITY = true // Extend session on each request
+
 // Session operations
 export async function createSession(userId: string, ip?: string, userAgent?: string): Promise<string> {
   await initDatabase()
+  
+  // Get custom session duration if configured
+  const customDuration = await getConfig('SESSION_DURATION_HOURS')
+  const durationHours = customDuration || SESSION_DURATION_HOURS
   
   const token = crypto.randomBytes(32).toString('hex')
   const session: SessionItem = {
     token,
     userId,
     createdAt: new Date(),
-    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+    expiresAt: new Date(Date.now() + durationHours * 60 * 60 * 1000), // Configurable duration (default 7 days)
     ip,
     userAgent
   }
@@ -189,6 +207,24 @@ export async function getSession(token: string): Promise<SessionItem | null> {
   if (new Date() > new Date(session.expiresAt)) {
     sessionsCollection?.remove(session)
     return null
+  }
+  
+  // Extend session on activity if enabled
+  if (SESSION_EXTEND_ON_ACTIVITY) {
+    const now = new Date()
+    const timeSinceLastActivity = session.lastActivity ? 
+      (now.getTime() - new Date(session.lastActivity).getTime()) / (1000 * 60 * 60) : // hours
+      24
+    
+    // Only extend if it's been more than 1 hour since last activity
+    if (timeSinceLastActivity > 1) {
+      const customDuration = await getConfig('SESSION_DURATION_HOURS')
+      const durationHours = customDuration || SESSION_DURATION_HOURS
+      
+      session.expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000)
+      session.lastActivity = now
+      sessionsCollection?.update(session)
+    }
   }
   
   return session

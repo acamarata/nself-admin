@@ -100,7 +100,7 @@ function getServiceCategory(name: string | undefined): 'required' | 'optional' |
   if (['redis', 'cache'].some(n => lowerName.includes(n))) return 'optional'
   if (['grafana', 'prometheus', 'loki', 'jaeger', 'alertmanager'].some(n => lowerName.includes(n))) return 'optional'
   
-  // Everything else is user services (including BullMQ workers)
+  // Everything else is custom services (including BullMQ workers)
   return 'user'
 }
 
@@ -162,7 +162,7 @@ function getServiceOrder(name: string | undefined): number {
     return 610 + name.charCodeAt(0) // Alphabetical within Python
   }
   
-  // Other user services (700+)
+  // Other custom services (700+)
   return 700 + name.charCodeAt(0)
 }
 
@@ -618,7 +618,7 @@ function EnhancedListView({
             <>
               <tr>
                 <td colSpan={7} className="px-4 py-2 bg-orange-50/50 dark:bg-orange-900/10">
-                  <span className="text-xs font-medium text-orange-700 dark:text-orange-400">User Services</span>
+                  <span className="text-xs font-medium text-orange-700 dark:text-orange-400">Custom Services</span>
                 </td>
               </tr>
               {userContainers.map(container => (
@@ -856,7 +856,7 @@ function TreeView({
       {userServices.length > 0 && (
         <div>
           <div className="px-4 py-3 bg-orange-50/50 dark:bg-orange-900/10">
-            <span className="text-sm font-medium text-orange-700 dark:text-orange-400">User Services</span>
+            <span className="text-sm font-medium text-orange-700 dark:text-orange-400">Custom Services</span>
           </div>
           {userServices.map(container => (
             <TreeNode key={container.id} container={container} />
@@ -1025,7 +1025,7 @@ export default function ServicesPage() {
             title="Stack vs User"
             value={`${stats.stack}/${stats.services}`}
             percentage={typeof stats.stack === 'number' && typeof stats.total === 'number' ? (stats.stack / stats.total) * 100 : undefined}
-            description="Stack / User Services"
+            description="Stack / Custom Services"
             icon={Icons.Layers}
           />
         </div>
@@ -1056,7 +1056,7 @@ export default function ServicesPage() {
               <option value="running">Running</option>
               <option value="stopped">Stopped</option>
               <option value="stack">Stack</option>
-              <option value="services">User Services</option>
+              <option value="services">Custom Services</option>
               <option value="healthy">Healthy</option>
               <option value="unhealthy">Unhealthy</option>
             </select>

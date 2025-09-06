@@ -20,7 +20,7 @@ export default function LoginPage() {
   useEffect(() => {
     const checkPasswordSetup = async () => {
       try {
-        const response = await fetch('/api/auth/setup')
+        const response = await fetch('/api/auth/init')
         const data = await response.json()
         setIsSetupMode(!data.passwordExists)
       } catch (error) {
@@ -53,7 +53,7 @@ export default function LoginPage() {
       }
 
       try {
-        const response = await fetch('/api/auth/setup', {
+        const response = await fetch('/api/auth/init', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password })
@@ -65,7 +65,56 @@ export default function LoginPage() {
           // Password set successfully, now login
           const success = await login(password)
           if (success) {
-            router.push('/')
+            // Check project status and route appropriately
+            try {
+              const statusRes = await fetch('/api/project/status')
+              if (statusRes.ok) {
+                const statusData = await statusRes.json()
+                
+                // Routing logic based on project state
+                if (!statusData.hasEnvFile) {
+                  // No env file - blank directory
+                  router.push('/init')
+                } else if (!statusData.hasDockerCompose) {
+                  // Has env but not built
+                  router.push('/init/1')
+                } else if (!statusData.servicesRunning) {
+                  // Built but not running
+                  router.push('/start')
+                } else {
+                  // Services are running - check if partial or full
+                  // Check docker containers for more detail
+                  try {
+                    const dockerRes = await fetch('/api/docker/stats')
+                    if (dockerRes.ok) {
+                      const dockerData = await dockerRes.json()
+                      const runningCount = dockerData.containers?.filter((c: any) => c.state === 'running').length || 0
+                      const totalCount = dockerData.containers?.length || 0
+                      
+                      if (totalCount > 0 && runningCount < totalCount) {
+                        // Partial running - some containers stopped
+                        router.push('/doctor')
+                      } else {
+                        // All running or no containers info
+                        router.push('/')
+                      }
+                    } else {
+                      // Can't check containers, default to dashboard
+                      router.push('/')
+                    }
+                  } catch (error) {
+                    // Default to dashboard if docker check fails
+                    router.push('/')
+                  }
+                }
+              } else {
+                // Default to init if status check fails on first setup
+                router.push('/init')
+              }
+            } catch (error) {
+              console.error('Error checking project status:', error)
+              router.push('/init')
+            }
           } else {
             setError('Password set but login failed. Please try again.')
             setIsSetupMode(false)
@@ -81,7 +130,56 @@ export default function LoginPage() {
       const success = await login(password)
       
       if (success) {
-        router.push('/')
+        // Check project status and route appropriately
+        try {
+          const statusRes = await fetch('/api/project/status')
+          if (statusRes.ok) {
+            const statusData = await statusRes.json()
+            
+            // Routing logic based on project state
+            if (!statusData.hasEnvFile) {
+              // No env file - blank directory
+              router.push('/init')
+            } else if (!statusData.hasDockerCompose) {
+              // Has env but not built
+              router.push('/init/1')
+            } else if (!statusData.servicesRunning) {
+              // Built but not running
+              router.push('/start')
+            } else {
+              // Services are running - check if partial or full
+              // Check docker containers for more detail
+              try {
+                const dockerRes = await fetch('/api/docker/stats')
+                if (dockerRes.ok) {
+                  const dockerData = await dockerRes.json()
+                  const runningCount = dockerData.containers?.filter((c: any) => c.state === 'running').length || 0
+                  const totalCount = dockerData.containers?.length || 0
+                  
+                  if (totalCount > 0 && runningCount < totalCount) {
+                    // Partial running - some containers stopped
+                    router.push('/doctor')
+                  } else {
+                    // All running or no containers info
+                    router.push('/')
+                  }
+                } else {
+                  // Can't check containers, default to dashboard
+                  router.push('/')
+                }
+              } catch (error) {
+                // Default to dashboard if docker check fails
+                router.push('/')
+              }
+            }
+          } else {
+            // Default to dashboard if status check fails
+            router.push('/')
+          }
+        } catch (error) {
+          console.error('Error checking project status:', error)
+          router.push('/')
+        }
       } else {
         setError('Invalid password')
         setPassword('')

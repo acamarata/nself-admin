@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       {
         env: {
           ...process.env,
-          PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin',
+          PATH: `/opt/homebrew/opt/coreutils/libexec/gnubin:${process.env.PATH}:/usr/local/bin:/opt/homebrew/bin`,
           NSELF_PROJECT_PATH: projectPath
         },
         timeout: 300000 // 5 minute timeout
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         {
           env: {
             ...process.env,
-            PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin',
+            PATH: `/opt/homebrew/opt/coreutils/libexec/gnubin:${process.env.PATH}:/usr/local/bin:/opt/homebrew/bin`,
             NSELF_PROJECT_PATH: projectPath
           },
           timeout: 30000

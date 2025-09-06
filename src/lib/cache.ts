@@ -130,7 +130,7 @@ export function useCachedData<T>(
     } finally {
       setLoading(false)
     }
-  }, [key, ttl, ...dependencies])
+  }, [key, ttl, fetcher])
 
   React.useEffect(() => {
     const cached = cache.get<T>(key)
@@ -140,7 +140,7 @@ export function useCachedData<T>(
     } else {
       refresh()
     }
-  }, [key])
+  }, [key, refresh])
 
   return { data, loading, error, refresh }
 }

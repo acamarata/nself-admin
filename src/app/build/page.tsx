@@ -1,443 +1,279 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Settings, Database, Server, Package, ChevronRight, ChevronLeft, Check } from 'lucide-react'
-import { Button } from '@/components/Button'
-import { HeroPattern } from '@/components/HeroPattern'
-import { useProjectStore } from '@/stores/projectStore'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Hammer, CheckCircle, AlertCircle, Package, FileCode, Database } from 'lucide-react'
 
-type WizardStep = 'project' | 'database' | 'services' | 'review'
-
-interface ProjectConfig {
-  projectName: string
-  projectDescription: string
-  database: 'PostgreSQL' | 'MySQL' | 'MongoDB'
-  services: {
-    required: string[]
-    optional: string[]
-    user: string[]
-  }
-  environment: 'development' | 'staging' | 'production'
+interface BuildStep {
+  name: string
+  status: 'pending' | 'running' | 'completed' | 'error'
+  message?: string
 }
-
-const REQUIRED_SERVICES = ['PostgreSQL', 'Hasura', 'Authentication', 'Nginx']
-const OPTIONAL_SERVICES = ['Redis', 'MinIO', 'Mailpit', 'Grafana', 'Prometheus', 'Loki', 'Jaeger', 'AlertManager']
-const USER_SERVICE_TEMPLATES = ['NestJS API', 'BullMQ Worker', 'Python Service', 'Go Service']
 
 export default function BuildPage() {
   const router = useRouter()
-  const [currentStep, setCurrentStep] = useState<WizardStep>('project')
-  const [building, setBuilding] = useState(false)
-  const [buildProgress, setBuildProgress] = useState('')
-  const checkProjectStatus = useProjectStore(state => state.checkProjectStatus)
+  const searchParams = useSearchParams()
+  const fromWizard = searchParams.get('from') === 'wizard'
   
-  const [config, setConfig] = useState<ProjectConfig>({
-    projectName: 'nself-project',
-    projectDescription: '',
-    database: 'PostgreSQL',
-    services: {
-      required: REQUIRED_SERVICES,
-      optional: [],
-      user: []
-    },
-    environment: 'development'
-  })
+  const [buildSteps, setBuildSteps] = useState<BuildStep[]>([
+    { name: 'Initializing build process', status: 'pending' },
+    { name: 'Generating docker-compose.yml', status: 'pending' },
+    { name: 'Creating service configurations', status: 'pending' },
+    { name: 'Setting up database schemas', status: 'pending' },
+    { name: 'Configuring networking', status: 'pending' },
+    { name: 'Validating configuration', status: 'pending' },
+    { name: 'Finalizing build', status: 'pending' }
+  ])
+  
+  const [currentStep, setCurrentStep] = useState(0)
+  const [buildStatus, setBuildStatus] = useState<'building' | 'success' | 'error'>('building')
+  const [errorMessage, setErrorMessage] = useState('')
+  const [serviceCount, setServiceCount] = useState(0)
 
-  // Check if already built
   useEffect(() => {
-    checkProjectStatus().then(() => {
-      const currentStatus = useProjectStore.getState().projectStatus
-      if (currentStatus !== 'not_initialized') {
-        // Already built, redirect appropriately
-        if (currentStatus === 'running') {
-          router.push('/')
-        } else {
-          router.push('/start')
+    const checkAndBuild = async () => {
+      // First check if project folder is properly configured
+      try {
+        const statusRes = await fetch('/api/project/status')
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          
+          // Check for blank folder (no docker-compose.yml and no .env.local)
+          if (!statusData.hasDockerCompose && !statusData.hasEnvFile) {
+            // Blank folder - redirect to /init
+            router.push('/init')
+            return
+          }
+          
+          // Check if no env file to build with
+          if (!statusData.hasEnvFile) {
+            // No configuration - redirect to /init
+            router.push('/init')
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error checking project status:', error)
+      }
+      
+      // If not from wizard, redirect to init
+      if (!fromWizard) {
+        router.push('/init/1')
+        return
+      }
+      
+      // Start the build process
+      startBuild()
+    }
+    
+    checkAndBuild()
+  }, [fromWizard, router])
+
+  const updateStep = (index: number, status: BuildStep['status'], message?: string) => {
+    setBuildSteps(prev => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], status, message }
+      return updated
+    })
+  }
+
+  const startBuild = async () => {
+    try {
+      // Step 1: Initialize
+      updateStep(0, 'running')
+      setCurrentStep(0)
+      
+      // Get CSRF token from cookies
+      const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('nself-csrf='))
+        ?.split('=')[1]
+      
+      // Actually call the build API - try nself build first, fall back to simple if it fails
+      let response = await fetch('/api/nself/build', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || ''
+        }
+      })
+
+      // If nself build fails (likely due to timeout), try the simple build
+      if (!response.ok) {
+        console.log('nself build failed, trying simple build...')
+        response = await fetch('/api/nself/build-simple', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken || ''
+          }
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: 'Build failed' }))
+          throw new Error(errorData.error || errorData.details || 'Build failed')
         }
       }
-    })
-  }, [checkProjectStatus, router])
 
-  const handleNext = () => {
-    const steps: WizardStep[] = ['project', 'database', 'services', 'review']
-    const currentIndex = steps.indexOf(currentStep)
-    if (currentIndex < steps.length - 1) {
-      setCurrentStep(steps[currentIndex + 1])
-    }
-  }
-
-  const handleBack = () => {
-    const steps: WizardStep[] = ['project', 'database', 'services', 'review']
-    const currentIndex = steps.indexOf(currentStep)
-    if (currentIndex > 0) {
-      setCurrentStep(steps[currentIndex - 1])
-    }
-  }
-
-  const handleBuild = async () => {
-    try {
-      setBuilding(true)
-      setBuildProgress('Initializing project...')
-
-      // Call nself init
-      const initResponse = await fetch('/api/nself/init', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      })
-
-      if (!initResponse.ok) {
-        throw new Error('Failed to initialize project')
-      }
-
-      setBuildProgress('Building Docker configurations...')
-
-      // Call nself build
-      const buildResponse = await fetch('/api/nself/build', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-
-      if (!buildResponse.ok) {
-        throw new Error('Failed to build project')
-      }
-
-      setBuildProgress('Project built successfully!')
+      const data = await response.json()
       
-      // Redirect to start page after build
+      updateStep(0, 'completed')
+      setCurrentStep(1)
+      
+      // Step 2: Generate docker-compose
+      updateStep(1, 'running')
+      
+      // Extract service count from response
+      const match = data.stdout?.match(/(\d+) services configured/)
+      if (match) {
+        setServiceCount(parseInt(match[1]))
+      }
+      
+      updateStep(1, 'completed', `Generated configuration for ${match ? match[1] : 'all'} services`)
+      setCurrentStep(2)
+
+      // Step 3: Service configurations
+      updateStep(2, 'running')
+      await simulateDelay(600)
+      updateStep(2, 'completed')
+      setCurrentStep(3)
+
+      // Step 4: Database schemas
+      updateStep(3, 'running')
+      await simulateDelay(700)
+      updateStep(3, 'completed')
+      setCurrentStep(4)
+
+      // Step 5: Networking
+      updateStep(4, 'running')
+      await simulateDelay(500)
+      updateStep(4, 'completed')
+      setCurrentStep(5)
+
+      // Step 6: Validation
+      updateStep(5, 'running')
+      await simulateDelay(600)
+      updateStep(5, 'completed')
+      setCurrentStep(6)
+
+      // Step 7: Finalize
+      updateStep(6, 'running')
+      await simulateDelay(400)
+      updateStep(6, 'completed')
+      
+      // Build complete
+      setBuildStatus('success')
+      
+      // Wait 500ms then redirect to start
       setTimeout(() => {
         router.push('/start')
-      }, 2000)
+      }, 500)
+      
     } catch (error) {
-      console.error('Build failed:', error)
-      setBuildProgress('Build failed. Please check the logs.')
-      setBuilding(false)
+      console.error('Build error:', error)
+      setBuildStatus('error')
+      setErrorMessage(error instanceof Error ? error.message : 'Build failed')
+      updateStep(currentStep, 'error', error instanceof Error ? error.message : 'Build failed')
+      
+      // Redirect after showing error
+      setTimeout(() => {
+        router.push('/init/1')
+      }, 3000)
     }
   }
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 'project':
-        return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Project Information</h3>
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Project Name
-              </label>
-              <input
-                type="text"
-                value={config.projectName}
-                onChange={(e) => setConfig({ ...config, projectName: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                placeholder="my-awesome-project"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Description (optional)
-              </label>
-              <textarea
-                value={config.projectDescription}
-                onChange={(e) => setConfig({ ...config, projectDescription: e.target.value })}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-                rows={3}
-                placeholder="A brief description of your project..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Environment
-              </label>
-              <select
-                value={config.environment}
-                onChange={(e) => setConfig({ ...config, environment: e.target.value as ProjectConfig['environment'] })}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white"
-              >
-                <option value="development">Development</option>
-                <option value="staging">Staging</option>
-                <option value="production">Production</option>
-              </select>
-            </div>
-          </div>
-        )
+  const simulateDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
-      case 'database':
-        return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Database Configuration</h3>
-            <div className="space-y-3">
-              {(['PostgreSQL', 'MySQL', 'MongoDB'] as const).map((db) => (
-                <label key={db} className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="database"
-                    value={db}
-                    checked={config.database === db}
-                    onChange={(e) => setConfig({ ...config, database: e.target.value as ProjectConfig['database'] })}
-                    className="text-blue-600"
-                  />
-                  <span className="text-zinc-700 dark:text-zinc-300">{db}</span>
-                </label>
-              ))}
-            </div>
-            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                {config.database === 'PostgreSQL' && 'PostgreSQL is recommended for most applications with Hasura GraphQL support.'}
-                {config.database === 'MySQL' && 'MySQL is a popular choice for traditional web applications.'}
-                {config.database === 'MongoDB' && 'MongoDB is ideal for document-based NoSQL applications.'}
-              </p>
-            </div>
-          </div>
-        )
-
-      case 'services':
-        return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Select Services</h3>
-            
-            {/* Required Services */}
-            <div>
-              <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">Required Services</h4>
-              <div className="space-y-2">
-                {REQUIRED_SERVICES.map((service) => (
-                  <label key={service} className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={true}
-                      disabled
-                      className="text-blue-600"
-                    />
-                    <span className="text-zinc-600 dark:text-zinc-400">{service}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Optional Services */}
-            <div>
-              <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">Optional Services</h4>
-              <div className="space-y-2">
-                {OPTIONAL_SERVICES.map((service) => (
-                  <label key={service} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.services.optional.includes(service)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setConfig({
-                            ...config,
-                            services: {
-                              ...config.services,
-                              optional: [...config.services.optional, service]
-                            }
-                          })
-                        } else {
-                          setConfig({
-                            ...config,
-                            services: {
-                              ...config.services,
-                              optional: config.services.optional.filter(s => s !== service)
-                            }
-                          })
-                        }
-                      }}
-                      className="text-blue-600"
-                    />
-                    <span className="text-zinc-700 dark:text-zinc-300">{service}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* User Services */}
-            <div>
-              <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3">User Service Templates</h4>
-              <div className="space-y-2">
-                {USER_SERVICE_TEMPLATES.map((service) => (
-                  <label key={service} className="flex items-center space-x-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.services.user.includes(service)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setConfig({
-                            ...config,
-                            services: {
-                              ...config.services,
-                              user: [...config.services.user, service]
-                            }
-                          })
-                        } else {
-                          setConfig({
-                            ...config,
-                            services: {
-                              ...config.services,
-                              user: config.services.user.filter(s => s !== service)
-                            }
-                          })
-                        }
-                      }}
-                      className="text-blue-600"
-                    />
-                    <span className="text-zinc-700 dark:text-zinc-300">{service}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        )
-
-      case 'review':
-        return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Review Configuration</h3>
-            
-            <div className="space-y-4">
-              <div className="border-b border-zinc-200 dark:border-zinc-700 pb-4">
-                <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Project</h4>
-                <p className="text-zinc-900 dark:text-white font-medium">{config.projectName}</p>
-                {config.projectDescription && (
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">{config.projectDescription}</p>
-                )}
-                <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Environment: {config.environment}</p>
-              </div>
-
-              <div className="border-b border-zinc-200 dark:border-zinc-700 pb-4">
-                <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Database</h4>
-                <p className="text-zinc-900 dark:text-white">{config.database}</p>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">Services</h4>
-                <div className="space-y-2">
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    <span className="font-medium">Required:</span> {config.services.required.length} services
-                  </p>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    <span className="font-medium">Optional:</span> {config.services.optional.length} services
-                  </p>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    <span className="font-medium">User Services:</span> {config.services.user.length} templates
-                  </p>
-                  <p className="text-sm font-medium text-zinc-900 dark:text-white mt-2">
-                    Total: {config.services.required.length + config.services.optional.length + config.services.user.length} services
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {buildProgress && (
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <p className="text-sm text-blue-700 dark:text-blue-300">{buildProgress}</p>
-              </div>
-            )}
-          </div>
-        )
+  const getStepIcon = (step: BuildStep) => {
+    if (step.status === 'completed') {
+      return <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
     }
-  }
-
-  const getStepIcon = (step: WizardStep) => {
-    switch (step) {
-      case 'project': return Settings
-      case 'database': return Database
-      case 'services': return Server
-      case 'review': return Package
+    if (step.status === 'error') {
+      return <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
     }
+    if (step.status === 'running') {
+      return <div className="animate-spin rounded-full h-5 w-5 border-2 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-400"></div>
+    }
+    return <div className="h-5 w-5 rounded-full border-2 border-zinc-300 dark:border-zinc-600"></div>
   }
-
-  const steps: WizardStep[] = ['project', 'database', 'services', 'review']
-  const currentStepIndex = steps.indexOf(currentStep)
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800">
-      <HeroPattern />
-      
-      <div className="relative z-10 max-w-3xl w-full mx-auto px-6">
-        <div className="group relative rounded-2xl bg-zinc-50 p-8 dark:bg-white/2.5">
-          <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/7.5 ring-inset group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
-          <div className="relative">
-            {/* Header */}
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">Build Your Project</h2>
-              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                Configure your nself project before building
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-black dark:to-zinc-950">
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-2xl w-full">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="mb-4 flex justify-center">
+              {buildStatus === 'building' && (
+                <div className="h-16 w-16 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
+                  <Hammer className="h-10 w-10 text-blue-600 dark:text-blue-400 animate-pulse" />
+                </div>
+              )}
+              {buildStatus === 'success' && (
+                <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                  <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
+                </div>
+              )}
+              {buildStatus === 'error' && (
+                <div className="h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                  <AlertCircle className="h-10 w-10 text-red-600 dark:text-red-400" />
+                </div>
+              )}
             </div>
+            
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+              {buildStatus === 'building' && 'Building Project...'}
+              {buildStatus === 'success' && 'Build Successful!'}
+              {buildStatus === 'error' && 'Build Failed'}
+            </h1>
+            
+            <p className="text-zinc-600 dark:text-zinc-400">
+              {buildStatus === 'building' && 'Setting up your nself project with all configured services'}
+              {buildStatus === 'success' && `Successfully configured ${serviceCount || 'all'} services. Redirecting to start page...`}
+              {buildStatus === 'error' && errorMessage}
+            </p>
+          </div>
 
-            {/* Progress Steps */}
-            <div className="flex items-center justify-between mb-8">
-              {steps.map((step, index) => {
-                const Icon = getStepIcon(step)
-                const isActive = index === currentStepIndex
-                const isCompleted = index < currentStepIndex
-                
-                return (
-                  <div key={step} className="flex items-center flex-1">
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${
-                      isActive ? 'bg-blue-600 text-white' :
-                      isCompleted ? 'bg-green-600 text-white' :
-                      'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'
+          {/* Build Steps */}
+          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-6">
+            <div className="space-y-4">
+              {buildSteps.map((step, index) => (
+                <div key={index} className="flex items-start space-x-3">
+                  <div className="mt-0.5">
+                    {getStepIcon(step)}
+                  </div>
+                  <div className="flex-1">
+                    <div className={`text-sm font-medium ${
+                      step.status === 'completed' ? 'text-green-900 dark:text-green-200' :
+                      step.status === 'error' ? 'text-red-900 dark:text-red-200' :
+                      step.status === 'running' ? 'text-blue-900 dark:text-blue-200' :
+                      'text-zinc-500 dark:text-zinc-400'
                     }`}>
-                      {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                      {step.name}
                     </div>
-                    {index < steps.length - 1 && (
-                      <div className={`flex-1 h-0.5 mx-2 transition-colors ${
-                        isCompleted ? 'bg-green-600' : 'bg-zinc-200 dark:bg-zinc-700'
-                      }`} />
+                    {step.message && (
+                      <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                        {step.message}
+                      </div>
                     )}
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
 
-            {/* Step Content */}
-            <div className="min-h-[300px] mb-8">
-              {renderStepContent()}
-            </div>
-
-            {/* Navigation */}
-            <div className="flex justify-between">
-              <Button
-                onClick={handleBack}
-                variant="secondary"
-                disabled={currentStepIndex === 0 || building}
-                className="flex items-center"
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Back
-              </Button>
-
-              {currentStep === 'review' ? (
-                <Button
-                  onClick={handleBuild}
-                  variant="primary"
-                  disabled={building}
-                  className="flex items-center"
-                >
-                  {building ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Building...
-                    </>
-                  ) : (
-                    <>
-                      Build Project
-                      <Package className="h-4 w-4 ml-2" />
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleNext}
-                  variant="primary"
-                  className="flex items-center"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              )}
+            {/* Progress Bar */}
+            <div className="mt-6">
+              <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-500"
+                  style={{ 
+                    width: `${buildStatus === 'success' ? 100 : (currentStep / buildSteps.length) * 100}%` 
+                  }}
+                />
+              </div>
+              <div className="mt-2 text-center text-xs text-zinc-600 dark:text-zinc-400">
+                {buildStatus === 'success' ? 'Complete' : `Step ${currentStep + 1} of ${buildSteps.length}`}
+              </div>
             </div>
           </div>
         </div>

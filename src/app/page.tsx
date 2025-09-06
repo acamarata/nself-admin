@@ -47,6 +47,7 @@ import {
 } from 'lucide-react'
 import { GridPattern } from '@/components/GridPattern'
 import { apiPost } from '@/lib/api-client'
+import { safeNavigate, getTargetRoute, shouldRedirect } from '@/lib/routing'
 // DEV ONLY - REMOVE FOR PRODUCTION
 import { useDevTracking } from '@/hooks/useDevTracking'
 
@@ -190,7 +191,7 @@ function getServiceCategory(name: string): 'required' | 'optional' | 'user' {
   if (['nginx', 'proxy', 'gateway', 'traefik'].some(n => lowerName.includes(n))) return 'required'
   
   // Optional services (infrastructure) - but NOT user workers
-  if (lowerName.includes('bullmq') || lowerName.includes('bull')) return 'user' // BullMQ workers are user services
+  if (lowerName.includes('bullmq') || lowerName.includes('bull')) return 'user' // BullMQ workers are custom services
   if (['minio', 's3'].some(n => lowerName.includes(n))) return 'optional'
   if (lowerName.includes('storage') && !lowerName.includes('minio')) return 'optional'
   if (['mailpit'].some(n => lowerName.includes(n))) return 'optional'
@@ -199,7 +200,7 @@ function getServiceCategory(name: string): 'required' | 'optional' | 'user' {
   if (['kafka', 'rabbitmq', 'nats', 'amqp'].some(n => lowerName.includes(n))) return 'optional'
   if (['elasticsearch', 'elastic', 'kibana', 'logstash'].some(n => lowerName.includes(n))) return 'optional'
   
-  // Everything else is user services (including workers)
+  // Everything else is custom services (including workers)
   return 'user'
 }
 
@@ -670,13 +671,13 @@ function ContainersTable({ services }: ContainersTableProps) {
                 </>
               )}
               
-              {/* User Services */}
+              {/* Custom Services */}
               {filteredUser.length > 0 && (
                 <>
                   <tr>
                     <td colSpan={5} className="px-6 py-2 border-b border-zinc-200/50 dark:border-zinc-700/30">
                       <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
-                        User Services
+                        Custom Services
                       </span>
                     </td>
                   </tr>
@@ -882,21 +883,26 @@ export default function DashboardPage() {
   
   // Check project status and redirect based on state
   useEffect(() => {
-    checkProjectStatus().then(() => {
+    // Add a small delay to prevent flashing when coming from build success
+    const checkTimer = setTimeout(async () => {
+      // First check project status
+      await checkProjectStatus()
       const currentStatus = useProjectStore.getState().projectStatus
-      const currentContainersRunning = useProjectStore.getState().containersRunning
       
-      if (currentStatus === 'not_initialized') {
-        // Project not built, redirect to build wizard
-        router.push('/build')
-      } else if (currentStatus !== 'running' && currentContainersRunning === 0) {
-        // Services built but not running, redirect to start page
-        router.push('/start')
+      // Determine the correct route based on project state
+      const targetRoute = await getTargetRoute(currentStatus)
+      const currentPath = window.location.pathname
+      
+      // Only redirect if we should change routes
+      if (shouldRedirect(currentPath, targetRoute)) {
+        safeNavigate(router, targetRoute)
       } else if (currentStatus === 'running') {
         // Services running, fetch dashboard data
         fetchAllData()
       }
-    })
+    }, 500) // Increased delay to prevent bouncing
+    
+    return () => clearTimeout(checkTimer)
   }, [checkProjectStatus, fetchAllData, router])
   
   // Transform container stats to services format

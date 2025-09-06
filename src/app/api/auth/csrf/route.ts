@@ -8,7 +8,7 @@ export async function GET() {
   
   // Set CSRF token in cookie
   response.cookies.set('nself-csrf', token, {
-    httpOnly: true,
+    httpOnly: false, // Must be readable by JavaScript for inclusion in headers
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     path: '/',

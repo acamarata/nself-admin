@@ -8,19 +8,35 @@ const execAsync = promisify(exec)
 
 export async function GET() {
   try {
-    const projectPath = process.env.PROJECT_PATH || '/project'
+    // Use the same project path as the build API uses
+    const projectPath = process.env.NSELF_PROJECT_PATH || '/Users/admin/Sites/nself-project'
     
-    // Check if .env.local exists
-    const envPath = path.join(projectPath, '.env.local')
+    // Check if any env file exists (.env.dev, .env.local, or .env)
     let hasEnvFile = false
     let envContent = null
     
+    // Check in order of priority
+    const envFiles = ['.env.dev', '.env.local', '.env']
+    for (const envFile of envFiles) {
+      const envPath = path.join(projectPath, envFile)
+      try {
+        const content = await fs.readFile(envPath, 'utf8')
+        hasEnvFile = true
+        envContent = content
+        break  // Stop at first file found
+      } catch {
+        // File doesn't exist, try next
+      }
+    }
+    
+    // Check if docker-compose.yml exists (project is built)
+    const dockerComposePath = path.join(projectPath, 'docker-compose.yml')
+    let isBuilt = false
     try {
-      const content = await fs.readFile(envPath, 'utf8')
-      hasEnvFile = true
-      envContent = content
-    } catch (error: any) {
-      hasEnvFile = false
+      await fs.access(dockerComposePath)
+      isBuilt = true
+    } catch {
+      isBuilt = false
     }
     
     // Check if services are running
@@ -124,9 +140,16 @@ export async function GET() {
       if (servicesRunning) {
         projectState = 'running'
         needsSetup = false
+      } else if (hasDockerCompose) {
+        projectState = 'configured'
+        needsSetup = false
       } else if (envContent.includes('POSTGRES_') || envContent.includes('HASURA_')) {
         projectState = 'configured'
         needsSetup = false
+      } else if (projectName && baseDomain) {
+        // Has basic configuration but no docker-compose yet - still in setup wizard
+        projectState = 'partial'
+        needsSetup = true
       } else {
         projectState = 'partial'
         needsSetup = true
@@ -145,6 +168,8 @@ export async function GET() {
       projectState,
       needsSetup,
       hasEnvFile,
+      hasDockerCompose: isBuilt,  // Add explicit hasDockerCompose field
+      isBuilt,
       hasAdminPassword,
       servicesRunning,
       runningServices,
@@ -157,7 +182,7 @@ export async function GET() {
       summary: {
         initialized: hasEnvFile,
         configured: hasEnvFile && (projectName || baseDomain),
-        built: servicesRunning || dockerContainers.length > 0,
+        built: isBuilt,
         running: servicesRunning
       }
     })

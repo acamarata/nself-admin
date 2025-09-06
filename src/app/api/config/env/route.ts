@@ -280,9 +280,9 @@ export async function GET(request: NextRequest) {
     const adminPath = process.cwd() // Current admin project root
     const backendPath = getProjectPath()
     
-    // Use admin path for .env.local, backend path for others
+    // Use backend path for all environment files
     const envFiles = {
-      local: path.join(adminPath, '.env.local'), // Admin project's .env.local
+      local: path.join(backendPath, '.env.local'), // Backend project's .env.local
       dev: path.join(backendPath, '.env.dev'),
       stage: path.join(backendPath, '.env.stage'),
       prod: path.join(backendPath, '.env.prod'),
@@ -366,9 +366,16 @@ export async function POST(request: NextRequest) {
       const adminPath = process.cwd() // Current admin project root
       const backendPath = getProjectPath()
       
-      // Use admin path for .env.local, backend path for others
+      // Ensure the backend directory exists
+      try {
+        await fs.mkdir(backendPath, { recursive: true })
+      } catch (mkdirError) {
+        console.error('Failed to create backend directory:', mkdirError)
+      }
+      
+      // Use backend path for all environment files
       const envFiles = {
-        local: path.join(adminPath, '.env.local'), // Admin project's .env.local
+        local: path.join(backendPath, '.env.local'), // Backend project's .env.local
         dev: path.join(backendPath, '.env.dev'),
         stage: path.join(backendPath, '.env.stage'),
         prod: path.join(backendPath, '.env.prod'),
@@ -396,7 +403,17 @@ export async function POST(request: NextRequest) {
       
       // Format and write file
       const content = formatEnvFile(varsToSave)
-      await fs.writeFile(envFile, content, 'utf-8')
+      
+      try {
+        await fs.writeFile(envFile, content, 'utf-8')
+        console.log(`Successfully wrote ${Object.keys(varsToSave).length} variables to ${envFile}`)
+      } catch (writeError: any) {
+        console.error('Failed to write environment file:', writeError)
+        return NextResponse.json(
+          { success: false, error: `Failed to write environment file: ${writeError.message}` },
+          { status: 500 }
+        )
+      }
       
       return NextResponse.json({
         success: true,
@@ -406,8 +423,9 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ success: true })
   } catch (error: any) {
+    console.error('Error in POST /api/config/env:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to save environment variables' },
+      { success: false, error: `Failed to save environment variables: ${error.message}` },
       { status: 500 }
     )
   }

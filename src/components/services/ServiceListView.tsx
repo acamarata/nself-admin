@@ -121,7 +121,7 @@ export function ServiceListView({
     const categoryLabels = {
       required: 'Required Services',
       optional: 'Optional Services',
-      user: 'User Services'
+      user: 'Custom Services'
     }
     
     if (containerList.length === 0) return null

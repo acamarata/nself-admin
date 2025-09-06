@@ -18,15 +18,16 @@ export function useDevTracking(componentName: string, props?: any) {
     }
     
     return () => {
+      const totalRenders = renderCount.current
       if (typeof window !== 'undefined' && (window as any).devLogger) {
         const devLogger = (window as any).devLogger
         devLogger.log('debug', 'render', `${componentName} unmounted`, {
           component: componentName,
-          totalRenders: renderCount.current
+          totalRenders: totalRenders
         })
       }
     }
-  }, [])
+  }, [componentName, props])
   
   // Track renders
   useEffect(() => {

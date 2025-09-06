@@ -47,7 +47,7 @@ export function useKeyboardShortcuts(shortcuts: ShortcutDefinition[] = []) {
   const router = useRouter()
   
   // Navigation shortcuts
-  const navigationShortcuts: ShortcutDefinition[] = [
+  const navigationShortcuts: ShortcutDefinition[] = useMemo(() => [
     {
       key: 'g',
       shift: true,
@@ -78,11 +78,11 @@ export function useKeyboardShortcuts(shortcuts: ShortcutDefinition[] = []) {
       handler: () => router.push('/logs'),
       description: 'Go to Logs'
     }
-  ]
+  ], [router])
   
   const allShortcuts = useMemo(() => 
     [...globalShortcuts, ...navigationShortcuts, ...shortcuts], 
-    [shortcuts]
+    [shortcuts, navigationShortcuts]
   )
   
   const handleKeyDown = useCallback((event: KeyboardEvent) => {

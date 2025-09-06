@@ -26,9 +26,11 @@ export function Layout({
   const isLoginPage = pathname === '/login'
   const isBuildPage = pathname === '/build'
   const isStartPage = pathname === '/start'
+  const isSetupPage = pathname === '/init'
+  const isInitPage = pathname.startsWith('/init')
   
   // Pages that should render without navigation
-  const isFullscreenPage = isLoginPage || isBuildPage || isStartPage
+  const isFullscreenPage = isLoginPage || isBuildPage || isStartPage || isSetupPage || isInitPage
 
   useEffect(() => {
     // Redirect to login if not authenticated and not already on login page
@@ -43,6 +45,17 @@ export function Layout({
 
   // If on a fullscreen page, render children without navigation
   if (isFullscreenPage) {
+    // For init page, add minimal header with theme toggle and logout
+    if (isSetupPage && isAuthenticated) {
+      return (
+        <div className="min-h-screen">
+          <div className="absolute top-4 right-4 z-50 flex items-center gap-4">
+            <Header minimal />
+          </div>
+          {children}
+        </div>
+      )
+    }
     return <>{children}</>
   }
 

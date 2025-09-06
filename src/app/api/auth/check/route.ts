@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isTokenExpired } from '@/lib/auth'
-import { sessions } from '@/lib/sessions'
+import { validateSessionToken } from '@/lib/auth-db'
+import { getSession } from '@/lib/database'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,21 +13,22 @@ export async function GET(request: NextRequest) {
       )
     }
     
-    // Check if session exists and is valid
-    const session = sessions.get(token)
+    // Check if session exists and is valid in database
+    const isValid = await validateSessionToken(token)
     
-    if (!session) {
+    if (!isValid) {
       return NextResponse.json(
-        { success: false, error: 'Invalid session' },
+        { success: false, error: 'Invalid or expired session' },
         { status: 401 }
       )
     }
     
-    // Check if session is expired
-    if (isTokenExpired(session.expiresAt)) {
-      sessions.delete(token)
+    // Get session details from database
+    const session = await getSession(token)
+    
+    if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Session expired' },
+        { success: false, error: 'Session not found' },
         { status: 401 }
       )
     }
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       userId: session.userId,
-      expiresAt: session.expiresAt.toISOString()
+      expiresAt: new Date(session.expiresAt).toISOString()
     })
     
   } catch (error: any) {

@@ -31,14 +31,14 @@ export function ProjectStateProvider({ children }: ProjectStateProviderProps) {
     return () => {
       stopBackgroundRefresh()
     }
-  }, [])
+  }, [checkProjectStatus, stopBackgroundRefresh])
 
   useEffect(() => {
     // NOTE: BackgroundDataService handles all data fetching
     // We don't need the store's background refresh
     // Just stop it if it's running
     stopBackgroundRefresh()
-  }, [projectStatus, projectSetup])
+  }, [projectStatus, projectSetup, stopBackgroundRefresh])
 
   // Show loading state during initial check
   if (isChecking && projectStatus === 'not_initialized') {

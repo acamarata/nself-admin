@@ -285,18 +285,18 @@ function KeyDetails({ redisKey, onClose }: { redisKey: RedisKey, onClose: () => 
   const [editing, setEditing] = useState(false)
   const [ttl, setTtl] = useState(redisKey.ttl)
 
-  const mockValues = {
-    string: 'Hello, World!',
-    hash: JSON.stringify({ field1: 'value1', field2: 'value2', field3: 'value3' }, null, 2),
-    list: JSON.stringify(['item1', 'item2', 'item3'], null, 2),
-    set: JSON.stringify(['member1', 'member2', 'member3'], null, 2),
-    zset: JSON.stringify([{ member: 'item1', score: 1 }, { member: 'item2', score: 2 }], null, 2),
-    stream: JSON.stringify([{ id: '1-0', fields: { field1: 'value1' } }], null, 2)
-  }
-
   useEffect(() => {
+    const mockValues = {
+      string: 'Hello, World!',
+      hash: JSON.stringify({ field1: 'value1', field2: 'value2', field3: 'value3' }, null, 2),
+      list: JSON.stringify(['item1', 'item2', 'item3'], null, 2),
+      set: JSON.stringify(['member1', 'member2', 'member3'], null, 2),
+      zset: JSON.stringify([{ member: 'item1', score: 1 }, { member: 'item2', score: 2 }], null, 2),
+      stream: JSON.stringify([{ id: '1-0', fields: { field1: 'value1' } }], null, 2)
+    }
+    
     setValue(mockValues[redisKey.type])
-  }, [redisKey, mockValues])
+  }, [redisKey])
 
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">

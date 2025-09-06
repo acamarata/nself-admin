@@ -4,9 +4,14 @@ import { validateCSRFToken, csrfErrorResponse, setCSRFCookie } from './lib/csrf'
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = [
   '/login',
+  '/init',  // Allow init pages for project setup
   '/api/auth/login',
-  '/api/auth/setup',
+  '/api/auth/init',
+  '/api/auth/check',  // Allow checking auth status
   '/api/health',
+  '/api/project/status',  // Allow checking project status without auth
+  '/api/wizard/init',  // Allow wizard init check
+  '/api/debug',  // Debug endpoints (dev only)
   '/_next',
   '/favicon.ico',
   '/site.webmanifest',

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useProjectStore } from '@/stores/projectStore'
 import { dataFetchService } from '@/services/DataFetchService'
 
@@ -17,7 +17,7 @@ export function usePageData(options: PageDataOptions) {
   const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
   
   // Fetch data based on options
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (projectStatus !== 'running' && !options.projectStatus) {
       return
     }
@@ -56,7 +56,7 @@ export function usePageData(options: PageDataOptions) {
     
     // Fetch all in parallel
     await Promise.all(promises)
-  }
+  }, [projectStatus, options])
   
   useEffect(() => {
     // Initial fetch
@@ -73,7 +73,7 @@ export function usePageData(options: PageDataOptions) {
         clearInterval(intervalRef.current)
       }
     }
-  }, [projectStatus, JSON.stringify(options)])
+  }, [projectStatus, options.refreshInterval, fetchData])
   
   // Return manual refresh function
   return {

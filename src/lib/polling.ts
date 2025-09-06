@@ -172,7 +172,8 @@ export function usePolling(
         }
       }
     }
-  }, [interval, ...deps])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interval, ...(deps || [])])
 }
 
 // Ensure cleanup on page unload

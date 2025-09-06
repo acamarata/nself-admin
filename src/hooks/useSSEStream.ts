@@ -33,7 +33,7 @@ export function useSSEStream() {
   /**
    * Connect to SSE stream
    */
-  const connect = () => {
+  const connect = useCallback(() => {
     // Clean up existing connection
     disconnect()
     
@@ -92,7 +92,8 @@ export function useSSEStream() {
       }))
       scheduleReconnect()
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   
   /**
    * Disconnect from SSE stream
@@ -226,7 +227,7 @@ export function useSSEStream() {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
-  }, []) // Empty deps - we want this to run once
+  }, [connect]) // Include connect function
   
   return {
     ...state,
