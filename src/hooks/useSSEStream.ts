@@ -3,7 +3,7 @@
  * Manages SSE connection with automatic reconnection and Zustand updates
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useCentralDataStore } from '@/stores/centralDataStore'
 
 export interface SSEState {

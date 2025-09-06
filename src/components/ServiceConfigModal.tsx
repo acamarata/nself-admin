@@ -230,24 +230,24 @@ const serviceConfigs: Record<string, (initialConfig?: any) => ConfigField[]> = {
         key: 'AUTH_JWT_REFRESH_TOKEN_EXPIRES_IN', 
         label: 'Refresh Token Lifetime', 
         type: 'select', 
-        defaultValue: 2592000,
+        defaultValue: '2592000',
         options: [
-          { value: 86400, label: '1 Day (86400 seconds)' },
-          { value: 604800, label: '7 Days (604800 seconds)' },
-          { value: 2592000, label: '30 Days (2592000 seconds) - Recommended' },
-          { value: 7776000, label: '90 Days (7776000 seconds)' },
+          { value: '86400', label: '1 Day (86400 seconds)' },
+          { value: '604800', label: '7 Days (604800 seconds)' },
+          { value: '2592000', label: '30 Days (2592000 seconds) - Recommended' },
+          { value: '7776000', label: '90 Days (7776000 seconds)' },
         ]
       },
       { 
         key: 'AUTH_JWT_ACCESS_TOKEN_EXPIRES_IN', 
         label: 'Access Token Lifetime', 
         type: 'select', 
-        defaultValue: 900,
+        defaultValue: '900',
         options: [
-          { value: 300, label: '5 Minutes (300 seconds) - High Security' },
-          { value: 900, label: '15 Minutes (900 seconds) - Recommended' },
-          { value: 1800, label: '30 Minutes (1800 seconds)' },
-          { value: 3600, label: '1 Hour (3600 seconds)' },
+          { value: '300', label: '5 Minutes (300 seconds) - High Security' },
+          { value: '900', label: '15 Minutes (900 seconds) - Recommended' },
+          { value: '1800', label: '30 Minutes (1800 seconds)' },
+          { value: '3600', label: '1 Hour (3600 seconds)' },
         ]
       },
       { 
@@ -719,10 +719,7 @@ const serviceConfigs: Record<string, (initialConfig?: any) => ConfigField[]> = {
       label: 'Search Host',
       type: 'text',
       placeholder: 'search',
-      defaultValue: (config: ServiceConfig) => {
-        const engine = config.SEARCH_ENGINE || 'postgres'
-        return engine === 'postgres' ? 'postgres' : 'search'
-      },
+      defaultValue: 'search',
       condition: (config) => config.SEARCH_ENGINE !== 'postgres'
     },
     {
@@ -730,18 +727,7 @@ const serviceConfigs: Record<string, (initialConfig?: any) => ConfigField[]> = {
       label: 'Search Port',
       type: 'number',
       placeholder: '7700',
-      defaultValue: (config: ServiceConfig) => {
-        const engine = config.SEARCH_ENGINE || 'postgres'
-        const ports: Record<string, number> = {
-          'postgres': 5432,
-          'meilisearch': 7700,
-          'typesense': 8108,
-          'elasticsearch': 9200,
-          'opensearch': 9200,
-          'sonic': 1491
-        }
-        return ports[engine] || 7700
-      },
+      defaultValue: 7700,
       condition: (config) => config.SEARCH_ENGINE !== 'postgres'
     },
     // MeiliSearch configuration
@@ -1188,7 +1174,7 @@ export default function ServiceConfigModal({ isOpen, onClose, service, config, o
     if (field.type === 'select') {
       return (
         <select
-          value={localConfig[field.key] as string || field.defaultValue || ''}
+          value={localConfig[field.key] as string || String(field.defaultValue || '')}
           onChange={(e) => handleChange(field.key, e.target.value)}
           className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
@@ -1229,7 +1215,7 @@ export default function ServiceConfigModal({ isOpen, onClose, service, config, o
     return (
       <input
         type={field.type}
-        value={localConfig[field.key] as string || field.defaultValue || ''}
+        value={localConfig[field.key] as string || String(field.defaultValue || '')}
         onChange={(e) => handleChange(field.key, field.type === 'number' ? parseInt(e.target.value) : e.target.value)}
         placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}`}
         className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

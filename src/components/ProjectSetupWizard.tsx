@@ -33,7 +33,8 @@ import {
   Smartphone,
   Search,
   Plus,
-  ChevronDown
+  ChevronDown,
+  X
 } from 'lucide-react'
 import { useProjectStore } from '@/stores/projectStore'
 
@@ -404,7 +405,6 @@ export function ProjectSetupWizard({ mode = 'new' }: ProjectSetupWizardProps) {
     // Optional Services
     optionalServices: {
       redis: false,
-      minio: false,  // Storage service (S3-compatible)
       mail: {
         enabled: false,
         provider: 'auto'  // Auto selects best option based on environment
@@ -1296,78 +1296,6 @@ nself start`}
                 </div>
               </div>
 
-              {/* Storage Service (MinIO) */}
-              <div 
-                onClick={() => {
-                  if (!config.optionalServices.minio) {
-                    setConfig({ 
-                      ...config, 
-                      optionalServices: { ...config.optionalServices, minio: true }
-                    })
-                  }
-                }}
-                className={`border rounded-lg p-4 transition-all ${
-                  config.optionalServices.minio 
-                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/10' 
-                    : 'border-zinc-300 dark:border-zinc-600 bg-zinc-50/50 dark:bg-zinc-800/50 cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-500'
-                }`}>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3">
-                    <HardDrive className={`h-5 w-5 mt-0.5 transition-colors ${
-                      config.optionalServices.minio ? 'text-orange-500' : 'text-zinc-400 dark:text-zinc-600'
-                    }`} />
-                    <div className="flex-1">
-                      <h4 className={`font-medium ${
-                        config.optionalServices.minio 
-                          ? 'text-zinc-900 dark:text-white' 
-                          : 'text-zinc-500 dark:text-zinc-400'
-                      }`}>Storage Service (MinIO)</h4>
-                      <p className={`text-sm mt-1 ${
-                        config.optionalServices.minio 
-                          ? 'text-zinc-600 dark:text-zinc-400' 
-                          : 'text-zinc-400 dark:text-zinc-500'
-                      }`}>
-                        S3-compatible object storage for files and media
-                      </p>
-                      {config.optionalServices.minio && (
-                        <div className="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
-                          Ports: 9000 (API), 9001 (Console) | Bucket: {config.storage.bucket}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end space-y-2">
-                    {config.optionalServices.minio ? (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setConfig({ 
-                              ...config, 
-                              optionalServices: { ...config.optionalServices, minio: false }
-                            })
-                          }}
-                          className="p-1 text-zinc-400 hover:text-red-500 transition-colors"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedService('storage')
-                          }}
-                          className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                        >
-                          <Wrench className="h-4 w-4 inline mr-1" />
-                          Settings
-                        </button>
-                      </>
-                    ) : (
-                      <Plus className="h-4 w-4 text-zinc-400" />
-                    )}
-                  </div>
-                </div>
-              </div>
 
               {/* Mail Service */}
               <div 
@@ -2845,17 +2773,17 @@ nself start`}
           onSave={(newConfig) => {
             // Handle optional services config save
             if (selectedService === 'redis') {
-              setConfig({ ...config, redisConfig: newConfig })
+              setConfig({ ...config, redisConfig: newConfig as any })
             } else if (selectedService === 'mail') {
-              setConfig({ ...config, mailConfig: newConfig })
+              setConfig({ ...config, mailConfig: newConfig as any })
             } else if (selectedService === 'monitoring') {
-              setConfig({ ...config, monitoringConfig: newConfig })
+              setConfig({ ...config, monitoringConfig: newConfig as any })
             } else if (selectedService === 'search') {
-              setConfig({ ...config, searchConfig: newConfig })
+              setConfig({ ...config, searchConfig: newConfig as any })
             } else if (selectedService === 'mlflow') {
-              setConfig({ ...config, mlflowConfig: newConfig })
+              setConfig({ ...config, mlflowConfig: newConfig as any })
             } else if (selectedService === 'nadmin') {
-              setConfig({ ...config, nadminConfig: newConfig })
+              setConfig({ ...config, nadminConfig: newConfig as any })
             } else {
               setConfig({
                 ...config,

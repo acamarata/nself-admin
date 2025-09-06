@@ -230,7 +230,7 @@ export default function InitStep6() {
                 <h4 className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2 uppercase tracking-wider">Optional Services</h4>
                 <div className="space-y-2 text-sm ml-2">
                   {enabledOptionalServices.map(service => (
-                    <div key={service} className="flex items-center space-x-2">
+                    <div key={String(service)} className="flex items-center space-x-2">
                       <CheckCircle className="h-4 w-4 text-purple-600" />
                       <span className="text-zinc-900 dark:text-white">{service}</span>
                     </div>

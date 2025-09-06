@@ -231,7 +231,7 @@ export default function InitStep4() {
 
   // Validation is now handled by UrlInput component
   
-  const updateService = (index: number, field: keyof UserService, value: any) => {
+  const updateService = (index: number, field: keyof CustomService, value: any) => {
     const updated = [...customServices]
     if (field === 'name' && typeof value === 'string') {
       // Sanitize service name

@@ -28,9 +28,10 @@ export async function POST(request: NextRequest) {
       cwd: projectPath
     })
     
-    const containers = psOutput.split('\n')
-      .filter(line => line.trim())
-      .map(line => {
+    const containerLines = psOutput.split('\n').filter(line => line.trim())
+    
+    const containers = await Promise.all(
+      containerLines.map(async line => {
         const [name, statusRaw, restarts] = line.split('|')
         let status: 'running' | 'stopped' | 'restarting' | 'error' = 'stopped'
         let health: 'healthy' | 'unhealthy' | 'starting' | undefined
@@ -68,7 +69,9 @@ export async function POST(request: NextRequest) {
           logs
         }
       })
-      .filter(c => c.name.includes('my_project'))
+    )
+    
+    const filteredContainers = containers.filter(c => c.name.includes('my_project'))
     
     // Parse nself doctor output for system checks
     const systemChecks = []
@@ -108,8 +111,8 @@ export async function POST(request: NextRequest) {
     }
     
     // Determine overall status
-    const runningCount = containers.filter(c => c.status === 'running').length
-    const totalCount = containers.length
+    const runningCount = filteredContainers.filter(c => c.status === 'running').length
+    const totalCount = filteredContainers.length
     let overall: 'healthy' | 'partial' | 'critical' = 'healthy'
     
     if (runningCount === 0) {
@@ -117,13 +120,13 @@ export async function POST(request: NextRequest) {
       recommendations.push('No services are running. Click "Auto Fix Issues" or run "nself start" to start all services.')
     } else if (runningCount < totalCount) {
       overall = 'partial'
-      const stoppedServices = containers
+      const stoppedServices = filteredContainers
         .filter(c => c.status !== 'running')
         .map(c => c.name.replace('my_project_', ''))
       recommendations.push(`The following services are not running: ${stoppedServices.join(', ')}`)
       
       // Check for specific issues
-      const nginxIssue = containers.find(c => c.name.includes('nginx') && c.status === 'restarting')
+      const nginxIssue = filteredContainers.find(c => c.name.includes('nginx') && c.status === 'restarting')
       if (nginxIssue) {
         recommendations.push('Nginx is restarting. Check nginx configuration files for syntax errors.')
       }
@@ -136,7 +139,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       overall,
-      containers,
+      containers: filteredContainers,
       systemChecks,
       recommendations
     })

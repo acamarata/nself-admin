@@ -140,7 +140,7 @@ export async function GET() {
       if (servicesRunning) {
         projectState = 'running'
         needsSetup = false
-      } else if (hasDockerCompose) {
+      } else if (isBuilt) {
         projectState = 'configured'
         needsSetup = false
       } else if (envContent.includes('POSTGRES_') || envContent.includes('HASURA_')) {
