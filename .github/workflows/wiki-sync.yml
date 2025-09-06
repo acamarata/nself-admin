@@ -37,7 +37,7 @@ jobs:
       
       - name: Clone Wiki
         run: |
-          git clone https://github.com/${{ github.repository }}.wiki.git wiki
+          git clone https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git wiki
       
       - name: Sync Documentation
         run: |
@@ -107,7 +107,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Sync documentation from main repository (v${{ steps.version.outputs.version }})"
-            git push
+            git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
             echo "Wiki updated successfully!"
           fi
       

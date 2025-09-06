@@ -3,7 +3,7 @@
 # Multi-platform support: linux/amd64, linux/arm64
 
 # Stage 1: Dependencies
-FROM --platform=$BUILDPLATFORM node:20-alpine AS deps
+FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY package*.json ./
 RUN npm ci --only=production
 
 # Stage 2: Builder
-FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
+FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -33,7 +33,7 @@ ENV STANDALONE=true
 RUN npm run build
 
 # Stage 3: Runner (minimal image)
-FROM --platform=$TARGETPLATFORM node:20-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Install only essential runtime dependencies
