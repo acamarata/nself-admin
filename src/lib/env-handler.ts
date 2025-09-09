@@ -96,21 +96,21 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
   const projectPath = getProjectPath()
   
   // Determine which file to write based on environment
-  const env = config.ENV || 'development'
+  const env = config.ENV || 'dev'
   
   // Write to environment-specific file based on ENV setting
   // Per nself guidance: write to .env.dev for development, NOT .env (which is for local overrides only)
   let envFileName: string
   switch(env) {
-    case 'development':
     case 'dev':
+    case 'development':
       envFileName = '.env.dev'
       break
     case 'staging':
       envFileName = '.env.staging'
       break
-    case 'production':
     case 'prod':
+    case 'production':
       envFileName = '.env.prod'
       break
     default:
@@ -149,7 +149,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
   }
   
   // Hasura Settings - per spec v1.0
-  const hasuraSettings = ['HASURA_GRAPHQL_ADMIN_SECRET', 'HASURA_JWT_KEY', 'HASURA_JWT_TYPE', 'HASURA_GRAPHQL_JWT_SECRET']
+  const hasuraSettings = ['HASURA_GRAPHQL_ADMIN_SECRET', 'HASURA_JWT_KEY', 'HASURA_JWT_TYPE', 'HASURA_METADATA_DATABASE_URL']
   const hasuraValues = hasuraSettings.filter(key => config[key] !== undefined)
   if (hasuraValues.length > 0) {
     lines.push('# Hasura GraphQL')
@@ -219,7 +219,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
   const serviceFlags = [
     'POSTGRES_ENABLED', 'HASURA_ENABLED', 'AUTH_ENABLED', 'STORAGE_ENABLED',  // Core services  
     'NSELF_ADMIN_ENABLED', 'REDIS_ENABLED', 'MLFLOW_ENABLED', 'MAILPIT_ENABLED', 'SEARCH_ENABLED',  // Optional services
-    'PROMETHEUS_ENABLED', 'GRAFANA_ENABLED', 'LOKI_ENABLED', 'MONITORING_ENABLED'  // Monitoring bundle
+    'PROMETHEUS_ENABLED', 'GRAFANA_ENABLED', 'LOKI_ENABLED', 'TEMPO_ENABLED', 'ALERTMANAGER_ENABLED', 'MONITORING_ENABLED'  // Monitoring bundle
   ]
   const enabledServices = serviceFlags.filter(key => config[key] === 'true')
   const disabledServices = serviceFlags.filter(key => config[key] === 'false')
@@ -233,6 +233,33 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
     // Then disabled ones
     for (const key of disabledServices) {
       lines.push(`${key}=false`)
+    }
+    lines.push('')
+  }
+  
+  // Service Credentials - write credentials for enabled services
+  const serviceCredentials: Record<string, string[]> = {
+    'STORAGE_ENABLED': ['MINIO_ROOT_USER', 'MINIO_ROOT_PASSWORD'],
+    'SEARCH_ENABLED': ['MEILI_MASTER_KEY'],
+    'MONITORING_ENABLED': ['GRAFANA_ADMIN_PASSWORD'],
+    'GRAFANA_ENABLED': ['GRAFANA_ADMIN_PASSWORD']
+  }
+  
+  const credentialsToWrite: string[] = []
+  for (const [flag, creds] of Object.entries(serviceCredentials)) {
+    if (config[flag] === 'true') {
+      for (const cred of creds) {
+        if (config[cred] && !credentialsToWrite.includes(cred)) {
+          credentialsToWrite.push(cred)
+        }
+      }
+    }
+  }
+  
+  if (credentialsToWrite.length > 0) {
+    lines.push('# Service Credentials')
+    for (const key of credentialsToWrite) {
+      lines.push(`${key}=${config[key]}`)
     }
     lines.push('')
   }
@@ -259,7 +286,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
     ...serviceKeys, ...frontendKeys, ...serviceFlags,
     'BACKUP_ENABLED', 'BACKUP_SCHEDULE', 'BACKUP_RETENTION_DAYS', 'BACKUP_DIR', 'BACKUP_COMPRESSION', 'BACKUP_ENCRYPTION',
     'DB_BACKUP_ENABLED', 'DB_BACKUP_SCHEDULE', 'DB_BACKUP_RETENTION_DAYS', 'DB_BACKUP_STORAGE', // Also handle old format
-    'HASURA_GRAPHQL_JWT_SECRET'  // Old format
+    'MINIO_ROOT_USER', 'MINIO_ROOT_PASSWORD', 'MEILI_MASTER_KEY', 'GRAFANA_ADMIN_PASSWORD'  // Service credentials
   ])
   
   const remainingKeys = Object.keys(config).filter(key => !handledKeys.has(key))
@@ -282,8 +309,45 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
 
 // Update specific env variables
 export async function updateEnvFile(updates: EnvConfig): Promise<void> {
+  console.log('updateEnvFile called with updates:', {
+    PROJECT_NAME: updates.PROJECT_NAME,
+    ENV: updates.ENV,
+    POSTGRES_DB: updates.POSTGRES_DB,
+    BASE_DOMAIN: updates.BASE_DOMAIN
+  })
   const existing = await readEnvFile() || {}
-  const merged = { ...existing, ...updates }
+  
+  // Merge updates with existing, but handle empty strings specially
+  const merged: EnvConfig = { ...existing }
+  
+  // Process updates: empty strings delete the key, non-empty values update it
+  Object.entries(updates).forEach(([key, value]) => {
+    if (value === '' || value === null || value === undefined) {
+      // Delete the key if value is empty
+      delete merged[key]
+    } else {
+      // Update the key with new value
+      merged[key] = value
+    }
+  })
+  
+  // If database credentials were updated, rebuild HASURA_METADATA_DATABASE_URL
+  if (updates.POSTGRES_DB || updates.POSTGRES_USER || updates.POSTGRES_PASSWORD) {
+    const dbHost = merged.POSTGRES_HOST || 'postgres'
+    const dbPort = merged.POSTGRES_PORT || '5432'
+    const dbUser = merged.POSTGRES_USER || 'postgres'
+    const dbPass = merged.POSTGRES_PASSWORD || 'postgres'
+    const dbName = merged.POSTGRES_DB || 'nself'
+    merged.HASURA_METADATA_DATABASE_URL = `postgres://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}`
+    console.log('Rebuilt HASURA_METADATA_DATABASE_URL:', merged.HASURA_METADATA_DATABASE_URL)
+  }
+  
+  console.log('Merged config will have:', {
+    PROJECT_NAME: merged.PROJECT_NAME,
+    ENV: merged.ENV,
+    POSTGRES_DB: merged.POSTGRES_DB,
+    BASE_DOMAIN: merged.BASE_DOMAIN
+  })
   await writeEnvFile(merged)
 }
 
@@ -322,9 +386,9 @@ export function wizardConfigToEnv(config: any): EnvConfig {
   const env: EnvConfig = {}
   
   // Basic settings - per nself docs, use ENV not ENVIRONMENT
-  env.PROJECT_NAME = config.projectName || 'nproject'
+  env.PROJECT_NAME = config.projectName || 'my-project'
   env.PROJECT_DESCRIPTION = config.projectDescription || ''
-  env.ENV = config.environment || 'development'  // nself uses ENV, not ENVIRONMENT
+  env.ENV = config.environment || 'dev'  // Use value as-is, nself accepts both dev and development
   env.BASE_DOMAIN = config.domain || 'local.nself.org'  // nself default domain
   
   // Core services are enabled by default per spec v1.0
@@ -333,15 +397,62 @@ export function wizardConfigToEnv(config: any): EnvConfig {
   env.AUTH_ENABLED = 'true'  // Always true per spec for backward compatibility
   env.STORAGE_ENABLED = 'true'  // Default true per spec
   
-  // Database - nself uses POSTGRES_DB and POSTGRES_PASSWORD
-  env.POSTGRES_DB = config.databaseName || 'nself'  // nself default db name
+  // Database - respect user input for db name and user
+  // Check multiple sources for database configuration
+  env.POSTGRES_DB = config.databaseName || 'nself'  // Respect user input, default to 'nself'
   env.POSTGRES_PASSWORD = config.databasePassword || 'nself-dev-password'
-  env.POSTGRES_USER = 'postgres'  // nself always uses postgres user
+  // Check postgresqlConfig from Step 2, then other fields
+  env.POSTGRES_USER = config.postgresqlConfig?.POSTGRES_USER || config.postgresUser || config.databaseUser || 'postgres'
+  
+  // Also extract other PostgreSQL configs if present
+  if (config.postgresqlConfig) {
+    if (config.postgresqlConfig.POSTGRES_HOST) {
+      env.POSTGRES_HOST = config.postgresqlConfig.POSTGRES_HOST
+    }
+    if (config.postgresqlConfig.POSTGRES_PORT) {
+      env.POSTGRES_PORT = config.postgresqlConfig.POSTGRES_PORT
+    }
+  }
   
   // Hasura Configuration - per spec v1.0 use HASURA_JWT_KEY not full JWT_SECRET
   env.HASURA_GRAPHQL_ADMIN_SECRET = config.hasuraAdminSecret || 'hasura-admin-secret-dev'
   env.HASURA_JWT_KEY = config.jwtSecret || 'development-secret-key-minimum-32-characters-long'
   env.HASURA_JWT_TYPE = 'HS256'  // Default per spec
+  
+  // Also extract hasuraConfig from Step 2 if present
+  if (config.hasuraConfig) {
+    Object.keys(config.hasuraConfig).forEach(key => {
+      if (key.startsWith('HASURA_')) {
+        env[key] = String(config.hasuraConfig[key])
+      }
+    })
+  }
+  
+  // Extract Auth configuration from Step 2 if present
+  if (config.authConfig) {
+    Object.keys(config.authConfig).forEach(key => {
+      if (key.startsWith('AUTH_')) {
+        env[key] = String(config.authConfig[key])
+      }
+    })
+  }
+  
+  // Extract Nginx configuration from Step 2 if present
+  if (config.nginxConfig) {
+    Object.keys(config.nginxConfig).forEach(key => {
+      if (key.startsWith('NGINX_')) {
+        env[key] = String(config.nginxConfig[key])
+      }
+    })
+  }
+  
+  // Construct database URL for Hasura
+  const dbHost = config.postgresHost || 'postgres'
+  const dbPort = config.postgresPort || '5432'
+  const dbUser = env.POSTGRES_USER || 'postgres'
+  const dbPass = env.POSTGRES_PASSWORD || 'postgres'
+  const dbName = env.POSTGRES_DB || 'nself'
+  env.HASURA_METADATA_DATABASE_URL = `postgres://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}`
   
   // Optional services - these default to false unless explicitly enabled
   if (config.optionalServices) {
@@ -355,18 +466,34 @@ export function wizardConfigToEnv(config: any): EnvConfig {
     env.MLFLOW_ENABLED = config.optionalServices.mlflow ? 'true' : 'false'
     env.MAILPIT_ENABLED = (config.optionalServices.mail?.enabled || config.optionalServices.mailpit) ? 'true' : 'false'
     env.SEARCH_ENABLED = config.optionalServices.search ? 'true' : 'false'
-    // Monitoring bundle - can use individual or bundle flag
+    // Monitoring bundle - includes all monitoring services
     if (config.optionalServices.monitoring) {
-      env.MONITORING_ENABLED = 'true'  // Bundle flag sets all three per spec
+      env.MONITORING_ENABLED = 'true'  // Bundle flag sets all monitoring services
       env.PROMETHEUS_ENABLED = 'true'
       env.GRAFANA_ENABLED = 'true'
       env.LOKI_ENABLED = 'true'
+      env.TEMPO_ENABLED = 'true'
+      env.ALERTMANAGER_ENABLED = 'true'
     } else {
       env.MONITORING_ENABLED = 'false'
       env.PROMETHEUS_ENABLED = 'false'
       env.GRAFANA_ENABLED = 'false'
       env.LOKI_ENABLED = 'false'
+      env.TEMPO_ENABLED = 'false'
+      env.ALERTMANAGER_ENABLED = 'false'
     }
+  }
+  
+  // Add service credentials when services are enabled
+  if (env.STORAGE_ENABLED === 'true') {
+    env.MINIO_ROOT_USER = config.minioRootUser || 'minioadmin'
+    env.MINIO_ROOT_PASSWORD = config.minioRootPassword || 'minioadmin-password'
+  }
+  if (env.SEARCH_ENABLED === 'true') {
+    env.MEILI_MASTER_KEY = config.meiliMasterKey || 'meilisearch-master-key-32-chars'
+  }
+  if (env.MONITORING_ENABLED === 'true') {
+    env.GRAFANA_ADMIN_PASSWORD = config.grafanaAdminPassword || 'grafana-admin-password'
   }
   
   // Custom services - Use nself CLI format (CS_N=name:framework:port:route)
@@ -443,6 +570,7 @@ export function envToWizardConfig(env: EnvConfig): any {
     domain: env.BASE_DOMAIN || 'local.nself.org',
     databaseName: env.POSTGRES_DB || 'nself',
     databasePassword: env.POSTGRES_PASSWORD || 'nself-dev-password',
+    postgresUser: env.POSTGRES_USER || 'postgres',  // Add this field
     hasuraAdminSecret: env.HASURA_GRAPHQL_ADMIN_SECRET || 'hasura-admin-secret-dev',
     jwtSecret: env.HASURA_JWT_KEY || (() => {
       // For backward compatibility, try to extract from old JWT_SECRET format
@@ -458,6 +586,37 @@ export function envToWizardConfig(env: EnvConfig): any {
     })(),
     backupEnabled: env.BACKUP_ENABLED === 'true' || env.DB_BACKUP_ENABLED === 'true', // Support both for backwards compat
     backupSchedule: env.BACKUP_SCHEDULE || env.DB_BACKUP_SCHEDULE || '0 2 * * *',
+    
+    // Extract service configurations from Step 2
+    postgresqlConfig: {
+      POSTGRES_USER: env.POSTGRES_USER || 'postgres',
+      POSTGRES_HOST: env.POSTGRES_HOST || 'postgres',
+      POSTGRES_PORT: env.POSTGRES_PORT || '5432'
+    },
+    
+    // Extract Hasura configuration
+    hasuraConfig: Object.keys(env).reduce((acc, key) => {
+      if (key.startsWith('HASURA_')) {
+        acc[key] = env[key]
+      }
+      return acc
+    }, {} as Record<string, string>),
+    
+    // Extract Auth configuration
+    authConfig: Object.keys(env).reduce((acc, key) => {
+      if (key.startsWith('AUTH_')) {
+        acc[key] = env[key]
+      }
+      return acc
+    }, {} as Record<string, string>),
+    
+    // Extract Nginx configuration
+    nginxConfig: Object.keys(env).reduce((acc, key) => {
+      if (key.startsWith('NGINX_')) {
+        acc[key] = env[key]
+      }
+      return acc
+    }, {} as Record<string, string>),
     
     // Pass through all raw env variables so the page can read them
     ...env,
@@ -495,8 +654,17 @@ export function envToWizardConfig(env: EnvConfig): any {
     },
     
     // Optional services - per spec v1.0 (in order: nself-admin, redis, minio, mlflow, mail, search, monitoring)
+    // Add as top-level fields for easier access in UI
+    nadminEnabled: env.NSELF_ADMIN_ENABLED === 'true' || env.NADMIN_ENABLED === 'true',
+    redisEnabled: env.REDIS_ENABLED === 'true',
+    minioEnabled: env.STORAGE_ENABLED === 'true' || env.MINIO_ENABLED === 'true',
+    mlflowEnabled: env.MLFLOW_ENABLED === 'true',
+    mailpitEnabled: env.MAILPIT_ENABLED === 'true',
+    searchEnabled: env.SEARCH_ENABLED === 'true',
+    monitoringEnabled: env.MONITORING_ENABLED === 'true',
     optionalServices: {
       admin: env.NSELF_ADMIN_ENABLED === 'true' || env.NADMIN_ENABLED === 'true',  // Support both
+      nadmin: env.NSELF_ADMIN_ENABLED === 'true' || env.NADMIN_ENABLED === 'true',  // Alternative name
       redis: env.REDIS_ENABLED === 'true',
       minio: env.STORAGE_ENABLED === 'true' || env.MINIO_ENABLED === 'true', // Support both for backwards compat
       storage: env.STORAGE_ENABLED === 'true',  // Use storage as primary name

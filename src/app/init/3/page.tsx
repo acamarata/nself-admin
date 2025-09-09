@@ -5,19 +5,22 @@ import { useRouter } from 'next/navigation'
 import { ArrowRight, ArrowLeft, Database, Mail, Activity, Package, Search, HardDrive, Wrench } from 'lucide-react'
 import { StepWrapper } from '../StepWrapper'
 import ServiceConfigModal from '@/components/ServiceConfigModal'
+import { useWizardStore } from '@/stores/wizardStore'
 
 export default function InitStep3() {
   const router = useRouter()
   const [modalService, setModalService] = useState<string | null>(null)
-  const [initialConfig, setInitialConfig] = useState<any>({})
-  const [config, setConfig] = useState({
-    redisEnabled: false,
-    minioEnabled: false,
-    mlflowEnabled: false,
-    mailpitEnabled: false,
-    searchEnabled: false,
-    monitoringEnabled: false
-  })
+  const [navigating, setNavigating] = useState(false)
+  
+  // Use wizard store
+  const { 
+    optionalServices,
+    setOptionalServices,
+    syncWithEnv,
+    isInitialized,
+    isLoading
+  } = useWizardStore()
+  
   const [serviceConfigs, setServiceConfigs] = useState<Record<string, any>>({
     redis: {},
     minio: {},
@@ -27,90 +30,32 @@ export default function InitStep3() {
     elasticsearch: {}
   })
 
-  // Load configuration from .env.local on mount
+  // Always sync with env when component mounts to get latest values
   useEffect(() => {
-    checkAndLoadConfiguration()
-    // nself-admin is always enabled since it's running
-    saveNadminEnabled()
-  }, [])
-  
-  const saveNadminEnabled = async () => {
-    try {
-      await fetch('/api/wizard/update-env-var', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          key: 'NSELF_ADMIN_ENABLED',
-          value: 'true',
-          environment: initialConfig.environment || 'dev'
-        })
-      })
-    } catch (error) {
-      console.error('Failed to save nadmin enabled state:', error)
-    }
-  }
-
-  const checkAndLoadConfiguration = async () => {
-    // First check if env file exists
-    try {
-      const statusRes = await fetch('/api/project/status')
-      if (statusRes.ok) {
-        const statusData = await statusRes.json()
-        if (!statusData.hasEnvFile) {
-          // No env file - redirect to /init to create it
-          router.push('/init')
-          return
-        }
-      }
-    } catch (error) {
-      console.error('Error checking project status:', error)
+    syncWithEnv()
+    
+    // Reload when the page gains focus (e.g., navigating back)
+    const handleFocus = () => {
+      syncWithEnv()
     }
     
-    // Load configuration if env file exists
-    loadConfiguration()
-  }
-
-  const loadConfiguration = async () => {
-    try {
-      const response = await fetch('/api/wizard/init')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.config) {
-          // Store initial config from step 1
-          setInitialConfig({
-            environment: data.config.environment,
-            adminEmail: data.config.adminEmail
-          })
-          
-          // Map env variables to state keys
-          setConfig({
-            redisEnabled: data.config.REDIS_ENABLED === 'true' || data.config.redisEnabled || false,
-            minioEnabled: data.config.STORAGE_ENABLED === 'true' || data.config.MINIO_ENABLED === 'true' || data.config.minioEnabled || false,
-            mlflowEnabled: data.config.MLFLOW_ENABLED === 'true' || data.config.mlflowEnabled || false,
-            mailpitEnabled: data.config.MAILPIT_ENABLED === 'true' || data.config.mailpitEnabled || false,
-            searchEnabled: data.config.SEARCH_ENABLED === 'true' || data.config.ELASTICSEARCH_ENABLED === 'true' || data.config.searchEnabled || data.config.elasticsearchEnabled || false,
-            monitoringEnabled: data.config.MONITORING_ENABLED === 'true' || data.config.monitoringEnabled || false
-          })
-          
-          // Load any existing service configs
-          setServiceConfigs(prev => ({
-            ...prev,
-            redis: data.config.redisConfig || {},
-            minio: data.config.minioConfig || {},
-            monitoring: data.config.monitoringConfig || {},
-            mlflow: data.config.mlflowConfig || {},
-            mailpit: data.config.mailpitConfig || {},
-            elasticsearch: data.config.elasticsearchConfig || {}
-          }))
-        }
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        syncWithEnv()
       }
-    } catch (error) {
-      console.error('Failed to load configuration:', error)
+    })
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus)
     }
-  }
+  }, [syncWithEnv])
+
+
 
   const handleNext = () => {
     // Changes are already saved, just navigate
+    setNavigating(true)
     router.push('/init/4')
   }
 
@@ -150,50 +95,43 @@ export default function InitStep3() {
     }
   }
 
-  const toggleService = async (key: string) => {
-    const newValue = !config[key as keyof typeof config]
-    const newConfig = { ...config, [key]: newValue }
-    setConfig(newConfig)
+  const toggleService = async (serviceKey: string) => {
+    // Map service keys to wizard store keys
+    const keyMap: Record<string, string> = {
+      'redisEnabled': 'redis',
+      'minioEnabled': 'minio', 
+      'mlflowEnabled': 'mlflow',
+      'mailpitEnabled': 'mailpit',
+      'searchEnabled': 'search',
+      'monitoringEnabled': 'monitoring',
+      'nadminEnabled': 'nadmin'
+    }
     
-    // Save ALL optional services state immediately
+    const storeKey = keyMap[serviceKey] as keyof typeof optionalServices
+    if (!storeKey) return
+    
+    // Update wizard store
+    const newOptionalServices = {
+      ...optionalServices,
+      [storeKey]: !optionalServices[storeKey]
+    }
+    
+    setOptionalServices(newOptionalServices)
+    
+    // Save to env file
     try {
+      // Get the environment from localStorage (set in step 1)
+      const environment = localStorage.getItem('wizard_environment') || 'dev'
+      
       await fetch('/api/wizard/update-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          config: newConfig,
-          step: 'optional-services',
-          environment: initialConfig.environment || 'dev'
-        })
-      })
-    } catch (error) {
-      console.error('Failed to save service state:', error)
-    }
-    
-    // Map the key to the actual env variable name (keeping for reference)
-    const envKeyMap: Record<string, string> = {
-      'minioEnabled': 'STORAGE_ENABLED',
-      'redisEnabled': 'REDIS_ENABLED',
-      'monitoringEnabled': 'MONITORING_ENABLED',
-      'mlflowEnabled': 'MLFLOW_ENABLED',
-      'mailpitEnabled': 'MAILPIT_ENABLED',
-      'searchEnabled': 'SEARCH_ENABLED'
-    }
-  }
-
-  const enableService = async (key: string) => {
-    const newConfig = { ...config, [key]: true }
-    setConfig(newConfig)
-    
-    // Save ALL optional services state immediately
-    try {
-      await fetch('/api/wizard/update-env', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          config: newConfig,
-          step: 'optional-services',
-          environment: initialConfig.environment || 'dev'
+          config: { 
+            environment,  // Include environment to write to correct file
+            optionalServices: newOptionalServices 
+          },
+          step: 'optional-services'
         })
       })
     } catch (error) {
@@ -201,31 +139,47 @@ export default function InitStep3() {
     }
   }
 
-  const allEnabled = Object.values(config).every(v => v === true)
-  const noneEnabled = Object.values(config).every(v => v === false)
+  // Calculate toggle states based on wizard store
+  const allEnabled = Object.values(optionalServices).filter((v, i) => 
+    // Exclude nadmin from "all" calculation since it's always required
+    Object.keys(optionalServices)[i] !== 'nadmin'
+  ).every(v => v === true)
+  
+  const noneEnabled = Object.values(optionalServices).filter((v, i) => 
+    // Exclude nadmin from "all" calculation since it's always required
+    Object.keys(optionalServices)[i] !== 'nadmin'
+  ).every(v => v === false)
 
   const toggleAll = async () => {
     const newState = !allEnabled
     // Don't include nadmin in the toggle since it's required
-    const newConfig = {
-      redisEnabled: newState,
-      minioEnabled: newState,
-      mlflowEnabled: newState,
-      mailpitEnabled: newState,
-      searchEnabled: newState,
-      monitoringEnabled: newState
+    const newOptionalServices = {
+      ...optionalServices,
+      redis: newState,
+      minio: newState,
+      mlflow: newState,
+      mailpit: newState,
+      search: newState,
+      monitoring: newState
+      // nadmin stays as is
     }
-    setConfig(newConfig)
     
-    // Save ALL optional services state immediately
+    setOptionalServices(newOptionalServices)
+    
+    // Save to env file
     try {
+      // Get the environment from localStorage (set in step 1)
+      const environment = localStorage.getItem('wizard_environment') || 'dev'
+      
       await fetch('/api/wizard/update-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          config: newConfig,
-          step: 'optional-services',
-          environment: initialConfig.environment || 'dev'
+          config: { 
+            environment,  // Include environment to write to correct file
+            optionalServices: newOptionalServices 
+          },
+          step: 'optional-services'
         })
       })
     } catch (error) {
@@ -233,7 +187,7 @@ export default function InitStep3() {
     }
   }
 
-  const optionalServices: Array<{
+  const serviceDefinitions: Array<{
     key: string
     configKey: string
     name: string
@@ -262,7 +216,7 @@ export default function InitStep3() {
       icon: Database,
       description: 'In-memory data store for caching and real-time features',
       details: 'Lightning-fast key-value database. Use for session storage, caching, pub/sub messaging, real-time leaderboards, rate limiting, and distributed locks.',
-      enabled: config.redisEnabled
+      enabled: optionalServices.redis
     },
     {
       key: 'minioEnabled',
@@ -271,7 +225,7 @@ export default function InitStep3() {
       icon: HardDrive,
       description: 'S3-compatible object storage for files and media',
       details: 'Self-hosted AWS S3 alternative. Perfect for storing user uploads, profile images, documents, backups, and any binary data with full S3 API compatibility and multi-cloud support.',
-      enabled: config.minioEnabled
+      enabled: optionalServices.minio
     },
     {
       key: 'mlflowEnabled',
@@ -280,7 +234,7 @@ export default function InitStep3() {
       icon: Package,
       description: 'Machine Learning lifecycle management platform',
       details: 'Complete ML platform for experiment tracking, model registry, model deployment, and collaborative ML workflows. Integrates with popular ML frameworks and provides a unified interface for the entire ML lifecycle.',
-      enabled: config.mlflowEnabled
+      enabled: optionalServices.mlflow
     },
     {
       key: 'mailpitEnabled',
@@ -289,7 +243,7 @@ export default function InitStep3() {
       icon: Mail,
       description: 'Email testing and delivery service',
       details: 'Catch all emails in development with Mailpit\'s web UI. Configure production email with SendGrid, AWS SES, Resend, Postmark, or your own SMTP service. Auto mode uses Mailpit for dev and your selected service for production.',
-      enabled: config.mailpitEnabled
+      enabled: optionalServices.mailpit
     },
     {
       key: 'searchEnabled',
@@ -298,7 +252,7 @@ export default function InitStep3() {
       icon: Search,
       description: 'Full-text search with 6 engine options',
       details: 'Choose from Meilisearch (default), Typesense, Zinc, Elasticsearch, OpenSearch, or Sonic. Each offers different trade-offs between features, performance, and resource usage.',
-      enabled: config.searchEnabled
+      enabled: optionalServices.search
     },
     {
       key: 'monitoringEnabled',
@@ -307,9 +261,37 @@ export default function InitStep3() {
       icon: Activity,
       description: 'Complete observability stack with 5 integrated services',
       details: 'Includes Prometheus (metrics collection), Grafana (visualization dashboards), Loki (log aggregation), Tempo (distributed tracing), and Alertmanager (alert routing). Full observability for your entire stack.',
-      enabled: config.monitoringEnabled
+      enabled: optionalServices.monitoring
     }
   ]
+
+  // Show loading skeleton while initial data loads
+  if (isLoading && !isInitialized) {
+    return (
+      <StepWrapper>
+        <div className="space-y-4">
+          {/* Loading skeleton for service cards */}
+          {[...Array(7)].map((_, i) => (
+            <div key={i} className="p-5 border-2 border-zinc-200 dark:border-zinc-700 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+                  <div>
+                    <div className="h-5 w-28 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse mb-2"></div>
+                    <div className="h-3 w-56 bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-6 w-11 bg-zinc-200 dark:bg-zinc-700 rounded-full animate-pulse"></div>
+                  <div className="h-8 w-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </StepWrapper>
+    )
+  }
 
   return (
     <StepWrapper>
@@ -324,7 +306,7 @@ export default function InitStep3() {
       </div>
 
       <div className="space-y-4">
-        {optionalServices.map((service) => {
+        {serviceDefinitions.map((service) => {
           const Icon = service.icon
           return (
             <div
@@ -421,10 +403,20 @@ export default function InitStep3() {
         </button>
         <button
           onClick={handleNext}
-          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-blue-600 py-1 px-3 text-white hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-inset dark:ring-blue-400/20 dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300"
+          disabled={navigating}
+          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-blue-600 py-1 px-3 text-white hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-inset dark:ring-blue-400/20 dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer disabled:cursor-not-allowed"
         >
-          <span>Next</span>
-          <ArrowRight className="h-4 w-4" />
+          {navigating ? (
+            <>
+              <span>Loading</span>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-blue-400"></div>
+            </>
+          ) : (
+            <>
+              <span>Next</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </button>
       </div>
 

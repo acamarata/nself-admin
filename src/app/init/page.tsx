@@ -48,6 +48,11 @@ export default function InitPage() {
           setStatus('initializing')
           setMessage('Initializing new project...')
           
+          // Clear wizard state when starting fresh
+          localStorage.removeItem('wizard_visited_steps')
+          localStorage.removeItem('wizard_environment')
+          localStorage.removeItem('wizard_step1_cache')
+          
           // Run nself init --full
           const initResponse = await fetch('/api/nself/init', {
             method: 'POST',

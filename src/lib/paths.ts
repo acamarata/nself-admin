@@ -8,7 +8,13 @@
  */
 export function getProjectPath(): string {
   // Check both NSELF_PROJECT_PATH and PROJECT_PATH for compatibility
-  const projectPath = process.env.NSELF_PROJECT_PATH || process.env.PROJECT_PATH || '../nself-project'
+  let projectPath = process.env.NSELF_PROJECT_PATH || process.env.PROJECT_PATH || '../nself-project'
+  
+  // Handle tilde expansion for home directory
+  if (projectPath.startsWith('~')) {
+    const os = require('os')
+    projectPath = projectPath.replace(/^~/, os.homedir())
+  }
   
   // If it's a relative path, resolve it relative to the app root
   if (!projectPath.startsWith('/')) {

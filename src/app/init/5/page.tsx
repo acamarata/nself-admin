@@ -22,15 +22,32 @@ interface FrontendApp {
 export default function InitStep5() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [dataLoaded, setDataLoaded] = useState(false)
   const [frontendApps, setFrontendApps] = useState<FrontendApp[]>([])
   const [environment, setEnvironment] = useState('development')
   const [baseDomain, setBaseDomain] = useState('localhost')
   const [autoSaving, setAutoSaving] = useState(false)
   const [editingTitle, setEditingTitle] = useState<number | null>(null)
 
-  // Load configuration from .env.local on mount
+  // Load configuration from .env.local on mount and when page gains focus
   useEffect(() => {
     checkAndLoadConfiguration()
+    
+    // Reload when the page gains focus (e.g., navigating back)
+    const handleFocus = () => {
+      checkAndLoadConfiguration()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        checkAndLoadConfiguration()
+      }
+    })
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
 
   const checkAndLoadConfiguration = async () => {
@@ -72,13 +89,18 @@ export default function InitStep5() {
       }
     } catch (error) {
       console.error('Failed to load configuration:', error)
+    } finally {
+      setDataLoaded(true)
     }
   }
 
   // Auto-save whenever frontendApps changes
   useEffect(() => {
+    // Skip if data hasn't been loaded yet
+    if (!dataLoaded) return
+    
     // Skip initial empty state
-    const isInitialLoad = frontendApps.length === 0 && !autoSaving
+    const isInitialLoad = frontendApps.length === 0
     if (isInitialLoad) return
     
     const saveApps = async () => {
@@ -99,7 +121,7 @@ export default function InitStep5() {
     // Debounce the save
     const timer = setTimeout(saveApps, 500)
     return () => clearTimeout(timer)
-  }, [frontendApps, environment])
+  }, [frontendApps, environment, dataLoaded])
 
   const addApp = () => {
     const nextPort = frontendApps.length > 0 
@@ -125,6 +147,11 @@ export default function InitStep5() {
         remoteSchemaUrl
       }
     ])
+    
+    // Automatically focus on the new app's title to show it's editable
+    setTimeout(() => {
+      setEditingTitle(frontendApps.length)
+    }, 50)
   }
 
   const removeApp = (index: number) => {
@@ -159,16 +186,90 @@ export default function InitStep5() {
         body: JSON.stringify({ frontendApps, environment })
       })
       
+      // Don't set loading to false - let the page transition handle it
       router.push('/init/6')
     } catch (error) {
       console.error('Error saving configuration:', error)
-    } finally {
+      // Only set loading false on error
       setLoading(false)
     }
   }
 
-  const handleBack = () => {
-    router.push('/init/4')
+  const handleBack = async () => {
+    setLoading(true)
+    try {
+      // Ensure final save before moving back
+      await fetch('/api/wizard/update-frontend-app', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ frontendApps, environment })
+      })
+      
+      // Don't set loading to false - let the page transition handle it
+      router.push('/init/4')
+    } catch (error) {
+      console.error('Error saving configuration:', error)
+      // Only set loading false on error
+      setLoading(false)
+    }
+  }
+
+  // Show loading skeleton while initial data loads
+  if (!dataLoaded) {
+    return (
+      <StepWrapper>
+        <div className="space-y-4">
+          {/* Info box skeleton */}
+          <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+            <div className="flex items-start gap-2">
+              <div className="w-4 h-4 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+              <div className="flex-1">
+                <div className="h-4 w-48 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse mb-2"></div>
+                <div className="h-3 w-full bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse"></div>
+                <div className="h-3 w-3/4 bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse mt-1"></div>
+              </div>
+            </div>
+          </div>
+          
+          {/* App card skeletons */}
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-5 h-5 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+                  <div className="h-5 w-24 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+                </div>
+                <div className="w-8 h-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+              </div>
+              
+              {/* Input row skeletons */}
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                {[...Array(3)].map((_, j) => (
+                  <div key={j}>
+                    <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse mb-1"></div>
+                    <div className="h-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                {[...Array(2)].map((_, j) => (
+                  <div key={j}>
+                    <div className="h-3 w-32 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse mb-1"></div>
+                    <div className="h-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          
+          {/* Add button skeleton */}
+          <div className="flex justify-start">
+            <div className="h-8 w-24 bg-zinc-200 dark:bg-zinc-700 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+      </StepWrapper>
+    )
   }
 
   return (
@@ -383,10 +484,19 @@ export default function InitStep5() {
         <button
           onClick={handleNext}
           disabled={loading}
-          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-blue-600 py-1 px-3 text-white hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-inset dark:ring-blue-400/20 dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-blue-600 py-1 px-3 text-white hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-inset dark:ring-blue-400/20 dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer disabled:cursor-not-allowed"
         >
-          <span>{loading ? 'Saving...' : 'Next'}</span>
-          <ArrowRight className="h-4 w-4" />
+          {loading ? (
+            <>
+              <span>Saving</span>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-blue-400"></div>
+            </>
+          ) : (
+            <>
+              <span>Next</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </button>
       </div>
     </StepWrapper>

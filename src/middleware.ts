@@ -10,7 +10,8 @@ const PUBLIC_ROUTES = [
   '/api/auth/check',  // Allow checking auth status
   '/api/health',
   '/api/project/status',  // Allow checking project status without auth
-  '/api/wizard/init',  // Allow wizard init check
+  '/api/wizard',  // Allow all wizard endpoints
+  '/api/env/read',  // Allow reading env during wizard
   '/api/debug',  // Debug endpoints (dev only)
   '/_next',
   '/favicon.ico',

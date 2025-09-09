@@ -17,8 +17,38 @@ export async function POST(request: NextRequest) {
     console.log('Project path:', projectPath)
     console.log('Mode:', mode)
     
-    // Path to nself CLI
-    const nselfPath = '/Users/admin/Sites/nself/bin/nself'
+    // Find nself CLI - check PATH first (for normal users), then dev location
+    let nselfPath = 'nself'
+    
+    // Check if nself is in PATH
+    try {
+      await execAsync('which nself')
+      console.log('Using nself from PATH')
+    } catch {
+      // Fallback to known development location
+      const devPath = '/Users/admin/Sites/nself/bin/nself'
+      const fs = require('fs')
+      if (fs.existsSync(devPath)) {
+        nselfPath = devPath
+        console.log('Using nself from development location')
+      } else {
+        // Try common installation locations
+        const commonPaths = [
+          '/usr/local/bin/nself',
+          '/opt/homebrew/bin/nself',
+          process.env.HOME + '/bin/nself',
+          process.env.HOME + '/.local/bin/nself'
+        ]
+        
+        for (const p of commonPaths) {
+          if (fs.existsSync(p)) {
+            nselfPath = p
+            console.log('Found nself at:', p)
+            break
+          }
+        }
+      }
+    }
     
     // If mode is 'edit', save current .env.local BEFORE reset
     const envPath = path.join(projectPath, '.env.local')

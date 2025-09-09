@@ -3,20 +3,21 @@ import fs from 'fs/promises'
 import path from 'path'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { getProjectPath } from '@/lib/paths'
 
 const execAsync = promisify(exec)
 
 export async function GET() {
   try {
     // Use the same project path as the build API uses
-    const projectPath = process.env.NSELF_PROJECT_PATH || '/Users/admin/Sites/nself-project'
+    const projectPath = getProjectPath()
     
-    // Check if any env file exists (.env.dev, .env.local, or .env)
+    // Check if any env file exists - nself prefers .env, falls back to .env.dev
     let hasEnvFile = false
     let envContent = null
     
-    // Check in order of priority
-    const envFiles = ['.env.dev', '.env.local', '.env']
+    // Check in nself's priority order
+    const envFiles = ['.env', '.env.dev', '.env.staging', '.env.prod']
     for (const envFile of envFiles) {
       const envPath = path.join(projectPath, envFile)
       try {
@@ -174,6 +175,7 @@ export async function GET() {
       servicesRunning,
       runningServices,
       dockerContainers,
+      containerCount: dockerContainers.length,  // Add container count for routing logic
       config: {
         projectName,
         baseDomain

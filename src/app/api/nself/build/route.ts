@@ -3,13 +3,14 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 import path from 'path'
 import fs from 'fs/promises'
+import { getProjectPath } from '@/lib/paths'
 
 const execAsync = promisify(exec)
 
 export async function POST(request: NextRequest) {
   try {
     // Get the actual backend project path where we want to build
-    const backendProjectPath = process.env.NSELF_PROJECT_PATH || '/Users/admin/Sites/nself-project'
+    const backendProjectPath = getProjectPath()
     
     console.log('=== Starting nself build ===')
     console.log('Backend project path:', backendProjectPath)
@@ -47,15 +48,29 @@ export async function POST(request: NextRequest) {
       console.error('Failed to create backend directory:', mkdirError)
     }
     
-    // Check if .env.local exists
-    const envPath = path.join(backendProjectPath, '.env.local')
+    // Check if env files exist - nself build expects .env or .env.dev
+    const envPath = path.join(backendProjectPath, '.env')
+    const envDevPath = path.join(backendProjectPath, '.env.dev')
+    
+    let envFileFound = false
     try {
       await fs.access(envPath)
-      console.log('.env.local found')
+      console.log('.env found')
+      envFileFound = true
     } catch {
-      console.error('.env.local not found')
+      // Check for .env.dev as fallback
+      try {
+        await fs.access(envDevPath)
+        console.log('.env.dev found')
+        envFileFound = true
+      } catch {
+        console.error('Neither .env nor .env.dev found')
+      }
+    }
+    
+    if (!envFileFound) {
       return NextResponse.json(
-        { error: 'Project not initialized. Please run the setup wizard first.' },
+        { error: 'Project not initialized. Please run the setup wizard first. (No .env or .env.dev file found)' },
         { status: 400 }
       )
     }

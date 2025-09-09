@@ -22,6 +22,9 @@ export async function POST(request: NextRequest) {
         if (app.displayName) {
           envUpdates[`FRONTEND_APP_${num}_DISPLAY_NAME`] = app.displayName
         }
+        if (app.systemName) {
+          envUpdates[`FRONTEND_APP_${num}_SYSTEM_NAME`] = app.systemName
+        }
         if (app.tablePrefix) {
           envUpdates[`FRONTEND_APP_${num}_TABLE_PREFIX`] = app.tablePrefix
         }
@@ -48,13 +51,15 @@ export async function POST(request: NextRequest) {
         }
       })
       
-      // Clear any extra frontend apps from previous configurations
-      for (let i = frontendApps.length + 1; i <= 10; i++) {
+      // Clear any extra frontend apps from previous configurations (up to 99 apps)
+      for (let i = frontendApps.length + 1; i <= 99; i++) {
         // Check if this app exists in current config
         if (currentEnv[`FRONTEND_APP_${i}_DISPLAY_NAME`] || 
-            currentEnv[`FRONTEND_APP_${i}_TABLE_PREFIX`]) {
+            currentEnv[`FRONTEND_APP_${i}_TABLE_PREFIX`] ||
+            currentEnv[`FRONTEND_APP_${i}_SYSTEM_NAME`]) {
           // Clear it
           envUpdates[`FRONTEND_APP_${i}_DISPLAY_NAME`] = ''
+          envUpdates[`FRONTEND_APP_${i}_SYSTEM_NAME`] = ''
           envUpdates[`FRONTEND_APP_${i}_TABLE_PREFIX`] = ''
           envUpdates[`FRONTEND_APP_${i}_PORT`] = ''
           envUpdates[`FRONTEND_APP_${i}_ROUTE`] = ''

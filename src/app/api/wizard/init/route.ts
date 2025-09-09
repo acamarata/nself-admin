@@ -17,7 +17,9 @@ export async function GET(request: NextRequest) {
       // Read existing env file and return config
       const env = await readEnvFile()
       if (env) {
-        const config = envToWizardConfig(env)
+        const wizardConfig = envToWizardConfig(env)
+        // Merge the wizard config with raw env values so validation can check for existing keys
+        const config = { ...wizardConfig, ...env }
         return NextResponse.json({
           success: true,
           hasEnvFile: true,
@@ -51,7 +53,9 @@ export async function GET(request: NextRequest) {
     // Now read the generated .env.local
     const env = await readEnvFile()
     if (env) {
-      const config = envToWizardConfig(env)
+      const wizardConfig = envToWizardConfig(env)
+      // Merge the wizard config with raw env values so validation can check for existing keys
+      const config = { ...wizardConfig, ...env }
       return NextResponse.json({
         success: true,
         hasEnvFile: true,

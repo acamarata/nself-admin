@@ -78,8 +78,8 @@ export default function LoginPage() {
                 } else if (!statusData.hasDockerCompose) {
                   // Has env but not built
                   router.push('/init/1')
-                } else if (!statusData.servicesRunning) {
-                  // Built but not running
+                } else if (!statusData.servicesRunning || statusData.containerCount === 0) {
+                  // Built but not running (check both flags for accuracy)
                   router.push('/start')
                 } else {
                   // Services are running - check if partial or full
@@ -91,20 +91,23 @@ export default function LoginPage() {
                       const runningCount = dockerData.containers?.filter((c: any) => c.state === 'running').length || 0
                       const totalCount = dockerData.containers?.length || 0
                       
-                      if (totalCount > 0 && runningCount < totalCount) {
+                      // If no containers at all, go to start page
+                      if (totalCount === 0) {
+                        router.push('/start')
+                      } else if (totalCount > 0 && runningCount < totalCount) {
                         // Partial running - some containers stopped
                         router.push('/doctor')
                       } else {
-                        // All running or no containers info
+                        // All running
                         router.push('/')
                       }
                     } else {
-                      // Can't check containers, default to dashboard
-                      router.push('/')
+                      // Can't check containers, go to start page to be safe
+                      router.push('/start')
                     }
                   } catch (error) {
-                    // Default to dashboard if docker check fails
-                    router.push('/')
+                    // Default to start page if docker check fails
+                    router.push('/start')
                   }
                 }
               } else {
@@ -143,8 +146,8 @@ export default function LoginPage() {
             } else if (!statusData.hasDockerCompose) {
               // Has env but not built
               router.push('/init/1')
-            } else if (!statusData.servicesRunning) {
-              // Built but not running
+            } else if (!statusData.servicesRunning || statusData.containerCount === 0) {
+              // Built but not running (check both flags for accuracy)
               router.push('/start')
             } else {
               // Services are running - check if partial or full
@@ -156,20 +159,23 @@ export default function LoginPage() {
                   const runningCount = dockerData.containers?.filter((c: any) => c.state === 'running').length || 0
                   const totalCount = dockerData.containers?.length || 0
                   
-                  if (totalCount > 0 && runningCount < totalCount) {
+                  // If no containers at all, go to start page
+                  if (totalCount === 0) {
+                    router.push('/start')
+                  } else if (totalCount > 0 && runningCount < totalCount) {
                     // Partial running - some containers stopped
                     router.push('/doctor')
                   } else {
-                    // All running or no containers info
+                    // All running
                     router.push('/')
                   }
                 } else {
-                  // Can't check containers, default to dashboard
-                  router.push('/')
+                  // Can't check containers, go to start page to be safe
+                  router.push('/start')
                 }
               } catch (error) {
-                // Default to dashboard if docker check fails
-                router.push('/')
+                // Default to start page if docker check fails
+                router.push('/start')
               }
             }
           } else {

@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Server, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import { Server, CheckCircle, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
 import { useProjectStore } from '@/stores/projectStore'
 import { GridPattern } from '@/components/GridPattern'
 import { useMotionValue, motion, useMotionTemplate } from 'framer-motion'
-import { safeNavigate, getTargetRoute, shouldRedirect } from '@/lib/routing'
+import { safeNavigate } from '@/lib/routing'
 import type { MotionValue } from 'framer-motion'
 
 interface ProjectInfoCardProps {
@@ -106,11 +106,320 @@ function ProjectInfoCard({ icon, label, value, pattern }: ProjectInfoCardProps) 
   )
 }
 
+// Helper to get detailed service information
+function getServiceInfo(name: string): { description: string; details: string[] } {
+  const lowerName = name.toLowerCase()
+  
+  // Core services
+  if (lowerName === 'postgres') {
+    return {
+      description: 'PostgreSQL Database - Primary data store',
+      details: [
+        'Container: postgres',
+        'Image: postgres:15-alpine',
+        'Port: 5432',
+        'Stores all application data'
+      ]
+    }
+  }
+  if (lowerName === 'hasura') {
+    return {
+      description: 'Hasura GraphQL Engine',
+      details: [
+        'Container: hasura',
+        'Image: hasura/graphql-engine:v2.36.0',
+        'Port: 8080',
+        'Instant GraphQL API with subscriptions'
+      ]
+    }
+  }
+  if (lowerName === 'auth') {
+    return {
+      description: 'Hasura Auth Service',
+      details: [
+        'Container: auth',
+        'Image: nhost/hasura-auth:0.36.0',
+        'Port: 4000',
+        'JWT tokens & session management'
+      ]
+    }
+  }
+  if (lowerName === 'nginx') {
+    return {
+      description: 'Nginx Reverse Proxy',
+      details: [
+        'Container: nginx',
+        'Image: nginx:alpine',
+        'Ports: 80, 443',
+        'Routes requests & SSL termination'
+      ]
+    }
+  }
+  
+  // Storage services
+  if (lowerName === 'minio') {
+    return {
+      description: 'MinIO Object Storage',
+      details: [
+        'Container: minio',
+        'Image: minio/minio:latest',
+        'Ports: 9000, 9001',
+        'S3-compatible storage'
+      ]
+    }
+  }
+  if (lowerName === 'storage') {
+    return {
+      description: 'Hasura Storage Service',
+      details: [
+        'Container: storage',
+        'Image: nhost/hasura-storage:0.6.1',
+        'Port: 5001',
+        'S3-compatible API for file operations'
+      ]
+    }
+  }
+  
+  // Optional services
+  if (lowerName === 'nself-admin') {
+    return {
+      description: 'nself Admin UI',
+      details: [
+        'Container: nself-admin',
+        'Image: acamarata/nself-admin:latest',
+        'Port: 3021',
+        'Web management interface'
+      ]
+    }
+  }
+  if (lowerName === 'mailpit') {
+    return {
+      description: 'Mailpit Email Server',
+      details: [
+        'Container: mailpit',
+        'Image: axllent/mailpit:latest',
+        'Ports: 1025, 8025',
+        'Email testing & capture'
+      ]
+    }
+  }
+  if (lowerName === 'meilisearch') {
+    return {
+      description: 'MeiliSearch Engine',
+      details: [
+        'Container: meilisearch',
+        'Image: getmeili/meilisearch:v1.5',
+        'Port: 7700',
+        'Full-text search engine'
+      ]
+    }
+  }
+  if (lowerName === 'redis') {
+    return {
+      description: 'Redis Cache',
+      details: [
+        'Container: redis',
+        'Image: redis:7-alpine',
+        'Port: 6379',
+        'In-memory data store'
+      ]
+    }
+  }
+  if (lowerName === 'mlflow') {
+    return {
+      description: 'MLflow Platform',
+      details: [
+        'Container: mlflow',
+        'Image: ghcr.io/mlflow/mlflow:v2.9.2',
+        'Port: 5001',
+        'ML lifecycle management'
+      ]
+    }
+  }
+  
+  // Monitoring stack
+  if (lowerName === 'grafana') {
+    return {
+      description: 'Grafana Dashboards',
+      details: [
+        'Container: grafana',
+        'Image: grafana/grafana:10.2.3',
+        'Port: 3000',
+        'Metrics visualization'
+      ]
+    }
+  }
+  if (lowerName === 'prometheus') {
+    return {
+      description: 'Prometheus Metrics',
+      details: [
+        'Container: prometheus',
+        'Image: prom/prometheus:v2.48.1',
+        'Port: 9090',
+        'Time-series database'
+      ]
+    }
+  }
+  if (lowerName === 'loki') {
+    return {
+      description: 'Loki Log Aggregation',
+      details: [
+        'Container: loki',
+        'Image: grafana/loki:2.9.3',
+        'Port: 3100',
+        'Centralized logging'
+      ]
+    }
+  }
+  if (lowerName === 'tempo') {
+    return {
+      description: 'Tempo Tracing',
+      details: [
+        'Container: tempo',
+        'Image: grafana/tempo:2.3.1',
+        'Port: 3200',
+        'Distributed tracing'
+      ]
+    }
+  }
+  if (lowerName === 'jaeger') {
+    return {
+      description: 'Jaeger UI',
+      details: [
+        'Container: jaeger',
+        'Image: jaegertracing/all-in-one:1.52',
+        'Port: 16686',
+        'Trace visualization'
+      ]
+    }
+  }
+  if (lowerName === 'alertmanager') {
+    return {
+      description: 'Alert Manager',
+      details: [
+        'Container: alertmanager',
+        'Image: prom/alertmanager:v0.26.0',
+        'Port: 9093',
+        'Alert routing & notifications'
+      ]
+    }
+  }
+  if (lowerName === 'node-exporter') {
+    return {
+      description: 'System Metrics (Node Exporter)',
+      details: [
+        'Container: node-exporter',
+        'Image: prom/node-exporter:v1.7.0',
+        'Port: 9100',
+        'Host system metrics'
+      ]
+    }
+  }
+  if (lowerName === 'postgres-exporter') {
+    return {
+      description: 'Database Metrics (PostgreSQL Exporter)',
+      details: [
+        'Container: postgres-exporter',
+        'Image: prometheuscommunity/postgres-exporter:v0.15.0',
+        'Port: 9187',
+        'Database performance metrics'
+      ]
+    }
+  }
+  if (lowerName === 'cadvisor') {
+    return {
+      description: 'Container Metrics (cAdvisor)',
+      details: [
+        'Container: cadvisor',
+        'Image: gcr.io/cadvisor/cadvisor:v0.47.2',
+        'Port: 8080',
+        'Container resource usage'
+      ]
+    }
+  }
+  
+  // Custom services
+  if (lowerName.startsWith('cs')) {
+    const serviceNum = name.replace(/cs/i, '')
+    return {
+      description: `Custom Service ${serviceNum}`,
+      details: [
+        `Container: ${name}`,
+        'User-defined service',
+        'Check .env file for details'
+      ]
+    }
+  }
+  
+  // Default
+  return {
+    description: name,
+    details: ['Service component']
+  }
+}
+
+// Keep simple description helper for backward compatibility
+function getServiceDescription(name: string): string {
+  const info = getServiceInfo(name)
+  return `${info.description}\n${info.details.join('\n')}`
+}
+
+// Helper to get service display name
+function getServiceDisplayName(name: string): string {
+  const lowerName = name.toLowerCase()
+  
+  // Core services
+  if (lowerName === 'postgres') return 'PostgreSQL'
+  if (lowerName === 'hasura') return 'Hasura GraphQL'
+  if (lowerName === 'auth') return 'Authentication'
+  if (lowerName === 'nginx') return 'Nginx Proxy'
+  
+  // Storage services
+  if (lowerName === 'minio') return 'MinIO Storage'
+  if (lowerName === 'storage') return 'Storage API'
+  
+  // Mail & Search
+  if (lowerName === 'mailpit') return 'Mailpit'
+  if (lowerName === 'meilisearch') return 'MeiliSearch'
+  
+  // Cache
+  if (lowerName === 'redis') return 'Redis Cache'
+  
+  // ML
+  if (lowerName === 'mlflow') return 'MLflow'
+  
+  // Admin UI
+  if (lowerName === 'nself-admin') return 'nself Admin UI'
+  
+  // Monitoring stack
+  if (lowerName === 'grafana') return 'Grafana'
+  if (lowerName === 'prometheus') return 'Prometheus'
+  if (lowerName === 'loki') return 'Loki Logs'
+  if (lowerName === 'tempo') return 'Tempo Tracing'
+  if (lowerName === 'alertmanager') return 'Alert Manager'
+  if (lowerName === 'node-exporter') return 'System Metrics'
+  if (lowerName === 'postgres-exporter') return 'Database Metrics'
+  if (lowerName === 'cadvisor') return 'Container Metrics'
+  if (lowerName === 'jaeger') return 'Jaeger'
+  
+  // Admin
+  if (lowerName === 'nself-admin') return 'nself Admin UI'
+  
+  // Default: capitalize and clean up
+  return name.replace(/[-_]/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 export default function StartPage() {
   const router = useRouter()
   const [projectInfo, setProjectInfo] = useState<any>(null)
+  const [serviceDetails, setServiceDetails] = useState<any>(null)
+  const [loadingServices, setLoadingServices] = useState(true)
   const [starting, setStarting] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [showDbPassword, setShowDbPassword] = useState(false)
   const [startProgress, setStartProgress] = useState<{
     message: string
     percentage?: number
@@ -120,20 +429,28 @@ export default function StartPage() {
   const checkProjectStatus = useProjectStore(state => state.checkProjectStatus)
   const projectStatus = useProjectStore(state => state.projectStatus)
   
-  // Check project status and redirect if needed
+  // Check project status but DON'T auto-redirect to dashboard
   useEffect(() => {
     const checkStatus = async () => {
       // Check project status first
       await checkProjectStatus()
-      const currentStatus = useProjectStore.getState().projectStatus
       
-      // Determine the correct route based on project state
-      const targetRoute = await getTargetRoute(currentStatus)
-      const currentPath = window.location.pathname
-      
-      // Only redirect if we should change routes
-      if (shouldRedirect(currentPath, targetRoute)) {
-        safeNavigate(router, targetRoute)
+      // Only redirect AWAY from /start if project is not built
+      // We should NOT auto-redirect to dashboard - user must click Start
+      try {
+        const response = await fetch('/api/project/status')
+        if (response.ok) {
+          const statusData = await response.json()
+          
+          // Only redirect away if project is NOT built
+          if (!statusData.hasDockerCompose) {
+            router.push('/init')
+          }
+          // If built but not started, STAY on /start page
+          // Don't auto-redirect to dashboard even if containers are detected
+        }
+      } catch (error) {
+        console.error('Error checking project status:', error)
       }
     }
     
@@ -142,9 +459,10 @@ export default function StartPage() {
     return () => clearTimeout(timer)
   }, [checkProjectStatus, router])
 
-  // Fetch project info
+  // Fetch project info and service details
   useEffect(() => {
     fetchProjectInfo()
+    fetchServiceDetails()
   }, [])
 
   const fetchProjectInfo = async () => {
@@ -156,6 +474,21 @@ export default function StartPage() {
       }
     } catch (error) {
       console.error('Failed to fetch project info:', error)
+    }
+  }
+  
+  const fetchServiceDetails = async () => {
+    try {
+      setLoadingServices(true)
+      const response = await fetch('/api/project/services-detail')
+      if (response.ok) {
+        const data = await response.json()
+        setServiceDetails(data.services)
+      }
+    } catch (error) {
+      console.error('Failed to fetch service details:', error)
+    } finally {
+      setLoadingServices(false)
     }
   }
 
@@ -300,14 +633,10 @@ export default function StartPage() {
             <h2 className="mt-4 text-2xl font-bold text-zinc-900 dark:text-white">
               Ready to Launch
             </h2>
-            <p className="mt-2 text-base text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-              Your <span className="font-semibold text-zinc-800 dark:text-zinc-200">{projectInfo?.projectName || 'nself'}</span> project has been successfully built and configured.
-              All {projectInfo?.monitoringEnabled ? (projectInfo?.totalServices || 0) + 5 : (projectInfo?.totalServices || 0)} services are ready to start.
-            </p>
             
             {projectInfo && (
               <>
-                {/* Status Cards */}
+                {/* First Row: Status and Environment */}
                 <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <ProjectInfoCard
                     icon={CheckCircle}
@@ -321,7 +650,9 @@ export default function StartPage() {
                   <ProjectInfoCard
                     icon={Server}
                     label="Env"
-                    value={projectInfo.environment === 'dev' ? 'Dev' : projectInfo.environment === 'production' ? 'Prod' : 'Dev'}
+                    value={projectInfo.environment === 'dev' ? 'Dev' : 
+                           projectInfo.environment === 'staging' ? 'Staging' : 
+                           projectInfo.environment === 'production' ? 'Prod' : 'Dev'}
                     pattern={{
                       y: 16,
                       squares: [[0, 1], [1, 3]]
@@ -329,16 +660,37 @@ export default function StartPage() {
                   />
                 </div>
                 
-                {/* Services Breakdown */}
-                {/* Additional Info Cards */}
+                {/* Second Row: Project Name and Base Domain */}
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 p-3 border border-blue-200 dark:border-blue-800">
-                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">Base Domain</div>
-                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-200 mt-1">*.{projectInfo.domain || 'localhost'}</div>
+                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">Project Name</div>
+                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-200 mt-1 text-center">{projectInfo.projectName || 'nself-project'}</div>
                   </div>
-                  <div className="rounded-lg bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 p-3 border border-green-200 dark:border-green-800">
-                    <div className="text-xs font-medium text-green-700 dark:text-green-400">Database</div>
-                    <div className="text-sm font-semibold text-green-900 dark:text-green-200 mt-1">{projectInfo.databaseName || projectInfo.database || 'PostgreSQL'}</div>
+                  <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 p-3 border border-blue-200 dark:border-blue-800">
+                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">Base Domain</div>
+                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-200 mt-1 text-center">{projectInfo.domain || 'localhost'}</div>
+                  </div>
+                </div>
+                
+                {/* Third Row: Database Name and Database Password */}
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 p-3 border border-blue-200 dark:border-blue-800">
+                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">Database Name</div>
+                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-200 mt-1 text-center">{projectInfo.databaseName || 'postgres'}</div>
+                  </div>
+                  <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 p-3 border border-blue-200 dark:border-blue-800">
+                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">Database Password</div>
+                    <div className="flex items-center justify-center mt-1 gap-2">
+                      <div className="text-sm font-semibold text-blue-900 dark:text-blue-200 text-center">
+                        {showDbPassword ? (projectInfo?.dbPassword || 'No password found') : '••••••••'}
+                      </div>
+                      <button
+                        onClick={() => setShowDbPassword(!showDbPassword)}
+                        className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        {showDbPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 
@@ -350,102 +702,220 @@ export default function StartPage() {
                     >
                       <span>
                         Total Services: <span className="text-blue-600 dark:text-blue-400 font-bold">
-                          {projectInfo?.monitoringEnabled ? (projectInfo?.totalServices || 0) + 5 : (projectInfo?.totalServices || 0)}
+                          {projectInfo?.totalServices || 0}
                         </span>
                       </span>
                       {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>
                     {showDetails && (
-                    <div className="space-y-1.5 mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-700">
+                    <div className="space-y-3 mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700">
                       {/* Required Services */}
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center space-x-2">
-                          <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                          <span className="text-zinc-600 dark:text-zinc-400">Required</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-zinc-900 dark:text-white">
-                            {projectInfo.servicesByCategory?.required?.length || 
-                             projectInfo.services?.filter((s: string) => 
-                              ['postgres', 'hasura', 'auth', 'nginx'].some(req => s.toLowerCase().includes(req))
-                            ).length || 4}
-                          </span>
-                          <span className="text-xs text-zinc-500">
-                            (PostgreSQL, Hasura, Auth, Nginx)
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Optional Services */}
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center space-x-2">
-                          <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                          <span className="text-zinc-600 dark:text-zinc-400">Optional</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-zinc-900 dark:text-white">
-                            {(() => {
-                              const baseOptional = projectInfo.servicesByCategory?.optional?.length || 
-                                projectInfo.services?.filter((s: string) => 
-                                  ['redis', 'minio', 'storage', 'mailpit', 'mlflow'].some(opt => s.toLowerCase().includes(opt))
-                                ).length || 0;
-                              // Add 5 if monitoring is enabled (even if services aren't built yet)
-                              return projectInfo.monitoringEnabled ? baseOptional + 5 : baseOptional;
-                            })()}
-                          </span>
-                          <span className="text-xs text-zinc-500">
-                            ({projectInfo.monitoringEnabled ? 'Monitoring Bundle, ' : ''}Redis, MinIO, Storage, MLflow, Mailpit)
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Custom Services */}
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center space-x-2">
-                          <div className="h-2 w-2 rounded-full bg-purple-500"></div>
-                          <span className="text-zinc-600 dark:text-zinc-400">Custom Services</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-zinc-900 dark:text-white">
-                            {projectInfo.servicesByCategory?.user?.filter((s: string) => s !== 'nself').length || 
-                             projectInfo.services?.filter((s: string) => 
-                              !['postgres', 'hasura', 'auth', 'nginx', 'redis', 'minio', 'storage', 'mailpit', 'mlflow', 'grafana', 'prometheus', 'loki', 'jaeger', 'alertmanager'].some(known => s.toLowerCase().includes(known))
-                            ).length || 0}
-                          </span>
-                          <span className="text-xs text-zinc-500">
-                            (Custom backend services)
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Frontend Apps */}
-                      {projectInfo.frontendApps && projectInfo.frontendApps.length > 0 && (
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center space-x-2">
-                            <div className="h-2 w-2 rounded-full bg-indigo-500"></div>
-                            <span className="text-zinc-600 dark:text-zinc-400">Frontend Apps</span>
+                      {projectInfo.servicesByCategory?.required?.length > 0 && (
+                        <div>
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                              Required ({projectInfo.servicesByCategory.required.length})
+                            </span>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium text-zinc-900 dark:text-white">
-                              {projectInfo.frontendApps.length}
-                            </span>
-                            <span className="text-xs text-zinc-500">
-                              ({projectInfo.frontendApps.map((app: any) => app.label).join(', ')})
-                            </span>
+                          <div className="space-y-1 ml-4">
+                            {projectInfo.servicesByCategory.required.map((service: string, idx: number) => {
+                              const serviceData = serviceDetails?.[service]
+                              const info = serviceData ? {
+                                description: getServiceDisplayName(service),
+                                details: [
+                                  serviceData.container_name && `Container: ${serviceData.container_name}`,
+                                  serviceData.image && `Image: ${serviceData.image}`,
+                                  serviceData.ports?.length > 0 && `Ports: ${serviceData.ports.map((p: string) => p.split(':')[0]).join(', ')}`,
+                                  serviceData.restart && `Restart: ${serviceData.restart}`
+                                ].filter(Boolean)
+                              } : getServiceInfo(service)
+                              return (
+                                <div key={service} className="flex items-center space-x-2 text-sm">
+                                  <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
+                                  <span className="text-zinc-700 dark:text-zinc-300">{getServiceDisplayName(service)}</span>
+                                  <div className="relative group/tooltip inline-flex isolate">
+                                    <svg 
+                                      className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-help flex-shrink-0" 
+                                      fill="none" 
+                                      stroke="currentColor" 
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div className="absolute left-0 bottom-full mb-2 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 w-72 p-3 text-xs text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none">
+                                      <div className="font-semibold mb-2">{info.description}</div>
+                                      <div className="space-y-1 text-gray-300">
+                                        {info.details.map((detail, i) => (
+                                          <div key={i} className="text-xs">{detail}</div>
+                                        ))}
+                                      </div>
+                                      <div className="absolute left-2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
                           </div>
                         </div>
                       )}
                       
-                      {/* Backup Status - inline, compact */}
-                      {projectInfo.backupEnabled && (
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center space-x-2">
-                            <div className="h-2 w-2 rounded-full bg-amber-500"></div>
-                            <span className="text-zinc-600 dark:text-zinc-400">Backups</span>
+                      {/* Optional Services */}
+                      {projectInfo.servicesByCategory?.optional?.length > 0 && (
+                        <div>
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+                              Optional ({projectInfo.servicesByCategory.optional.length})
+                            </span>
                           </div>
-                          <span className="text-xs text-zinc-500">
-                            Enabled ({projectInfo.backupSchedule || 'Daily 2AM'})
-                          </span>
+                          <div className="space-y-1 ml-4">
+                            {projectInfo.servicesByCategory.optional.map((service: string, idx: number) => {
+                              const serviceData = serviceDetails?.[service]
+                              const info = serviceData ? {
+                                description: getServiceDisplayName(service),
+                                details: [
+                                  serviceData.container_name && `Container: ${serviceData.container_name}`,
+                                  serviceData.image && `Image: ${serviceData.image}`,
+                                  serviceData.ports?.length > 0 && `Ports: ${serviceData.ports.map((p: string) => p.split(':')[0]).join(', ')}`,
+                                  serviceData.restart && `Restart: ${serviceData.restart}`
+                                ].filter(Boolean)
+                              } : getServiceInfo(service)
+                              return (
+                                <div key={service} className="flex items-center space-x-2 text-sm">
+                                  <div className="h-1.5 w-1.5 rounded-full bg-purple-500"></div>
+                                  <span className="text-zinc-700 dark:text-zinc-300">{getServiceDisplayName(service)}</span>
+                                  <div className="relative group/tooltip inline-flex isolate">
+                                    <svg 
+                                      className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-help flex-shrink-0" 
+                                      fill="none" 
+                                      stroke="currentColor" 
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div className="absolute left-0 bottom-full mb-2 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 w-72 p-3 text-xs text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none">
+                                      <div className="font-semibold mb-2">{info.description}</div>
+                                      <div className="space-y-1 text-gray-300">
+                                        {info.details.map((detail, i) => (
+                                          <div key={i} className="text-xs">{detail}</div>
+                                        ))}
+                                      </div>
+                                      <div className="absolute left-2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Custom Services */}
+                      {projectInfo.servicesByCategory?.user?.length > 0 && (
+                        <div>
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                              Custom ({projectInfo.servicesByCategory.user.length})
+                            </span>
+                          </div>
+                          <div className="space-y-1 ml-4">
+                            {projectInfo.servicesByCategory.user.map((service: string, idx: number) => {
+                              const serviceData = serviceDetails?.[service]
+                              const info = serviceData ? {
+                                description: `Custom Service: ${service}`,
+                                details: [
+                                  serviceData.container_name && `Container: ${serviceData.container_name}`,
+                                  serviceData.image && `Image: ${serviceData.image}`,
+                                  serviceData.ports?.length > 0 && `Ports: ${serviceData.ports.map((p: string) => p.split(':')[0]).join(', ')}`,
+                                  serviceData.customInfo?.type && `Type: ${serviceData.customInfo.type}`,
+                                  serviceData.customInfo?.route && `Route: ${serviceData.customInfo.route}`,
+                                  serviceData.restart && `Restart: ${serviceData.restart}`
+                                ].filter(Boolean)
+                              } : getServiceInfo(service)
+                              return (
+                                <div key={service} className="flex items-center space-x-2 text-sm">
+                                  <div className="h-1.5 w-1.5 rounded-full bg-orange-500"></div>
+                                  <span className="text-zinc-700 dark:text-zinc-300">{getServiceDisplayName(service)}</span>
+                                  <div className="relative group/tooltip inline-flex isolate">
+                                    <svg 
+                                      className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-help flex-shrink-0" 
+                                      fill="none" 
+                                      stroke="currentColor" 
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div className="absolute left-0 bottom-full mb-2 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 w-72 p-3 text-xs text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none">
+                                      <div className="font-semibold mb-2">{info.description}</div>
+                                      <div className="space-y-1 text-gray-300">
+                                        {info.details.map((detail, i) => (
+                                          <div key={i} className="text-xs">{detail}</div>
+                                        ))}
+                                      </div>
+                                      <div className="absolute left-2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Frontend Apps */}
+                      {projectInfo.frontendApps && projectInfo.frontendApps.length > 0 && (
+                        <div>
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                              Frontend Apps ({projectInfo.frontendApps.length})
+                            </span>
+                          </div>
+                          <div className="space-y-1 ml-4">
+                            {projectInfo.frontendApps.map((app: any) => (
+                              <div key={app.name} className="flex items-center space-x-2 text-sm">
+                                <div className="h-1.5 w-1.5 rounded-full bg-indigo-500"></div>
+                                <span className="text-zinc-700 dark:text-zinc-300">{app.label} (port {app.port})</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Backup Status */}
+                      {projectInfo.backupEnabled && (
+                        <div>
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                              Backups
+                            </span>
+                          </div>
+                          <div className="space-y-1 ml-4">
+                            <div className="flex items-center space-x-2 text-sm">
+                              <div className="h-1.5 w-1.5 rounded-full bg-gray-500"></div>
+                              <span className="text-zinc-700 dark:text-zinc-300">
+                                Enabled
+                              </span>
+                              <div className="relative group/tooltip inline-flex isolate">
+                                <svg 
+                                  className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-help flex-shrink-0" 
+                                  fill="none" 
+                                  stroke="currentColor" 
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div className="absolute left-0 bottom-full mb-2 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 w-72 p-3 text-xs text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none">
+                                  <div className="font-semibold mb-2">Database Backups</div>
+                                  <div className="space-y-1 text-gray-300">
+                                    <div className="text-xs">Status: Enabled</div>
+                                    <div className="text-xs">Schedule: {projectInfo.backupSchedule || 'Daily at 2AM'}</div>
+                                    <div className="text-xs">Type: PostgreSQL dumps</div>
+                                    <div className="text-xs">Retention: 7 days</div>
+                                  </div>
+                                  <div className="absolute left-2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -480,8 +950,8 @@ export default function StartPage() {
                 </Button>
                 
                 <p className="text-xs text-zinc-500 dark:text-zinc-500 text-center leading-tight">
-                  This will start all {projectInfo?.monitoringEnabled ? (projectInfo?.totalServices || 0) + 5 : (projectInfo?.totalServices || 0)} services using Docker Compose<br />
-                  using <span className="font-medium">nself start</span> with smart defaults and auto-fixer.
+                  This will run <span className="font-medium">nself start</span> which uses Docker Compose<br />
+                  to launch all {projectInfo?.totalServices || 0} services with smart defaults and auto-recovery.
                 </p>
                 
                 {/* Edit/Reset Options */}

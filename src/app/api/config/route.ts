@@ -28,7 +28,6 @@ const fileOperationSchema = z.object({
 // Allowed configuration files (following nself CLI conventions)
 const ALLOWED_CONFIG_FILES = [
   '.env',
-  '.env.local', 
   '.env.example', 
   '.env.dev',
   '.env.staging',
@@ -169,7 +168,7 @@ async function getConfigFiles() {
     const configFiles = []
     
     // Environment files (following nself CLI conventions)
-    const envFiles = ['.env', '.env.local', '.env.example', '.env.dev', '.env.staging', '.env.prod', '.env.secrets']
+    const envFiles = ['.env', '.env.dev', '.env.staging', '.env.prod', '.env.secrets', '.env.example']
     for (const envFile of envFiles) {
       try {
         const filePath = path.join(backendPath, envFile)
@@ -453,11 +452,24 @@ async function validateConfiguration() {
       { timeout: 30000 }
     ).catch(error => ({ stdout: '', stderr: error?.message || "Unknown error" }))
 
-    // Check for required environment variables
-    const envPath = path.join(backendPath, '.env.local')
+    // Check for required environment variables - nself prefers .env, falls back to .env.dev
+    const envPath = path.join(backendPath, '.env')
+    const envDevPath = path.join(backendPath, '.env.dev')
     let envValidation = 'Environment file not found'
+    let envContent = null
+    
+    // Try .env first, then .env.dev (nself's priority)
     try {
-      const envContent = await fs.readFile(envPath, 'utf-8')
+      envContent = await fs.readFile(envPath, 'utf-8')
+    } catch {
+      try {
+        envContent = await fs.readFile(envDevPath, 'utf-8')
+      } catch {
+        // Neither file exists
+      }
+    }
+    
+    if (envContent) {
       const parsed = parseEnvContent(envContent)
       
       const requiredVars = ['PROJECT_NAME', 'BASE_DOMAIN', 'POSTGRES_PASSWORD']
@@ -466,8 +478,6 @@ async function validateConfiguration() {
       envValidation = missing.length === 0 
         ? 'All required variables present'
         : `Missing required variables: ${missing.join(', ')}`
-    } catch (error: any) {
-      // Already handled above
     }
 
     return NextResponse.json({
@@ -553,7 +563,7 @@ async function applyConfiguration(options: any) {
 
 async function createEnvironmentFile(options: any) {
   const backendPath = getProjectPath()
-  const requestedFile = options.environment || '.env.local'
+  const requestedFile = options.environment || '.env.dev'
   
   // Validate file path
   const validation = validateFilePath(requestedFile)
@@ -639,7 +649,7 @@ async function backupConfiguration() {
     await fs.mkdir(backupDir, { recursive: true })
 
     const configFiles = [
-      '.env', '.env.local', '.env.dev', '.env.staging', '.env.prod', '.env.secrets',
+      '.env', '.env.dev', '.env.staging', '.env.prod', '.env.secrets',
       'docker-compose.yml', 'docker-compose.override.yml'
     ]
 

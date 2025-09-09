@@ -31,8 +31,40 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Use nself CLI which is already tested and works
-        const nselfPath = '/Users/admin/Sites/nself/bin/nself'
+        // Find nself CLI - check PATH first (for normal users), then dev location
+        let nselfPath = 'nself' // Default to using from PATH
+        
+        // Check if nself is available in PATH
+        try {
+          const { execSync } = require('child_process')
+          execSync('which nself', { stdio: 'ignore' })
+          console.log('Using nself from PATH')
+        } catch {
+          // Not in PATH, check known development location
+          const devPath = '/Users/admin/Sites/nself/bin/nself'
+          if (require('fs').existsSync(devPath)) {
+            nselfPath = devPath
+            console.log('Using nself from development location:', devPath)
+          } else {
+            // Try common installation locations
+            const commonPaths = [
+              '/usr/local/bin/nself',
+              '/opt/homebrew/bin/nself',
+              process.env.HOME + '/bin/nself',
+              process.env.HOME + '/.local/bin/nself'
+            ]
+            
+            for (const path of commonPaths) {
+              if (require('fs').existsSync(path)) {
+                nselfPath = path
+                console.log('Found nself at:', path)
+                break
+              }
+            }
+          }
+        }
+        
+        console.log('Using nself command:', nselfPath)
         
         // First, check which images need to be pulled
         const checkProcess = spawn('docker-compose', ['config', '--images'], {

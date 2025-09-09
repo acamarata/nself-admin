@@ -11,50 +11,168 @@ export default function InitStep1() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [config, setConfig] = useState<any>({
-    projectName: 'nproject',
-    environment: 'development',  // nself uses 'development' not 'dev'
-    domain: 'local.nself.org',  // nself default domain
-    databaseName: 'nself',  // nself default db name  
-    databasePassword: 'nself-dev-password',
-    adminEmail: '',
-    backup: {
-      enabled: false,
-      types: {
-        database: true,
-        images: false,
-        configs: false
-      },
-      schedule: {
-        frequency: 'daily' as 'daily' | 'weekly' | 'monthly' | 'custom',
-        time: '02:00',
-        dayOfWeek: undefined,
-        dayOfMonth: undefined,
-        customCron: undefined
-      },
-      retention: 7,
-      compression: true,
-      encryption: false
-    }
-  })
   const [errors, setErrors] = useState<any>({})
   const [touched, setTouched] = useState<any>({})
   const [hasLoaded, setHasLoaded] = useState(false)
 
+  // Start with null config - will be loaded from env file
+  const [config, setConfig] = useState<any>(null)
+
+  // Load configuration from env file on mount and when page gains focus
+  useEffect(() => {
+    loadFromEnv()
+    
+    // Reload when the page gains focus (e.g., navigating back)
+    const handleFocus = () => {
+      loadFromEnv()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    // Also reload when the page becomes visible (handles tab switching)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        loadFromEnv()
+      }
+    })
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
+
+  const loadFromEnv = async () => {
+    try {
+      const response = await fetch('/api/env/read')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.env) {
+          // Load from env file - this is the source of truth
+          setConfig({
+            projectName: data.env.PROJECT_NAME || 'my-project',
+            environment: data.env.ENV || 'dev',
+            domain: data.env.BASE_DOMAIN || 'local.nself.org',
+            databaseName: data.env.POSTGRES_DB || 'nself',
+            databasePassword: data.env.POSTGRES_PASSWORD || 'nself-dev-password',
+            adminEmail: data.env.ADMIN_EMAIL || '',
+            backup: {
+              enabled: data.env.BACKUP_ENABLED === 'true',
+              types: {
+                database: true,
+                images: false,
+                configs: false
+              },
+              schedule: {
+                frequency: 'daily' as 'daily' | 'weekly' | 'monthly' | 'custom',
+                time: '02:00',
+                dayOfWeek: undefined,
+                dayOfMonth: undefined,
+                customCron: data.env.BACKUP_SCHEDULE
+              },
+              retention: parseInt(data.env.BACKUP_RETENTION_DAYS) || 7,
+              compression: data.env.BACKUP_COMPRESSION === 'true',
+              encryption: data.env.BACKUP_ENCRYPTION === 'true'
+            }
+          })
+        } else {
+          // No env file yet, use defaults
+          setConfig({
+            projectName: 'my-project',
+            environment: 'dev',
+            domain: 'local.nself.org',
+            databaseName: 'nself',
+            databasePassword: 'nself-dev-password',
+            adminEmail: '',
+            backup: {
+              enabled: false,
+              types: {
+                database: true,
+                images: false,
+                configs: false
+              },
+              schedule: {
+                frequency: 'daily' as 'daily' | 'weekly' | 'monthly' | 'custom',
+                time: '02:00',
+                dayOfWeek: undefined,
+                dayOfMonth: undefined,
+                customCron: undefined
+              },
+              retention: 7,
+              compression: true,
+              encryption: false
+            }
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load from env:', error)
+      // On error, use defaults
+      setConfig({
+        projectName: 'my-project',
+        environment: 'dev',
+        domain: 'local.nself.org',
+        databaseName: 'nself',
+        databasePassword: 'nself-dev-password',
+        adminEmail: '',
+        backup: {
+          enabled: false,
+          types: {
+            database: true,
+            images: false,
+            configs: false
+          },
+          schedule: {
+            frequency: 'daily' as 'daily' | 'weekly' | 'monthly' | 'custom',
+            time: '02:00',
+            dayOfWeek: undefined,
+            dayOfMonth: undefined,
+            customCron: undefined
+          },
+          retention: 7,
+          compression: true,
+          encryption: false
+        }
+      })
+    } finally {
+      setHasLoaded(true)
+    }
+  }
+
   // Auto-save configuration
   const saveConfig = useCallback(async () => {
+    // Don't save if config hasn't loaded yet
+    if (!config) return
+    
     try {
+      // Don't use localStorage - env file is the source of truth
+      
+      // Safely build backup schedule with defensive checks
+      let backupSchedule = '0 2 * * *' // Default daily at 2am
+      
+      if (config.backup?.schedule) {
+        const schedule = config.backup.schedule
+        const timeParts = schedule.time?.split(':') || ['2', '0']
+        const hour = timeParts[0] || '2'
+        const minute = timeParts[1] || '0'
+        
+        if (schedule.customCron) {
+          backupSchedule = schedule.customCron
+        } else if (schedule.frequency === 'daily') {
+          backupSchedule = `0 ${minute} ${hour} * * *`
+        } else if (schedule.frequency === 'weekly') {
+          backupSchedule = `0 ${minute} ${hour} * * ${schedule.dayOfWeek || 0}`
+        } else if (schedule.frequency === 'monthly') {
+          backupSchedule = `0 ${minute} ${hour} ${schedule.dayOfMonth || 1} * *`
+        }
+      }
+      
       // Convert backup structure to flat env vars for API
       const configToSave = {
         ...config,
         backupEnabled: config.backup?.enabled || false,
-        backupSchedule: config.backup?.schedule?.customCron || 
-          (config.backup?.schedule?.frequency === 'daily' ? `0 ${config.backup.schedule.time.split(':')[1]} ${config.backup.schedule.time.split(':')[0]} * * *` :
-          config.backup?.schedule?.frequency === 'weekly' ? `0 ${config.backup.schedule.time.split(':')[1]} ${config.backup.schedule.time.split(':')[0]} * * ${config.backup.schedule.dayOfWeek || 0}` :
-          config.backup?.schedule?.frequency === 'monthly' ? `0 ${config.backup.schedule.time.split(':')[1]} ${config.backup.schedule.time.split(':')[0]} ${config.backup.schedule.dayOfMonth || 1} * *` :
-          '0 2 * * *')
+        backupSchedule
       }
       
+      // Save directly to env file
       const response = await fetch('/api/wizard/update-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -71,86 +189,14 @@ export default function InitStep1() {
     }
   }, [config])
 
-  // Use auto-save hook (only after initial load)
+  // Use auto-save hook (only after initial load from env and when config exists)
   const { saveNow } = useAutoSave(config, {
     onSave: saveConfig,
-    enabled: hasLoaded,
+    enabled: hasLoaded && config !== null,
     delay: 1000  // Save after 1 second of inactivity
   })
 
-  // Load configuration from .env.local on mount
-  useEffect(() => {
-    checkAndLoadConfiguration()
-  }, [])
 
-  const checkAndLoadConfiguration = async () => {
-    // First check if env file exists
-    try {
-      const statusRes = await fetch('/api/project/status')
-      if (statusRes.ok) {
-        const statusData = await statusRes.json()
-        if (!statusData.hasEnvFile) {
-          // No env file - try to initialize first
-          console.log('No env file found, attempting to initialize...')
-          const initRes = await fetch('/api/nself/init', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ projectName: 'nproject' })
-          })
-          
-          if (!initRes.ok) {
-            console.error('Failed to initialize project')
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error checking project status:', error)
-    }
-    
-    // Load configuration regardless (will use defaults if no env file)
-    loadConfiguration()
-  }
-
-  const loadConfiguration = async () => {
-    try {
-      const response = await fetch('/api/wizard/init')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.config) {
-          setConfig({
-            projectName: data.config.projectName || 'nproject',
-            environment: data.config.environment || 'dev',
-            domain: data.config.domain || 'localhost',
-            databaseName: data.config.databaseName || 'my_database',
-            databasePassword: data.config.databasePassword || 'postgres_dev_password',
-            adminEmail: data.config.adminEmail || '',
-            backup: data.config.backup || {
-              enabled: data.config.backupEnabled || data.config.BACKUP_ENABLED === 'true' || data.config.DB_BACKUP_ENABLED === 'true' || false,
-              types: {
-                database: true,
-                images: false,
-                configs: false
-              },
-              schedule: {
-                frequency: 'daily',
-                time: '02:00',
-                dayOfWeek: undefined,
-                dayOfMonth: undefined,
-                customCron: data.config.backupSchedule || data.config.BACKUP_SCHEDULE || data.config.DB_BACKUP_SCHEDULE || '0 2 * * *'
-              },
-              retention: parseInt(data.config.BACKUP_RETENTION_DAYS || data.config.DB_BACKUP_RETENTION_DAYS || '7'),
-              compression: true,
-              encryption: false
-            }
-          })
-          setHasLoaded(true)  // Enable auto-save after loading
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load configuration:', error)
-      setHasLoaded(true)  // Enable auto-save even on error
-    }
-  }
 
   const validateField = (field: string, value: any, currentEnv?: string) => {
     let error = ''
@@ -228,12 +274,31 @@ export default function InitStep1() {
     try {
       // Save immediately before navigating
       await saveNow()
+      // Don't set loading to false - let the page transition handle it
       router.push('/init/2')
     } catch (error) {
       console.error('Error saving configuration:', error)
-    } finally {
+      // Only set loading false on error
       setLoading(false)
     }
+  }
+
+
+  // Show loading skeleton while initial data loads
+  if (!hasLoaded || !config) {
+    return (
+      <StepWrapper>
+        <div className="grid grid-cols-2 gap-6">
+          {/* Loading skeleton with pulse animation */}
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+              <div className="h-10 bg-zinc-100 dark:bg-zinc-800 rounded-lg animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+      </StepWrapper>
+    )
   }
 
   return (
@@ -285,12 +350,12 @@ export default function InitStep1() {
               let newDomain = config.domain
               
               // Update domain when switching environments
-              if (newEnv === 'development') {
+              if (newEnv === 'dev' || newEnv === 'development') {
                 // Switching to development - use local.nself.org if current domain isn't valid for dev
                 if (config.domain !== 'localhost' && config.domain !== 'local.nself.org') {
                   newDomain = 'local.nself.org'  // Use nself default domain
                 }
-              } else if (config.environment === 'development') {
+              } else if (config.environment === 'dev' || config.environment === 'development') {
                 // Switching from development to staging/prod - set a placeholder domain
                 newDomain = ''
               }
@@ -305,9 +370,9 @@ export default function InitStep1() {
             }}
             className="peer w-full px-3 pt-5 pb-2 pr-10 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-transparent text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 focus:border-blue-500 appearance-none transition-all"
           >
-            <option value="development">Development</option>
+            <option value="dev">Development</option>
             <option value="staging">Staging</option>
-            <option value="production">Production</option>
+            <option value="prod">Production</option>
           </select>
           <ChevronDown className="absolute right-3 top-[50%] -translate-y-[50%] h-4 w-4 text-zinc-400 pointer-events-none" />
           <label 
@@ -403,7 +468,7 @@ export default function InitStep1() {
         </div>
 
         <div className="relative">
-          {(config.environment === 'development' || config.environment === 'dev') ? (
+          {(config.environment === 'dev' || config.environment === 'development') ? (
             <>
               <select
                 id="domain"
@@ -450,7 +515,7 @@ export default function InitStep1() {
           )}
           <label 
             htmlFor="domain"
-            className={`absolute left-2 -top-3 px-1 text-xs font-medium bg-white/90 dark:bg-zinc-900/90 transition-all ${(config.environment !== 'development' && config.environment !== 'dev') ? 'peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:-top-3 peer-focus:text-xs' : ''} ${
+            className={`absolute left-2 -top-3 px-1 text-xs font-medium bg-white/90 dark:bg-zinc-900/90 transition-all ${(config.environment !== 'dev' && config.environment !== 'development') ? 'peer-placeholder-shown:top-3.5 peer-placeholder-shown:text-sm peer-placeholder-shown:text-zinc-400 peer-focus:-top-3 peer-focus:text-xs' : ''} ${
               touched.domain && errors.domain
                 ? 'text-red-600 dark:text-red-400 peer-focus:text-red-600 dark:peer-focus:text-red-400'
                 : 'text-zinc-600 dark:text-zinc-400 peer-focus:text-blue-600 dark:peer-focus:text-blue-400'
@@ -460,7 +525,7 @@ export default function InitStep1() {
           </label>
           {config.domain && !errors.domain && (
             <span className={`absolute top-[50%] -translate-y-[50%] text-xs text-zinc-500 dark:text-zinc-600 pointer-events-none ${
-              (config.environment === 'development' || config.environment === 'dev') ? 'right-14' : 'right-2'
+              (config.environment === 'dev' || config.environment === 'development') ? 'right-14' : 'right-2'
             }`}>
               (i.e., admin.{config.domain})
             </span>
@@ -536,10 +601,19 @@ export default function InitStep1() {
         <button
           onClick={handleNext}
           disabled={loading}
-          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-blue-600 py-1 px-3 text-white hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-inset dark:ring-blue-400/20 dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-blue-600 py-1 px-3 text-white hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-inset dark:ring-blue-400/20 dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer disabled:cursor-not-allowed"
         >
-          <span>{loading ? 'Saving...' : 'Next'}</span>
-          <ArrowRight className="h-4 w-4" />
+          {loading ? (
+            <>
+              <span>Saving</span>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-blue-400"></div>
+            </>
+          ) : (
+            <>
+              <span>Next</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </button>
       </div>
     </StepWrapper>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { getProjectPath } from '@/lib/paths'
+import { findNselfPath } from '@/lib/nself-path'
 
 const execAsync = promisify(exec)
 
@@ -14,14 +15,14 @@ export async function POST(request: NextRequest) {
     console.log('Project path:', projectPath)
     console.log('Project name:', projectName)
     
-    // Path to nself CLI
-    const nselfPath = '/Users/admin/Sites/nself/bin/nself'
+    // Find nself CLI
+    const nselfPath = await findNselfPath()
     
-    // Run nself init --full with project name
-    console.log(`Running nself init --full ${projectName}...`)
+    // Run nself init --full (no arguments needed)
+    console.log('Running nself init --full...')
     
     try {
-      const { stdout, stderr } = await execAsync(`${nselfPath} init --full ${projectName}`, {
+      const { stdout, stderr } = await execAsync(`${nselfPath} init --full`, {
         cwd: projectPath,
         env: {
           ...process.env,

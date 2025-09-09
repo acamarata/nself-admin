@@ -69,9 +69,11 @@ export function ProgressSteps() {
           {steps.map((step) => {
             const Icon = step.icon
             const isActive = step.number === currentStep
-            const isCompleted = visitedSteps.has(step.number) && step.number < currentStep
-            const isVisited = visitedSteps.has(step.number)
-            const isClickable = isVisited || isActive
+            const isPastDone = visitedSteps.has(step.number) && step.number < currentStep
+            const isFutureDone = visitedSteps.has(step.number) && step.number > currentStep
+            const isNotVisited = !visitedSteps.has(step.number) && !isActive
+            // Make all steps up to the max visited step clickable
+            const isClickable = step.number <= maxVisitedStep || isActive
 
             return (
               <button
@@ -86,34 +88,36 @@ export function ProgressSteps() {
                 {/* Circle */}
                 <div className={`
                   relative z-10 w-10 h-10 rounded-full flex items-center justify-center
-                  transition-all duration-300
+                  transition-all duration-300 ease-in-out transform-gpu
                   ${isActive 
                     ? 'bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-400 dark:to-blue-600 ring-4 ring-blue-300 dark:ring-blue-400/50 scale-125 shadow-xl shadow-blue-500/25 dark:shadow-blue-400/25' 
-                    : isCompleted
-                      ? 'bg-blue-800 dark:bg-blue-700 shadow-md'
-                      : isVisited
-                        ? 'bg-blue-500 dark:bg-blue-600 hover:scale-105 shadow-md'
-                        : 'bg-white dark:bg-zinc-800 border-2 border-zinc-300 dark:border-zinc-600'
+                    : isPastDone
+                      ? 'bg-blue-800 dark:bg-blue-700 shadow-md transform scale-100'
+                      : isFutureDone
+                        ? 'bg-blue-900 dark:bg-blue-950 border-2 border-zinc-400 dark:border-zinc-500 hover:scale-105 shadow-md transform scale-100'
+                        : 'bg-white dark:bg-zinc-800 border-2 border-zinc-300 dark:border-zinc-600 transform scale-100'
                   }
                 `}>
-                  {isCompleted ? (
-                    <CheckCircle className="w-5 h-5 text-white" />
+                  {isPastDone ? (
+                    <CheckCircle className="w-5 h-5 text-white transition-colors duration-300" />
                   ) : (
                     <Icon className={`
-                      w-5 h-5
-                      ${(isActive || isVisited) ? 'text-white' : 'text-zinc-400 dark:text-zinc-500'}
+                      w-5 h-5 transition-colors duration-300
+                      ${(isActive || isPastDone || isFutureDone) ? 'text-white' : 'text-zinc-400 dark:text-zinc-500'}
                     `} />
                   )}
                 </div>
                 
                 {/* Label */}
                 <span className={`
-                  mt-2 text-xs whitespace-nowrap
+                  mt-2 text-xs whitespace-nowrap transition-all duration-300
                   ${isActive 
                     ? 'text-blue-700 dark:text-blue-300 font-bold' 
-                    : isVisited
+                    : isPastDone
                       ? 'text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 dark:hover:text-blue-300'
-                      : 'text-zinc-500 dark:text-zinc-400 font-medium'
+                      : isFutureDone
+                        ? 'text-blue-800 dark:text-blue-400 font-medium hover:text-blue-900 dark:hover:text-blue-300'
+                        : 'text-zinc-500 dark:text-zinc-400 font-medium'
                   }
                 `}>
                   {step.name}

@@ -9,6 +9,7 @@ import ServiceConfigModal from '@/components/ServiceConfigModal'
 export default function InitStep2() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [dataLoaded, setDataLoaded] = useState(false)
   const [modalService, setModalService] = useState<string | null>(null)
   const [initialConfig, setInitialConfig] = useState<any>({})
   const [serviceConfigs, setServiceConfigs] = useState<Record<string, any>>({
@@ -68,18 +69,24 @@ export default function InitStep2() {
       }
     } catch (error) {
       console.error('Failed to load configuration:', error)
+    } finally {
+      setDataLoaded(true)
     }
   }
 
   const handleNext = async () => {
     setLoading(true)
     try {
+      // Get the environment from localStorage (set in step 1)
+      const environment = localStorage.getItem('wizard_environment') || 'dev'
+      
       // Save service configurations to .env.local
       const response = await fetch('/api/wizard/update-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           config: {
+            environment,  // Include environment to write to correct file
             postgresqlEnabled: true,
             hasuraEnabled: true,
             authEnabled: true,
@@ -94,13 +101,15 @@ export default function InitStep2() {
       })
       
       if (response.ok) {
+        // Don't set loading to false - let the page transition handle it
         router.push('/init/3')
       } else {
         console.error('Failed to save configuration')
+        setLoading(false)
       }
     } catch (error) {
       console.error('Error saving configuration:', error)
-    } finally {
+      // Only set loading false on error
       setLoading(false)
     }
   }
@@ -113,11 +122,53 @@ export default function InitStep2() {
     setModalService(service)
   }
 
-  const handleSaveConfig = (service: string, config: any) => {
+  const handleSaveConfig = async (service: string, config: any) => {
+    // Save to local state
     setServiceConfigs(prev => ({
       ...prev,
       [service]: config
     }))
+    
+    // Save to env file immediately for all service configurations
+    try {
+      // Get the environment from localStorage (set in step 1)
+      const environment = localStorage.getItem('wizard_environment') || 'dev'
+      
+      const updateConfig: any = {
+        environment  // Always include environment
+      }
+      
+      // Map service to appropriate config key
+      switch(service) {
+        case 'postgresql':
+          updateConfig.postgresqlConfig = config
+          break
+        case 'hasura':
+          updateConfig.hasuraConfig = config
+          break
+        case 'auth':
+          updateConfig.authConfig = config
+          break
+        case 'nginx':
+          updateConfig.nginxConfig = config
+          break
+      }
+      
+      const response = await fetch('/api/wizard/update-env', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          config: updateConfig,
+          step: 'required' 
+        })
+      })
+      
+      if (!response.ok) {
+        console.error(`Failed to save ${service} configuration`)
+      }
+    } catch (error) {
+      console.error(`Error saving ${service} configuration:`, error)
+    }
   }
 
   const requiredServices = [
@@ -150,6 +201,31 @@ export default function InitStep2() {
       configurable: true
     }
   ]
+
+  // Show loading skeleton while initial data loads
+  if (!dataLoaded) {
+    return (
+      <StepWrapper>
+        <div className="space-y-4">
+          {/* Loading skeleton for service cards */}
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="p-4 border-2 border-zinc-200 dark:border-zinc-700 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+                  <div>
+                    <div className="h-5 w-32 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse mb-2"></div>
+                    <div className="h-3 w-48 bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="h-8 w-20 bg-zinc-200 dark:bg-zinc-700 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </StepWrapper>
+    )
+  }
 
   return (
     <StepWrapper>
@@ -205,10 +281,19 @@ export default function InitStep2() {
         <button
           onClick={handleNext}
           disabled={loading}
-          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-blue-600 py-1 px-3 text-white hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-inset dark:ring-blue-400/20 dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-blue-600 py-1 px-3 text-white hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-inset dark:ring-blue-400/20 dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer disabled:cursor-not-allowed"
         >
-          <span>{loading ? 'Saving...' : 'Next'}</span>
-          <ArrowRight className="h-4 w-4" />
+          {loading ? (
+            <>
+              <span>Saving</span>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-blue-400"></div>
+            </>
+          ) : (
+            <>
+              <span>Next</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </button>
       </div>
 

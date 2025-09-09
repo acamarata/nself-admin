@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
 import path from 'path'
 import { readEnvFile } from '@/lib/env-handler'
+import { getProjectPath } from '@/lib/paths'
 
 // Generate a basic docker-compose.yml based on env settings
 async function generateDockerCompose(config: any): Promise<string> {
@@ -197,7 +198,7 @@ ${volumes.map(v => `  ${v}:`).join('\n')}
 export async function POST(request: NextRequest) {
   try {
     // Get project path - use the same as other APIs
-    const projectPath = process.env.NSELF_PROJECT_PATH || '/Users/admin/Sites/nself-project'
+    const projectPath = getProjectPath()
     
     console.log('=== Simple Build Starting ===')
     console.log('Project path:', projectPath)

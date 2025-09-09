@@ -47,7 +47,7 @@ import {
 } from 'lucide-react'
 import { GridPattern } from '@/components/GridPattern'
 import { apiPost } from '@/lib/api-client'
-import { safeNavigate, getTargetRoute, shouldRedirect } from '@/lib/routing'
+import { safeNavigate } from '@/lib/routing'
 // DEV ONLY - REMOVE FOR PRODUCTION
 import { useDevTracking } from '@/hooks/useDevTracking'
 
@@ -889,15 +889,32 @@ export default function DashboardPage() {
       await checkProjectStatus()
       const currentStatus = useProjectStore.getState().projectStatus
       
-      // Determine the correct route based on project state
-      const targetRoute = await getTargetRoute(currentStatus)
-      const currentPath = window.location.pathname
-      
-      // Only redirect if we should change routes
-      if (shouldRedirect(currentPath, targetRoute)) {
-        safeNavigate(router, targetRoute)
-      } else if (currentStatus === 'running') {
-        // Services running, fetch dashboard data
+      // Check the actual project status
+      try {
+        const response = await fetch('/api/project/status')
+        if (response.ok) {
+          const statusData = await response.json()
+          
+          // If project not initialized, go to init
+          if (!statusData.hasDockerCompose) {
+            router.push('/init')
+            return
+          }
+          
+          // If project is built but no containers running, go to /start
+          if (statusData.hasDockerCompose && statusData.containerCount === 0) {
+            router.push('/start')
+            return
+          }
+          
+          // Services are running, we can show dashboard
+          if (statusData.containerCount > 0) {
+            fetchAllData()
+          }
+        }
+      } catch (error) {
+        console.error('Error checking project status:', error)
+        // On error, still try to fetch data
         fetchAllData()
       }
     }, 500) // Increased delay to prevent bouncing

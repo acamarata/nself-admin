@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { getProjectPath } from '@/lib/paths'
+import { findNselfPath } from '@/lib/nself-path'
 
 const execAsync = promisify(exec)
 
@@ -11,8 +12,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}))
     const shouldFix = body.fix === true
     
-    // Path to nself CLI
-    const nselfPath = '/Users/admin/Sites/nself/bin/nself'
+    // Find nself CLI
+    const nselfPath = await findNselfPath()
     
     // Run nself doctor command
     const command = shouldFix ? `${nselfPath} doctor --fix` : `${nselfPath} doctor`

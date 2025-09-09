@@ -1,6 +1,6 @@
 {
   "name": "nself-admin",
-  "version": "0.0.4-beta",
+  "version": "0.0.4-alpha",
   "private": false,
   "description": "Web-based administration interface for nself CLI backend stack",
   "license": "SEE LICENSE IN LICENSE",
@@ -52,6 +52,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/bcryptjs": "^2.4.6",
     "@types/dockerode": "^3.3.43",
+    "@types/js-yaml": "^4.0.9",
     "@types/lodash": "^4.17.20",
     "@types/lokijs": "^1.5.14",
     "@types/mdx": "^2.0.13",
@@ -66,6 +67,7 @@
     "fast-glob": "^3.3.3",
     "flexsearch": "^0.8.205",
     "framer-motion": "^12.23.11",
+    "js-yaml": "^4.1.0",
     "lightningcss": "^1.30.1",
     "lodash": "^4.17.21",
     "lokijs": "^1.5.12",
