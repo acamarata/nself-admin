@@ -275,7 +275,7 @@ export default function InitStep6() {
     // Auto-fix port conflicts for custom services
     
     if (summary.customServices.length > 0) {
-      const fixedCustomServices = []
+      const fixedCustomServices: any[] = []
       
       summary.customServices.forEach((service, index) => {
         if (usedPorts.has(service.port)) {
@@ -312,7 +312,7 @@ export default function InitStep6() {
     
     // Auto-fix port conflicts for frontend apps
     if (summary.frontendApps.length > 0) {
-      const fixedFrontendApps = []
+      const fixedFrontendApps: any[] = []
       
       summary.frontendApps.forEach((app, index) => {
         if (app.localPort && usedPorts.has(app.localPort)) {

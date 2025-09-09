@@ -626,10 +626,8 @@ export default function InitStep4() {
                 </label>
                 <UrlInput
                   value={service.route || ''}
-                  onChange={(value, error) => {
-                    updateService(index, 'route', value)
-                    updateService(index, 'routeError', error)
-                  }}
+                  onChange={(value) => updateService(index, 'route', value)}
+                  onError={(error) => updateService(index, 'routeError', error)}
                   placeholder="api"
                   baseDomain={baseDomain}
                   environment={environment}

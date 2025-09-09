@@ -18,7 +18,8 @@ export default function InitStep3() {
     setOptionalServices,
     syncWithEnv,
     isInitialized,
-    isLoading
+    isLoading,
+    environment
   } = useWizardStore()
   
   const [serviceConfigs, setServiceConfigs] = useState<Record<string, any>>({
@@ -86,7 +87,7 @@ export default function InitStep3() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             variables,
-            environment: initialConfig.environment || 'dev'
+            environment: environment || 'dev'
           })
         })
       } catch (error) {
@@ -216,7 +217,7 @@ export default function InitStep3() {
       icon: Database,
       description: 'In-memory data store for caching and real-time features',
       details: 'Lightning-fast key-value database. Use for session storage, caching, pub/sub messaging, real-time leaderboards, rate limiting, and distributed locks.',
-      enabled: optionalServices.redis
+      enabled: optionalServices.redis || false
     },
     {
       key: 'minioEnabled',
@@ -225,7 +226,7 @@ export default function InitStep3() {
       icon: HardDrive,
       description: 'S3-compatible object storage for files and media',
       details: 'Self-hosted AWS S3 alternative. Perfect for storing user uploads, profile images, documents, backups, and any binary data with full S3 API compatibility and multi-cloud support.',
-      enabled: optionalServices.minio
+      enabled: optionalServices.minio || false
     },
     {
       key: 'mlflowEnabled',
@@ -234,7 +235,7 @@ export default function InitStep3() {
       icon: Package,
       description: 'Machine Learning lifecycle management platform',
       details: 'Complete ML platform for experiment tracking, model registry, model deployment, and collaborative ML workflows. Integrates with popular ML frameworks and provides a unified interface for the entire ML lifecycle.',
-      enabled: optionalServices.mlflow
+      enabled: optionalServices.mlflow || false
     },
     {
       key: 'mailpitEnabled',
@@ -243,7 +244,7 @@ export default function InitStep3() {
       icon: Mail,
       description: 'Email testing and delivery service',
       details: 'Catch all emails in development with Mailpit\'s web UI. Configure production email with SendGrid, AWS SES, Resend, Postmark, or your own SMTP service. Auto mode uses Mailpit for dev and your selected service for production.',
-      enabled: optionalServices.mailpit
+      enabled: optionalServices.mailpit || false
     },
     {
       key: 'searchEnabled',
@@ -252,7 +253,7 @@ export default function InitStep3() {
       icon: Search,
       description: 'Full-text search with 6 engine options',
       details: 'Choose from Meilisearch (default), Typesense, Zinc, Elasticsearch, OpenSearch, or Sonic. Each offers different trade-offs between features, performance, and resource usage.',
-      enabled: optionalServices.search
+      enabled: optionalServices.search || false
     },
     {
       key: 'monitoringEnabled',
@@ -261,7 +262,7 @@ export default function InitStep3() {
       icon: Activity,
       description: 'Complete observability stack with 5 integrated services',
       details: 'Includes Prometheus (metrics collection), Grafana (visualization dashboards), Loki (log aggregation), Tempo (distributed tracing), and Alertmanager (alert routing). Full observability for your entire stack.',
-      enabled: optionalServices.monitoring
+      enabled: optionalServices.monitoring || false
     }
   ]
 
@@ -320,7 +321,7 @@ export default function InitStep3() {
               <div className="flex items-start justify-between">
                 <div 
                   className={`flex items-start space-x-4 flex-1 ${service.required ? '' : 'cursor-pointer'}`}
-                  onClick={() => !service.required && !service.enabled && enableService(service.key)}
+                  onClick={() => !service.required && !service.enabled && toggleService(service.key)}
                 >
                   <div className={`p-2 rounded-lg border ${
                     service.enabled 
@@ -428,7 +429,6 @@ export default function InitStep3() {
           service={modalService}
           config={serviceConfigs[modalService]}
           onSave={(serviceConfig) => handleSaveConfig(modalService, serviceConfig)}
-          initialConfig={initialConfig}
         />
       )}
     </StepWrapper>
