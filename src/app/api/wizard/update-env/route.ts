@@ -223,6 +223,36 @@ export async function POST(request: NextRequest) {
         envUpdates = wizardConfigToEnv(config)
         break
         
+      case 'custom-services':
+        // Handle custom services with explicit step
+        if (customServices !== undefined) {
+          const services = customServices || []
+          envUpdates.SERVICES_ENABLED = services.length > 0 ? 'true' : 'false'
+          
+          // Clear existing CS_ entries first
+          for (let i = 1; i <= 20; i++) {
+            envUpdates[`CS_${i}`] = ''
+          }
+          
+          // Add new services
+          services.forEach((service: any, index: number) => {
+            const num = index + 1
+            const parts = [
+              service.name || `service_${num}`,
+              service.framework || 'custom',
+              String(service.port || (4000 + index)),
+              service.route || ''
+            ]
+            envUpdates[`CS_${num}`] = parts.join(':')
+          })
+        }
+        
+        // Ensure environment is set
+        if (environment) {
+          envUpdates.ENV = environment
+        }
+        break
+        
       default:
         // Auto-save mode - handle any combination of data
         if (customServices !== undefined || userServices !== undefined) {

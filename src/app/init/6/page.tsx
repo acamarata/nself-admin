@@ -17,6 +17,15 @@ interface ConfigSummary {
   redisEnabled: boolean
   minioEnabled: boolean
   monitoringEnabled: boolean
+  // Individual monitoring service flags
+  prometheusEnabled?: boolean
+  grafanaEnabled?: boolean
+  lokiEnabled?: boolean
+  tempoEnabled?: boolean
+  alertmanagerEnabled?: boolean
+  nodeExporterEnabled?: boolean
+  postgresExporterEnabled?: boolean
+  cadvisorEnabled?: boolean
   mlflowEnabled: boolean
   mailpitEnabled: boolean
   searchEnabled: boolean
@@ -64,6 +73,7 @@ export default function InitStep6() {
     checkAndLoadConfiguration()
   }, [])
 
+
   const checkAndLoadConfiguration = async () => {
     // First check if env file exists
     try {
@@ -107,6 +117,15 @@ export default function InitStep6() {
             searchEnabled: data.config.searchEnabled || data.config.SEARCH_ENABLED === 'true',
             searchEngine: data.config.searchEngine || data.config.SEARCH_ENGINE || 'meilisearch',
             monitoringEnabled: data.config.monitoringEnabled || data.config.MONITORING_ENABLED === 'true',
+            // Load individual monitoring service flags
+            prometheusEnabled: data.config.PROMETHEUS_ENABLED === 'true',
+            grafanaEnabled: data.config.GRAFANA_ENABLED === 'true',
+            lokiEnabled: data.config.LOKI_ENABLED === 'true',
+            tempoEnabled: data.config.TEMPO_ENABLED === 'true',
+            alertmanagerEnabled: data.config.ALERTMANAGER_ENABLED === 'true',
+            nodeExporterEnabled: data.config.NODE_EXPORTER_ENABLED === 'true',
+            postgresExporterEnabled: data.config.POSTGRES_EXPORTER_ENABLED === 'true',
+            cadvisorEnabled: data.config.CADVISOR_ENABLED === 'true',
             customServices: data.config.customServices || data.config.userServices || [],
             frontendApps: data.config.frontendApps || [],
             backupEnabled: data.config.backupEnabled || data.config.BACKUP_ENABLED === 'true' || data.config.DB_BACKUP_ENABLED === 'true',
@@ -465,6 +484,31 @@ export default function InitStep6() {
     )
   }
 
+  // Generate dynamic monitoring bundle description based on enabled services
+  const getMonitoringBundleDescription = () => {
+    if (!config.monitoringEnabled) return null
+    
+    // When monitoring is enabled, nself automatically enables all 8 monitoring services
+    // Unless explicitly disabled, all are enabled by default
+    const enabledMonitoringServices = [
+      (config.prometheusEnabled !== false) && 'Prometheus',
+      (config.grafanaEnabled !== false) && 'Grafana', 
+      (config.lokiEnabled !== false) && 'Loki',
+      (config.tempoEnabled !== false) && 'Tempo',
+      (config.alertmanagerEnabled !== false) && 'Alertmanager',
+      // These three are always enabled when monitoring is enabled
+      'Node Exporter',
+      'PostgreSQL Exporter',
+      'cAdvisor'
+    ].filter(Boolean)
+    
+    if (enabledMonitoringServices.length === 0) {
+      return 'Monitoring Bundle (None enabled)'
+    }
+    
+    return `Monitoring Bundle (${enabledMonitoringServices.join(', ')})`
+  }
+
   const enabledOptionalServices = [
     'nself Admin UI',  // Always show as enabled since user is viewing this interface
     config.redisEnabled && 'Redis Cache',
@@ -472,12 +516,17 @@ export default function InitStep6() {
     config.mlflowEnabled && 'MLflow Platform',
     config.mailpitEnabled && 'Email Service (Mailpit)',
     config.searchEnabled && `Search Service (${(config.searchEngine || 'meilisearch').charAt(0).toUpperCase() + (config.searchEngine || 'meilisearch').slice(1)})`,
-    config.monitoringEnabled && 'Monitoring Bundle (Prometheus, Grafana, Loki, Tempo, Alertmanager)'
+    getMonitoringBundleDescription()
   ].filter(Boolean)
 
   // Core services: PostgreSQL, Hasura, Auth, Nginx (4)
-  // Optional services count individually (monitoring = 5 services)
   const coreServicesCount = 4  // Always enabled
+  
+  // Calculate actual monitoring services count
+  // When monitoring is enabled, nself automatically enables all 8 monitoring services:
+  // Prometheus, Grafana, Loki, Tempo, Alertmanager, Node Exporter, PostgreSQL Exporter, cAdvisor
+  const monitoringServicesCount = config.monitoringEnabled ? 8 : 0
+  
   const optionalServicesCount = 
     1 +  // nself-admin is always counted since user is viewing this interface
     (config.redisEnabled ? 1 : 0) +
@@ -485,11 +534,10 @@ export default function InitStep6() {
     (config.mlflowEnabled ? 1 : 0) +
     (config.mailpitEnabled ? 1 : 0) +
     (config.searchEnabled ? 1 : 0) +
-    (config.monitoringEnabled ? 5 : 0) // Monitoring is 5 services
+    monitoringServicesCount // Count actual enabled monitoring services
   
-  const totalServices = coreServicesCount + 
-    optionalServicesCount +
-    config.customServices.length
+  // Calculate total services (don't use API value as it may be incorrect before build)
+  const totalServices = coreServicesCount + optionalServicesCount + config.customServices.length
 
   return (
     <StepWrapper>

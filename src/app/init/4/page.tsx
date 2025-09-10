@@ -55,7 +55,9 @@ export default function InitStep4() {
         const data = await response.json()
         if (data.env) {
           // Load environment and domain
-          setEnvironment(data.env.ENV || 'development')
+          const env = data.env.ENV || 'development'
+          console.log('Loaded environment from env file:', env)
+          setEnvironment(env === 'dev' ? 'development' : env)
           setBaseDomain(data.env.BASE_DOMAIN || 'localhost')
           
           // Load custom services from CS_* format
@@ -89,11 +91,16 @@ export default function InitStep4() {
   // Auto-save configuration
   const saveConfig = useCallback(async () => {
     try {
-      // Save to env
+      console.log('Saving custom services:', localServices, 'to environment:', environment)
+      // Save to env with explicit step for custom services
       await fetch('/api/wizard/update-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customServices: localServices, environment })
+        body: JSON.stringify({ 
+          customServices: localServices, 
+          environment: environment,
+          step: 'custom-services' // Add explicit step
+        })
       })
     } catch (error) {
       console.error('Failed to auto-save custom services:', error)

@@ -6,6 +6,7 @@ import { useProjectStore } from '@/stores/projectStore'
 import { usePageData } from '@/hooks/usePageData'
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { ensureCorrectRoute } from '@/lib/routing-logic'
 import {
   motion,
   useMotionTemplate,
@@ -69,7 +70,7 @@ interface DockerMetrics {
 
 interface ServiceStatus {
   name: string
-  status: 'running' | 'stopped' | 'error' | 'healthy' | 'unhealthy'
+  status: 'running' | 'stopped' | 'error' | 'healthy' | 'unhealthy' | 'restarting' | 'paused'
   health?: string
   uptime?: string
   cpu?: number
@@ -736,8 +737,59 @@ interface BackendServiceCardProps {
 
 function BackendServiceCard({ title, services, icon: Icon, description, color, category }: BackendServiceCardProps) {
   const [expanded, setExpanded] = useState(false)
-  const runningCount = services.filter(s => s.status === 'healthy' || s.status === 'running').length
-  const totalCount = services.length
+  
+  // Sort services based on title
+  const sortedServices = [...services].sort((a, b) => {
+    if (title === 'Monitoring') {
+      // Custom sort for monitoring stack
+      const order = [
+        'prometheus',
+        'grafana',
+        'loki',
+        'tempo',
+        'alertmanager',
+        'cadvisor',
+        'postgres_exporter',
+        'node_exporter'
+      ]
+      
+      const aName = a.name.toLowerCase()
+      const bName = b.name.toLowerCase()
+      
+      // Find positions in order array
+      const aIndex = order.findIndex(item => aName.includes(item))
+      const bIndex = order.findIndex(item => bName.includes(item))
+      
+      // If both found in order, sort by order
+      if (aIndex !== -1 && bIndex !== -1) {
+        return aIndex - bIndex
+      }
+      
+      // If only one found, put it first
+      if (aIndex !== -1) return -1
+      if (bIndex !== -1) return 1
+      
+      // Otherwise sort alphabetically
+      return aName.localeCompare(bName)
+    } else if (title === 'API Gateway') {
+      // Custom sort: Hasura first, then Nginx, then others
+      const aName = a.name.toLowerCase()
+      const bName = b.name.toLowerCase()
+      if (aName.includes('hasura')) return -1
+      if (bName.includes('hasura')) return 1
+      if (aName.includes('nginx')) return -1
+      if (bName.includes('nginx')) return 1
+      return aName.localeCompare(bName)
+    }
+    
+    // Default alphabetical sort for other categories
+    return a.name.localeCompare(b.name)
+  })
+  
+  const runningCount = sortedServices.filter(s => 
+    s.status === 'healthy' || s.status === 'running' || s.status === 'restarting'
+  ).length
+  const totalCount = sortedServices.length
   const isHealthy = runningCount === totalCount && totalCount > 0
   const categoryColors = category ? getCategoryColors(category) : null
   
@@ -801,7 +853,12 @@ function BackendServiceCard({ title, services, icon: Icon, description, color, c
               category && categoryColors ? categoryColors.icon : classes.iconColor
             }`} />
           </div>
-          <div className={`text-lg font-bold ${classes.status}`}>
+          <div className={`text-lg font-bold ${
+            totalCount === 0 ? 'text-gray-400' :
+            runningCount === totalCount ? 'text-blue-600 dark:text-blue-400' :
+            runningCount === 0 ? 'text-red-600 dark:text-red-400' :
+            'text-amber-600 dark:text-amber-400'
+          }`}>
             {totalCount > 0 ? `${runningCount}/${totalCount}` : '0'}
           </div>
         </div>
@@ -814,9 +871,9 @@ function BackendServiceCard({ title, services, icon: Icon, description, color, c
           {description}
         </p>
         
-        {services.length > 0 && (
+        {sortedServices.length > 0 && (
           <div className="space-y-1">
-            {services.slice(0, expanded ? services.length : 3).map((service, index) => (
+            {sortedServices.slice(0, expanded ? sortedServices.length : 3).map((service, index) => (
               <div key={index} className="flex items-center justify-between text-xs">
                 <span className="text-zinc-700 dark:text-zinc-300 truncate">
                   {service.name}
@@ -825,28 +882,39 @@ function BackendServiceCard({ title, services, icon: Icon, description, color, c
                   <div className={`h-1.5 w-1.5 rounded-full mr-1 ${
                     service.status === 'healthy' || service.status === 'running' 
                       ? 'bg-green-500' 
-                      : service.status === 'stopped' 
-                        ? 'bg-gray-500' 
-                        : 'bg-red-500'
+                      : service.status === 'error' || service.status === 'unhealthy'
+                        ? 'bg-red-500'
+                      : service.status === 'restarting'
+                        ? 'bg-amber-500'
+                      : service.status === 'paused'
+                        ? 'bg-blue-500'
+                      : 'bg-gray-500'
                   }`} />
-                  <span className="text-zinc-500 dark:text-zinc-400 capitalize text-xs">
-                    {service.status === 'healthy' ? 'up' : service.status}
+                  <span className={`capitalize text-xs ${
+                    service.status === 'error' || service.status === 'unhealthy'
+                      ? 'text-red-500 dark:text-red-400 font-medium'
+                      : 'text-zinc-500 dark:text-zinc-400'
+                  }`}>
+                    {service.status === 'healthy' ? 'up' : 
+                     service.status === 'error' ? 'error' :
+                     service.status === 'restarting' ? 'restarting' :
+                     service.status}
                   </span>
                 </div>
               </div>
             ))}
-            {services.length > 3 && (
+            {sortedServices.length > 3 && (
               <button
                 onClick={() => setExpanded(!expanded)}
                 className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
               >
-                {expanded ? 'Show less' : `+${services.length - 3} more`}
+                {expanded ? 'Show less' : `+${sortedServices.length - 3} more`}
               </button>
             )}
           </div>
         )}
         
-        {services.length === 0 && (
+        {sortedServices.length === 0 && (
           <div className="text-xs text-zinc-500 dark:text-zinc-400 italic">
             {title === 'Applications' ? 'No apps configured yet' : 'No services detected'}
           </div>
@@ -881,56 +949,103 @@ export default function DashboardPage() {
     return () => clearTimeout(timer)
   }, [])
   
-  // Check project status and redirect based on state
+  // Check routing and load dashboard data
   useEffect(() => {
-    // Add a small delay to prevent flashing when coming from build success
-    const checkTimer = setTimeout(async () => {
-      // First check project status
-      await checkProjectStatus()
-      const currentStatus = useProjectStore.getState().projectStatus
+    const initializeDashboard = async () => {
+      // Safety check: ensure we should be on the dashboard
+      const redirected = await ensureCorrectRoute('/', router.push)
+      if (redirected) {
+        return // Don't load data if we're redirecting
+      }
       
-      // Check the actual project status
-      try {
-        const response = await fetch('/api/project/status')
-        if (response.ok) {
-          const statusData = await response.json()
+      // First update the project status
+      await checkProjectStatus()
+      
+      // Force fetch data regardless of current projectStatus since we're on dashboard
+      // This fixes the issue where projectStatus might not be updated yet
+      const forceFetchData = async () => {
+        try {
+          // Direct API calls since we know we should be able to see dashboard data
+          const [systemRes, dockerRes] = await Promise.all([
+            fetch('/api/system/metrics').catch(() => null),
+            fetch('/api/docker/containers?detailed=true&stats=true').catch(() => null)
+          ])
           
-          // If project not initialized, go to init
-          if (!statusData.hasDockerCompose) {
-            router.push('/init')
-            return
-          }
+          // Update the store with the project status so future calls work
+          const store = useProjectStore.getState()
+          store.setProjectStatus('running')
           
-          // If project is built but no containers running, go to /start
-          if (statusData.hasDockerCompose && statusData.containerCount === 0) {
-            router.push('/start')
-            return
-          }
+          // Now call fetchAllData which should work
+          fetchAllData()
           
-          // Services are running, we can show dashboard
-          if (statusData.containerCount > 0) {
-            fetchAllData()
-          }
+        } catch (error) {
+          console.error('Dashboard data fetch error:', error)
+          // Fallback to regular fetch
+          fetchAllData()
         }
-      } catch (error) {
-        console.error('Error checking project status:', error)
-        // On error, still try to fetch data
+      }
+      
+      forceFetchData()
+      
+      // Check if services were recently started (within last 30 seconds)
+      const recentlyStarted = localStorage.getItem('services_recently_started')
+      const isRecent = recentlyStarted && (Date.now() - parseInt(recentlyStarted)) < 30000
+      
+      // If recently started, check again in a few seconds for updated data
+      if (isRecent) {
+        setTimeout(() => {
+          checkProjectStatus()
+          fetchAllData()
+        }, 3000)
+      }
+    }
+    
+    initializeDashboard()
+  }, [checkProjectStatus, fetchAllData, router.push])
+
+  // Add real-time polling for live dashboard updates
+  useEffect(() => {
+    // Start background refresh for real-time updates
+    const interval = setInterval(() => {
+      if (!isInitialLoad) {
         fetchAllData()
       }
-    }, 500) // Increased delay to prevent bouncing
-    
-    return () => clearTimeout(checkTimer)
-  }, [checkProjectStatus, fetchAllData, router])
+    }, 5000) // Update every 5 seconds
+
+    return () => clearInterval(interval)
+  }, [isInitialLoad, fetchAllData])
+  
+  // Helper to clean service names (remove project prefix)
+  const cleanServiceName = (name: string): string => {
+    // Remove common project prefixes like nproj99_ or nself_
+    return name.replace(/^(nproj\d+_|nself_|nself-)/, '')
+  }
   
   // Transform container stats to services format
-  const services: ServiceStatus[] = containerStats.map((c: any) => ({
-    name: c.name || 'unknown',
-    status: (c.state === 'running' ? 'healthy' : 'stopped') as ServiceStatus['status'],
-    health: c.status,
-    cpu: c.stats?.cpu?.percentage || 0,
-    memory: c.stats?.memory?.percentage || 0,
-    port: c.ports?.[0]?.public
-  }))
+  const services: ServiceStatus[] = containerStats.map((c: any) => {
+    // Determine status based on health and state
+    let status: ServiceStatus['status']
+    if (c.health === 'healthy' || (c.state === 'running' && !c.health)) {
+      status = 'healthy'
+    } else if (c.health === 'unhealthy' || c.state === 'exited' || c.state === 'dead') {
+      status = 'error'
+    } else if (c.health === 'restarting' || c.state === 'restarting') {
+      status = 'restarting'
+    } else if (c.state === 'paused') {
+      status = 'paused'
+    } else {
+      status = 'stopped'
+    }
+    
+    return {
+      name: cleanServiceName(c.name || 'unknown'),
+      status,
+      health: c.health || c.state,
+      cpu: c.stats?.cpu?.percentage || 0,
+      memory: c.stats?.memory?.percentage || 0,
+      port: c.ports?.[0]?.public
+    }
+  })
   
   // Use Docker metrics from system metrics API if available
   const apiDockerMetrics = systemMetrics?.docker
@@ -1001,6 +1116,10 @@ export default function DashboardPage() {
     percentage?: number
     type?: 'status' | 'progress' | 'download' | 'container' | 'error' | 'complete'
   }>({ message: '' })
+  
+  // Frontend apps from config
+  const [frontendApps, setFrontendApps] = useState<any[]>([])
+  const [loadingApps, setLoadingApps] = useState(false)
 
   // Mouse tracking for cards
   function MetricCard({ 
@@ -1081,6 +1200,26 @@ export default function DashboardPage() {
       fetchProjectInfo()
     }
   }, [hasRunningServices, loading])
+  
+  // Fetch frontend apps from config
+  useEffect(() => {
+    fetchFrontendApps()
+  }, [])
+  
+  const fetchFrontendApps = async () => {
+    setLoadingApps(true)
+    try {
+      const res = await fetch('/api/config/frontend-apps')
+      const data = await res.json()
+      if (data.success) {
+        setFrontendApps(data.data || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch frontend apps:', error)
+    } finally {
+      setLoadingApps(false)
+    }
+  }
 
   const fetchProjectInfo = async () => {
     try {
@@ -1334,11 +1473,13 @@ export default function DashboardPage() {
               {/* Database Services */}
               <BackendServiceCard
                 title="Database Services"
-                services={services.filter(s => 
-                  ['postgres', 'postgresql', 'database', 'db', 'redis', 'cache', 'memcached'].some(name => 
-                    s.name.toLowerCase().includes(name)
-                  )
-                )}
+                services={services.filter(s => {
+                  const name = s.name.toLowerCase()
+                  // Include postgres and redis, but exclude exporters (those go in monitoring)
+                  return ['postgres', 'postgresql', 'database', 'db', 'redis', 'cache', 'memcached'].some(n => 
+                    name.includes(n)
+                  ) && !name.includes('exporter')
+                })}
                 icon={Database}
                 description="PostgreSQL, Redis & caching layer"
                 color="blue"
@@ -1355,10 +1496,19 @@ export default function DashboardPage() {
                       s.name.toLowerCase().includes(exclude)
                     )
                   )
-                )}
+                ).sort((a, b) => {
+                  // Custom sort: Hasura first, then Nginx, then others
+                  const aName = a.name.toLowerCase()
+                  const bName = b.name.toLowerCase()
+                  if (aName.includes('hasura')) return -1
+                  if (bName.includes('hasura')) return 1
+                  if (aName.includes('nginx')) return -1
+                  if (bName.includes('nginx')) return 1
+                  return aName.localeCompare(bName)
+                })}
                 icon={Globe}
                 description="Nginx, Hasura GraphQL & REST APIs"
-                color="emerald"
+                color="blue"
                 category="required"
               />
               
@@ -1375,7 +1525,7 @@ export default function DashboardPage() {
                 )}
                 icon={Shield}
                 description="Auth service, JWT & session management"
-                color="purple"
+                color="blue"
                 category="required"
               />
               
@@ -1390,7 +1540,7 @@ export default function DashboardPage() {
                 )}
                 icon={HardDrive}
                 description="MinIO object storage & file management"
-                color="orange"
+                color="violet"
                 category="optional"
               />
               
@@ -1408,7 +1558,7 @@ export default function DashboardPage() {
                 )}
                 icon={Mail}
                 description="MeiliSearch, Mailpit & email services"
-                color="red"
+                color="violet"
                 category="optional"
               />
               
@@ -1428,17 +1578,19 @@ export default function DashboardPage() {
               />
               
               {/* Row 3 - User Applications */}
-              {/* Workers */}
+              {/* Workers & Jobs */}
               <BackendServiceCard
-                title="Workers"
+                title="Workers & Jobs"
                 services={services.filter(s => {
                   const name = s.name.toLowerCase()
-                  // All BullMQ services are workers
-                  return name.includes('bullmq') || name.includes('bull')
+                  // BullMQ workers, Celery workers, MLflow, or any container with "worker" in the name
+                  return name.includes('bullmq') || name.includes('bull') || 
+                         name.includes('worker') || name.includes('celery') ||
+                         name.includes('mlflow')
                 })}
                 icon={Briefcase}
-                description="BullMQ workers & background jobs"
-                color="blue"
+                description="Background jobs & ML pipelines"
+                color="orange"
                 category="user"
               />
               
@@ -1447,30 +1599,44 @@ export default function DashboardPage() {
                 title="Services"
                 services={services.filter(s => {
                   const name = s.name.toLowerCase()
-                  // NestJS, Go, Python services that are NOT BullMQ workers
-                  const isUserService = ['nest', 'go', 'golang', 'python', 'py'].some(n => name.includes(n))
-                  const isNotWorker = !name.includes('bull')
-                  return isUserService && isNotWorker
+                  // NestJS, Go, Python services that are NOT BullMQ workers or MLflow
+                  const isFrameworkService = ['nest', 'go', 'golang', 'python', 'py'].some(n => name.includes(n))
+                  // Generic user services (service_X pattern)
+                  const isGenericService = /service_\d+/.test(name)
+                  
+                  const isNotWorker = !name.includes('bull') && !name.includes('mlflow')
+                  return (isFrameworkService || isGenericService) && isNotWorker
                 })}
                 icon={Terminal}
-                description="NestJS, Go, Python microservices"
-                color="emerald"
+                description="Custom APIs & microservices"
+                color="orange"
                 category="user"
               />
               
               {/* Applications */}
               <BackendServiceCard
                 title="Applications"
-                services={services.filter(s => {
-                  const name = s.name.toLowerCase()
-                  // Only actual frontend applications (currently none)
-                  return ['frontend', 'webapp', 'mobile', 'client-app', 'ui-app'].some(n => 
-                    name === n || name.startsWith(n + '-') || name.endsWith('-' + n)
-                  )
-                })}
+                services={[
+                  // Docker-based frontend containers
+                  ...services.filter(s => {
+                    const name = s.name.toLowerCase()
+                    return ['frontend', 'webapp', 'mobile', 'client-app', 'ui-app'].some(n => 
+                      name === n || name.startsWith(n + '-') || name.endsWith('-' + n)
+                    )
+                  }),
+                  // Config-based frontend apps
+                  ...frontendApps.map(app => ({
+                    name: app.displayName,
+                    status: 'healthy' as any, // Config apps are considered configured/healthy
+                    health: app.status,
+                    cpu: 0,
+                    memory: 0,
+                    port: app.port
+                  }))
+                ]}
                 icon={Layers}
                 description="Frontend & client applications"
-                color="purple"
+                color="orange"
                 category="user"
               />
             </div>

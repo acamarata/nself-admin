@@ -247,7 +247,9 @@ export const useProjectStore = create<ProjectState>()(
       
       fetchSystemMetrics: async () => {
         const state = get()
-        if (state.projectStatus !== 'running') {
+        // Allow fetching metrics if we have any indication the system is set up
+        // This is more permissive to handle cases where projectStatus isn't updated yet
+        if (state.projectStatus === 'not_initialized') {
           return
         }
         
@@ -264,21 +266,31 @@ export const useProjectStore = create<ProjectState>()(
           
           if (response && response.ok) {
             const data = await response.json()
-            if (data.success) {
+            if (data.success && data.data) {
               set({ 
                 systemMetrics: data.data,
                 isLoadingMetrics: false
               })
+            } else {
+              // API returned unsuccessful response, keep existing data
+              set({ isLoadingMetrics: false })
             }
+          } else {
+            // Request failed, keep existing data
+            set({ isLoadingMetrics: false })
           }
         } catch (error) {
+          // Exception occurred, keep existing data
+          console.warn('[ProjectStore] fetchSystemMetrics failed:', error)
           set({ isLoadingMetrics: false })
         }
       },
       
       fetchContainerStats: async () => {
         const state = get()
-        if (state.projectStatus !== 'running') return
+        // Allow fetching containers if we have any indication services might be running
+        // This is more permissive to handle cases where projectStatus isn't updated yet
+        if (state.projectStatus === 'not_initialized') return
         
         set({ isLoadingContainers: true })
         
@@ -293,7 +305,7 @@ export const useProjectStore = create<ProjectState>()(
           
           if (response && response.ok) {
             const data = await response.json()
-            if (data.success) {
+            if (data.success && Array.isArray(data.data)) {
               // Group containers by category
               const byCategory: Record<string, ContainerStats[]> = {}
               data.data.forEach((container: ContainerStats) => {
@@ -309,9 +321,17 @@ export const useProjectStore = create<ProjectState>()(
                 containersByCategory: byCategory,
                 isLoadingContainers: false
               })
+            } else {
+              // API returned unsuccessful response, keep existing data
+              set({ isLoadingContainers: false })
             }
+          } else {
+            // Request failed, keep existing data  
+            set({ isLoadingContainers: false })
           }
         } catch (error) {
+          // Exception occurred, keep existing data
+          console.warn('[ProjectStore] fetchContainerStats failed:', error)
           set({ isLoadingContainers: false })
         }
       },
@@ -356,9 +376,9 @@ export const useProjectStore = create<ProjectState>()(
       fetchAllData: async () => {
         const state = get()
         
-        
-        // Only fetch if project is running
-        if (state.projectStatus !== 'running') {
+        // Be more permissive - only skip if completely not initialized
+        // This allows dashboard to load data even if projectStatus is uncertain
+        if (state.projectStatus === 'not_initialized') {
           return
         }
         

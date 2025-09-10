@@ -96,8 +96,11 @@ export async function GET(request: NextRequest) {
         if (searchEnabled) totalServices++ // Meilisearch
         if (nselfAdminEnabled) totalServices++ // nself-admin
         
-        // Monitoring adds 5 services but we don't count them in base total
-        // They're added separately in the UI
+        // Monitoring adds 8 services when enabled:
+        // Prometheus, Grafana, Loki, Tempo, Alertmanager, Node Exporter, PostgreSQL Exporter, cAdvisor
+        if (monitoringEnabledMatch && monitoringEnabledMatch[1].trim() === 'true') {
+          totalServices += 8
+        }
         
         // Add custom services
         totalServices += customServiceCount
@@ -106,6 +109,7 @@ export async function GET(request: NextRequest) {
         projectInfo.customServiceCount = customServiceCount
         
         // Debug logging
+        const monitoringEnabled = monitoringEnabledMatch && monitoringEnabledMatch[1].trim() === 'true'
         console.log('Service count debug:', {
           core: 4,
           storage: storageEnabled ? 1 : 0,
@@ -115,9 +119,8 @@ export async function GET(request: NextRequest) {
           search: searchEnabled ? 1 : 0,
           nselfAdmin: nselfAdminEnabled ? 1 : 0,
           customServices: customServiceCount,
-          monitoring: monitoringEnabledMatch ? 5 : 0,
-          totalWithoutMonitoring: totalServices,
-          totalWithMonitoring: totalServices + (monitoringEnabledMatch ? 5 : 0)
+          monitoring: monitoringEnabled ? 8 : 0,
+          total: totalServices
         })
         
         // Parse frontend apps

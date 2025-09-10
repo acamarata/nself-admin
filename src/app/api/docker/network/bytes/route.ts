@@ -1,17 +1,52 @@
 import { NextResponse } from 'next/server'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { getProjectPath } from '@/lib/paths'
+import fs from 'fs/promises'
+import path from 'path'
 
 const execAsync = promisify(exec)
 
 export async function GET() {
   try {
-    // Get list of nself containers
-    const { stdout: containerList } = await execAsync("docker ps --format '{{.Names}}'")
-    const nselfContainers = containerList.split('\n')
-      .filter(name => name && (name.toLowerCase().startsWith('nself_') || name.toLowerCase().startsWith('nself-')))
+    // Get project prefix for filtering containers
+    let projectPrefix = 'nproj' // Default fallback
+    try {
+      const projectPath = getProjectPath()
+      const dockerComposePath = path.join(projectPath, 'docker-compose.yml')
+      
+      try {
+        const dockerComposeContent = await fs.readFile(dockerComposePath, 'utf8')
+        const projectMatch = dockerComposeContent.match(/# Project: ([^\s\n]+)/)
+        if (projectMatch) {
+          projectPrefix = projectMatch[1].trim()
+        }
+      } catch {
+        // File doesn't exist or can't read, use default
+      }
+    } catch {
+      // Path error, use default
+    }
     
-    if (nselfContainers.length === 0) {
+    // Get list of project containers
+    const { stdout: containerList } = await execAsync("docker ps --format '{{.Names}}'")
+    const projectContainers = containerList.split('\n')
+      .filter(name => {
+        if (!name) return false
+        const lowerName = name.toLowerCase()
+        return (
+          lowerName.startsWith(projectPrefix.toLowerCase() + '_') ||
+          lowerName.startsWith(projectPrefix.toLowerCase() + '-') ||
+          lowerName.startsWith('nself_') ||
+          lowerName.startsWith('nself-') ||
+          // Also check if container name contains common nself service names
+          (['postgres', 'hasura', 'grafana', 'prometheus'].some(service => 
+            lowerName.includes(service)
+          ))
+        )
+      })
+    
+    if (projectContainers.length === 0) {
       return NextResponse.json({
         success: true,
         containers: []
@@ -20,7 +55,7 @@ export async function GET() {
     
     // Get network stats for each container from /proc/net/dev inside container
     const containerStats = await Promise.all(
-      nselfContainers.map(async (containerName) => {
+      projectContainers.map(async (containerName) => {
         try {
           // Get network stats from inside the container
           const { stdout } = await execAsync(

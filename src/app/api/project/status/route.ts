@@ -75,21 +75,43 @@ export async function GET() {
       // nself status failed, check Docker containers directly
     }
     
-    // Check Docker containers related to nself
+    // Check Docker containers related to this nself project
     let dockerContainers: any[] = []
+    let projectPrefix = 'nproj' // Default fallback
     
     try {
+      // Try to get the project name from docker-compose.yml
+      if (isBuilt) {
+        const dockerComposeContent = await fs.readFile(dockerComposePath, 'utf8')
+        const projectMatch = dockerComposeContent.match(/# Project: ([^\s\n]+)/)
+        if (projectMatch) {
+          projectPrefix = projectMatch[1].trim()
+        }
+      }
+      
       // Get all containers
       const { stdout } = await execAsync('docker ps --format "{{.Names}}\t{{.Status}}\t{{.Ports}}"')
       const lines = stdout.split('\n').filter(line => line.trim())
       
-      // Filter for nself containers (with both underscore and hyphen naming)
-      const nselfContainers = lines.filter(line => 
-        line.toLowerCase().startsWith('nself_') || 
-        line.toLowerCase().startsWith('nself-')
-      )
+      // Filter for containers from this project (more flexible matching)
+      const projectContainers = lines.filter(line => {
+        const containerName = line.split('\t')[0].toLowerCase()
+        return (
+          containerName.startsWith(projectPrefix.toLowerCase() + '_') ||
+          containerName.startsWith(projectPrefix.toLowerCase() + '-') ||
+          containerName.startsWith('nself_') ||
+          containerName.startsWith('nself-') ||
+          // Also check if container name contains common nself service names
+          (isBuilt && (
+            containerName.includes('postgres') ||
+            containerName.includes('hasura') ||
+            containerName.includes('grafana') ||
+            containerName.includes('prometheus')
+          ))
+        )
+      })
       
-      dockerContainers = nselfContainers.map(line => {
+      dockerContainers = projectContainers.map(line => {
         const parts = line.split('\t')
         const name = parts[0] || 'unknown'
         const status = parts[1] || 'unknown'

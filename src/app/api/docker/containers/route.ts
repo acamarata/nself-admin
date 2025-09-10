@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { execFile } from 'child_process'
 import { promisify } from 'util'
 import { z } from 'zod'
+import { getProjectPath } from '@/lib/paths'
+import fs from 'fs/promises'
+import path from 'path'
 
 const execFileAsync = promisify(execFile)
 
@@ -35,10 +38,27 @@ function getServiceCategory(name: string, labels: any): string {
 }
 
 function getHealthStatus(status: string, state: string): string {
+  // Check for explicit health indicators first
   if (status.includes('healthy')) return 'healthy'
   if (status.includes('unhealthy')) return 'unhealthy'
-  if (state === 'running') return 'running'
-  return state
+  
+  // Map container states to user-friendly health statuses
+  switch (state) {
+    case 'running':
+      return 'healthy'  // Running containers are healthy
+    case 'restarting':
+      return 'restarting'  // Restarting is a transitional state, not stopped
+    case 'paused':
+      return 'paused'
+    case 'exited':
+      return 'stopped'
+    case 'dead':
+      return 'stopped'
+    case 'created':
+      return 'created'  // Created but not started
+    default:
+      return state  // Return the raw state for unknown states
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -56,12 +76,16 @@ export async function GET(request: NextRequest) {
     const detailed = params.detailed === 'true'
     const withStats = params.stats === 'true'
     
+    console.log(`[CONTAINERS API] Request params:`, { detailed, withStats, all: params.all })
+    
     // Get container list using docker ps safely
     const { stdout: containerJson } = await execFileAsync(
       'docker',
       ['ps', '-a', '--format', '{{json .}}'],
       { timeout: 10000 }
     )
+    
+    console.log(`[CONTAINERS API] Raw docker output length: ${containerJson.length} chars`)
     
     const containers = containerJson
       .trim()
@@ -76,18 +100,62 @@ export async function GET(request: NextRequest) {
       })
       .filter(c => c !== null)
     
-    // Filter for nself containers only (unless explicitly requesting all)
+    console.log(`[CONTAINERS API] Parsed ${containers.length} total containers from docker`)
+    
+    // Get project prefix for filtering containers
+    let projectPrefix = 'nproj' // Default fallback
+    try {
+      const projectPath = getProjectPath()
+      const dockerComposePath = path.join(projectPath, 'docker-compose.yml')
+      
+      try {
+        const dockerComposeContent = await fs.readFile(dockerComposePath, 'utf8')
+        const projectMatch = dockerComposeContent.match(/# Project: ([^\s\n]+)/)
+        if (projectMatch) {
+          projectPrefix = projectMatch[1].trim()
+        }
+      } catch {
+        // File doesn't exist or can't read, use default
+      }
+    } catch {
+      // Path error, use default
+    }
+    
+    console.log(`[CONTAINERS API] Using project prefix: "${projectPrefix}"`)
+    
+    // Filter for project containers (unless explicitly requesting all)
     const showAll = searchParams.get('all') === 'true'
-    const nselfContainers = showAll ? containers : containers.filter(container => {
+    
+    // Debug: Log all container names before filtering
+    console.log(`[CONTAINERS API] All container names:`, containers.map(c => c.Names))
+    
+    const projectContainers = showAll ? containers : containers.filter(container => {
       const name = container.Names?.toLowerCase() || ''
-      return name.startsWith('nself_') || name.startsWith('nself-')
+      const matches = (
+        name.startsWith(projectPrefix.toLowerCase() + '_') ||
+        name.startsWith(projectPrefix.toLowerCase() + '-') ||
+        name.startsWith('nself_') ||
+        name.startsWith('nself-') ||
+        // Also check if container name contains common nself service names
+        (['postgres', 'hasura', 'grafana', 'prometheus'].some(service => 
+          name.includes(service)
+        ))
+      )
+      
+      if (matches) {
+        console.log(`[CONTAINERS API] ✓ Including container: ${container.Names} (State: ${container.State}, Status: ${container.Status})`)
+      }
+      
+      return matches
     })
+    
+    console.log(`[CONTAINERS API] Filtered to ${projectContainers.length} project containers`)
     
     // Get stats if requested
     let statsMap = new Map()
-    if (withStats && nselfContainers.length > 0) {
+    if (withStats && projectContainers.length > 0) {
       try {
-        const containerIds = nselfContainers.map(c => c.ID)
+        const containerIds = projectContainers.map(c => c.ID)
         const { stdout: statsOutput } = await execFileAsync(
           'docker',
           ['stats', '--no-stream', '--format', '{{json .}}', ...containerIds],
@@ -117,14 +185,17 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    const formattedContainers = nselfContainers.map(container => {
+    const formattedContainers = projectContainers.map(container => {
       const stats = statsMap.get(container.ID)
+      const health = getHealthStatus(container.Status, container.State)
+      
+      console.log(`[CONTAINERS API] Processing ${container.Names}: State=${container.State}, Status="${container.Status}", Health=${health}`)
       
       return {
         id: container.ID,
         name: container.Names,
         image: container.Image,
-        state: container.State === 'running' ? 'running' : 'stopped',
+        state: container.State, // Keep the actual Docker state
         status: container.Status,
         ports: container.Ports?.split(',').map((p: any) => {
           const match = p.match(/(\d+)->(\d+)/)
@@ -137,9 +208,21 @@ export async function GET(request: NextRequest) {
         created: container.CreatedAt,
         serviceType: getServiceType(container.Names, {}),
         category: getServiceCategory(container.Names, {}),
-        health: getHealthStatus(container.Status, container.State),
+        health: health,
         stats: stats || null
       }
+    })
+    
+    // Debug summary
+    const healthCounts = formattedContainers.reduce((acc, c) => {
+      acc[c.health] = (acc[c.health] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    console.log(`[CONTAINERS API] Final summary:`, {
+      total: formattedContainers.length,
+      healthCounts,
+      timestamp: new Date().toISOString()
     })
     
     return NextResponse.json({

@@ -31,37 +31,34 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Find nself CLI - check PATH first (for normal users), then dev location
-        let nselfPath = 'nself' // Default to using from PATH
+        // Find nself CLI - use absolute path
+        let nselfPath: string
         
-        // Check if nself is available in PATH
-        try {
-          const { execSync } = require('child_process')
-          execSync('which nself', { stdio: 'ignore' })
-          console.log('Using nself from PATH')
-        } catch {
-          // Not in PATH, check known development location
-          const devPath = '/Users/admin/Sites/nself/bin/nself'
-          if (require('fs').existsSync(devPath)) {
-            nselfPath = devPath
-            console.log('Using nself from development location:', devPath)
-          } else {
-            // Try common installation locations
-            const commonPaths = [
-              '/usr/local/bin/nself',
-              '/opt/homebrew/bin/nself',
-              process.env.HOME + '/bin/nself',
-              process.env.HOME + '/.local/bin/nself'
-            ]
-            
-            for (const path of commonPaths) {
-              if (require('fs').existsSync(path)) {
-                nselfPath = path
-                console.log('Found nself at:', path)
-                break
-              }
-            }
+        // Check known locations in order of preference
+        const possiblePaths = [
+          '/Users/admin/Sites/nself/bin/nself',  // Development location
+          '/Users/admin/bin/nself',              // User bin (symlink)
+          '/usr/local/bin/nself',                // Common installation
+          '/opt/homebrew/bin/nself',             // Homebrew location
+          process.env.HOME + '/bin/nself',
+          process.env.HOME + '/.local/bin/nself'
+        ]
+        
+        // Find the first existing path
+        nselfPath = possiblePaths.find(path => require('fs').existsSync(path)) || 'nself'
+        
+        // If we found a path, verify it's executable
+        if (nselfPath !== 'nself') {
+          console.log('Found nself at:', nselfPath)
+          // Make sure it's executable
+          try {
+            require('fs').accessSync(nselfPath, require('fs').constants.X_OK)
+            console.log('nself is executable')
+          } catch {
+            console.error('nself is not executable at:', nselfPath)
           }
+        } else {
+          console.log('Using nself from PATH (fallback)')
         }
         
         console.log('Using nself command:', nselfPath)
@@ -112,16 +109,28 @@ export async function POST(request: NextRequest) {
         // Start services using nself start
         controller.enqueue(encoder.encode(JSON.stringify({
           type: 'status',
-          message: 'Starting services with nself CLI...'
+          message: 'Starting services with nself CLI...',
+          command: `${nselfPath} start`,
+          cwd: projectPath
         }) + '\n'))
+        
+        console.log('Executing nself start:', {
+          command: nselfPath,
+          args: ['start'],
+          cwd: projectPath
+        })
         
         const composeProcess = spawn(nselfPath, ['start'], {
           cwd: projectPath,
           env: {
             ...process.env,
-            PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin',
-            COMPOSE_PARALLEL_LIMIT: '4'
-          }
+            PATH: '/Users/admin/bin:/usr/local/bin:/opt/homebrew/bin:' + process.env.PATH,
+            COMPOSE_PARALLEL_LIMIT: '4',
+            NSELF_PROJECT_PATH: projectPath,  // Make sure nself knows the project path
+            HOME: process.env.HOME || '/Users/admin'
+          },
+          shell: false,  // Don't use shell to avoid path issues
+          stdio: ['pipe', 'pipe', 'pipe']  // Capture all streams
         })
 
         let pulledImages = 0
@@ -202,10 +211,25 @@ export async function POST(request: NextRequest) {
             
             // Track nself specific output
             if (line.includes('✓') || line.includes('Starting') || line.includes('Restarting')) {
-              controller.enqueue(encoder.encode(JSON.stringify({
-                type: 'progress',
-                message: line.trim()
-              }) + '\n'))
+              // Parse "Starting Docker containers... (12/20)" format
+              const containerMatch = line.match(/Starting Docker containers.*\((\d+)\/(\d+)\)/)
+              if (containerMatch) {
+                const current = parseInt(containerMatch[1])
+                const total = parseInt(containerMatch[2])
+                const percentage = Math.round((current / total) * 100)
+                controller.enqueue(encoder.encode(JSON.stringify({
+                  type: 'container',
+                  message: `Starting containers: ${current}/${total}`,
+                  current,
+                  total,
+                  percentage
+                }) + '\n'))
+              } else {
+                controller.enqueue(encoder.encode(JSON.stringify({
+                  type: 'progress',
+                  message: line.trim()
+                }) + '\n'))
+              }
             }
           }
         }
@@ -214,34 +238,102 @@ export async function POST(request: NextRequest) {
         composeProcess.stderr.on('data', handleOutput)
         composeProcess.stdout.on('data', handleOutput)
 
+        // Collect all output for debugging
+        let allOutput = ''
+        let errorOutput = ''
+        
+        composeProcess.stdout.on('data', (data) => {
+          allOutput += data.toString()
+        })
+        
+        composeProcess.stderr.on('data', (data) => {
+          errorOutput += data.toString()
+        })
+        
         // Wait for process to complete
         await new Promise<void>((resolve, reject) => {
           let hasErrors = false
           
           composeProcess.on('error', (error) => {
             hasErrors = true
+            console.error('Process spawn error:', error)
             controller.enqueue(encoder.encode(JSON.stringify({
               type: 'error',
-              message: `Process error: ${error.message}`
+              message: `Process error: ${error.message}`,
+              details: error.toString()
             }) + '\n'))
           })
           
           composeProcess.on('close', (code) => {
-            // nself CLI sometimes returns 1 even when successful
-            // Check if we saw actual errors before treating as failure
-            if (code === 0 || (code === 1 && !hasErrors)) {
-              controller.enqueue(encoder.encode(JSON.stringify({
-                type: 'complete',
-                message: 'Services start process completed!',
-                startedContainers,
-                exitCode: code
-              }) + '\n'))
-              resolve()
+            console.log('nself start process closed with code:', code)
+            console.log('Output:', allOutput)
+            console.log('Error output:', errorOutput)
+            
+            // Check if containers were actually started or already running
+            const hasStartedContainers = allOutput.includes('Container') || 
+                                       allOutput.includes('Started') || 
+                                       errorOutput.includes('Container')
+            
+            // Check if services are already running (common case for exit code 1)
+            const alreadyRunning = allOutput.includes('already running') || 
+                                 allOutput.includes('Already running') ||
+                                 errorOutput.includes('already running') ||
+                                 errorOutput.includes('Already running')
+            
+            // nself CLI returns 1 when services are already running or on some non-fatal issues
+            // Check if we saw actual errors or if services are running
+            if (code === 0 || hasStartedContainers || alreadyRunning || 
+                (code === 1 && (!hasErrors || startedContainers > 0))) {
+              
+              // Check how many containers are actually running
+              const checkContainers = spawn('docker', ['ps', '--format', '{{.Names}}'], {
+                cwd: projectPath
+              })
+              
+              let containerList = ''
+              checkContainers.stdout.on('data', (data) => {
+                containerList += data.toString()
+              })
+              
+              checkContainers.on('close', () => {
+                const runningContainers = containerList.split('\n').filter(name => 
+                  name.includes('nproj')
+                ).length
+                
+                if (runningContainers > 0) {
+                  controller.enqueue(encoder.encode(JSON.stringify({
+                    type: 'complete',
+                    message: `Services are running! (${runningContainers} containers active)`,
+                    startedContainers: runningContainers,
+                    exitCode: code,
+                    hasStartedContainers: true
+                  }) + '\n'))
+                } else if (code === 0) {
+                  controller.enqueue(encoder.encode(JSON.stringify({
+                    type: 'complete',
+                    message: 'Services start process completed successfully!',
+                    startedContainers,
+                    exitCode: code,
+                    hasStartedContainers
+                  }) + '\n'))
+                } else {
+                  controller.enqueue(encoder.encode(JSON.stringify({
+                    type: 'error',
+                    message: 'Services may not have started properly. Please check Docker Desktop.',
+                    exitCode: code,
+                    output: allOutput.slice(-500),
+                    errorOutput: errorOutput.slice(-500)
+                  }) + '\n'))
+                }
+                resolve()
+              })
             } else {
               controller.enqueue(encoder.encode(JSON.stringify({
                 type: 'error',
                 message: `Process exited with code ${code}`,
-                exitCode: code
+                exitCode: code,
+                output: allOutput.slice(-500),  // Last 500 chars
+                errorOutput: errorOutput.slice(-500)  // Last 500 chars
               }) + '\n'))
               // Still resolve to allow partial success
               resolve()

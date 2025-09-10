@@ -6,6 +6,7 @@ import { Server, CheckCircle, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
 import { useProjectStore } from '@/stores/projectStore'
+import { ensureCorrectRoute } from '@/lib/routing-logic'
 import { GridPattern } from '@/components/GridPattern'
 import { useMotionValue, motion, useMotionTemplate } from 'framer-motion'
 import { safeNavigate } from '@/lib/routing'
@@ -420,6 +421,7 @@ export default function StartPage() {
   const [starting, setStarting] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [showDbPassword, setShowDbPassword] = useState(false)
+  const [initialCheck, setInitialCheck] = useState(true)
   const [startProgress, setStartProgress] = useState<{
     message: string
     percentage?: number
@@ -429,35 +431,26 @@ export default function StartPage() {
   const checkProjectStatus = useProjectStore(state => state.checkProjectStatus)
   const projectStatus = useProjectStore(state => state.projectStatus)
   
-  // Check project status but DON'T auto-redirect to dashboard
+  // Check routing and load start page data
   useEffect(() => {
-    const checkStatus = async () => {
-      // Check project status first
-      await checkProjectStatus()
-      
-      // Only redirect AWAY from /start if project is not built
-      // We should NOT auto-redirect to dashboard - user must click Start
+    const initializeStartPage = async () => {
       try {
-        const response = await fetch('/api/project/status')
-        if (response.ok) {
-          const statusData = await response.json()
-          
-          // Only redirect away if project is NOT built
-          if (!statusData.hasDockerCompose) {
-            router.push('/init')
-          }
-          // If built but not started, STAY on /start page
-          // Don't auto-redirect to dashboard even if containers are detected
+        // Safety check: ensure we should be on the start page
+        const redirected = await ensureCorrectRoute('/start', router.push)
+        if (redirected) {
+          return // Don't load data if we're redirecting
         }
+        
+        await checkProjectStatus()
+        setInitialCheck(false)
       } catch (error) {
         console.error('Error checking project status:', error)
+        setInitialCheck(false)
       }
     }
     
-    // Add delay to prevent bouncing
-    const timer = setTimeout(checkStatus, 500)
-    return () => clearTimeout(timer)
-  }, [checkProjectStatus, router])
+    initializeStartPage()
+  }, [checkProjectStatus, router.push])
 
   // Fetch project info and service details
   useEffect(() => {
@@ -560,17 +553,27 @@ export default function StartPage() {
                   
                 case 'container':
                   setStartProgress({
-                    message: data.message,
+                    message: data.message || `Starting containers...`,
+                    percentage: data.percentage,
                     type: 'container'
                   })
+                  // Update if we have current/total info
+                  if (data.current && data.total) {
+                    setStartProgress({
+                      message: `Starting containers: ${data.current}/${data.total}`,
+                      percentage: data.percentage,
+                      type: 'container'
+                    })
+                  }
                   break
                   
                 case 'error':
                   setStartProgress({
-                    message: `Error: ${data.message}`,
+                    message: data.message || 'An error occurred',
                     type: 'error'
                   })
-                  console.error('Start error:', data.message)
+                  console.error('Start error:', data.message, data.errorOutput)
+                  setStarting(false) // Reset starting state on error
                   break
                   
                 case 'complete':
@@ -617,6 +620,23 @@ export default function StartPage() {
         setStartProgress({ message: '' })
       }, 5000)
     }
+  }
+
+  // Show loading state while checking if we should redirect
+  if (initialCheck) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800">
+        <HeroPattern />
+        <div className="relative z-10 text-center">
+          <div className="animate-pulse">
+            <div className="mx-auto h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center dark:bg-blue-500/10">
+              <div className="h-6 w-6 rounded-full bg-blue-500 animate-ping" />
+            </div>
+            <p className="mt-4 text-zinc-600 dark:text-zinc-400">Checking services...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -949,40 +969,45 @@ export default function StartPage() {
                   )}
                 </Button>
                 
-                <p className="text-xs text-zinc-500 dark:text-zinc-500 text-center leading-tight">
-                  This will run <span className="font-medium">nself start</span> which uses Docker Compose<br />
-                  to launch all {projectInfo?.totalServices || 0} services with smart defaults and auto-recovery.
-                </p>
+                {/* Only show description and options when NOT starting */}
+                {!starting && (
+                  <>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-500 text-center leading-tight">
+                      This will run <span className="font-medium">nself start</span> which uses Docker Compose<br />
+                      to launch all {projectInfo?.totalServices || 0} services with smart defaults and auto-recovery.
+                    </p>
+                    
+                    {/* Edit/Reset Options */}
+                    <div className="flex items-center gap-3 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                      <button
+                        onClick={() => safeNavigate(router, '/init/1', true)} 
+                        className="text-sm px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                      >
+                        <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit Build
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm('This will completely reset your project and delete all configuration. Are you sure?')) {
+                            safeNavigate(router, '/init/reset', true) // Force navigation to reset
+                          }
+                        }}
+                        className="text-sm px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      >
+                        <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Reset Project
+                      </button>
+                    </div>
+                  </>
+                )}
                 
-                {/* Edit/Reset Options */}
-                <div className="flex items-center gap-3 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
-                  <button
-                    onClick={() => safeNavigate(router, '/init/1', true)} 
-                    className="text-sm px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                  >
-                    <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit Build
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm('This will completely reset your project and delete all configuration. Are you sure?')) {
-                        safeNavigate(router, '/init/reset', true) // Force navigation to reset
-                      }
-                    }}
-                    className="text-sm px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                  >
-                    <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Reset Project
-                  </button>
-                </div>
-                
-                {/* Progress Message */}
-                {startProgress.message && (
-                  <div className="text-center space-y-2 max-w-md">
+                {/* Progress Message - Show when starting or has message */}
+                {(starting || startProgress.message) && (
+                  <div className="text-center space-y-3 max-w-md mt-4">
                     <p className={`text-sm font-medium ${
                       startProgress.type === 'error' 
                         ? 'text-red-600 dark:text-red-400'
@@ -996,13 +1021,26 @@ export default function StartPage() {
                     </p>
                     
                     {/* Progress Bar */}
-                    {startProgress.percentage !== undefined && startProgress.percentage > 0 && (
+                    {startProgress.percentage !== undefined && startProgress.percentage > 0 && startProgress.type !== 'error' && (
                       <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-1.5">
                         <div 
                           className="bg-blue-600 dark:bg-blue-400 h-1.5 rounded-full transition-all duration-300"
                           style={{ width: `${startProgress.percentage}%` }}
                         />
                       </div>
+                    )}
+                    
+                    {/* Retry button on error */}
+                    {startProgress.type === 'error' && !starting && (
+                      <button
+                        onClick={() => {
+                          setStartProgress({ message: '' })
+                          startServices()
+                        }}
+                        className="mt-2 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                      >
+                        Retry
+                      </button>
                     )}
                   </div>
                 )}

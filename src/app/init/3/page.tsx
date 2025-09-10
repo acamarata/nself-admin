@@ -260,8 +260,8 @@ export default function InitStep3() {
       configKey: 'monitoring',
       name: 'Monitoring Bundle',
       icon: Activity,
-      description: 'Complete observability stack with 5 integrated services',
-      details: 'Includes Prometheus (metrics collection), Grafana (visualization dashboards), Loki (log aggregation), Tempo (distributed tracing), and Alertmanager (alert routing). Full observability for your entire stack.',
+      description: 'Complete observability stack with 8 integrated services',
+      details: 'Includes Prometheus (metrics collection), Grafana (visualization dashboards), Loki (log aggregation), Tempo (distributed tracing), Alertmanager (alert routing), plus Node Exporter, Postgres Exporter, and cAdvisor for comprehensive system monitoring. Full observability for your entire stack.',
       enabled: optionalServices.monitoring || false
     }
   ]

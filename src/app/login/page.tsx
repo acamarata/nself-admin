@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { LoginBackground } from '@/components/LoginBackground'
 import { LogoIcon } from '@/components/Logo'
 import { useAuth } from '@/contexts/AuthContext'
+import { getCorrectRoute } from '@/lib/routing-logic'
 
 export default function LoginPage() {
   const [password, setPassword] = useState('')
@@ -65,59 +66,10 @@ export default function LoginPage() {
           // Password set successfully, now login
           const success = await login(password)
           if (success) {
-            // Check project status and route appropriately
-            try {
-              const statusRes = await fetch('/api/project/status')
-              if (statusRes.ok) {
-                const statusData = await statusRes.json()
-                
-                // Routing logic based on project state
-                if (!statusData.hasEnvFile) {
-                  // No env file - blank directory
-                  router.push('/init')
-                } else if (!statusData.hasDockerCompose) {
-                  // Has env but not built
-                  router.push('/init/1')
-                } else if (!statusData.servicesRunning || statusData.containerCount === 0) {
-                  // Built but not running (check both flags for accuracy)
-                  router.push('/start')
-                } else {
-                  // Services are running - check if partial or full
-                  // Check docker containers for more detail
-                  try {
-                    const dockerRes = await fetch('/api/docker/stats')
-                    if (dockerRes.ok) {
-                      const dockerData = await dockerRes.json()
-                      const runningCount = dockerData.containers?.filter((c: any) => c.state === 'running').length || 0
-                      const totalCount = dockerData.containers?.length || 0
-                      
-                      // If no containers at all, go to start page
-                      if (totalCount === 0) {
-                        router.push('/start')
-                      } else if (totalCount > 0 && runningCount < totalCount) {
-                        // Partial running - some containers stopped
-                        router.push('/doctor')
-                      } else {
-                        // All running
-                        router.push('/')
-                      }
-                    } else {
-                      // Can't check containers, go to start page to be safe
-                      router.push('/start')
-                    }
-                  } catch (error) {
-                    // Default to start page if docker check fails
-                    router.push('/start')
-                  }
-                }
-              } else {
-                // Default to init if status check fails on first setup
-                router.push('/init')
-              }
-            } catch (error) {
-              console.error('Error checking project status:', error)
-              router.push('/init')
-            }
+            // Use centralized routing logic
+            const routingResult = await getCorrectRoute()
+            console.log('Post-setup routing:', routingResult.reason)
+            router.push(routingResult.route)
           } else {
             setError('Password set but login failed. Please try again.')
             setIsSetupMode(false)
@@ -133,59 +85,10 @@ export default function LoginPage() {
       const success = await login(password)
       
       if (success) {
-        // Check project status and route appropriately
-        try {
-          const statusRes = await fetch('/api/project/status')
-          if (statusRes.ok) {
-            const statusData = await statusRes.json()
-            
-            // Routing logic based on project state
-            if (!statusData.hasEnvFile) {
-              // No env file - blank directory
-              router.push('/init')
-            } else if (!statusData.hasDockerCompose) {
-              // Has env but not built
-              router.push('/init/1')
-            } else if (!statusData.servicesRunning || statusData.containerCount === 0) {
-              // Built but not running (check both flags for accuracy)
-              router.push('/start')
-            } else {
-              // Services are running - check if partial or full
-              // Check docker containers for more detail
-              try {
-                const dockerRes = await fetch('/api/docker/stats')
-                if (dockerRes.ok) {
-                  const dockerData = await dockerRes.json()
-                  const runningCount = dockerData.containers?.filter((c: any) => c.state === 'running').length || 0
-                  const totalCount = dockerData.containers?.length || 0
-                  
-                  // If no containers at all, go to start page
-                  if (totalCount === 0) {
-                    router.push('/start')
-                  } else if (totalCount > 0 && runningCount < totalCount) {
-                    // Partial running - some containers stopped
-                    router.push('/doctor')
-                  } else {
-                    // All running
-                    router.push('/')
-                  }
-                } else {
-                  // Can't check containers, go to start page to be safe
-                  router.push('/start')
-                }
-              } catch (error) {
-                // Default to start page if docker check fails
-                router.push('/start')
-              }
-            }
-          } else {
-            // Default to dashboard if status check fails
-            router.push('/')
-          }
-        } catch (error) {
-          console.error('Error checking project status:', error)
-          router.push('/')
-        }
+        // Use centralized routing logic
+        const routingResult = await getCorrectRoute()
+        console.log('Post-login routing:', routingResult.reason)
+        router.push(routingResult.route)
       } else {
         setError('Invalid password')
         setPassword('')
