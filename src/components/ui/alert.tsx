@@ -1,27 +1,29 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils'
+import * as React from 'react'
 
 const Alert = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
-    variant?: "default" | "destructive"
+    variant?: 'default' | 'destructive'
   }
->(({ className, variant = "default", ...props }, ref) => (
+>(({ className, variant = 'default', ...props }, ref) => (
   <div
     ref={ref}
     role="alert"
     className={cn(
-      "relative w-full rounded-lg border p-4",
+      'relative w-full rounded-lg border p-4',
       {
-        "bg-white text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50": variant === "default",
-        "border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500": variant === "destructive",
+        'bg-white text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50':
+          variant === 'default',
+        'border-red-500/50 text-red-500 dark:border-red-500 [&>svg]:text-red-500':
+          variant === 'destructive',
       },
-      className
+      className,
     )}
     {...props}
   />
 ))
-Alert.displayName = "Alert"
+Alert.displayName = 'Alert'
 
 const AlertTitle = React.forwardRef<
   HTMLParagraphElement,
@@ -29,11 +31,11 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    className={cn('mb-1 leading-none font-medium tracking-tight', className)}
     {...props}
   />
 ))
-AlertTitle.displayName = "AlertTitle"
+AlertTitle.displayName = 'AlertTitle'
 
 const AlertDescription = React.forwardRef<
   HTMLParagraphElement,
@@ -41,10 +43,10 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    className={cn('text-sm [&_p]:leading-relaxed', className)}
     {...props}
   />
 ))
-AlertDescription.displayName = "AlertDescription"
+AlertDescription.displayName = 'AlertDescription'
 
-export { Alert, AlertTitle, AlertDescription }
+export { Alert, AlertDescription, AlertTitle }

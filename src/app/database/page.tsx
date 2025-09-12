@@ -1,48 +1,30 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { Button } from '@/components/Button'
 import { useDatabaseData } from '@/hooks/useDatabaseData'
 import { usePageData } from '@/hooks/usePageData'
-import { Button } from '@/components/Button'
-import { HeroPattern } from '@/components/HeroPattern'
+import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import {
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-  type MotionValue,
-} from 'framer-motion'
-import { 
-  Database, 
-  Table2, 
-  Play, 
-  RefreshCw, 
+  Activity,
+  AlertCircle,
+  Clock,
+  Copy,
+  Database,
   Download,
-  Upload,
-  Plus,
-  Trash2,
   Edit,
   Eye,
-  ChevronRight,
-  ChevronDown,
-  Search,
-  Filter,
-  Settings,
-  Activity,
-  HardDrive,
-  Users,
-  Lock,
-  Unlock,
-  Copy,
-  Check,
-  X,
-  AlertCircle,
-  Info,
-  Terminal,
   FileText,
-  BarChart3,
-  Clock,
-  Zap
+  HardDrive,
+  Play,
+  Plus,
+  RefreshCw,
+  Search,
+  Table2,
+  Upload,
+  Users,
+  Zap,
 } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 // Using types from the store
 type TableInfo = {
@@ -55,12 +37,12 @@ type TableInfo = {
 }
 
 // Metric Card Component with mouse tracking effect
-function MetricCard({ 
-  title, 
-  value, 
-  percentage, 
-  description, 
-  icon: Icon 
+function MetricCard({
+  title,
+  value,
+  percentage,
+  description,
+  icon: Icon,
 }: {
   title: string
   value: string | number
@@ -82,9 +64,9 @@ function MetricCard({
   }
 
   return (
-    <div 
+    <div
       onMouseMove={onMouseMove}
-      className="group relative rounded-2xl bg-zinc-50/90 p-6 dark:bg-white/5 hover:bg-blue-50/80 dark:hover:bg-blue-950/40 transition-colors duration-300"
+      className="group relative rounded-2xl bg-zinc-50/90 p-6 transition-colors duration-300 hover:bg-blue-50/80 dark:bg-white/5 dark:hover:bg-blue-950/40"
     >
       <motion.div
         className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-200 to-blue-100 opacity-0 transition duration-300 group-hover:opacity-100 dark:from-blue-500/40 dark:to-blue-400/30"
@@ -93,12 +75,14 @@ function MetricCard({
           WebkitMaskImage: useMotionTemplate`radial-gradient(250px at ${mouseX}px ${mouseY}px, white, transparent)`,
         }}
       />
-      <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/10 ring-inset group-hover:ring-blue-500/50 dark:ring-white/20 dark:group-hover:ring-blue-400/60 transition-colors duration-300" />
+      <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/10 transition-colors duration-300 ring-inset group-hover:ring-blue-500/50 dark:ring-white/20 dark:group-hover:ring-blue-400/60" />
       <div className="relative">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{title}</h3>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20 dark:bg-blue-400/20 group-hover:bg-blue-500/40 dark:group-hover:bg-blue-400/40 transition-colors duration-300">
-            <Icon className="h-4 w-4 text-blue-600 dark:text-blue-400 group-hover:text-blue-500 dark:group-hover:text-blue-300" />
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+            {title}
+          </h3>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20 transition-colors duration-300 group-hover:bg-blue-500/40 dark:bg-blue-400/20 dark:group-hover:bg-blue-400/40">
+            <Icon className="h-4 w-4 text-blue-600 group-hover:text-blue-500 dark:text-blue-400 dark:group-hover:text-blue-300" />
           </div>
         </div>
         <div className="mt-4">
@@ -106,9 +90,9 @@ function MetricCard({
             {value}
           </div>
           {percentage !== undefined && (
-            <div className="mt-2 h-2 bg-zinc-200 rounded-full dark:bg-zinc-800">
-              <div 
-                className="h-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300"
+            <div className="mt-2 h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
+              <div
+                className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300"
                 style={{ width: `${Math.min(percentage, 100)}%` }}
               />
             </div>
@@ -122,34 +106,38 @@ function MetricCard({
   )
 }
 
-function TableRow({ 
-  table, 
-  onSelect 
-}: { 
+function TableRow({
+  table,
+  onSelect,
+}: {
   table: TableInfo
   onSelect: (table: TableInfo) => Promise<void>
 }) {
   const typeColors = {
     table: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-    view: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+    view: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
   }
-  
+
   return (
-    <tr 
-      className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 cursor-pointer"
+    <tr
+      className="cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
       onClick={() => onSelect(table)}
     >
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <Table2 className="w-4 h-4 text-zinc-500" />
+          <Table2 className="h-4 w-4 text-zinc-500" />
           <div>
-            <div className="font-medium text-sm text-zinc-900 dark:text-white">{table.name}</div>
+            <div className="text-sm font-medium text-zinc-900 dark:text-white">
+              {table.name}
+            </div>
             <div className="text-xs text-zinc-500">{table.schema}</div>
           </div>
         </div>
       </td>
       <td className="px-4 py-3">
-        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${typeColors[table.type]}`}>
+        <span
+          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${typeColors[table.type]}`}
+        >
           {table.type}
         </span>
       </td>
@@ -164,11 +152,11 @@ function TableRow({
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-1">
-          <button className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700">
-            <Eye className="w-4 h-4 text-zinc-500" />
+          <button className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700">
+            <Eye className="h-4 w-4 text-zinc-500" />
           </button>
-          <button className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700">
-            <Edit className="w-4 h-4 text-zinc-500" />
+          <button className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700">
+            <Edit className="h-4 w-4 text-zinc-500" />
           </button>
         </div>
       </td>
@@ -180,9 +168,9 @@ export default function DatabasePage() {
   // Fetch database data for this page
   const { refresh } = usePageData({
     database: { maxAge: 5000 }, // 5s cache for database
-    refreshInterval: 5000 // Auto-refresh every 5 seconds
+    refreshInterval: 5000, // Auto-refresh every 5 seconds
   })
-  
+
   // Use the custom hook for real-time database data
   const {
     stats,
@@ -197,16 +185,18 @@ export default function DatabasePage() {
     databaseSize,
     connections,
     uptime,
-    version
+    version,
   } = useDatabaseData()
-  
+
   const [selectedTable, setSelectedTable] = useState<TableInfo | null>(null)
   const [tableData, setTableData] = useState<any>(null)
   const [loadingTableData, setLoadingTableData] = useState(false)
   const [query, setQuery] = useState('')
   const [queryResults, setQueryResults] = useState<any>(null)
   const [executing, setExecuting] = useState(false)
-  const [activeTab, setActiveTab] = useState<'tables' | 'query' | 'backup'>('tables')
+  const [activeTab, setActiveTab] = useState<'tables' | 'query' | 'backup'>(
+    'tables',
+  )
   const [searchTerm, setSearchTerm] = useState('')
   const [showTableDetails, setShowTableDetails] = useState(false)
 
@@ -237,7 +227,7 @@ export default function DatabasePage() {
         rows: [],
         rowCount: 0,
         executionTime: '0ms',
-        error: error.message || 'Query execution failed'
+        error: error.message || 'Query execution failed',
       })
       setExecuting(false)
     }
@@ -245,9 +235,10 @@ export default function DatabasePage() {
 
   // Memoize filtered tables to avoid re-filtering on every render
   const filteredTables = useMemo(() => {
-    return tables.filter(table => 
-      table.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      table.schema.toLowerCase().includes(searchTerm.toLowerCase())
+    return tables.filter(
+      (table) =>
+        table.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        table.schema.toLowerCase().includes(searchTerm.toLowerCase()),
     )
   }, [tables, searchTerm])
 
@@ -255,8 +246,8 @@ export default function DatabasePage() {
   if (isLoading) {
     return (
       <>
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="flex h-96 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
         </div>
       </>
     )
@@ -266,12 +257,14 @@ export default function DatabasePage() {
   if (error && !hasData) {
     return (
       <>
-        <div className="flex flex-col items-center justify-center h-96 gap-4">
-          <AlertCircle className="w-12 h-12 text-red-500" />
-          <p className="text-lg text-zinc-600 dark:text-zinc-400">Failed to connect to database</p>
+        <div className="flex h-96 flex-col items-center justify-center gap-4">
+          <AlertCircle className="h-12 w-12 text-red-500" />
+          <p className="text-lg text-zinc-600 dark:text-zinc-400">
+            Failed to connect to database
+          </p>
           <p className="text-sm text-zinc-500">{error}</p>
           <Button variant="primary" onClick={refresh}>
-            <RefreshCw className="w-4 h-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Retry Connection
           </Button>
         </div>
@@ -281,17 +274,16 @@ export default function DatabasePage() {
 
   return (
     <>
-      
       {/* Hero Section with Dashboard-style Title */}
       <div className="mt-12 mb-4">
-        <h1 className="text-4xl/tight font-extrabold bg-gradient-to-r from-blue-600 to-black bg-clip-text text-transparent sm:text-6xl/tight dark:from-blue-400 dark:to-white">
+        <h1 className="bg-gradient-to-r from-blue-600 to-black bg-clip-text text-4xl/tight font-extrabold text-transparent sm:text-6xl/tight dark:from-blue-400 dark:to-white">
           Database
         </h1>
         <p className="mt-2 text-zinc-600 dark:text-zinc-400">
           Manage your PostgreSQL database, tables, and execute queries
         </p>
       </div>
-      
+
       {/* Top 4 Metric Cards */}
       <div className="mb-16">
         <div className="not-prose grid grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
@@ -302,7 +294,7 @@ export default function DatabasePage() {
             description="Total storage used"
             icon={HardDrive}
           />
-          
+
           <MetricCard
             title="Tables / Views"
             value={`${totalTables} / ${totalViews}`}
@@ -310,7 +302,7 @@ export default function DatabasePage() {
             description="Active database objects"
             icon={Table2}
           />
-          
+
           <MetricCard
             title="Connections"
             value={connections}
@@ -318,133 +310,148 @@ export default function DatabasePage() {
             description="Active connections"
             icon={Users}
           />
-          
+
           <MetricCard
             title="Performance"
-            value={stats ? "98%" : '...'}
+            value={stats ? '98%' : '...'}
             percentage={stats ? 98 : undefined}
             description="Query response time"
             icon={Zap}
           />
         </div>
       </div>
-      
+
       {/* Database Info Bar */}
-      <div className="mb-6 p-4 rounded-xl bg-white dark:bg-zinc-900/50 ring-1 ring-zinc-200 dark:ring-zinc-700">
+      <div className="mb-6 rounded-xl bg-white p-4 ring-1 ring-zinc-200 dark:bg-zinc-900/50 dark:ring-zinc-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <Database className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <Database className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <span className="text-sm font-medium">{version}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-zinc-500" />
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">Uptime: {uptime}</span>
+              <Clock className="h-4 w-4 text-zinc-500" />
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                Uptime: {uptime}
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              <Activity className="w-4 h-4 text-green-500" />
-              <span className="text-sm text-green-600 dark:text-green-400">Connected</span>
+              <Activity className="h-4 w-4 text-green-500" />
+              <span className="text-sm text-green-600 dark:text-green-400">
+                Connected
+              </span>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Button variant="outline" className="flex items-center gap-1">
-              <Download className="w-3 h-3" />
+              <Download className="h-3 w-3" />
               Backup
             </Button>
             <Button variant="outline" className="flex items-center gap-1">
-              <Upload className="w-3 h-3" />
+              <Upload className="h-3 w-3" />
               Restore
             </Button>
-            <Button 
-              variant="outline" 
-              
+            <Button
+              variant="outline"
               className="flex items-center gap-1"
               onClick={refresh}
             >
-              <RefreshCw className="w-3 h-3" />
+              <RefreshCw className="h-3 w-3" />
               Refresh
             </Button>
           </div>
         </div>
       </div>
-      
+
       {/* Tab Navigation */}
       <div className="mb-6">
-        <div className="flex items-center gap-1 p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 inline-flex">
+        <div className="flex inline-flex items-center gap-1 rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800">
           <button
             onClick={() => setActiveTab('tables')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
               activeTab === 'tables'
-                ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                ? 'bg-white text-blue-600 shadow-sm dark:bg-zinc-700 dark:text-blue-400'
+                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
             }`}
           >
             Tables & Views
           </button>
           <button
             onClick={() => setActiveTab('query')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
               activeTab === 'query'
-                ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                ? 'bg-white text-blue-600 shadow-sm dark:bg-zinc-700 dark:text-blue-400'
+                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
             }`}
           >
             Query Editor
           </button>
           <button
             onClick={() => setActiveTab('backup')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
               activeTab === 'backup'
-                ? 'bg-white dark:bg-zinc-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+                ? 'bg-white text-blue-600 shadow-sm dark:bg-zinc-700 dark:text-blue-400'
+                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white'
             }`}
           >
             Backup & Restore
           </button>
         </div>
       </div>
-      
+
       {/* Tab Content */}
       {activeTab === 'tables' && (
         <div className="space-y-6">
           {/* Search Bar */}
           <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+            <div className="relative max-w-md flex-1">
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
               <input
                 type="text"
                 placeholder="Search tables..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                className="w-full rounded-lg border border-zinc-200 bg-white py-2 pr-4 pl-10 dark:border-zinc-700 dark:bg-zinc-800"
               />
             </div>
             <Button variant="primary" className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
+              <Plus className="h-4 w-4" />
               Create Table
             </Button>
           </div>
-          
+
           {/* Tables List */}
-          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+          <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-zinc-50 dark:bg-zinc-900/50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Table</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Structure</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Records</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Size</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                      Table
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                      Structure
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                      Records
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                      Size
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                  {filteredTables.map(table => (
-                    <TableRow 
-                      key={`${table.schema}.${table.name}`} 
-                      table={table} 
+                  {filteredTables.map((table) => (
+                    <TableRow
+                      key={`${table.schema}.${table.name}`}
+                      table={table}
                       onSelect={handleTableSelect}
                     />
                   ))}
@@ -454,45 +461,39 @@ export default function DatabasePage() {
           </div>
         </div>
       )}
-      
+
       {activeTab === 'query' && (
         <div className="space-y-6">
           {/* Query Editor */}
-          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">SQL Query Editor</h3>
+          <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                SQL Query Editor
+              </h3>
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                 
-                  className="flex items-center gap-1"
-                >
-                  <FileText className="w-3 h-3" />
+                <Button variant="outline" className="flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
                   History
                 </Button>
-                <Button 
-                  variant="outline" 
-                 
-                  className="flex items-center gap-1"
-                >
-                  <Copy className="w-3 h-3" />
+                <Button variant="outline" className="flex items-center gap-1">
+                  <Copy className="h-3 w-3" />
                   Templates
                 </Button>
               </div>
             </div>
-            
+
             <textarea
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Enter your SQL query here..."
-              className="w-full h-40 px-4 py-3 font-mono text-sm bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="h-40 w-full rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900"
             />
-            
+
             <div className="mt-4 flex items-center justify-between">
               <div className="text-xs text-zinc-500">
                 Use Ctrl+Enter to execute query
               </div>
-              <Button 
+              <Button
                 variant="primary"
                 onClick={executeQuery}
                 disabled={executing || !query}
@@ -500,23 +501,23 @@ export default function DatabasePage() {
               >
                 {executing ? (
                   <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    <div className="h-3 w-3 animate-spin rounded-full border-b-2 border-white"></div>
                     Executing...
                   </>
                 ) : (
                   <>
-                    <Play className="w-4 h-4" />
+                    <Play className="h-4 w-4" />
                     Execute Query
                   </>
                 )}
               </Button>
             </div>
           </div>
-          
+
           {/* Query Results */}
           {queryResults && (
-            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700">
-              <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+            <div className="rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+              <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <span className="text-sm font-medium text-zinc-900 dark:text-white">
@@ -524,26 +525,34 @@ export default function DatabasePage() {
                     </span>
                     {!queryResults.error && (
                       <span className="text-xs text-zinc-500">
-                        {queryResults.rowCount} rows in {queryResults.executionTime}
+                        {queryResults.rowCount} rows in{' '}
+                        {queryResults.executionTime}
                       </span>
                     )}
                   </div>
                   {!queryResults.error && (
-                    <Button variant="outline" className="flex items-center gap-1">
-                      <Download className="w-3 h-3" />
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
                       Export
                     </Button>
                   )}
                 </div>
               </div>
-              
+
               {queryResults.error ? (
                 <div className="p-4">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
+                    <AlertCircle className="mt-0.5 h-5 w-5 text-red-500" />
                     <div>
-                      <p className="text-sm font-medium text-red-600 dark:text-red-400">Query Error</p>
-                      <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">{queryResults.error}</p>
+                      <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                        Query Error
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                        {queryResults.error}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -553,7 +562,10 @@ export default function DatabasePage() {
                     <thead className="bg-zinc-50 dark:bg-zinc-900/50">
                       <tr>
                         {queryResults.columns.map((col: string) => (
-                          <th key={col} className="px-4 py-2 text-left text-xs font-medium text-zinc-500 uppercase">
+                          <th
+                            key={col}
+                            className="px-4 py-2 text-left text-xs font-medium text-zinc-500 uppercase"
+                          >
                             {col}
                           </th>
                         ))}
@@ -561,9 +573,15 @@ export default function DatabasePage() {
                     </thead>
                     <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
                       {queryResults.rows.map((row: any[], idx: number) => (
-                        <tr key={idx} className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
+                        <tr
+                          key={idx}
+                          className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                        >
                           {row.map((cell, cellIdx) => (
-                            <td key={cellIdx} className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400">
+                            <td
+                              key={cellIdx}
+                              className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400"
+                            >
                               {cell}
                             </td>
                           ))}
@@ -577,18 +595,20 @@ export default function DatabasePage() {
           )}
         </div>
       )}
-      
+
       {activeTab === 'backup' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Backup Section */}
-          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700 p-6">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Create Backup</h3>
+          <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+            <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">
+              Create Backup
+            </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Backup Type
                 </label>
-                <select className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900">
+                <select className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900">
                   <option>Full Database</option>
                   <option>Schema Only</option>
                   <option>Data Only</option>
@@ -596,10 +616,10 @@ export default function DatabasePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                   Compression
                 </label>
-                <select className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900">
+                <select className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900">
                   <option>None</option>
                   <option>gzip</option>
                   <option>bzip2</option>
@@ -610,20 +630,25 @@ export default function DatabasePage() {
               </Button>
             </div>
           </div>
-          
+
           {/* Restore Section */}
-          <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700 p-6">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Restore Database</h3>
+          <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+            <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">
+              Restore Database
+            </h3>
             <div className="space-y-4">
-              <div className="border-2 border-dashed border-zinc-300 dark:border-zinc-600 rounded-lg p-8 text-center">
-                <Upload className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
+              <div className="rounded-lg border-2 border-dashed border-zinc-300 p-8 text-center dark:border-zinc-600">
+                <Upload className="mx-auto mb-2 h-8 w-8 text-zinc-400" />
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
                   Drop backup file here or click to browse
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="dropExisting" className="rounded" />
-                <label htmlFor="dropExisting" className="text-sm text-zinc-600 dark:text-zinc-400">
+                <label
+                  htmlFor="dropExisting"
+                  className="text-sm text-zinc-600 dark:text-zinc-400"
+                >
                   Drop existing database before restore
                 </label>
               </div>

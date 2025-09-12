@@ -3,10 +3,5 @@
 import { PageTemplate } from '@/components/PageTemplate'
 
 export default function Page() {
-  return (
-    <PageTemplate 
-     
-      description="Clean up unused resources"
-    />
-  )
+  return <PageTemplate description="Clean up unused resources" />
 }

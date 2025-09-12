@@ -2,9 +2,8 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
@@ -28,9 +27,10 @@ export function Layout({
   const isStartPage = pathname === '/start'
   const isSetupPage = pathname === '/init'
   const isInitPage = pathname.startsWith('/init')
-  
+
   // Pages that should render without navigation
-  const isFullscreenPage = isLoginPage || isBuildPage || isStartPage || isSetupPage || isInitPage
+  const isFullscreenPage =
+    isLoginPage || isBuildPage || isStartPage || isSetupPage || isInitPage
 
   useEffect(() => {
     // Redirect to login if not authenticated and not already on login page

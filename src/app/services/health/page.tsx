@@ -1,18 +1,35 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { 
-  Activity, AlertCircle, CheckCircle, XCircle, Clock, RefreshCw,
-  TrendingUp, TrendingDown, Minus, Server, Database, Shield,
-  Globe, HardDrive, Zap, Mail, GitBranch, Box, Network
-} from 'lucide-react'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Database,
+  GitBranch,
+  Globe,
+  HardDrive,
+  Mail,
+  Network,
+  RefreshCw,
+  Server,
+  Shield,
+  XCircle,
+  Zap,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface ServiceHealth {
   name: string
@@ -44,11 +61,13 @@ export default function ServiceHealthPage() {
   const [selectedService, setSelectedService] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [autoRefresh, setAutoRefresh] = useState(true)
-  const [viewMode, setViewMode] = useState<'matrix' | 'list' | 'dependencies'>('matrix')
+  const [viewMode, setViewMode] = useState<'matrix' | 'list' | 'dependencies'>(
+    'matrix',
+  )
 
   useEffect(() => {
     fetchHealthData()
-    
+
     if (autoRefresh) {
       const interval = setInterval(fetchHealthData, 5000)
       return () => clearInterval(interval)
@@ -70,7 +89,7 @@ export default function ServiceHealthPage() {
           memory: 35,
           dependencies: [],
           lastCheck: new Date().toISOString(),
-          metrics: { requests: 15420, errors: 2, latency: 5, throughput: 250 }
+          metrics: { requests: 15420, errors: 2, latency: 5, throughput: 250 },
         },
         {
           name: 'hasura',
@@ -83,7 +102,7 @@ export default function ServiceHealthPage() {
           memory: 28,
           dependencies: ['postgres'],
           lastCheck: new Date().toISOString(),
-          metrics: { requests: 8932, errors: 8, latency: 25, throughput: 150 }
+          metrics: { requests: 8932, errors: 8, latency: 25, throughput: 150 },
         },
         {
           name: 'auth',
@@ -96,7 +115,7 @@ export default function ServiceHealthPage() {
           memory: 18,
           dependencies: ['postgres', 'hasura'],
           lastCheck: new Date().toISOString(),
-          metrics: { requests: 3251, errors: 1, latency: 15, throughput: 50 }
+          metrics: { requests: 3251, errors: 1, latency: 15, throughput: 50 },
         },
         {
           name: 'minio',
@@ -109,7 +128,7 @@ export default function ServiceHealthPage() {
           memory: 25,
           dependencies: [],
           lastCheck: new Date().toISOString(),
-          metrics: { requests: 5821, errors: 0, latency: 10, throughput: 100 }
+          metrics: { requests: 5821, errors: 0, latency: 10, throughput: 100 },
         },
         {
           name: 'redis',
@@ -122,7 +141,7 @@ export default function ServiceHealthPage() {
           memory: 8,
           dependencies: [],
           lastCheck: new Date().toISOString(),
-          metrics: { requests: 45231, errors: 0, latency: 2, throughput: 1000 }
+          metrics: { requests: 45231, errors: 0, latency: 2, throughput: 1000 },
         },
         {
           name: 'nginx',
@@ -135,7 +154,7 @@ export default function ServiceHealthPage() {
           memory: 5,
           dependencies: [],
           lastCheck: new Date().toISOString(),
-          metrics: { requests: 82341, errors: 0, latency: 1, throughput: 2000 }
+          metrics: { requests: 82341, errors: 0, latency: 1, throughput: 2000 },
         },
         {
           name: 'mailpit',
@@ -148,7 +167,7 @@ export default function ServiceHealthPage() {
           memory: 3,
           dependencies: [],
           lastCheck: new Date().toISOString(),
-          metrics: { requests: 521, errors: 10, latency: 50, throughput: 10 }
+          metrics: { requests: 521, errors: 10, latency: 50, throughput: 10 },
         },
         {
           name: 'grafana',
@@ -161,7 +180,7 @@ export default function ServiceHealthPage() {
           memory: 15,
           dependencies: ['prometheus'],
           lastCheck: new Date().toISOString(),
-          metrics: { requests: 1823, errors: 1, latency: 35, throughput: 30 }
+          metrics: { requests: 1823, errors: 1, latency: 35, throughput: 30 },
         },
         {
           name: 'prometheus',
@@ -174,20 +193,22 @@ export default function ServiceHealthPage() {
           memory: 22,
           dependencies: [],
           lastCheck: new Date().toISOString(),
-          metrics: { requests: 9821, errors: 0, latency: 8, throughput: 200 }
-        }
+          metrics: { requests: 9821, errors: 0, latency: 8, throughput: 200 },
+        },
       ]
 
-      const overallStatus = mockServices.some(s => s.status === 'unhealthy' || s.status === 'offline') 
-        ? 'critical' 
-        : mockServices.some(s => s.status === 'degraded')
-        ? 'degraded'
-        : 'healthy'
+      const overallStatus = mockServices.some(
+        (s) => s.status === 'unhealthy' || s.status === 'offline',
+      )
+        ? 'critical'
+        : mockServices.some((s) => s.status === 'degraded')
+          ? 'degraded'
+          : 'healthy'
 
       setHealthMatrix({
         services: mockServices,
         overall: overallStatus,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       })
     } catch (error) {
     } finally {
@@ -197,21 +218,31 @@ export default function ServiceHealthPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy': return 'bg-green-500'
-      case 'degraded': return 'bg-yellow-500'
-      case 'unhealthy': return 'bg-orange-500'
-      case 'offline': return 'bg-red-500'
-      default: return 'bg-gray-500'
+      case 'healthy':
+        return 'bg-green-500'
+      case 'degraded':
+        return 'bg-yellow-500'
+      case 'unhealthy':
+        return 'bg-orange-500'
+      case 'offline':
+        return 'bg-red-500'
+      default:
+        return 'bg-gray-500'
     }
   }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'healthy': return <CheckCircle className="h-4 w-4 text-green-500" />
-      case 'degraded': return <AlertCircle className="h-4 w-4 text-yellow-500" />
-      case 'unhealthy': return <XCircle className="h-4 w-4 text-orange-500" />
-      case 'offline': return <XCircle className="h-4 w-4 text-red-500" />
-      default: return <Clock className="h-4 w-4 text-gray-500" />
+      case 'healthy':
+        return <CheckCircle className="h-4 w-4 text-green-500" />
+      case 'degraded':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />
+      case 'unhealthy':
+        return <XCircle className="h-4 w-4 text-orange-500" />
+      case 'offline':
+        return <XCircle className="h-4 w-4 text-red-500" />
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />
     }
   }
 
@@ -225,7 +256,7 @@ export default function ServiceHealthPage() {
       nginx: Globe,
       mailpit: Mail,
       grafana: Activity,
-      prometheus: Activity
+      prometheus: Activity,
     }
     const Icon = icons[name] || Server
     return <Icon className="h-5 w-5" />
@@ -233,8 +264,8 @@ export default function ServiceHealthPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex h-96 items-center justify-center">
+        <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
       </div>
     )
   }
@@ -244,18 +275,21 @@ export default function ServiceHealthPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Service Health Matrix</h1>
-          <p className="text-muted-foreground mt-1">Real-time health monitoring and dependency tracking</p>
+          <p className="text-muted-foreground mt-1">
+            Real-time health monitoring and dependency tracking
+          </p>
         </div>
         <div className="flex gap-2">
           <Button
             variant={autoRefresh ? 'default' : 'outline'}
-           
             onClick={() => setAutoRefresh(!autoRefresh)}
           >
-            <RefreshCw className={cn("h-4 w-4", autoRefresh && "animate-spin")} />
+            <RefreshCw
+              className={cn('h-4 w-4', autoRefresh && 'animate-spin')}
+            />
             {autoRefresh ? 'Auto' : 'Manual'}
           </Button>
           <Button variant="outline" onClick={fetchHealthData}>
@@ -265,20 +299,28 @@ export default function ServiceHealthPage() {
       </div>
 
       {/* Overall Health Status */}
-      <Card className={cn(
-        "border-2",
-        healthMatrix.overall === 'critical' ? 'border-red-500' :
-        healthMatrix.overall === 'degraded' ? 'border-yellow-500' :
-        'border-green-500'
-      )}>
+      <Card
+        className={cn(
+          'border-2',
+          healthMatrix.overall === 'critical'
+            ? 'border-red-500'
+            : healthMatrix.overall === 'degraded'
+              ? 'border-yellow-500'
+              : 'border-green-500',
+        )}
+      >
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <CardTitle>System Health Status</CardTitle>
-            <Badge className={cn(
-              healthMatrix.overall === 'critical' ? 'bg-red-500' :
-              healthMatrix.overall === 'degraded' ? 'bg-yellow-500' :
-              'bg-green-500'
-            )}>
+            <Badge
+              className={cn(
+                healthMatrix.overall === 'critical'
+                  ? 'bg-red-500'
+                  : healthMatrix.overall === 'degraded'
+                    ? 'bg-yellow-500'
+                    : 'bg-green-500',
+              )}
+            >
               {healthMatrix.overall.toUpperCase()}
             </Badge>
           </div>
@@ -286,25 +328,37 @@ export default function ServiceHealthPage() {
         <CardContent>
           <div className="grid grid-cols-4 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Total Services</p>
-              <p className="text-2xl font-bold">{healthMatrix.services.length}</p>
+              <p className="text-muted-foreground text-sm">Total Services</p>
+              <p className="text-2xl font-bold">
+                {healthMatrix.services.length}
+              </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Healthy</p>
+              <p className="text-muted-foreground text-sm">Healthy</p>
               <p className="text-2xl font-bold text-green-500">
-                {healthMatrix.services.filter(s => s.status === 'healthy').length}
+                {
+                  healthMatrix.services.filter((s) => s.status === 'healthy')
+                    .length
+                }
               </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Degraded</p>
+              <p className="text-muted-foreground text-sm">Degraded</p>
               <p className="text-2xl font-bold text-yellow-500">
-                {healthMatrix.services.filter(s => s.status === 'degraded').length}
+                {
+                  healthMatrix.services.filter((s) => s.status === 'degraded')
+                    .length
+                }
               </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Unhealthy</p>
+              <p className="text-muted-foreground text-sm">Unhealthy</p>
               <p className="text-2xl font-bold text-red-500">
-                {healthMatrix.services.filter(s => s.status === 'unhealthy' || s.status === 'offline').length}
+                {
+                  healthMatrix.services.filter(
+                    (s) => s.status === 'unhealthy' || s.status === 'offline',
+                  ).length
+                }
               </p>
             </div>
           </div>
@@ -323,19 +377,21 @@ export default function ServiceHealthPage() {
         <TabsContent value="matrix" className="space-y-4">
           <div className="grid grid-cols-3 gap-4">
             {healthMatrix.services.map((service) => (
-              <Card 
+              <Card
                 key={service.name}
                 className={cn(
-                  "cursor-pointer hover:shadow-lg transition-all",
-                  selectedService === service.name && "ring-2 ring-primary"
+                  'cursor-pointer transition-all hover:shadow-lg',
+                  selectedService === service.name && 'ring-primary ring-2',
                 )}
                 onClick={() => setSelectedService(service.name)}
               >
                 <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
+                  <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
                       {getServiceIcon(service.name)}
-                      <CardTitle className="text-base">{service.displayName}</CardTitle>
+                      <CardTitle className="text-base">
+                        {service.displayName}
+                      </CardTitle>
                     </div>
                     {getStatusIcon(service.status)}
                   </div>
@@ -352,21 +408,25 @@ export default function ServiceHealthPage() {
                     </div>
                     <div>
                       <p className="text-muted-foreground">CPU</p>
-                      <Progress value={service.cpu} className="h-1 mt-1" />
+                      <Progress value={service.cpu} className="mt-1 h-1" />
                       <p className="text-xs">{service.cpu}%</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Memory</p>
-                      <Progress value={service.memory} className="h-1 mt-1" />
+                      <Progress value={service.memory} className="mt-1 h-1" />
                       <p className="text-xs">{service.memory}%</p>
                     </div>
                   </div>
-                  
+
                   {service.metrics && (
-                    <div className="pt-2 border-t">
+                    <div className="border-t pt-2">
                       <div className="flex justify-between text-xs">
-                        <span>Requests: {service.metrics.requests?.toLocaleString()}</span>
-                        <span className="text-red-500">Errors: {service.metrics.errors}</span>
+                        <span>
+                          Requests: {service.metrics.requests?.toLocaleString()}
+                        </span>
+                        <span className="text-red-500">
+                          Errors: {service.metrics.errors}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -380,45 +440,66 @@ export default function ServiceHealthPage() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {healthMatrix.services.find(s => s.name === selectedService)?.displayName} Details
+                  {
+                    healthMatrix.services.find(
+                      (s) => s.name === selectedService,
+                    )?.displayName
+                  }{' '}
+                  Details
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {(() => {
-                  const service = healthMatrix.services.find(s => s.name === selectedService)
+                  const service = healthMatrix.services.find(
+                    (s) => s.name === selectedService,
+                  )
                   if (!service) return null
-                  
+
                   return (
                     <div className="space-y-4">
                       <div className="grid grid-cols-4 gap-4">
                         <div>
-                          <p className="text-sm text-muted-foreground">Status</p>
-                          <div className="flex items-center gap-2 mt-1">
+                          <p className="text-muted-foreground text-sm">
+                            Status
+                          </p>
+                          <div className="mt-1 flex items-center gap-2">
                             {getStatusIcon(service.status)}
-                            <span className="font-medium capitalize">{service.status}</span>
+                            <span className="font-medium capitalize">
+                              {service.status}
+                            </span>
                           </div>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Error Rate</p>
+                          <p className="text-muted-foreground text-sm">
+                            Error Rate
+                          </p>
                           <p className="font-medium">{service.errorRate}%</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Throughput</p>
-                          <p className="font-medium">{service.metrics?.throughput} req/s</p>
+                          <p className="text-muted-foreground text-sm">
+                            Throughput
+                          </p>
+                          <p className="font-medium">
+                            {service.metrics?.throughput} req/s
+                          </p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">Last Check</p>
-                          <p className="font-medium text-xs">
+                          <p className="text-muted-foreground text-sm">
+                            Last Check
+                          </p>
+                          <p className="text-xs font-medium">
                             {new Date(service.lastCheck).toLocaleTimeString()}
                           </p>
                         </div>
                       </div>
-                      
+
                       {service.dependencies.length > 0 && (
                         <div>
-                          <p className="text-sm text-muted-foreground mb-2">Dependencies</p>
+                          <p className="text-muted-foreground mb-2 text-sm">
+                            Dependencies
+                          </p>
                           <div className="flex gap-2">
-                            {service.dependencies.map(dep => (
+                            {service.dependencies.map((dep) => (
                               <Badge key={dep} variant="outline">
                                 {dep}
                               </Badge>
@@ -441,22 +522,24 @@ export default function ServiceHealthPage() {
               <table className="w-full">
                 <thead className="border-b">
                   <tr>
-                    <th className="text-left p-4">Service</th>
-                    <th className="text-left p-4">Status</th>
-                    <th className="text-left p-4">Uptime</th>
-                    <th className="text-left p-4">Response Time</th>
-                    <th className="text-left p-4">CPU</th>
-                    <th className="text-left p-4">Memory</th>
-                    <th className="text-left p-4">Error Rate</th>
+                    <th className="p-4 text-left">Service</th>
+                    <th className="p-4 text-left">Status</th>
+                    <th className="p-4 text-left">Uptime</th>
+                    <th className="p-4 text-left">Response Time</th>
+                    <th className="p-4 text-left">CPU</th>
+                    <th className="p-4 text-left">Memory</th>
+                    <th className="p-4 text-left">Error Rate</th>
                   </tr>
                 </thead>
                 <tbody>
                   {healthMatrix.services.map((service) => (
-                    <tr key={service.name} className="border-b hover:bg-accent">
+                    <tr key={service.name} className="hover:bg-accent border-b">
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           {getServiceIcon(service.name)}
-                          <span className="font-medium">{service.displayName}</span>
+                          <span className="font-medium">
+                            {service.displayName}
+                          </span>
                         </div>
                       </td>
                       <td className="p-4">
@@ -469,22 +552,29 @@ export default function ServiceHealthPage() {
                       <td className="p-4">{service.responseTime}ms</td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          <Progress value={service.cpu} className="w-16 h-2" />
+                          <Progress value={service.cpu} className="h-2 w-16" />
                           <span className="text-sm">{service.cpu}%</span>
                         </div>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          <Progress value={service.memory} className="w-16 h-2" />
+                          <Progress
+                            value={service.memory}
+                            className="h-2 w-16"
+                          />
                           <span className="text-sm">{service.memory}%</span>
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className={cn(
-                          service.errorRate > 1 ? 'text-red-500' :
-                          service.errorRate > 0 ? 'text-yellow-500' :
-                          'text-green-500'
-                        )}>
+                        <span
+                          className={cn(
+                            service.errorRate > 1
+                              ? 'text-red-500'
+                              : service.errorRate > 0
+                                ? 'text-yellow-500'
+                                : 'text-green-500',
+                          )}
+                        >
                           {service.errorRate}%
                         </span>
                       </td>
@@ -501,39 +591,54 @@ export default function ServiceHealthPage() {
           <Card>
             <CardHeader>
               <CardTitle>Service Dependencies</CardTitle>
-              <CardDescription>Dependency graph and impact analysis</CardDescription>
+              <CardDescription>
+                Dependency graph and impact analysis
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {healthMatrix.services.filter(s => s.dependencies.length > 0).map((service) => (
-                  <div key={service.name} className="flex items-center gap-4 p-3 rounded-lg border">
-                    <div className="flex items-center gap-2 min-w-[150px]">
-                      {getServiceIcon(service.name)}
-                      <span className="font-medium">{service.displayName}</span>
+                {healthMatrix.services
+                  .filter((s) => s.dependencies.length > 0)
+                  .map((service) => (
+                    <div
+                      key={service.name}
+                      className="flex items-center gap-4 rounded-lg border p-3"
+                    >
+                      <div className="flex min-w-[150px] items-center gap-2">
+                        {getServiceIcon(service.name)}
+                        <span className="font-medium">
+                          {service.displayName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Network className="text-muted-foreground h-4 w-4" />
+                        <span className="text-muted-foreground text-sm">
+                          depends on
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        {service.dependencies.map((dep) => {
+                          const depService = healthMatrix.services.find(
+                            (s) => s.name === dep,
+                          )
+                          return (
+                            <Badge
+                              key={dep}
+                              className={cn(
+                                depService?.status === 'healthy'
+                                  ? 'bg-green-500'
+                                  : depService?.status === 'degraded'
+                                    ? 'bg-yellow-500'
+                                    : 'bg-red-500',
+                              )}
+                            >
+                              {dep}
+                            </Badge>
+                          )
+                        })}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Network className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">depends on</span>
-                    </div>
-                    <div className="flex gap-2">
-                      {service.dependencies.map(dep => {
-                        const depService = healthMatrix.services.find(s => s.name === dep)
-                        return (
-                          <Badge 
-                            key={dep}
-                            className={cn(
-                              depService?.status === 'healthy' ? 'bg-green-500' :
-                              depService?.status === 'degraded' ? 'bg-yellow-500' :
-                              'bg-red-500'
-                            )}
-                          >
-                            {dep}
-                          </Badge>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             </CardContent>
           </Card>

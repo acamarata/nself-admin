@@ -3,10 +3,5 @@
 import { PageTemplate } from '@/components/PageTemplate'
 
 export default function Page() {
-  return (
-    <PageTemplate 
-     
-      description="Manage trusted certificates"
-    />
-  )
+  return <PageTemplate description="Manage trusted certificates" />
 }

@@ -13,7 +13,7 @@ const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
 const MAX_REQUESTS = {
   auth: 5, // 5 login attempts per 15 minutes
   api: 100, // 100 API calls per 15 minutes
-  heavy: 10 // 10 heavy operations per 15 minutes
+  heavy: 10, // 10 heavy operations per 15 minutes
 }
 
 /**
@@ -24,7 +24,7 @@ function getClientId(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for')
   const real = request.headers.get('x-real-ip')
   const ip = forwarded?.split(',')[0] || real || 'unknown'
-  
+
   // Combine with user agent for better fingerprinting
   const userAgent = request.headers.get('user-agent') || 'unknown'
   return `${ip}:${userAgent.substring(0, 50)}`
@@ -35,48 +35,48 @@ function getClientId(request: NextRequest): string {
  */
 export function isRateLimited(
   request: NextRequest,
-  type: 'auth' | 'api' | 'heavy' = 'api'
+  type: 'auth' | 'api' | 'heavy' = 'api',
 ): boolean {
   const clientId = getClientId(request)
   const key = `${type}:${clientId}`
   const now = Date.now()
   const maxRequests = MAX_REQUESTS[type]
-  
+
   // Clean up old entries
   for (const [k, entry] of rateLimitStore.entries()) {
     if (entry.resetTime < now) {
       rateLimitStore.delete(k)
     }
   }
-  
+
   const entry = rateLimitStore.get(key)
-  
+
   if (!entry) {
     // First request
     rateLimitStore.set(key, {
       count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW
+      resetTime: now + RATE_LIMIT_WINDOW,
     })
     return false
   }
-  
+
   if (entry.resetTime < now) {
     // Window expired, reset
     rateLimitStore.set(key, {
       count: 1,
-      resetTime: now + RATE_LIMIT_WINDOW
+      resetTime: now + RATE_LIMIT_WINDOW,
     })
     return false
   }
-  
+
   // Increment count
   entry.count++
-  
+
   // Check if limit exceeded
   if (entry.count > maxRequests) {
     return true
   }
-  
+
   return false
 }
 
@@ -85,7 +85,7 @@ export function isRateLimited(
  */
 export function getRateLimitInfo(
   request: NextRequest,
-  type: 'auth' | 'api' | 'heavy' = 'api'
+  type: 'auth' | 'api' | 'heavy' = 'api',
 ): {
   remaining: number
   resetTime: number
@@ -95,28 +95,31 @@ export function getRateLimitInfo(
   const key = `${type}:${clientId}`
   const now = Date.now()
   const maxRequests = MAX_REQUESTS[type]
-  
+
   const entry = rateLimitStore.get(key)
-  
+
   if (!entry || entry.resetTime < now) {
     return {
       remaining: maxRequests,
       resetTime: now + RATE_LIMIT_WINDOW,
-      limit: maxRequests
+      limit: maxRequests,
     }
   }
-  
+
   return {
     remaining: Math.max(0, maxRequests - entry.count),
     resetTime: entry.resetTime,
-    limit: maxRequests
+    limit: maxRequests,
   }
 }
 
 /**
  * Clear rate limit for a client (e.g., after successful login)
  */
-export function clearRateLimit(request: NextRequest, type: 'auth' | 'api' | 'heavy' = 'auth'): void {
+export function clearRateLimit(
+  request: NextRequest,
+  type: 'auth' | 'api' | 'heavy' = 'auth',
+): void {
   const clientId = getClientId(request)
   const key = `${type}:${clientId}`
   rateLimitStore.delete(key)

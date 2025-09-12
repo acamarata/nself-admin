@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useProjectStore } from '@/stores/projectStore'
 import { ProjectSetupWizard } from '@/components/ProjectSetupWizard'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useProjectStore } from '@/stores/projectStore'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
+import { useEffect } from 'react'
 
 interface ProjectStateProviderProps {
   children: React.ReactNode
@@ -17,16 +17,16 @@ export function ProjectStateProvider({ children }: ProjectStateProviderProps) {
     isChecking,
     checkProjectStatus,
     startBackgroundRefresh,
-    stopBackgroundRefresh
+    stopBackgroundRefresh,
   } = useProjectStore()
 
   useEffect(() => {
     // Initial check
     checkProjectStatus()
-    
+
     // NOTE: BackgroundDataService handles all data fetching
     // We don't start the store's background refresh anymore
-    
+
     // Cleanup on unmount
     return () => {
       stopBackgroundRefresh()
@@ -43,14 +43,16 @@ export function ProjectStateProvider({ children }: ProjectStateProviderProps) {
   // Show loading state during initial check
   if (isChecking && projectStatus === 'not_initialized') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
-          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Checking project status...</h2>
+          <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-blue-500" />
+          <h2 className="mb-2 text-xl font-semibold">
+            Checking project status...
+          </h2>
           <p className="text-zinc-600 dark:text-zinc-400">
             Analyzing your nself project configuration
           </p>

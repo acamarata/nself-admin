@@ -1,10 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, CheckCircle, XCircle, AlertCircle, Hammer, ChevronDown, ChevronUp } from 'lucide-react'
-import { StepWrapper } from '../StepWrapper'
 import { useWizardStore } from '@/stores/wizardStore'
+import {
+  ArrowLeft,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Hammer,
+  XCircle,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { StepWrapper } from '../StepWrapper'
 
 interface ConfigSummary {
   projectName: string
@@ -31,8 +38,19 @@ interface ConfigSummary {
   searchEnabled: boolean
   searchEngine?: string
   nadminEnabled: boolean
-  customServices: Array<{ name: string; framework: string; port: number; route?: string }>
-  frontendApps: Array<{ displayName: string; systemName?: string; tablePrefix?: string; localPort?: number; productionUrl?: string }>
+  customServices: Array<{
+    name: string
+    framework: string
+    port: number
+    route?: string
+  }>
+  frontendApps: Array<{
+    displayName: string
+    systemName?: string
+    tablePrefix?: string
+    localPort?: number
+    productionUrl?: string
+  }>
   backupEnabled: boolean
   ENV?: string
   BASE_DOMAIN?: string
@@ -40,7 +58,7 @@ interface ConfigSummary {
   POSTGRES_PASSWORD?: string
   REDIS_ENABLED?: string
   STORAGE_ENABLED?: string
-  MINIO_ENABLED?: string  // Deprecated, for backwards compat
+  MINIO_ENABLED?: string // Deprecated, for backwards compat
   MONITORING_ENABLED?: string
   MLFLOW_ENABLED?: string
   MAILPIT_ENABLED?: string
@@ -62,7 +80,9 @@ export default function InitStep6() {
   const [dataLoaded, setDataLoaded] = useState(false)
   const [validating, setValidating] = useState(false)
   const [config, setConfig] = useState<ConfigSummary | null>(null)
-  const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>([])
+  const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>(
+    [],
+  )
   const [showIssues, setShowIssues] = useState(false)
   const [autoFixing, setAutoFixing] = useState(false)
   const [fixedIssuesCount, setFixedIssuesCount] = useState(0)
@@ -72,7 +92,6 @@ export default function InitStep6() {
   useEffect(() => {
     checkAndLoadConfiguration()
   }, [])
-
 
   const checkAndLoadConfiguration = async () => {
     // First check if env file exists
@@ -89,7 +108,7 @@ export default function InitStep6() {
     } catch (error) {
       console.error('Error checking project status:', error)
     }
-    
+
     // Load configuration if env file exists
     loadConfiguration()
   }
@@ -102,21 +121,49 @@ export default function InitStep6() {
         if (data.config) {
           // Merge all config data including raw env vars
           const fullConfig: ConfigSummary = {
-            projectName: data.config.projectName || data.config.PROJECT_NAME || 'my_project',
-            environment: data.config.environment || data.config.ENV || 'development',
-            domain: data.config.domain || data.config.BASE_DOMAIN || 'localhost',
-            databaseName: data.config.databaseName || data.config.POSTGRES_DB || 'nself',
-            databasePassword: data.config.databasePassword || data.config.POSTGRES_PASSWORD || '',
-            hasuraEnabled: data.config.hasuraEnabled !== false,  // Always true for required service
-            authEnabled: data.config.authEnabled !== false,  // Always true for required service
-            nadminEnabled: data.config.nadminEnabled || data.config.NSELF_ADMIN_ENABLED === 'true' || data.config.adminEnabled || false,
-            redisEnabled: data.config.redisEnabled || data.config.REDIS_ENABLED === 'true',
-            minioEnabled: data.config.minioEnabled || data.config.STORAGE_ENABLED === 'true' || data.config.MINIO_ENABLED === 'true',
-            mlflowEnabled: data.config.mlflowEnabled || data.config.MLFLOW_ENABLED === 'true',
-            mailpitEnabled: data.config.mailpitEnabled || data.config.MAILPIT_ENABLED === 'true',
-            searchEnabled: data.config.searchEnabled || data.config.SEARCH_ENABLED === 'true',
-            searchEngine: data.config.searchEngine || data.config.SEARCH_ENGINE || 'meilisearch',
-            monitoringEnabled: data.config.monitoringEnabled || data.config.MONITORING_ENABLED === 'true',
+            projectName:
+              data.config.projectName ||
+              data.config.PROJECT_NAME ||
+              'my_project',
+            environment:
+              data.config.environment || data.config.ENV || 'development',
+            domain:
+              data.config.domain || data.config.BASE_DOMAIN || 'localhost',
+            databaseName:
+              data.config.databaseName || data.config.POSTGRES_DB || 'nself',
+            databasePassword:
+              data.config.databasePassword ||
+              data.config.POSTGRES_PASSWORD ||
+              '',
+            hasuraEnabled: data.config.hasuraEnabled !== false, // Always true for required service
+            authEnabled: data.config.authEnabled !== false, // Always true for required service
+            nadminEnabled:
+              data.config.nadminEnabled ||
+              data.config.NSELF_ADMIN_ENABLED === 'true' ||
+              data.config.adminEnabled ||
+              false,
+            redisEnabled:
+              data.config.redisEnabled || data.config.REDIS_ENABLED === 'true',
+            minioEnabled:
+              data.config.minioEnabled ||
+              data.config.STORAGE_ENABLED === 'true' ||
+              data.config.MINIO_ENABLED === 'true',
+            mlflowEnabled:
+              data.config.mlflowEnabled ||
+              data.config.MLFLOW_ENABLED === 'true',
+            mailpitEnabled:
+              data.config.mailpitEnabled ||
+              data.config.MAILPIT_ENABLED === 'true',
+            searchEnabled:
+              data.config.searchEnabled ||
+              data.config.SEARCH_ENABLED === 'true',
+            searchEngine:
+              data.config.searchEngine ||
+              data.config.SEARCH_ENGINE ||
+              'meilisearch',
+            monitoringEnabled:
+              data.config.monitoringEnabled ||
+              data.config.MONITORING_ENABLED === 'true',
             // Load individual monitoring service flags
             prometheusEnabled: data.config.PROMETHEUS_ENABLED === 'true',
             grafanaEnabled: data.config.GRAFANA_ENABLED === 'true',
@@ -124,12 +171,17 @@ export default function InitStep6() {
             tempoEnabled: data.config.TEMPO_ENABLED === 'true',
             alertmanagerEnabled: data.config.ALERTMANAGER_ENABLED === 'true',
             nodeExporterEnabled: data.config.NODE_EXPORTER_ENABLED === 'true',
-            postgresExporterEnabled: data.config.POSTGRES_EXPORTER_ENABLED === 'true',
+            postgresExporterEnabled:
+              data.config.POSTGRES_EXPORTER_ENABLED === 'true',
             cadvisorEnabled: data.config.CADVISOR_ENABLED === 'true',
-            customServices: data.config.customServices || data.config.userServices || [],
+            customServices:
+              data.config.customServices || data.config.userServices || [],
             frontendApps: data.config.frontendApps || [],
-            backupEnabled: data.config.backupEnabled || data.config.BACKUP_ENABLED === 'true' || data.config.DB_BACKUP_ENABLED === 'true',
-            ...data.config // Include all raw data
+            backupEnabled:
+              data.config.backupEnabled ||
+              data.config.BACKUP_ENABLED === 'true' ||
+              data.config.DB_BACKUP_ENABLED === 'true',
+            ...data.config, // Include all raw data
           }
           setConfig(fullConfig)
           // Run sanity check after loading (unless we're reloading after fixes)
@@ -145,58 +197,89 @@ export default function InitStep6() {
     }
   }
 
-  const validateConfiguration = async (summary: ConfigSummary, rawConfig: any) => {
+  const validateConfiguration = async (
+    summary: ConfigSummary,
+    rawConfig: any,
+  ) => {
     setValidating(true)
     setAutoFixing(true)
     const issues: ValidationIssue[] = []
     let fixCount = 0
     let portFixCount = 0
-    
+
     // Auto-fix configuration issues
     const fixes: Record<string, string> = {}
     const portFixes: Record<string, string> = {}
     const fixDescriptions: string[] = []
-    
+
     try {
       // Call validation API endpoint
       const response = await fetch('/api/wizard/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ config: rawConfig })
+        body: JSON.stringify({ config: rawConfig }),
       })
-      
+
       if (response.ok) {
         const result = await response.json()
         if (result.issues) {
           // Auto-fix known issues ONLY if the values don't already exist
           for (const issue of result.issues) {
-            if (issue.field === 'HASURA_METADATA_DATABASE_URL' && !rawConfig.HASURA_METADATA_DATABASE_URL) {
+            if (
+              issue.field === 'HASURA_METADATA_DATABASE_URL' &&
+              !rawConfig.HASURA_METADATA_DATABASE_URL
+            ) {
               // Auto-construct database URL
-              const dbUser = rawConfig.POSTGRES_USER || rawConfig.postgresUser || 'postgres'
-              const dbPass = rawConfig.POSTGRES_PASSWORD || rawConfig.databasePassword || 'nself-dev-password'
-              const dbName = rawConfig.POSTGRES_DB || rawConfig.databaseName || 'nself'
+              const dbUser =
+                rawConfig.POSTGRES_USER || rawConfig.postgresUser || 'postgres'
+              const dbPass =
+                rawConfig.POSTGRES_PASSWORD ||
+                rawConfig.databasePassword ||
+                'nself-dev-password'
+              const dbName =
+                rawConfig.POSTGRES_DB || rawConfig.databaseName || 'nself'
               fixes.HASURA_METADATA_DATABASE_URL = `postgres://${dbUser}:${dbPass}@postgres:5432/${dbName}`
-              fixDescriptions.push('Added HASURA_METADATA_DATABASE_URL for database connection')
+              fixDescriptions.push(
+                'Added HASURA_METADATA_DATABASE_URL for database connection',
+              )
               fixCount++
             } else if (issue.field === 'minio' && !rawConfig.MINIO_ROOT_USER) {
               fixes.MINIO_ROOT_USER = 'minioadmin'
               fixes.MINIO_ROOT_PASSWORD = 'minioadmin-password'
-              fixDescriptions.push('Added MinIO credentials for storage service')
+              fixDescriptions.push(
+                'Added MinIO credentials for storage service',
+              )
               fixCount++
-            } else if (issue.field === 'search' && !rawConfig.MEILI_MASTER_KEY) {
+            } else if (
+              issue.field === 'search' &&
+              !rawConfig.MEILI_MASTER_KEY
+            ) {
               fixes.MEILI_MASTER_KEY = 'meilisearch-master-key-32-chars'
-              fixDescriptions.push('Added MeiliSearch master key for search service')
+              fixDescriptions.push(
+                'Added MeiliSearch master key for search service',
+              )
               fixCount++
-            } else if (issue.field === 'grafana' && !rawConfig.GRAFANA_ADMIN_PASSWORD) {
+            } else if (
+              issue.field === 'grafana' &&
+              !rawConfig.GRAFANA_ADMIN_PASSWORD
+            ) {
               fixes.GRAFANA_ADMIN_PASSWORD = 'grafana-admin-password'
-              fixDescriptions.push('Added Grafana admin password for monitoring')
+              fixDescriptions.push(
+                'Added Grafana admin password for monitoring',
+              )
               fixCount++
-            } else if (issue.field === 'monitoring' && issue.message.includes('TEMPO_ENABLED') && rawConfig.TEMPO_ENABLED !== 'true') {
+            } else if (
+              issue.field === 'monitoring' &&
+              issue.message.includes('TEMPO_ENABLED') &&
+              rawConfig.TEMPO_ENABLED !== 'true'
+            ) {
               fixes.TEMPO_ENABLED = 'true'
               if (rawConfig.ALERTMANAGER_ENABLED !== 'true') {
                 fixes.ALERTMANAGER_ENABLED = 'true'
               }
-              fixDescriptions.push('Enabled missing monitoring services (Tempo, Alertmanager)')
+              fixDescriptions.push(
+                'Enabled missing monitoring services (Tempo, Alertmanager)',
+              )
               fixCount++
             } else {
               // Can't auto-fix this issue
@@ -208,16 +291,18 @@ export default function InitStep6() {
     } catch (error) {
       console.error('Validation error:', error)
     }
-    
+
     // Combine all fixes (config fixes + port fixes)
     const allFixes = { ...fixes, ...portFixes }
     const totalFixCount = fixCount + portFixCount
-    
+
     // Combine fix descriptions
     if (portFixCount > 0) {
-      fixDescriptions.push(`Fixed ${portFixCount} port conflict${portFixCount > 1 ? 's' : ''} for frontend apps`)
+      fixDescriptions.push(
+        `Fixed ${portFixCount} port conflict${portFixCount > 1 ? 's' : ''} for frontend apps`,
+      )
     }
-    
+
     // Apply fixes if any
     if (Object.keys(allFixes).length > 0) {
       try {
@@ -226,13 +311,13 @@ export default function InitStep6() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             config: allFixes,
-            step: 'auto-fix'
-          })
+            step: 'auto-fix',
+          }),
         })
         // Show the count and descriptions of fixes that were just applied
         setFixedIssuesCount(totalFixCount)
         setAppliedFixes(fixDescriptions)
-        
+
         // After applying fixes, reload configuration without re-validating
         // The fixes have been saved, so next time the page loads, no issues will be found
         setTimeout(() => {
@@ -246,30 +331,46 @@ export default function InitStep6() {
       setFixedIssuesCount(0)
       setAppliedFixes([])
     }
-    
+
     // Client-side validation for remaining issues
-    const isDev = summary.environment === 'dev' || summary.environment === 'development'
-    
+    const isDev =
+      summary.environment === 'dev' || summary.environment === 'development'
+
     // Only warn about default project name if not in dev
-    if (!isDev && (!summary.projectName || summary.projectName === 'my_project')) {
-      issues.push({ field: 'projectName', message: 'Project name is using default value', severity: 'warning' })
+    if (
+      !isDev &&
+      (!summary.projectName || summary.projectName === 'my_project')
+    ) {
+      issues.push({
+        field: 'projectName',
+        message: 'Project name is using default value',
+        severity: 'warning',
+      })
     }
-    
+
     // Only warn about default password in production/staging
-    if (!isDev && (!summary.databasePassword || summary.databasePassword === 'nself-dev-password')) {
-      issues.push({ field: 'databasePassword', message: 'Database password is using default (insecure for production)', severity: 'warning' })
+    if (
+      !isDev &&
+      (!summary.databasePassword ||
+        summary.databasePassword === 'nself-dev-password')
+    ) {
+      issues.push({
+        field: 'databasePassword',
+        message: 'Database password is using default (insecure for production)',
+        severity: 'warning',
+      })
     }
-    
+
     // Check for port conflicts (errors that can't be auto-fixed)
     const usedPorts = new Map<number, string>()
-    
+
     // Add default service ports
     usedPorts.set(5432, 'PostgreSQL')
     usedPorts.set(8080, 'Hasura')
     usedPorts.set(4000, 'Auth')
     usedPorts.set(80, 'Nginx HTTP')
     usedPorts.set(443, 'Nginx HTTPS')
-    
+
     // Add optional service ports if enabled
     if (summary.redisEnabled) usedPorts.set(6379, 'Redis')
     if (summary.minioEnabled) {
@@ -290,12 +391,12 @@ export default function InitStep6() {
       usedPorts.set(9093, 'Alertmanager')
     }
     if (summary.nadminEnabled) usedPorts.set(3021, 'nself Admin')
-    
+
     // Auto-fix port conflicts for custom services
-    
+
     if (summary.customServices.length > 0) {
       const fixedCustomServices: any[] = []
-      
+
       summary.customServices.forEach((service, index) => {
         if (usedPorts.has(service.port)) {
           // Find next available port starting from 4001
@@ -303,23 +404,29 @@ export default function InitStep6() {
           while (usedPorts.has(newPort)) {
             newPort++
           }
-          
+
           // Create fixed service
           const fixedService = { ...service, port: newPort }
           fixedCustomServices.push(fixedService)
           usedPorts.set(newPort, service.name)
-          
+
           // Add to fixes
-          portFixes[`CS_${index + 1}`] = `${service.name}:${service.framework}:${newPort}:${service.route || ''}`
+          portFixes[`CS_${index + 1}`] =
+            `${service.name}:${service.framework}:${newPort}:${service.route || ''}`
           portFixCount++
         } else {
           fixedCustomServices.push(service)
           usedPorts.set(service.port, service.name)
         }
       })
-      
+
       // If we fixed any ports, update the store
-      if (fixedCustomServices.some((service, index) => service.port !== summary.customServices[index]?.port)) {
+      if (
+        fixedCustomServices.some(
+          (service, index) =>
+            service.port !== summary.customServices[index]?.port,
+        )
+      ) {
         try {
           const { setCustomServices } = useWizardStore.getState()
           setCustomServices(fixedCustomServices)
@@ -328,11 +435,11 @@ export default function InitStep6() {
         }
       }
     }
-    
+
     // Auto-fix port conflicts for frontend apps
     if (summary.frontendApps.length > 0) {
       const fixedFrontendApps: any[] = []
-      
+
       summary.frontendApps.forEach((app, index) => {
         if (app.localPort && usedPorts.has(app.localPort)) {
           // Find next available port starting from 3001
@@ -340,12 +447,12 @@ export default function InitStep6() {
           while (usedPorts.has(newPort)) {
             newPort++
           }
-          
+
           // Create fixed app
           const fixedApp = { ...app, localPort: newPort }
           fixedFrontendApps.push(fixedApp)
           usedPorts.set(newPort, app.displayName || 'Frontend App')
-          
+
           // Add to fixes
           portFixes[`FRONTEND_APP_${index + 1}_PORT`] = newPort.toString()
           portFixCount++
@@ -356,9 +463,14 @@ export default function InitStep6() {
           }
         }
       })
-      
+
       // If we fixed any ports, update the store
-      if (fixedFrontendApps.some((app, index) => app.localPort !== summary.frontendApps[index]?.localPort)) {
+      if (
+        fixedFrontendApps.some(
+          (app, index) =>
+            app.localPort !== summary.frontendApps[index]?.localPort,
+        )
+      ) {
         try {
           const { setFrontendApps } = useWizardStore.getState()
           setFrontendApps(fixedFrontendApps)
@@ -367,7 +479,7 @@ export default function InitStep6() {
         }
       }
     }
-    
+
     setValidationIssues(issues)
     setValidating(false)
     setAutoFixing(false)
@@ -379,39 +491,39 @@ export default function InitStep6() {
 
   const handleBuild = async () => {
     // Check for validation errors first
-    const errors = validationIssues.filter(i => i.severity === 'error')
+    const errors = validationIssues.filter((i) => i.severity === 'error')
     if (errors.length > 0) {
       alert('Please fix the validation errors before building.')
       return
     }
-    
+
     setLoading(true)
-    
+
     try {
       // First, finalize and organize the env file
       const finalizeResponse = await fetch('/api/wizard/finalize', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       })
-      
+
       if (!finalizeResponse.ok) {
         throw new Error('Failed to finalize configuration')
       }
-      
+
       // Do a final save of the entire configuration
       const response = await fetch('/api/wizard/update-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           config: config,
-          step: 'review'
-        })
+          step: 'review',
+        }),
       })
-      
+
       if (!response.ok) {
         throw new Error('Failed to save final configuration')
       }
-      
+
       // Redirect to build page with wizard flag
       router.push('/build?from=wizard')
     } catch (error) {
@@ -427,54 +539,57 @@ export default function InitStep6() {
       <StepWrapper>
         <div className="space-y-4">
           {/* Validation box skeleton */}
-          <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+          <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-start gap-2">
-              <div className="w-5 h-5 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+              <div className="h-5 w-5 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
               <div className="flex-1">
-                <div className="h-5 w-48 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse mb-2"></div>
-                <div className="h-3 w-64 bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse"></div>
+                <div className="mb-2 h-5 w-48 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
+                <div className="h-3 w-64 animate-pulse rounded bg-zinc-100 dark:bg-zinc-800"></div>
               </div>
             </div>
           </div>
-          
+
           {/* Color legend skeleton */}
-          <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+          <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
             <div className="flex flex-wrap gap-4">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="flex items-center gap-1">
-                  <div className="w-3 h-3 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
-                  <div className="h-3 w-20 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+                  <div className="h-3 w-3 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
+                  <div className="h-3 w-20 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
                 </div>
               ))}
             </div>
           </div>
-          
+
           {/* Summary cards skeletons */}
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-              <div className="h-5 w-32 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse mb-3"></div>
+            <div
+              key={i}
+              className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700"
+            >
+              <div className="mb-3 h-5 w-32 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
               <div className="space-y-2">
                 {[...Array(3)].map((_, j) => (
                   <div key={j} className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
-                    <div className="h-4 w-48 bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse"></div>
+                    <div className="h-4 w-4 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
+                    <div className="h-4 w-48 animate-pulse rounded bg-zinc-100 dark:bg-zinc-800"></div>
                   </div>
                 ))}
               </div>
             </div>
           ))}
-          
+
           {/* Total summary skeleton */}
-          <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <div className="h-5 w-36 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
-              <div className="h-8 w-12 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="h-5 w-36 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
+              <div className="h-8 w-12 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
             </div>
             <div className="space-y-1">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="flex justify-between">
-                  <div className="h-3 w-24 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
-                  <div className="h-3 w-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+                  <div className="h-3 w-24 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
+                  <div className="h-3 w-8 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
                 </div>
               ))}
             </div>
@@ -487,80 +602,101 @@ export default function InitStep6() {
   // Generate dynamic monitoring bundle description based on enabled services
   const getMonitoringBundleDescription = () => {
     if (!config.monitoringEnabled) return null
-    
+
     // When monitoring is enabled, nself automatically enables all 8 monitoring services
     // Unless explicitly disabled, all are enabled by default
     const enabledMonitoringServices = [
-      (config.prometheusEnabled !== false) && 'Prometheus',
-      (config.grafanaEnabled !== false) && 'Grafana', 
-      (config.lokiEnabled !== false) && 'Loki',
-      (config.tempoEnabled !== false) && 'Tempo',
-      (config.alertmanagerEnabled !== false) && 'Alertmanager',
+      config.prometheusEnabled !== false && 'Prometheus',
+      config.grafanaEnabled !== false && 'Grafana',
+      config.lokiEnabled !== false && 'Loki',
+      config.tempoEnabled !== false && 'Tempo',
+      config.alertmanagerEnabled !== false && 'Alertmanager',
       // These three are always enabled when monitoring is enabled
       'Node Exporter',
       'PostgreSQL Exporter',
-      'cAdvisor'
+      'cAdvisor',
     ].filter(Boolean)
-    
+
     if (enabledMonitoringServices.length === 0) {
       return 'Monitoring Bundle (None enabled)'
     }
-    
+
     return `Monitoring Bundle (${enabledMonitoringServices.join(', ')})`
   }
 
   const enabledOptionalServices = [
-    'nself Admin UI',  // Always show as enabled since user is viewing this interface
+    'nself Admin UI', // Always show as enabled since user is viewing this interface
     config.redisEnabled && 'Redis Cache',
     config.minioEnabled && 'Storage (MinIO)',
     config.mlflowEnabled && 'MLflow Platform',
     config.mailpitEnabled && 'Email Service (Mailpit)',
-    config.searchEnabled && `Search Service (${(config.searchEngine || 'meilisearch').charAt(0).toUpperCase() + (config.searchEngine || 'meilisearch').slice(1)})`,
-    getMonitoringBundleDescription()
+    config.searchEnabled &&
+      `Search Service (${(config.searchEngine || 'meilisearch').charAt(0).toUpperCase() + (config.searchEngine || 'meilisearch').slice(1)})`,
+    getMonitoringBundleDescription(),
   ].filter(Boolean)
 
   // Core services: PostgreSQL, Hasura, Auth, Nginx (4)
-  const coreServicesCount = 4  // Always enabled
-  
+  const coreServicesCount = 4 // Always enabled
+
   // Calculate actual monitoring services count
   // When monitoring is enabled, nself automatically enables all 8 monitoring services:
   // Prometheus, Grafana, Loki, Tempo, Alertmanager, Node Exporter, PostgreSQL Exporter, cAdvisor
   const monitoringServicesCount = config.monitoringEnabled ? 8 : 0
-  
-  const optionalServicesCount = 
-    1 +  // nself-admin is always counted since user is viewing this interface
+
+  const optionalServicesCount =
+    1 + // nself-admin is always counted since user is viewing this interface
     (config.redisEnabled ? 1 : 0) +
     (config.minioEnabled ? 1 : 0) +
     (config.mlflowEnabled ? 1 : 0) +
     (config.mailpitEnabled ? 1 : 0) +
     (config.searchEnabled ? 1 : 0) +
     monitoringServicesCount // Count actual enabled monitoring services
-  
+
   // Calculate total services (don't use API value as it may be incorrect before build)
-  const totalServices = coreServicesCount + optionalServicesCount + config.customServices.length
+  const totalServices =
+    coreServicesCount + optionalServicesCount + config.customServices.length
 
   return (
     <StepWrapper>
       {/* Auto-fixed issues */}
-      {(fixedIssuesCount > 0 || validationIssues.filter(i => i.severity === 'warning').length > 0) && (
-        <div className="mb-4 p-4 border border-green-200 dark:border-green-800 rounded-lg bg-green-50 dark:bg-green-900/20">
+      {(fixedIssuesCount > 0 ||
+        validationIssues.filter((i) => i.severity === 'warning').length >
+          0) && (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
           <div className="flex items-start gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-500 flex-shrink-0 mt-0.5" />
+            <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-500" />
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium text-green-900 dark:text-green-300">
                   {fixedIssuesCount > 0 && (
-                    <span>{fixedIssuesCount} {fixedIssuesCount === 1 ? 'issue' : 'issues'} automatically fixed</span>
+                    <span>
+                      {fixedIssuesCount}{' '}
+                      {fixedIssuesCount === 1 ? 'issue' : 'issues'}{' '}
+                      automatically fixed
+                    </span>
                   )}
-                  {fixedIssuesCount > 0 && validationIssues.filter(i => i.severity === 'warning').length > 0 && ', '}
-                  {validationIssues.filter(i => i.severity === 'warning').length > 0 && (
-                    <span>{validationIssues.filter(i => i.severity === 'warning').length} {validationIssues.filter(i => i.severity === 'warning').length === 1 ? 'warning' : 'warnings'}</span>
+                  {fixedIssuesCount > 0 &&
+                    validationIssues.filter((i) => i.severity === 'warning')
+                      .length > 0 &&
+                    ', '}
+                  {validationIssues.filter((i) => i.severity === 'warning')
+                    .length > 0 && (
+                    <span>
+                      {
+                        validationIssues.filter((i) => i.severity === 'warning')
+                          .length
+                      }{' '}
+                      {validationIssues.filter((i) => i.severity === 'warning')
+                        .length === 1
+                        ? 'warning'
+                        : 'warnings'}
+                    </span>
                   )}
                 </h3>
                 {fixedIssuesCount > 0 && (
                   <button
                     onClick={() => setShowIssues(!showIssues)}
-                    className="text-sm text-green-700 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 flex items-center gap-1"
+                    className="flex items-center gap-1 text-sm text-green-700 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
                   >
                     {showIssues ? (
                       <>
@@ -577,7 +713,7 @@ export default function InitStep6() {
                 )}
               </div>
               {showIssues && (
-                <div className="mt-2 text-sm text-green-700 dark:text-green-400 space-y-1">
+                <div className="mt-2 space-y-1 text-sm text-green-700 dark:text-green-400">
                   {appliedFixes.length > 0 && (
                     <>
                       <div className="font-medium">Fixed:</div>
@@ -586,12 +722,17 @@ export default function InitStep6() {
                       ))}
                     </>
                   )}
-                  {validationIssues.filter(i => i.severity === 'warning').length > 0 && (
+                  {validationIssues.filter((i) => i.severity === 'warning')
+                    .length > 0 && (
                     <>
-                      <div className="font-medium mt-2">Warnings (non-critical):</div>
-                      {validationIssues.filter(i => i.severity === 'warning').map((issue, index) => (
-                        <div key={index}>• {issue.message}</div>
-                      ))}
+                      <div className="mt-2 font-medium">
+                        Warnings (non-critical):
+                      </div>
+                      {validationIssues
+                        .filter((i) => i.severity === 'warning')
+                        .map((issue, index) => (
+                          <div key={index}>• {issue.message}</div>
+                        ))}
                     </>
                   )}
                 </div>
@@ -600,42 +741,48 @@ export default function InitStep6() {
           </div>
         </div>
       )}
-      
+
       {/* Remaining validation errors (only show errors, not warnings) */}
-      {validationIssues.filter(i => i.severity === 'error').length > 0 && (
-        <div className="mb-4 p-4 border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-900/20">
+      {validationIssues.filter((i) => i.severity === 'error').length > 0 && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
           <div className="flex items-start gap-2">
-            <XCircle className="h-5 w-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
+            <XCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-500" />
             <div className="flex-1">
-              <h3 className="font-medium text-red-900 dark:text-red-300 mb-2">
+              <h3 className="mb-2 font-medium text-red-900 dark:text-red-300">
                 Issues Requiring Attention
               </h3>
               <div className="space-y-1">
-                {validationIssues.filter(i => i.severity === 'error').map((issue, index) => (
-                  <div key={index} className="flex items-start gap-2 text-sm">
-                    <span className="text-red-700 dark:text-red-400">• {issue.message}</span>
-                  </div>
-                ))}
+                {validationIssues
+                  .filter((i) => i.severity === 'error')
+                  .map((issue, index) => (
+                    <div key={index} className="flex items-start gap-2 text-sm">
+                      <span className="text-red-700 dark:text-red-400">
+                        • {issue.message}
+                      </span>
+                    </div>
+                  ))}
               </div>
             </div>
           </div>
         </div>
       )}
-      
+
       {/* Validation in progress */}
       {(validating || autoFixing) && (
-        <div className="mb-4 p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
           <div className="flex items-center gap-2">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-600"></div>
             <span className="text-sm text-blue-700 dark:text-blue-400">
-              {autoFixing ? 'Auto-fixing configuration issues...' : 'Validating configuration...'}
+              {autoFixing
+                ? 'Auto-fixing configuration issues...'
+                : 'Validating configuration...'}
             </span>
           </div>
         </div>
       )}
-      
+
       {/* Color Legend */}
-      <div className="flex flex-wrap gap-4 text-xs text-zinc-600 dark:text-zinc-400 mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+      <div className="mb-4 flex flex-wrap gap-4 rounded-lg bg-zinc-50 p-3 text-xs text-zinc-600 dark:bg-zinc-800/50 dark:text-zinc-400">
         <div className="flex items-center gap-1">
           <CheckCircle className="h-3 w-3 text-blue-600" />
           <span>Core (Required)</span>
@@ -653,69 +800,102 @@ export default function InitStep6() {
           <span>Frontend Apps</span>
         </div>
       </div>
-      
+
       {/* Configuration Summary */}
       <div className="space-y-4">
         {/* Project Details */}
-        <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-          <h3 className="font-medium text-zinc-900 dark:text-white mb-3">Project Details</h3>
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+          <h3 className="mb-3 font-medium text-zinc-900 dark:text-white">
+            Project Details
+          </h3>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <span className="text-zinc-600 dark:text-zinc-400">Name:</span>
-              <span className="ml-2 text-zinc-900 dark:text-white font-medium">{config.projectName}</span>
+              <span className="ml-2 font-medium text-zinc-900 dark:text-white">
+                {config.projectName}
+              </span>
             </div>
             <div>
-              <span className="text-zinc-600 dark:text-zinc-400">Environment:</span>
-              <span className="ml-2 text-zinc-900 dark:text-white font-medium">{config.environment}</span>
+              <span className="text-zinc-600 dark:text-zinc-400">
+                Environment:
+              </span>
+              <span className="ml-2 font-medium text-zinc-900 dark:text-white">
+                {config.environment}
+              </span>
             </div>
             <div>
               <span className="text-zinc-600 dark:text-zinc-400">Domain:</span>
-              <span className="ml-2 text-zinc-900 dark:text-white font-medium">{config.domain}</span>
+              <span className="ml-2 font-medium text-zinc-900 dark:text-white">
+                {config.domain}
+              </span>
             </div>
             <div>
-              <span className="text-zinc-600 dark:text-zinc-400">Database:</span>
-              <span className="ml-2 text-zinc-900 dark:text-white font-medium">{config.databaseName}</span>
+              <span className="text-zinc-600 dark:text-zinc-400">
+                Database:
+              </span>
+              <span className="ml-2 font-medium text-zinc-900 dark:text-white">
+                {config.databaseName}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Services Summary */}
-        <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-          <h3 className="font-medium text-zinc-900 dark:text-white mb-3">Services Configuration</h3>
-          
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+          <h3 className="mb-3 font-medium text-zinc-900 dark:text-white">
+            Services Configuration
+          </h3>
+
           <div className="space-y-3">
             {/* Core Services - Always Enabled */}
             <div>
-              <h4 className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2 uppercase tracking-wider">Core Services (Always Enabled)</h4>
-              <div className="space-y-2 text-sm ml-2">
+              <h4 className="mb-2 text-xs font-medium tracking-wider text-zinc-600 uppercase dark:text-zinc-400">
+                Core Services (Always Enabled)
+              </h4>
+              <div className="ml-2 space-y-2 text-sm">
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-blue-600" />
-                  <span className="text-zinc-900 dark:text-white">PostgreSQL Database</span>
+                  <span className="text-zinc-900 dark:text-white">
+                    PostgreSQL Database
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-blue-600" />
-                  <span className="text-zinc-900 dark:text-white">Hasura GraphQL Engine</span>
+                  <span className="text-zinc-900 dark:text-white">
+                    Hasura GraphQL Engine
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-blue-600" />
-                  <span className="text-zinc-900 dark:text-white">Authentication Service</span>
+                  <span className="text-zinc-900 dark:text-white">
+                    Authentication Service
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-blue-600" />
-                  <span className="text-zinc-900 dark:text-white">Nginx Reverse Proxy</span>
+                  <span className="text-zinc-900 dark:text-white">
+                    Nginx Reverse Proxy
+                  </span>
                 </div>
               </div>
             </div>
-            
+
             {/* Optional Services - If Enabled */}
             {enabledOptionalServices.length > 0 && (
               <div>
-                <h4 className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2 uppercase tracking-wider">Optional Services</h4>
-                <div className="space-y-2 text-sm ml-2">
-                  {enabledOptionalServices.map(service => (
-                    <div key={String(service)} className="flex items-center space-x-2">
+                <h4 className="mb-2 text-xs font-medium tracking-wider text-zinc-600 uppercase dark:text-zinc-400">
+                  Optional Services
+                </h4>
+                <div className="ml-2 space-y-2 text-sm">
+                  {enabledOptionalServices.map((service) => (
+                    <div
+                      key={String(service)}
+                      className="flex items-center space-x-2"
+                    >
                       <CheckCircle className="h-4 w-4 text-purple-600" />
-                      <span className="text-zinc-900 dark:text-white">{service}</span>
+                      <span className="text-zinc-900 dark:text-white">
+                        {service}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -726,14 +906,18 @@ export default function InitStep6() {
 
         {/* Custom Services */}
         {config.customServices.length > 0 && (
-          <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-            <h3 className="font-medium text-zinc-900 dark:text-white mb-3">Custom Services ({config.customServices.length})</h3>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+            <h3 className="mb-3 font-medium text-zinc-900 dark:text-white">
+              Custom Services ({config.customServices.length})
+            </h3>
             <div className="space-y-2 text-sm">
               {config.customServices.map((service, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-orange-600" />
-                  <div className="flex-1 flex items-center justify-between">
-                    <span className="text-zinc-900 dark:text-white">{service.name}</span>
+                  <div className="flex flex-1 items-center justify-between">
+                    <span className="text-zinc-900 dark:text-white">
+                      {service.name}
+                    </span>
                     <span className="text-zinc-600 dark:text-zinc-400">
                       {service.framework} • Port {service.port}
                       {service.route && ` • ${service.route}.${config.domain}`}
@@ -747,17 +931,24 @@ export default function InitStep6() {
 
         {/* Frontend Apps */}
         {config.frontendApps.length > 0 && (
-          <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800/50">
-            <h3 className="font-medium text-zinc-900 dark:text-white mb-3">Frontend Applications ({config.frontendApps.length})</h3>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800/50">
+            <h3 className="mb-3 font-medium text-zinc-900 dark:text-white">
+              Frontend Applications ({config.frontendApps.length})
+            </h3>
             <div className="space-y-2 text-sm">
               {config.frontendApps.map((app, index) => (
                 <div key={index} className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-teal-600" />
-                  <div className="flex-1 flex items-center justify-between">
-                    <span className="text-zinc-900 dark:text-white">{app.displayName || `App ${index + 1}`}</span>
+                  <div className="flex flex-1 items-center justify-between">
+                    <span className="text-zinc-900 dark:text-white">
+                      {app.displayName || `App ${index + 1}`}
+                    </span>
                     <span className="text-zinc-600 dark:text-zinc-400">
-                      {app.productionUrl && `${app.productionUrl}.${config.domain} • `}
-                      {app.localPort ? `Port ${app.localPort}` : 'No port configured'}
+                      {app.productionUrl &&
+                        `${app.productionUrl}.${config.domain} • `}
+                      {app.localPort
+                        ? `Port ${app.localPort}`
+                        : 'No port configured'}
                     </span>
                   </div>
                 </div>
@@ -767,16 +958,16 @@ export default function InitStep6() {
         )}
 
         {/* Total Summary */}
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-blue-900 dark:text-blue-200 font-medium">
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="font-medium text-blue-900 dark:text-blue-200">
               Total Services to Build
             </span>
             <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {totalServices}
             </span>
           </div>
-          <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+          <div className="space-y-1 text-xs text-blue-700 dark:text-blue-300">
             <div className="flex justify-between">
               <span>Core Services:</span>
               <span className="font-medium">{coreServicesCount}</span>
@@ -790,7 +981,9 @@ export default function InitStep6() {
             {config.customServices.length > 0 && (
               <div className="flex justify-between">
                 <span>Custom Services:</span>
-                <span className="font-medium">{config.customServices.length}</span>
+                <span className="font-medium">
+                  {config.customServices.length}
+                </span>
               </div>
             )}
           </div>
@@ -801,19 +994,23 @@ export default function InitStep6() {
       <div className="flex justify-between pt-4">
         <button
           onClick={handleBack}
-          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-zinc-500/10 dark:text-zinc-400 dark:ring-1 dark:ring-inset dark:ring-zinc-400/20 dark:hover:bg-zinc-400/10 dark:hover:text-zinc-300 dark:hover:ring-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center justify-center gap-0.5 overflow-hidden rounded-full bg-zinc-900 px-3 py-1 text-sm font-medium text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-500/10 dark:text-zinc-400 dark:ring-1 dark:ring-zinc-400/20 dark:ring-inset dark:hover:bg-zinc-400/10 dark:hover:text-zinc-300 dark:hover:ring-zinc-300"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back</span>
         </button>
         <button
           onClick={handleBuild}
-          disabled={loading || validating || validationIssues.some(i => i.severity === 'error')}
-          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-green-600 py-1 px-3 text-white hover:bg-green-700 dark:bg-green-500/10 dark:text-green-400 dark:ring-1 dark:ring-inset dark:ring-green-400/20 dark:hover:bg-green-400/10 dark:hover:text-green-300 dark:hover:ring-green-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer disabled:cursor-not-allowed"
+          disabled={
+            loading ||
+            validating ||
+            validationIssues.some((i) => i.severity === 'error')
+          }
+          className="inline-flex cursor-pointer items-center justify-center gap-0.5 overflow-hidden rounded-full bg-green-600 px-3 py-1 text-sm font-medium text-white transition hover:cursor-pointer hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-green-500/10 dark:text-green-400 dark:ring-1 dark:ring-green-400/20 dark:ring-inset dark:hover:bg-green-400/10 dark:hover:text-green-300 dark:hover:ring-green-300"
         >
           {loading ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-green-400"></div>
+              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white dark:border-green-400"></div>
               <span>Saving...</span>
             </>
           ) : (

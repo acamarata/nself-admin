@@ -3,10 +3,5 @@
 import { PageTemplate } from '@/components/PageTemplate'
 
 export default function Page() {
-  return (
-    <PageTemplate 
-     
-      description="Generate TypeScript type definitions"
-    />
-  )
+  return <PageTemplate description="Generate TypeScript type definitions" />
 }

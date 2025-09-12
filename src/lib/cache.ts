@@ -39,7 +39,7 @@ class DataCache {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl
+      ttl,
     })
 
     // Set auto-cleanup timer
@@ -62,7 +62,7 @@ class DataCache {
    */
   clear(): void {
     this.cache.clear()
-    this.timers.forEach(timer => clearTimeout(timer))
+    this.timers.forEach((timer) => clearTimeout(timer))
     this.timers.clear()
   }
 
@@ -71,8 +71,8 @@ class DataCache {
    */
   invalidate(pattern: string | RegExp): void {
     const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern
-    
-    Array.from(this.cache.keys()).forEach(key => {
+
+    Array.from(this.cache.keys()).forEach((key) => {
       if (regex.test(key)) {
         this.delete(key)
       }
@@ -93,10 +93,10 @@ export const cache = new DataCache()
 
 // Cache TTL presets (in milliseconds)
 export const CacheTTL = {
-  SHORT: 10000,    // 10 seconds - for rapidly changing data
-  MEDIUM: 60000,   // 1 minute - for moderately dynamic data
-  LONG: 300000,    // 5 minutes - for relatively static data
-  HOUR: 3600000,   // 1 hour - for very static data
+  SHORT: 10000, // 10 seconds - for rapidly changing data
+  MEDIUM: 60000, // 1 minute - for moderately dynamic data
+  LONG: 300000, // 5 minutes - for relatively static data
+  HOUR: 3600000, // 1 hour - for very static data
 } as const
 
 /**
@@ -106,7 +106,7 @@ export function useCachedData<T>(
   key: string,
   fetcher: () => Promise<T>,
   ttl: number = CacheTTL.MEDIUM,
-  dependencies: any[] = []
+  dependencies: any[] = [],
 ): {
   data: T | null
   loading: boolean
@@ -121,7 +121,7 @@ export function useCachedData<T>(
     try {
       setLoading(true)
       setError(null)
-      
+
       const result = await fetcher()
       cache.set(key, result, ttl)
       setData(result)

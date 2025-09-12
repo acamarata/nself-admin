@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { validateCSRFToken, csrfErrorResponse, setCSRFCookie } from './lib/csrf'
+import { csrfErrorResponse, setCSRFCookie, validateCSRFToken } from './lib/csrf'
 
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = [
   '/login',
-  '/init',  // Allow init pages for project setup
+  '/init', // Allow init pages for project setup
   '/api/auth/login',
   '/api/auth/init',
-  '/api/auth/check',  // Allow checking auth status
+  '/api/auth/check', // Allow checking auth status
   '/api/health',
-  '/api/project/status',  // Allow checking project status without auth
-  '/api/wizard',  // Allow all wizard endpoints
-  '/api/env/read',  // Allow reading env during wizard
-  '/api/debug',  // Debug endpoints (dev only)
+  '/api/project/status', // Allow checking project status without auth
+  '/api/wizard', // Allow all wizard endpoints
+  '/api/env/read', // Allow reading env during wizard
+  '/api/debug', // Debug endpoints (dev only)
   '/_next',
   '/favicon.ico',
   '/site.webmanifest',
-  '/sw.js'
+  '/sw.js',
 ]
 
 // Define API routes that should be protected
@@ -32,65 +32,62 @@ const PROTECTED_API_ROUTES = [
   '/api/monitoring',
   '/api/graphql',
   '/api/redis',
-  '/api/cli'
+  '/api/cli',
 ]
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  
+
   // Allow public routes
-  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
+  if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
     return NextResponse.next()
   }
-  
+
   // Check for session cookie
   const sessionToken = request.cookies.get('nself-session')?.value
-  
+
   // If no session token, redirect to login
   if (!sessionToken) {
     // For API routes, return 401
     if (pathname.startsWith('/api/')) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
+
     // For page routes, redirect to login
     return NextResponse.redirect(new URL('/login', request.url))
   }
-  
+
   // For now, accept any session token that exists
   // Validation happens in the API routes themselves since Edge Runtime
   // doesn't support Node.js modules needed for database access
-  
+
   // Check if it's a protected API route
-  if (PROTECTED_API_ROUTES.some(route => pathname.startsWith(route))) {
+  if (PROTECTED_API_ROUTES.some((route) => pathname.startsWith(route))) {
     // Validate CSRF token for state-changing requests
     if (!validateCSRFToken(request)) {
       return csrfErrorResponse()
     }
-    
+
     // Add security headers
     const response = NextResponse.next()
     response.headers.set('X-Content-Type-Options', 'nosniff')
     response.headers.set('X-Frame-Options', 'DENY')
     response.headers.set('X-XSS-Protection', '1; mode=block')
-    
+
     // Ensure CSRF token is set
     if (!request.cookies.get('nself-csrf')) {
       setCSRFCookie(response)
     }
-    
+
     return response
   }
-  
+
   // For non-API routes, ensure CSRF token exists
   const response = NextResponse.next()
   if (!request.cookies.get('nself-csrf')) {
     setCSRFCookie(response)
   }
-  
+
   return response
 }
 

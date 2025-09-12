@@ -1,21 +1,19 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-import { useState } from 'react'
-import { useProjectStore } from '@/stores/projectStore'
 import { Loader2 } from 'lucide-react'
+import dynamic from 'next/dynamic'
 
 // Lazy load the heavy services page component
 const ServicesContent = dynamic(
-  () => import('./page').then(mod => ({ default: mod.default })),
+  () => import('./page').then((mod) => ({ default: mod.default })),
   {
     loading: () => (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     ),
-    ssr: false // Disable SSR for this component
-  }
+    ssr: false, // Disable SSR for this component
+  },
 )
 
 export default function ServicesClient() {

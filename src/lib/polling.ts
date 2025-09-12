@@ -22,7 +22,7 @@ class PollingManager {
     id: string,
     callback: PollingCallback,
     interval: number,
-    immediate: boolean = true
+    immediate: boolean = true,
   ): void {
     // Clean up existing task if any
     this.unregister(id)
@@ -34,11 +34,10 @@ class PollingManager {
     // Wrapped callback with error handling
     const wrappedCallback = async () => {
       if (abortController.signal.aborted) return
-      
+
       try {
         await callback()
-      } catch (error) {
-      }
+      } catch (error) {}
     }
 
     // Execute immediately if requested
@@ -48,12 +47,12 @@ class PollingManager {
 
     // Set up interval
     const timer = setInterval(wrappedCallback, interval)
-    
+
     this.tasks.set(id, {
       id,
       callback: wrappedCallback,
       interval,
-      timer
+      timer,
     })
   }
 
@@ -65,13 +64,13 @@ class PollingManager {
     if (task?.timer) {
       clearInterval(task.timer)
     }
-    
+
     const abortController = this.abortControllers.get(id)
     if (abortController) {
       abortController.abort()
       this.abortControllers.delete(id)
     }
-    
+
     this.tasks.delete(id)
   }
 
@@ -110,16 +109,16 @@ class PollingManager {
    * Clean up all polling tasks
    */
   cleanup(): void {
-    this.tasks.forEach(task => {
+    this.tasks.forEach((task) => {
       if (task.timer) {
         clearInterval(task.timer)
       }
     })
-    
-    this.abortControllers.forEach(controller => {
+
+    this.abortControllers.forEach((controller) => {
       controller.abort()
     })
-    
+
     this.tasks.clear()
     this.abortControllers.clear()
   }
@@ -141,7 +140,7 @@ import { useEffect, useRef } from 'react'
 export function usePolling(
   callback: PollingCallback,
   interval: number | null,
-  deps: any[] = []
+  deps: any[] = [],
 ): void {
   const savedCallback = useRef<PollingCallback | undefined>(undefined)
   const taskId = useRef<string | undefined>(undefined)
@@ -156,13 +155,13 @@ export function usePolling(
     if (interval !== null && interval > 0) {
       // Generate unique task ID
       taskId.current = `polling-${Math.random().toString(36).substr(2, 9)}`
-      
+
       // Register polling task
       pollingManager.register(
         taskId.current,
         () => savedCallback.current?.(),
         interval,
-        true
+        true,
       )
 
       // Cleanup on unmount

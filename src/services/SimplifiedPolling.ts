@@ -5,7 +5,7 @@ class SimplifiedPollingService {
   private pollingTimeout: NodeJS.Timeout | null = null
   private isActive = false
   private abortController: AbortController | null = null
-  
+
   start() {
     if (this.isActive) return
     this.isActive = true
@@ -14,7 +14,7 @@ class SimplifiedPollingService {
     // Then start regular polling
     this.pollOnce()
   }
-  
+
   stop() {
     this.isActive = false
     if (this.pollingTimeout) {
@@ -27,15 +27,15 @@ class SimplifiedPollingService {
       this.abortController = null
     }
   }
-  
+
   private async pollOnce() {
     if (!this.isActive) return
-    
+
     try {
       // Only fetch if we're on a page that needs it
       const pathname = window.location.pathname
       const needsData = ['/', '/dashboard', '/services'].includes(pathname)
-      
+
       if (needsData) {
         // Use requestIdleCallback to not block the main thread
         if ('requestIdleCallback' in window) {
@@ -45,64 +45,61 @@ class SimplifiedPollingService {
           setTimeout(() => this.fetchData(), 100)
         }
       }
-    } catch (error) {
-    }
-    
+    } catch (error) {}
+
     // Schedule next poll
     if (this.isActive) {
       this.pollingTimeout = setTimeout(() => this.pollOnce(), 2000) // Poll every 2 seconds
     }
   }
-  
+
   private async fetchData() {
     const store = useProjectStore.getState()
-    
+
     // Create new abort controller for this fetch cycle
     this.abortController = new AbortController()
-    
+
     try {
       // Check if we should abort early (e.g. page change)
       if (!this.isActive || !this.abortController) return
-      
+
       // Fetch both metrics and containers in parallel with shorter timeout
       const [metricsRes, containersRes, statusRes] = await Promise.all([
         fetch('/api/system/metrics', {
-          signal: AbortSignal.timeout(1500)
+          signal: AbortSignal.timeout(1500),
         }).catch(() => null), // Silently ignore all errors
         fetch('/api/docker/containers?detailed=true', {
-          signal: AbortSignal.timeout(1500)
+          signal: AbortSignal.timeout(1500),
         }).catch(() => null), // Silently ignore all errors
         fetch('/api/project/status', {
-          signal: AbortSignal.timeout(1000)
-        }).catch(() => null) // Silently ignore all errors
+          signal: AbortSignal.timeout(1000),
+        }).catch(() => null), // Silently ignore all errors
       ])
-      
+
       // Process metrics
       if (metricsRes && metricsRes.ok) {
         try {
           const data = await metricsRes.json()
           if (data.success && data.data) {
-            store.updateCachedData({ 
-              systemMetrics: data.data
+            store.updateCachedData({
+              systemMetrics: data.data,
             })
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       }
-      
+
       // Process containers
       if (containersRes && containersRes.ok) {
         try {
           const data = await containersRes.json()
           if (data.success) {
-            store.updateCachedData({ 
-              containerStats: data.data?.containers || []
+            store.updateCachedData({
+              containerStats: data.data?.containers || [],
             })
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       }
-      
+
       // Process status
       if (statusRes && statusRes.ok) {
         try {
@@ -114,8 +111,7 @@ class SimplifiedPollingService {
             }
             store.setProjectInfo(data.projectInfo || data.config)
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       }
     } catch (error: any) {
       // Silently ignore all errors to prevent console spam

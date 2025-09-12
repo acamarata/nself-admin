@@ -37,17 +37,21 @@ On first launch, you'll see the password setup screen:
 After login, the setup wizard guides you through:
 
 ### Step 1 - Project Configuration
+
 - **Project Name**: Enter your project name
 - **Environment**: Select development or production
 - **Region**: Choose your deployment region
 
 ### Step 2 - Database Configuration
+
 - **Database Type**: PostgreSQL (default)
 - **Connection Settings**: Automatic for local development
 - **Migrations**: Enable/disable auto-migrations
 
 ### Step 3 - Services Selection
+
 Choose which services to include:
+
 - ✅ PostgreSQL - Database
 - ✅ Redis - Caching
 - ✅ Hasura - GraphQL Engine
@@ -57,6 +61,7 @@ Choose which services to include:
 - ✅ BullMQ - Job Queue
 
 ### Step 4 - Review & Build
+
 - Review your configuration
 - Click "Build Project"
 - Wait for containers to build (3-5 minutes)
@@ -107,6 +112,7 @@ From the dashboard, you can access:
 ## Quick Commands
 
 ### Check Status
+
 ```bash
 # View all running services
 docker ps
@@ -116,6 +122,7 @@ docker logs nself-admin
 ```
 
 ### Stop Services
+
 ```bash
 # Stop all services
 nself stop
@@ -125,6 +132,7 @@ docker stop nself-admin
 ```
 
 ### Restart Services
+
 ```bash
 # Restart all services
 nself restart
@@ -162,6 +170,7 @@ Keep an eye on the resource usage in the dashboard to ensure optimal performance
 ### 3. Regular Backups
 
 Set up automated backups:
+
 ```bash
 # Backup database
 nself backup database
@@ -177,6 +186,7 @@ Access the integrated terminal at `/dev/terminal` for quick commands without lea
 ## Troubleshooting Quick Fixes
 
 ### Services Won't Start
+
 ```bash
 # Check Docker is running
 docker version
@@ -188,6 +198,7 @@ nself start
 ```
 
 ### Can't Access Dashboard
+
 ```bash
 # Check if container is running
 docker ps | grep nself-admin
@@ -197,6 +208,7 @@ docker restart nself-admin
 ```
 
 ### Database Connection Issues
+
 ```bash
 # Check PostgreSQL is running
 docker ps | grep postgres

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { AlertCircle, CheckCircle, Hammer } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Hammer, CheckCircle, AlertCircle, Package, FileCode, Database } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface BuildStep {
   name: string
@@ -14,7 +14,7 @@ export default function BuildPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const fromWizard = searchParams.get('from') === 'wizard'
-  
+
   const [buildSteps, setBuildSteps] = useState<BuildStep[]>([
     { name: 'Initializing build process', status: 'pending' },
     { name: 'Generating docker-compose.yml', status: 'pending' },
@@ -22,11 +22,13 @@ export default function BuildPage() {
     { name: 'Setting up database schemas', status: 'pending' },
     { name: 'Configuring networking', status: 'pending' },
     { name: 'Validating configuration', status: 'pending' },
-    { name: 'Finalizing build', status: 'pending' }
+    { name: 'Finalizing build', status: 'pending' },
   ])
-  
+
   const [currentStep, setCurrentStep] = useState(0)
-  const [buildStatus, setBuildStatus] = useState<'building' | 'success' | 'error'>('building')
+  const [buildStatus, setBuildStatus] = useState<
+    'building' | 'success' | 'error'
+  >('building')
   const [errorMessage, setErrorMessage] = useState('')
   const [serviceCount, setServiceCount] = useState(0)
 
@@ -37,14 +39,14 @@ export default function BuildPage() {
         const statusRes = await fetch('/api/project/status')
         if (statusRes.ok) {
           const statusData = await statusRes.json()
-          
+
           // Check for blank folder (no docker-compose.yml and no .env.local)
           if (!statusData.hasDockerCompose && !statusData.hasEnvFile) {
             // Blank folder - redirect to /init
             router.push('/init')
             return
           }
-          
+
           // Check if no env file to build with
           if (!statusData.hasEnvFile) {
             // No configuration - redirect to /init
@@ -55,22 +57,26 @@ export default function BuildPage() {
       } catch (error) {
         console.error('Error checking project status:', error)
       }
-      
+
       // If not from wizard, redirect to init
       if (!fromWizard) {
         router.push('/init/1')
         return
       }
-      
+
       // Start the build process
       startBuild()
     }
-    
+
     checkAndBuild()
   }, [fromWizard, router])
 
-  const updateStep = (index: number, status: BuildStep['status'], message?: string) => {
-    setBuildSteps(prev => {
+  const updateStep = (
+    index: number,
+    status: BuildStep['status'],
+    message?: string,
+  ) => {
+    setBuildSteps((prev) => {
       const updated = [...prev]
       updated[index] = { ...updated[index], status, message }
       return updated
@@ -82,20 +88,20 @@ export default function BuildPage() {
       // Step 1: Initialize
       updateStep(0, 'running')
       setCurrentStep(0)
-      
+
       // Get CSRF token from cookies
       const csrfToken = document.cookie
         .split('; ')
-        .find(row => row.startsWith('nself-csrf='))
+        .find((row) => row.startsWith('nself-csrf='))
         ?.split('=')[1]
-      
+
       // Actually call the build API - try nself build first, fall back to simple if it fails
       let response = await fetch('/api/nself/build', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || ''
-        }
+          'X-CSRF-Token': csrfToken || '',
+        },
       })
 
       // If nself build fails (likely due to timeout), try the simple build
@@ -103,33 +109,41 @@ export default function BuildPage() {
         console.log('nself build failed, trying simple build...')
         response = await fetch('/api/nself/build-simple', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken || ''
-          }
+            'X-CSRF-Token': csrfToken || '',
+          },
         })
-        
+
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Build failed' }))
-          throw new Error(errorData.error || errorData.details || 'Build failed')
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: 'Build failed' }))
+          throw new Error(
+            errorData.error || errorData.details || 'Build failed',
+          )
         }
       }
 
       const data = await response.json()
-      
+
       updateStep(0, 'completed')
       setCurrentStep(1)
-      
+
       // Step 2: Generate docker-compose
       updateStep(1, 'running')
-      
+
       // Extract service count from response
       const match = data.stdout?.match(/(\d+) services configured/)
       if (match) {
         setServiceCount(parseInt(match[1]))
       }
-      
-      updateStep(1, 'completed', `Generated configuration for ${match ? match[1] : 'all'} services`)
+
+      updateStep(
+        1,
+        'completed',
+        `Generated configuration for ${match ? match[1] : 'all'} services`,
+      )
       setCurrentStep(2)
 
       // Step 3: Service configurations
@@ -160,21 +174,24 @@ export default function BuildPage() {
       updateStep(6, 'running')
       await simulateDelay(400)
       updateStep(6, 'completed')
-      
+
       // Build complete
       setBuildStatus('success')
-      
+
       // Wait 500ms then redirect to start
       setTimeout(() => {
         router.push('/start')
       }, 500)
-      
     } catch (error) {
       console.error('Build error:', error)
       setBuildStatus('error')
       setErrorMessage(error instanceof Error ? error.message : 'Build failed')
-      updateStep(currentStep, 'error', error instanceof Error ? error.message : 'Build failed')
-      
+      updateStep(
+        currentStep,
+        'error',
+        error instanceof Error ? error.message : 'Build failed',
+      )
+
       // Redirect after showing error
       setTimeout(() => {
         router.push('/init/1')
@@ -182,77 +199,89 @@ export default function BuildPage() {
     }
   }
 
-  const simulateDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+  const simulateDelay = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms))
 
   const getStepIcon = (step: BuildStep) => {
     if (step.status === 'completed') {
-      return <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+      return (
+        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+      )
     }
     if (step.status === 'error') {
       return <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
     }
     if (step.status === 'running') {
-      return <div className="animate-spin rounded-full h-5 w-5 border-2 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-400"></div>
+      return (
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-400"></div>
+      )
     }
-    return <div className="h-5 w-5 rounded-full border-2 border-zinc-300 dark:border-zinc-600"></div>
+    return (
+      <div className="h-5 w-5 rounded-full border-2 border-zinc-300 dark:border-zinc-600"></div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-black dark:to-zinc-950">
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-2xl w-full">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-2xl">
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="mb-8 text-center">
             <div className="mb-4 flex justify-center">
               {buildStatus === 'building' && (
-                <div className="h-16 w-16 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                  <Hammer className="h-10 w-10 text-blue-600 dark:text-blue-400 animate-pulse" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
+                  <Hammer className="h-10 w-10 animate-pulse text-blue-600 dark:text-blue-400" />
                 </div>
               )}
               {buildStatus === 'success' && (
-                <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
                   <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
                 </div>
               )}
               {buildStatus === 'error' && (
-                <div className="h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
                   <AlertCircle className="h-10 w-10 text-red-600 dark:text-red-400" />
                 </div>
               )}
             </div>
-            
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-2">
+
+            <h1 className="mb-2 text-2xl font-bold text-zinc-900 dark:text-white">
               {buildStatus === 'building' && 'Building Project...'}
               {buildStatus === 'success' && 'Build Successful!'}
               {buildStatus === 'error' && 'Build Failed'}
             </h1>
-            
+
             <p className="text-zinc-600 dark:text-zinc-400">
-              {buildStatus === 'building' && 'Setting up your nself project with all configured services'}
-              {buildStatus === 'success' && `Successfully configured ${serviceCount || 'all'} services. Redirecting to start page...`}
+              {buildStatus === 'building' &&
+                'Setting up your nself project with all configured services'}
+              {buildStatus === 'success' &&
+                `Successfully configured ${serviceCount || 'all'} services. Redirecting to start page...`}
               {buildStatus === 'error' && errorMessage}
             </p>
           </div>
 
           {/* Build Steps */}
-          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-6">
+          <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-zinc-900">
             <div className="space-y-4">
               {buildSteps.map((step, index) => (
                 <div key={index} className="flex items-start space-x-3">
-                  <div className="mt-0.5">
-                    {getStepIcon(step)}
-                  </div>
+                  <div className="mt-0.5">{getStepIcon(step)}</div>
                   <div className="flex-1">
-                    <div className={`text-sm font-medium ${
-                      step.status === 'completed' ? 'text-green-900 dark:text-green-200' :
-                      step.status === 'error' ? 'text-red-900 dark:text-red-200' :
-                      step.status === 'running' ? 'text-blue-900 dark:text-blue-200' :
-                      'text-zinc-500 dark:text-zinc-400'
-                    }`}>
+                    <div
+                      className={`text-sm font-medium ${
+                        step.status === 'completed'
+                          ? 'text-green-900 dark:text-green-200'
+                          : step.status === 'error'
+                            ? 'text-red-900 dark:text-red-200'
+                            : step.status === 'running'
+                              ? 'text-blue-900 dark:text-blue-200'
+                              : 'text-zinc-500 dark:text-zinc-400'
+                      }`}
+                    >
                       {step.name}
                     </div>
                     {step.message && (
-                      <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                      <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
                         {step.message}
                       </div>
                     )}
@@ -263,16 +292,18 @@ export default function BuildPage() {
 
             {/* Progress Bar */}
             <div className="mt-6">
-              <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-2">
-                <div 
-                  className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full transition-all duration-500"
-                  style={{ 
-                    width: `${buildStatus === 'success' ? 100 : (currentStep / buildSteps.length) * 100}%` 
+              <div className="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-700">
+                <div
+                  className="h-2 rounded-full bg-blue-600 transition-all duration-500 dark:bg-blue-400"
+                  style={{
+                    width: `${buildStatus === 'success' ? 100 : (currentStep / buildSteps.length) * 100}%`,
                   }}
                 />
               </div>
               <div className="mt-2 text-center text-xs text-zinc-600 dark:text-zinc-400">
-                {buildStatus === 'success' ? 'Complete' : `Step ${currentStep + 1} of ${buildSteps.length}`}
+                {buildStatus === 'success'
+                  ? 'Complete'
+                  : `Step ${currentStep + 1} of ${buildSteps.length}`}
               </div>
             </div>
           </div>

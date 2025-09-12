@@ -7,6 +7,7 @@ The nself-admin app manages an nself backend project. The location of this proje
 ## Development Mode
 
 When running in development (`npm run dev`), the app uses the `.backend` folder within the nself-admin project itself:
+
 - Path: `/Users/admin/Sites/nself-admin/.backend`
 - This folder contains a complete nself project structure
 - Developers can test the admin interface against this local backend
@@ -20,6 +21,7 @@ When deployed as a Docker container (which is how nself CLI will run it), the ap
 3. **Docker Socket**: The Docker socket is mounted (read-only or read-write) for container management
 
 ### Example Docker Run Command (used by nself CLI):
+
 ```bash
 docker run -d \
   -p 3021:3021 \

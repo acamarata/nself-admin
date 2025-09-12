@@ -41,6 +41,7 @@ The nself-admin Setup Wizard is a 6-step guided process that helps you configure
 ### File Output
 
 The wizard writes configuration to environment-specific files:
+
 - Development: `.env.dev`
 - Staging: `.env.staging`
 - Production: `.env.prod`
@@ -54,18 +55,21 @@ Configure fundamental project settings and metadata.
 ### Fields
 
 #### Project Name (Required)
+
 - **Format**: Lowercase alphanumeric with dashes
 - **Example**: `my-awesome-app`
 - **Validation**: Must be provided, no spaces allowed
 - **Used for**: Docker container names, service identification
 
 #### Project Description (Optional)
+
 - **Format**: Free text
 - **Example**: `Multi-tenant SaaS platform for task management`
 - **Used for**: Documentation and admin UI display
 
 #### Environment (Required)
-- **Options**: 
+
+- **Options**:
   - `development` (dev) - Local development
   - `staging` - Testing environment
   - `production` (prod) - Live environment
@@ -73,22 +77,25 @@ Configure fundamental project settings and metadata.
 - **Impact**: Determines which `.env.*` file to write to
 
 #### Base Domain (Required)
+
 - **Format**: Valid domain name
 - **Default**: `localhost` (dev) or `local.nself.org`
 - **Examples**:
   - Development: `localhost`, `myapp.local`
   - Production: `myapp.com`, `api.example.com`
-- **Validation**: 
+- **Validation**:
   - Dev mode: Allows subdomains like `api.test`
   - Production: Must be valid FQDN
 
 #### Database Name (Required)
+
 - **Format**: Lowercase alphanumeric with underscores
 - **Default**: `nself`
 - **Example**: `myapp_db`
 - **Used for**: PostgreSQL database name
 
 #### Database Password (Required)
+
 - **Default**: `nself-dev-password` (dev only)
 - **Requirements**:
   - Development: Minimum 3 characters
@@ -96,6 +103,7 @@ Configure fundamental project settings and metadata.
 - **Security**: Never commit production passwords to git
 
 #### Admin Email (Optional)
+
 - **Format**: Valid email address
 - **Example**: `admin@mycompany.com`
 - **Used for**: System notifications, initial admin account
@@ -105,29 +113,34 @@ Configure fundamental project settings and metadata.
 Configure database backup settings with visual schedule builder.
 
 #### Enable/Disable
+
 - Toggle to enable automated backups
 - When disabled, no backup configuration is saved
 
 #### Schedule Options
 
 **Quick Presets:**
+
 - Daily at 2 AM
 - Every 6 hours
 - Weekly (Sunday)
 - Custom (opens advanced settings)
 
 **Advanced Settings:**
+
 - Visual cron builder with dropdowns
 - Minute, Hour, Day, Month, Weekday selection
 - Live preview of cron expression
 - Next run time calculation
 
 #### Retention Period
+
 - **Range**: 1-365 days
 - **Default**: 7 days
 - **Recommendation**: 30 days for production
 
 #### Additional Options
+
 - **Compression**: Reduce backup size (recommended)
 - **Encryption**: Secure backups with encryption
 
@@ -147,6 +160,7 @@ View and configure the required services that form the foundation of your nself 
 ### Services
 
 #### PostgreSQL (Required)
+
 - **Description**: Primary database for all services
 - **Port**: 5432
 - **Configuration Options**:
@@ -156,6 +170,7 @@ View and configure the required services that form the foundation of your nself 
   - Performance tuning
 
 #### Hasura GraphQL (Required)
+
 - **Description**: Instant GraphQL API for your database
 - **Port**: 8080 (API), 3000 (Console)
 - **Configuration Options**:
@@ -166,6 +181,7 @@ View and configure the required services that form the foundation of your nself 
   - Console access
 
 #### Hasura Auth (Required)
+
 - **Description**: User authentication and authorization
 - **Port**: 4000
 - **Configuration Options**:
@@ -175,6 +191,7 @@ View and configure the required services that form the foundation of your nself 
   - WebAuthn support
 
 #### Nginx (Required)
+
 - **Description**: Reverse proxy and load balancer
 - **Ports**: 80 (HTTP), 443 (HTTPS)
 - **Configuration Options**:
@@ -186,6 +203,7 @@ View and configure the required services that form the foundation of your nself 
 ### Configuration Modal
 
 Click "Configure" on any service to open advanced settings:
+
 - Service-specific environment variables
 - Performance tuning options
 - Security configurations
@@ -204,6 +222,7 @@ Enable additional services to enhance your stack's capabilities.
 ### Available Services
 
 #### Storage Service (MinIO)
+
 - **Description**: S3-compatible object storage
 - **Default**: Enabled (recommended)
 - **Ports**: 9000 (API), 9001 (Console)
@@ -214,6 +233,7 @@ Enable additional services to enhance your stack's capabilities.
   - Region settings
 
 #### Redis Cache
+
 - **Description**: In-memory data store for caching
 - **Default**: Disabled
 - **Port**: 6379
@@ -224,6 +244,7 @@ Enable additional services to enhance your stack's capabilities.
   - Memory limits
 
 #### nself Admin UI (This tool)
+
 - **Description**: Web-based administration interface
 - **Default**: Disabled
 - **Port**: 3100
@@ -231,6 +252,7 @@ Enable additional services to enhance your stack's capabilities.
 - **Note**: Automatically enabled when using the wizard
 
 #### Email Service (Mailpit)
+
 - **Description**: Email capture for development
 - **Default**: Disabled (enabled for dev)
 - **Ports**: 1025 (SMTP), 8025 (Web UI)
@@ -238,6 +260,7 @@ Enable additional services to enhance your stack's capabilities.
 - **Production**: Switches to real email provider
 
 #### Search Services
+
 - **Description**: Full-text search with 6 engine options
 - **Default**: Disabled
 - **Options**:
@@ -249,6 +272,7 @@ Enable additional services to enhance your stack's capabilities.
   - **Sonic** - Ultra-lightweight
 
 #### Monitoring Bundle
+
 - **Description**: Complete observability stack
 - **Default**: Disabled
 - **Includes**:
@@ -266,6 +290,7 @@ Use the subtle "Enable All" / "Disable All" button in the top-right to quickly t
 ### Service Cards
 
 Each service card shows:
+
 - Service name and icon
 - Brief description
 - Detailed explanation on hover/focus
@@ -281,11 +306,13 @@ Add your own backend services that run as part of the Docker stack.
 ### Service Configuration
 
 #### Service Name (Required)
+
 - **Format**: Lowercase alphanumeric with dashes
 - **Example**: `api-gateway`, `worker-service`
 - **Used for**: Container naming, logging
 
 #### Framework/Language (Required)
+
 - **Dropdown Options**:
   - Node.js: `express`, `fastify`, `nestjs`, `hono`
   - Python: `fastapi`, `django`, `flask`
@@ -298,21 +325,24 @@ Add your own backend services that run as part of the Docker stack.
 - **Impact**: Determines Docker image and setup
 
 #### Port (Required)
+
 - **Range**: 3000-9999
 - **Default**: 4000, 4001, 4002 (auto-increments)
 - **Validation**: Must be unique across all services
 - **Reserved Ports**: See [Port Allocation](#port-allocation)
 
 #### URL Route (Optional)
+
 - **Format**: Lowercase alphanumeric with dashes
 - **Example**: `api`, `webhooks`, `admin-api`
-- **Result**: 
+- **Result**:
   - Dev: `api.localhost`
   - Prod: `api.yourdomain.com`
 
 ### Advanced Options
 
 Available after service creation:
+
 - **Memory Limit**: `256M`, `512M`, `1G`, etc.
 - **CPU Limit**: `0.25`, `0.5`, `1.0`, etc.
 - **Replicas**: Number of instances
@@ -335,12 +365,12 @@ Available after service creation:
    - Framework: Express
    - Port: 4000
    - Route: api
-   
+
 2. Background Worker
    - Framework: Python
    - Port: 4001
    - No route (internal only)
-   
+
 3. WebSocket Server
    - Framework: Socket.io
    - Port: 4002
@@ -356,24 +386,28 @@ Configure external frontend applications that will consume your backend services
 ### Application Fields
 
 #### Display Name (Editable Title)
+
 - **Format**: Free text
 - **Example**: `Admin Dashboard`
 - **Default**: `App 1`, `App 2`, etc.
 - **Used for**: UI display, documentation
 
 #### System Name (Required)
+
 - **Format**: Lowercase, underscores, no spaces
 - **Example**: `admin_dashboard`
 - **Auto-generated**: From display name
 - **Used for**: Internal references, configurations
 
 #### Table Prefix (Optional)
+
 - **Format**: Lowercase, underscores, ends with underscore
 - **Example**: `admin_`, `customer_`
 - **Used for**: Database table namespacing
 - **Purpose**: Enables multi-tenant schemas
 
 #### Local Port (Required) ⚠️
+
 - **Format**: Number 3000-9999
 - **Example**: `3001`, `3002`
 - **Auto-increment**: Starts at 3001
@@ -381,6 +415,7 @@ Configure external frontend applications that will consume your backend services
 - **Validation**: Must be unique
 
 #### Production URL (Optional)
+
 - **Format**: Subdomain or full domain
 - **Examples**:
   - Dev: `admin` → `admin.localhost`
@@ -388,6 +423,7 @@ Configure external frontend applications that will consume your backend services
 - **Used for**: Nginx routing configuration
 
 #### GraphQL Endpoint (Optional)
+
 - **Format**: Valid URL
 - **Example**: `http://localhost:4001/graphql`
 - **Used for**: Hasura remote schema integration
@@ -396,6 +432,7 @@ Configure external frontend applications that will consume your backend services
 ### Port Allocation
 
 Frontend apps must use unique ports. Reserved ranges:
+
 - **3000**: Reserved for Hasura Console
 - **3001-3099**: Frontend applications
 - **3100**: nself-admin
@@ -441,7 +478,7 @@ App 1: Admin Dashboard
 - GraphQL: http://localhost:4001/graphql
 
 App 2: Customer Portal
-- System Name: customer_portal  
+- System Name: customer_portal
 - Table Prefix: customer_
 - Port: 3002
 - Route: portal
@@ -459,18 +496,19 @@ Review your complete configuration and initiate the build process.
 The review page displays:
 
 #### Project Details
+
 - Project name and description
 - Environment setting
 - Domain configuration
 - Database configuration
 
 #### Services Configuration
+
 - **Core Services** (always enabled):
   - PostgreSQL Database
   - Hasura GraphQL
   - Authentication Service
   - Nginx Proxy
-  
 - **Optional Services** (if enabled):
   - Storage (MinIO)
   - Redis Cache
@@ -480,28 +518,33 @@ The review page displays:
   - Monitoring Stack
 
 #### Custom Services Count
+
 - Number of custom services configured
 - Service details (name, framework, port, route)
 
 #### Frontend Applications Count
+
 - Number of frontend apps configured
 - App details (name, port, route)
 
 #### Total Services
+
 - Combined count of all services to be built
 - Visual indicator of stack complexity
 
 ### Actions
 
 #### Back Button
+
 - Return to previous step to make changes
 - All configurations are preserved
 
 #### Build Project Button
+
 - **Color**: Green (indicates readiness)
 - **Icon**: Hammer icon
 - **Action**: Redirects to `/build?from=wizard`
-- **Process**: 
+- **Process**:
   1. Saves final configuration
   2. Navigates to build page
   3. Initiates `nself build` command
@@ -547,8 +590,9 @@ The wizard automatically saves your configuration as you type.
 ### Saved Locations
 
 Based on your environment selection:
+
 - **Development**: `.env.dev`
-- **Staging**: `.env.staging`  
+- **Staging**: `.env.staging`
 - **Production**: `.env.prod`
 
 ### Benefits
@@ -586,6 +630,7 @@ project/
 ### Loading Order
 
 Files load in priority order (later overrides earlier):
+
 1. `.env.dev`
 2. `.env.staging` (if ENV=staging)
 3. `.env.prod` (if ENV=prod)
@@ -595,11 +640,13 @@ Files load in priority order (later overrides earlier):
 ### Best Practices
 
 #### DO Commit
+
 - `.env.dev` - Team development defaults
 - `.env.staging` - Staging configuration
 - `.env.prod` - Production config (no secrets)
 
 #### DON'T Commit
+
 - `.env` - Personal overrides
 - `.env.secrets` - Production secrets
 - Any file with passwords/keys
@@ -607,10 +654,11 @@ Files load in priority order (later overrides earlier):
 ### Variable Naming
 
 The wizard follows nself's official naming conventions:
+
 - Service flags: `*_ENABLED`
 - Frontend apps: `FRONTEND_APP_N_*`
 - Custom services: `CS_N`
-- Backup: `BACKUP_*` (not DB_BACKUP_*)
+- Backup: `BACKUP_*` (not DB*BACKUP*\*)
 
 ---
 
@@ -696,29 +744,34 @@ FRONTEND_APP_3_PORT=3003
 ### Common Issues
 
 #### "Auto-saving..." Stuck
+
 - **Cause**: Network issue or server error
 - **Fix**: Refresh page, changes are likely saved
 - **Check**: Look for errors in browser console
 
 #### Port Already in Use
+
 - **Cause**: Port conflict with running service
 - **Fix**: Choose different port or stop conflicting service
 - **Check**: `lsof -i :PORT` to find process
 
 #### Domain Validation Error
+
 - **Cause**: Invalid format for environment
-- **Fix**: 
+- **Fix**:
   - Dev: Use `localhost` or `.local` domains
   - Prod: Use valid FQDN
 
 #### Build Fails
+
 - **Cause**: Missing required configuration
 - **Fix**: Review Step 6 for missing items
 - **Check**: Ensure all secrets meet length requirements
 
 #### Services Not Starting
+
 - **Cause**: Configuration or dependency issues
-- **Fix**: 
+- **Fix**:
   1. Check docker logs: `docker-compose logs [service]`
   2. Verify environment variables
   3. Ensure ports are available
@@ -726,6 +779,7 @@ FRONTEND_APP_3_PORT=3003
 ### Reset Wizard
 
 To start fresh:
+
 1. Click "Reset Configuration" on any step
 2. Confirm the reset action
 3. Wizard runs:
@@ -736,6 +790,7 @@ To start fresh:
 ### Manual Configuration
 
 If the wizard isn't working:
+
 1. Edit `.env.dev` directly
 2. Run `nself build` manually
 3. Check logs for errors
@@ -754,6 +809,7 @@ If the wizard isn't working:
 ### Custom Service Templates
 
 Create reusable service templates:
+
 1. Define service in `CS_N` format
 2. Add memory/CPU limits
 3. Configure health checks
@@ -762,6 +818,7 @@ Create reusable service templates:
 ### Remote Schema Federation
 
 Connect multiple GraphQL services:
+
 1. Each frontend app exposes GraphQL
 2. Hasura adds as remote schema
 3. Single unified API endpoint
@@ -770,6 +827,7 @@ Connect multiple GraphQL services:
 ### Multi-Environment Strategy
 
 Managing multiple environments:
+
 1. **Local**: `.env.dev` for development
 2. **CI/CD**: `.env.staging` for testing
 3. **Production**: `.env.prod` + `.env.secrets`
@@ -778,6 +836,7 @@ Managing multiple environments:
 ### Performance Optimization
 
 Optimize your stack:
+
 1. **Redis**: Enable for caching
 2. **Monitoring**: Track metrics
 3. **Replicas**: Scale services horizontally
@@ -800,5 +859,5 @@ After completing the wizard:
 
 ---
 
-*Last Updated: 2025-01-05*
-*Wizard Version: 1.0.0*
+_Last Updated: 2025-01-05_
+_Wizard Version: 1.0.0_

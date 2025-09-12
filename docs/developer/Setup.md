@@ -6,16 +6,16 @@ This guide will help you set up your local development environment for nself-adm
 
 ### Required Software
 
-* **Node.js**: Version 20.0.0 or higher
-* **npm**: Version 9.0.0 or higher (comes with Node.js)
-* **Docker**: Version 20.10 or higher
-* **Git**: Version 2.0 or higher
+- **Node.js**: Version 20.0.0 or higher
+- **npm**: Version 9.0.0 or higher (comes with Node.js)
+- **Docker**: Version 20.10 or higher
+- **Git**: Version 2.0 or higher
 
 ### Optional but Recommended
 
-* **VS Code**: With recommended extensions
-* **Docker Compose**: For running the full nself stack locally
-* **PostgreSQL Client**: For database debugging
+- **VS Code**: With recommended extensions
+- **Docker Compose**: For running the full nself stack locally
+- **PostgreSQL Client**: For database debugging
 
 ## Initial Setup
 
@@ -230,10 +230,10 @@ Create `.vscode/launch.json`:
 
 When `ENABLE_DEBUG_MODE=true` in `.env.local`:
 
-* Verbose logging in console
-* React Query Devtools enabled
-* Performance monitoring
-* API request/response logging
+- Verbose logging in console
+- React Query Devtools enabled
+- Performance monitoring
+- API request/response logging
 
 ## Testing
 
@@ -371,8 +371,8 @@ npm run build:types
 // In next.config.js
 module.exports = {
   experimental: {
-    webVitalsAttribution: ['CLS', 'LCP']
-  }
+    webVitalsAttribution: ['CLS', 'LCP'],
+  },
 }
 ```
 
@@ -416,14 +416,14 @@ git push origin main
 
 ## Getting Help
 
-* **Documentation**: Check `/docs` folder
-* **Discord**: Join our [Discord server](https://discord.gg/nself)
-* **GitHub Issues**: Search existing issues or create new one
-* **Stack Overflow**: Tag with `nself-admin`
+- **Documentation**: Check `/docs` folder
+- **Discord**: Join our [Discord server](https://discord.gg/nself)
+- **GitHub Issues**: Search existing issues or create new one
+- **Stack Overflow**: Tag with `nself-admin`
 
 ## Next Steps
 
-* Read the [Architecture Overview](./Architecture.md)
-* Review [Contributing Guidelines](../contributing/CONTRIBUTING.md)
-* Explore the [API Reference](../api/Reference.md)
-* Set up your [IDE](./IDE-Setup.md)
+- Read the [Architecture Overview](./Architecture.md)
+- Review [Contributing Guidelines](../contributing/CONTRIBUTING.md)
+- Explore the [API Reference](../api/Reference.md)
+- Set up your [IDE](./IDE-Setup.md)

@@ -3,10 +3,5 @@
 import { PageTemplate } from '@/components/PageTemplate'
 
 export default function Page() {
-  return (
-    <PageTemplate 
-     
-      description="Docker compose configuration"
-    />
-  )
+  return <PageTemplate description="Docker compose configuration" />
 }

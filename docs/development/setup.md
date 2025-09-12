@@ -86,6 +86,7 @@ mkdir nself-project && cd nself-project && nself init
 ```
 
 Your directory structure should look like:
+
 ```
 parent-directory/
 ├── nself-admin/       # This repository (nAdmin)
@@ -145,6 +146,7 @@ For development, password requirements are relaxed:
 - **Production**: Min 12 chars with complexity
 
 Test with:
+
 ```bash
 # Quick test password
 Password: "dev"
@@ -160,6 +162,7 @@ code ./.vscode/api-tests.http
 ```
 
 Or use curl:
+
 ```bash
 # Test health endpoint
 curl http://localhost:3021/api/health

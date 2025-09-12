@@ -6,10 +6,9 @@ import {
   useMotionValue,
   type MotionValue,
 } from 'framer-motion'
-import Link from 'next/link'
 
 import { GridPattern } from '@/components/GridPattern'
-import { Cpu, MemoryStick, HardDrive, Network } from 'lucide-react'
+import { Cpu, HardDrive, MemoryStick, Network } from 'lucide-react'
 
 interface ResourcesProps {
   systemMetrics?: {
@@ -25,7 +24,6 @@ interface ResourcesProps {
     network: { rx: number; tx: number }
   }
 }
-
 
 function ResourcePattern({
   mouseX,
@@ -74,14 +72,13 @@ function ResourcePattern({
   )
 }
 
-
-function ResourceCard({ 
-  title, 
-  value, 
-  percentage, 
-  description, 
-  icon: Icon, 
-  pattern 
+function ResourceCard({
+  title,
+  value,
+  percentage,
+  description,
+  icon: Icon,
+  pattern,
 }: {
   title: string
   value: string | number
@@ -104,16 +101,18 @@ function ResourceCard({
   }
 
   return (
-    <div 
+    <div
       onMouseMove={onMouseMove}
-      className="group relative rounded-2xl bg-zinc-50 p-6 dark:bg-white/2.5 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors duration-300"
+      className="group relative rounded-2xl bg-zinc-50 p-6 transition-colors duration-300 hover:bg-blue-50/50 dark:bg-white/2.5 dark:hover:bg-blue-950/20"
     >
       <ResourcePattern {...pattern} mouseX={mouseX} mouseY={mouseY} />
-      <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/7.5 ring-inset group-hover:ring-blue-500/20 dark:ring-white/10 dark:group-hover:ring-blue-400/30 transition-colors duration-300" />
+      <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/7.5 transition-colors duration-300 ring-inset group-hover:ring-blue-500/20 dark:ring-white/10 dark:group-hover:ring-blue-400/30" />
       <div className="relative">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{title}</h3>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 dark:bg-blue-400/10 group-hover:bg-blue-500/20 dark:group-hover:bg-blue-400/20 transition-colors duration-300">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+            {title}
+          </h3>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 transition-colors duration-300 group-hover:bg-blue-500/20 dark:bg-blue-400/10 dark:group-hover:bg-blue-400/20">
             <Icon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
         </div>
@@ -121,9 +120,9 @@ function ResourceCard({
           <div className="text-2xl font-bold text-zinc-900 dark:text-white">
             {value}
           </div>
-          <div className="mt-2 h-2 bg-zinc-200 rounded-full dark:bg-zinc-800">
-            <div 
-              className="h-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300"
+          <div className="mt-2 h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
+            <div
+              className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300"
               style={{ width: `${Math.min(percentage, 100)}%` }}
             />
           </div>
@@ -138,10 +137,20 @@ function ResourceCard({
 
 export function Resources({ systemMetrics, dockerMetrics }: ResourcesProps) {
   const cpuUsage = dockerMetrics?.cpu.usage || 0
-  const memoryPercentage = systemMetrics?.memory.total ? Math.round((dockerMetrics?.memory.used || 0) / systemMetrics.memory.total * 100) : 0
-  const diskPercentage = systemMetrics?.disk.total ? Math.round((dockerMetrics?.storage.used || 0) / systemMetrics.disk.total * 100) : 0
-  const totalNetwork = ((dockerMetrics?.network.rx || 0) + (dockerMetrics?.network.tx || 0)).toFixed(0)
-  
+  const memoryPercentage = systemMetrics?.memory.total
+    ? Math.round(
+        ((dockerMetrics?.memory.used || 0) / systemMetrics.memory.total) * 100,
+      )
+    : 0
+  const diskPercentage = systemMetrics?.disk.total
+    ? Math.round(
+        ((dockerMetrics?.storage.used || 0) / systemMetrics.disk.total) * 100,
+      )
+    : 0
+  const totalNetwork = (
+    (dockerMetrics?.network.rx || 0) + (dockerMetrics?.network.tx || 0)
+  ).toFixed(0)
+
   return (
     <div className="mb-8">
       <div className="not-prose grid grid-cols-2 gap-8 sm:grid-cols-4">
@@ -152,7 +161,13 @@ export function Resources({ systemMetrics, dockerMetrics }: ResourcesProps) {
           percentage={cpuUsage}
           description="of system CPU"
           icon={Cpu}
-          pattern={{ y: 16, squares: [[0, 1], [1, 3]] }}
+          pattern={{
+            y: 16,
+            squares: [
+              [0, 1],
+              [1, 3],
+            ],
+          }}
         />
 
         {/* Docker RAM */}
@@ -162,7 +177,13 @@ export function Resources({ systemMetrics, dockerMetrics }: ResourcesProps) {
           percentage={memoryPercentage}
           description={`${dockerMetrics?.memory.used || 0}GB / ${systemMetrics?.memory.total || 0}GB`}
           icon={MemoryStick}
-          pattern={{ y: -6, squares: [[-1, 2], [1, 3]] }}
+          pattern={{
+            y: -6,
+            squares: [
+              [-1, 2],
+              [1, 3],
+            ],
+          }}
         />
 
         {/* Docker Storage */}
@@ -172,7 +193,13 @@ export function Resources({ systemMetrics, dockerMetrics }: ResourcesProps) {
           percentage={diskPercentage}
           description={`${dockerMetrics?.storage.used || 0}GB / ${systemMetrics?.disk.total || 0}GB`}
           icon={HardDrive}
-          pattern={{ y: 32, squares: [[0, 2], [1, 4]] }}
+          pattern={{
+            y: 32,
+            squares: [
+              [0, 2],
+              [1, 4],
+            ],
+          }}
         />
 
         {/* Docker Network */}

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.3] - 2025-08-29
 
 ### Added
+
 - **LokiJS Database Integration**: Replaced .env file storage with embedded LokiJS database
   - Session management with 24-hour TTL
   - Secure password storage with bcrypt hashing
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Manual reset by deleting `nadmin.db`
 
 ### Changed
+
 - **Navigation Flow**: Improved user journey from setup → build → start → dashboard
 - **Session Storage**: Moved from environment variables to database
 - **Password Storage**: Now stored as bcrypt hash in database instead of .env file
@@ -43,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Empty State Handling**: Moved to dedicated /start page instead of dashboard
 
 ### Fixed
+
 - Docker image download progress not showing during service startup
 - Edge Runtime compatibility issues with middleware
 - WebSocket connection errors on initial load
@@ -51,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Password persistence issues after container restart
 
 ### Security
+
 - Implemented bcrypt password hashing with 12 salt rounds
 - Added CSRF token validation for all API endpoints
 - Session tokens are now cryptographically secure random values
@@ -58,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic session expiration after 24 hours
 
 ### Technical Debt
+
 - Removed dependency on .env files for authentication
 - Eliminated Node.js module usage in Edge Runtime
 - Cleaned up console warnings and errors
@@ -66,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.2] - 2025-08-20
 
 ### Added
+
 - **Dashboard**: Main dashboard with service status overview
 - **Service Monitoring**: Real-time monitoring of Docker containers
 - **Service Management**: Start, stop, restart services from UI
@@ -76,11 +82,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Responsive Design**: Mobile-friendly interface
 
 ### Changed
+
 - Improved UI/UX with Tailwind CSS
 - Better error handling and user feedback
 - Enhanced navigation structure
 
 ### Fixed
+
 - Various UI bugs and inconsistencies
 - Docker connection issues
 - Session management problems
@@ -88,6 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2025-01-15
 
 ### Added
+
 - **Initial Release**: Basic proof of concept
 - **Authentication**: Simple password-based login
 - **Basic UI**: Minimal interface for project management
@@ -96,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Docker Support**: Basic containerization
 
 ### Known Issues
+
 - Limited functionality
 - No persistent storage
 - Basic authentication only
@@ -106,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Versioning Policy
 
 This project follows Semantic Versioning:
+
 - **0.0.x**: Alpha releases with breaking changes expected
 - **0.x.0**: Beta releases with stabilizing API
 - **1.0.0**: First stable release with production readiness
@@ -138,6 +149,7 @@ This project follows Semantic Versioning:
 ### From 0.0.1 to 0.0.2
 
 Simple container replacement - no data migration required:
+
 ```bash
 docker pull acamarata/nself-admin:0.0.2
 docker stop nself-admin
@@ -148,6 +160,7 @@ docker rm nself-admin
 ## Support
 
 For issues and feature requests, please visit:
+
 - GitHub Issues: https://github.com/acamarata/nself-admin/issues
 - GitHub Discussions: https://github.com/acamarata/nself-admin/discussions
 - Telegram Announcements: https://t.me/nselforg

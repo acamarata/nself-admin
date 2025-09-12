@@ -1,14 +1,14 @@
+import crypto from 'crypto'
+import fs from 'fs'
 import Loki from 'lokijs'
 import path from 'path'
-import fs from 'fs'
-import crypto from 'crypto'
 
 // Database configuration
 const isDevelopment = process.env.NODE_ENV === 'development'
 const DB_NAME = 'nadmin.db'
-const DB_PATH = isDevelopment 
-  ? path.join(process.cwd(), 'data', DB_NAME)  // Local dev path
-  : '/app/data/nadmin.db'                       // Container path
+const DB_PATH = isDevelopment
+  ? path.join(process.cwd(), 'data', DB_NAME) // Local dev path
+  : '/app/data/nadmin.db' // Container path
 
 // Ensure data directory exists (only at runtime, not build time)
 function ensureDataDir() {
@@ -67,7 +67,7 @@ export interface AuditLogItem {
 export async function initDatabase(): Promise<void> {
   // Check if db exists and collections are initialized
   if (isInitialized && db && configCollection) return
-  
+
   // Reset initialization flag if db is null
   if (!db) {
     isInitialized = false
@@ -85,28 +85,36 @@ export async function initDatabase(): Promise<void> {
       autoloadCallback: () => {
         try {
           // Initialize collections
-          configCollection = db!.getCollection('config') || db!.addCollection('config', {
-            unique: ['key'],
-            indices: ['key']
-          })
+          configCollection =
+            db!.getCollection('config') ||
+            db!.addCollection('config', {
+              unique: ['key'],
+              indices: ['key'],
+            })
 
-          sessionsCollection = db!.getCollection('sessions') || db!.addCollection('sessions', {
-            unique: ['token'],
-            indices: ['token', 'userId'],
-            ttl: 24 * 60 * 60 * 1000, // 24 hours TTL
-            ttlInterval: 60000 // Check every minute
-          })
+          sessionsCollection =
+            db!.getCollection('sessions') ||
+            db!.addCollection('sessions', {
+              unique: ['token'],
+              indices: ['token', 'userId'],
+              ttl: 24 * 60 * 60 * 1000, // 24 hours TTL
+              ttlInterval: 60000, // Check every minute
+            })
 
-          projectCacheCollection = db!.getCollection('projectCache') || db!.addCollection('projectCache', {
-            unique: ['key'],
-            indices: ['key']
-          })
+          projectCacheCollection =
+            db!.getCollection('projectCache') ||
+            db!.addCollection('projectCache', {
+              unique: ['key'],
+              indices: ['key'],
+            })
 
-          auditLogCollection = db!.getCollection('auditLog') || db!.addCollection('auditLog', {
-            indices: ['action', 'timestamp'],
-            ttl: 30 * 24 * 60 * 60 * 1000, // 30 days TTL
-            ttlInterval: 60 * 60 * 1000 // Check every hour
-          })
+          auditLogCollection =
+            db!.getCollection('auditLog') ||
+            db!.addCollection('auditLog', {
+              indices: ['action', 'timestamp'],
+              ttl: 30 * 24 * 60 * 60 * 1000, // 30 days TTL
+              ttlInterval: 60 * 60 * 1000, // Check every hour
+            })
 
           isInitialized = true
           console.log('Database initialized at:', DB_PATH)
@@ -114,7 +122,7 @@ export async function initDatabase(): Promise<void> {
         } catch (error) {
           reject(error)
         }
-      }
+      },
     })
   })
 }
@@ -129,7 +137,7 @@ export async function getConfig(key: string): Promise<any> {
 export async function setConfig(key: string, value: any): Promise<void> {
   await initDatabase()
   const existing = configCollection?.findOne({ key })
-  
+
   if (existing) {
     existing.value = value
     existing.updatedAt = new Date()
@@ -138,10 +146,10 @@ export async function setConfig(key: string, value: any): Promise<void> {
     configCollection?.insert({
       key,
       value,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     })
   }
-  
+
   // Force save to disk
   db?.saveDatabase()
 }
@@ -174,13 +182,17 @@ const SESSION_DURATION_HOURS = 7 * 24 // 7 days by default
 const SESSION_EXTEND_ON_ACTIVITY = true // Extend session on each request
 
 // Session operations
-export async function createSession(userId: string, ip?: string, userAgent?: string): Promise<string> {
+export async function createSession(
+  userId: string,
+  ip?: string,
+  userAgent?: string,
+): Promise<string> {
   await initDatabase()
-  
+
   // Get custom session duration if configured
   const customDuration = await getConfig('SESSION_DURATION_HOURS')
   const durationHours = customDuration || SESSION_DURATION_HOURS
-  
+
   const token = crypto.randomBytes(32).toString('hex')
   const session: SessionItem = {
     token,
@@ -188,45 +200,46 @@ export async function createSession(userId: string, ip?: string, userAgent?: str
     createdAt: new Date(),
     expiresAt: new Date(Date.now() + durationHours * 60 * 60 * 1000), // Configurable duration (default 7 days)
     ip,
-    userAgent
+    userAgent,
   }
-  
+
   sessionsCollection?.insert(session)
   await addAuditLog('session_created', { userId, ip }, true)
-  
+
   return token
 }
 
 export async function getSession(token: string): Promise<SessionItem | null> {
   await initDatabase()
   const session = sessionsCollection?.findOne({ token })
-  
+
   if (!session) return null
-  
+
   // Check if expired
   if (new Date() > new Date(session.expiresAt)) {
     sessionsCollection?.remove(session)
     return null
   }
-  
+
   // Extend session on activity if enabled
   if (SESSION_EXTEND_ON_ACTIVITY) {
     const now = new Date()
-    const timeSinceLastActivity = session.lastActivity ? 
-      (now.getTime() - new Date(session.lastActivity).getTime()) / (1000 * 60 * 60) : // hours
-      24
-    
+    const timeSinceLastActivity = session.lastActivity
+      ? (now.getTime() - new Date(session.lastActivity).getTime()) /
+        (1000 * 60 * 60) // hours
+      : 24
+
     // Only extend if it's been more than 1 hour since last activity
     if (timeSinceLastActivity > 1) {
       const customDuration = await getConfig('SESSION_DURATION_HOURS')
       const durationHours = customDuration || SESSION_DURATION_HOURS
-      
+
       session.expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000)
       session.lastActivity = now
       sessionsCollection?.update(session)
     }
   }
-  
+
   return session
 }
 
@@ -242,14 +255,15 @@ export async function deleteSession(token: string): Promise<void> {
 export async function cleanupExpiredSessions(): Promise<number> {
   await initDatabase()
   const now = new Date()
-  const expired = sessionsCollection?.find({
-    expiresAt: { $lt: now }
-  }) || []
-  
-  expired.forEach(session => {
+  const expired =
+    sessionsCollection?.find({
+      expiresAt: { $lt: now },
+    }) || []
+
+  expired.forEach((session) => {
     sessionsCollection?.remove(session)
   })
-  
+
   return expired.length
 }
 
@@ -257,20 +271,26 @@ export async function cleanupExpiredSessions(): Promise<number> {
 export async function getCachedProjectInfo(key: string): Promise<any> {
   await initDatabase()
   const item = projectCacheCollection?.findOne({ key })
-  
+
   // Check if cache is older than 5 minutes
-  if (item && new Date().getTime() - new Date(item.cachedAt).getTime() > 5 * 60 * 1000) {
+  if (
+    item &&
+    new Date().getTime() - new Date(item.cachedAt).getTime() > 5 * 60 * 1000
+  ) {
     projectCacheCollection?.remove(item)
     return null
   }
-  
+
   return item?.value
 }
 
-export async function setCachedProjectInfo(key: string, value: any): Promise<void> {
+export async function setCachedProjectInfo(
+  key: string,
+  value: any,
+): Promise<void> {
   await initDatabase()
   const existing = projectCacheCollection?.findOne({ key })
-  
+
   if (existing) {
     existing.value = value
     existing.cachedAt = new Date()
@@ -279,47 +299,49 @@ export async function setCachedProjectInfo(key: string, value: any): Promise<voi
     projectCacheCollection?.insert({
       key,
       value,
-      cachedAt: new Date()
+      cachedAt: new Date(),
     })
   }
 }
 
 // Audit log operations
 export async function addAuditLog(
-  action: string, 
-  details: any = {}, 
+  action: string,
+  details: any = {},
   success: boolean = true,
-  userId?: string
+  userId?: string,
 ): Promise<void> {
   await initDatabase()
-  
+
   auditLogCollection?.insert({
     action,
     details,
     timestamp: new Date(),
     success,
-    userId
+    userId,
   })
 }
 
 export async function getAuditLogs(
   limit: number = 100,
   offset: number = 0,
-  filter?: { action?: string; userId?: string }
+  filter?: { action?: string; userId?: string },
 ): Promise<AuditLogItem[]> {
   await initDatabase()
-  
+
   let query: any = {}
   if (filter?.action) query.action = filter.action
   if (filter?.userId) query.userId = filter.userId
-  
-  const logs = auditLogCollection?.chain()
-    .find(query)
-    .simplesort('timestamp', true) // Sort by timestamp descending
-    .offset(offset)
-    .limit(limit)
-    .data() || []
-  
+
+  const logs =
+    auditLogCollection
+      ?.chain()
+      .find(query)
+      .simplesort('timestamp', true) // Sort by timestamp descending
+      .offset(offset)
+      .limit(limit)
+      .data() || []
+
   return logs
 }
 
@@ -334,7 +356,7 @@ export async function getProjectPath(): Promise<string> {
   if (isDevelopment) {
     return path.join(process.cwd(), '..', 'nself')
   }
-  
+
   // In production, use mounted volume or environment variable
   return process.env.NSELF_PROJECT_PATH || '/workspace'
 }

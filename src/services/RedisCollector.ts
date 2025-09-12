@@ -41,7 +41,7 @@ export class RedisCollector {
     data: RedisStats | null
     timestamp: number
   } = { data: null, timestamp: 0 }
-  
+
   private readonly CACHE_TTL = 5000 // 5 seconds cache
   private readonly containerName = 'nself_redis'
 
@@ -50,34 +50,34 @@ export class RedisCollector {
    */
   async collect(): Promise<RedisStats> {
     const now = Date.now()
-    
+
     // Return cached if fresh
-    if (this.cache.data && (now - this.cache.timestamp) < this.CACHE_TTL) {
+    if (this.cache.data && now - this.cache.timestamp < this.CACHE_TTL) {
       return this.cache.data
     }
 
     try {
       // Check if container is running
       const isRunning = await this.checkContainerStatus()
-      
+
       if (!isRunning) {
         return this.getEmptyStats('stopped')
       }
 
       // Get Redis INFO all at once
       const info = await this.getRedisInfo()
-      
+
       const result: RedisStats = {
         status: 'healthy',
         memory: this.parseMemoryStats(info),
         performance: this.parsePerformanceStats(info),
         persistence: this.parsePersistenceStats(info),
-        databases: this.parseDatabaseStats(info)
+        databases: this.parseDatabaseStats(info),
       }
 
       // Update cache
       this.cache = { data: result, timestamp: now }
-      
+
       return result
     } catch (error) {
       return this.getEmptyStats('unhealthy')
@@ -91,7 +91,7 @@ export class RedisCollector {
     try {
       const { stdout } = await this.execWithTimeout(
         `docker ps --filter "name=${this.containerName}" --format "{{.Status}}"`,
-        2000
+        2000,
       )
       return stdout.trim().toLowerCase().includes('up')
     } catch {
@@ -105,7 +105,7 @@ export class RedisCollector {
   private async getRedisInfo(): Promise<string> {
     const { stdout } = await this.execWithTimeout(
       `docker exec ${this.containerName} redis-cli INFO`,
-      5000
+      5000,
     )
     return stdout
   }
@@ -116,31 +116,32 @@ export class RedisCollector {
   private parseMemoryStats(info: string): RedisStats['memory'] {
     const lines = info.split('\n')
     const stats: any = {}
-    
+
     for (const line of lines) {
       if (line.includes(':')) {
-        const [key, value] = line.split(':').map(s => s.trim())
+        const [key, value] = line.split(':').map((s) => s.trim())
         stats[key] = value
       }
     }
-    
+
     // Convert bytes to human readable
     const formatBytes = (bytes: number) => {
       if (bytes < 1024) return `${bytes}B`
       if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)}KB`
-      if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)}MB`
+      if (bytes < 1024 * 1024 * 1024)
+        return `${(bytes / (1024 * 1024)).toFixed(2)}MB`
       return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)}GB`
     }
-    
+
     const usedMemory = parseInt(stats.used_memory || '0')
     const peakMemory = parseInt(stats.used_memory_peak || '0')
     const maxMemory = parseInt(stats.maxmemory || '0') || 1024 * 1024 * 1024 // Default 1GB
-    
+
     return {
       used: formatBytes(usedMemory),
       peak: formatBytes(peakMemory),
       percentage: Math.round((usedMemory / maxMemory) * 100),
-      evictedKeys: parseInt(stats.evicted_keys || '0')
+      evictedKeys: parseInt(stats.evicted_keys || '0'),
     }
   }
 
@@ -150,24 +151,28 @@ export class RedisCollector {
   private parsePerformanceStats(info: string): RedisStats['performance'] {
     const lines = info.split('\n')
     const stats: any = {}
-    
+
     for (const line of lines) {
       if (line.includes(':')) {
-        const [key, value] = line.split(':').map(s => s.trim())
+        const [key, value] = line.split(':').map((s) => s.trim())
         stats[key] = value
       }
     }
-    
+
     const keyspaceHits = parseInt(stats.keyspace_hits || '0')
     const keyspaceMisses = parseInt(stats.keyspace_misses || '0')
     const totalLookups = keyspaceHits + keyspaceMisses
-    
+
     return {
       connectedClients: parseInt(stats.connected_clients || '0'),
       opsPerSecond: parseInt(stats.instantaneous_ops_per_sec || '0'),
-      hitRate: totalLookups > 0 ? Math.round((keyspaceHits / totalLookups) * 100) : 0,
-      missRate: totalLookups > 0 ? Math.round((keyspaceMisses / totalLookups) * 100) : 0,
-      totalCommands: parseInt(stats.total_commands_processed || '0')
+      hitRate:
+        totalLookups > 0 ? Math.round((keyspaceHits / totalLookups) * 100) : 0,
+      missRate:
+        totalLookups > 0
+          ? Math.round((keyspaceMisses / totalLookups) * 100)
+          : 0,
+      totalCommands: parseInt(stats.total_commands_processed || '0'),
     }
   }
 
@@ -177,21 +182,22 @@ export class RedisCollector {
   private parsePersistenceStats(info: string): RedisStats['persistence'] {
     const lines = info.split('\n')
     const stats: any = {}
-    
+
     for (const line of lines) {
       if (line.includes(':')) {
-        const [key, value] = line.split(':').map(s => s.trim())
+        const [key, value] = line.split(':').map((s) => s.trim())
         stats[key] = value
       }
     }
-    
+
     const lastSaveTime = parseInt(stats.rdb_last_save_time || '0')
-    const lastSave = lastSaveTime > 0 ? new Date(lastSaveTime * 1000).toISOString() : 'Never'
-    
+    const lastSave =
+      lastSaveTime > 0 ? new Date(lastSaveTime * 1000).toISOString() : 'Never'
+
     return {
       lastSave,
       changesSinceSave: parseInt(stats.rdb_changes_since_last_save || '0'),
-      aofEnabled: stats.aof_enabled === '1'
+      aofEnabled: stats.aof_enabled === '1',
     }
   }
 
@@ -201,7 +207,7 @@ export class RedisCollector {
   private parseDatabaseStats(info: string): RedisStats['databases'] {
     const lines = info.split('\n')
     const databases: RedisStats['databases'] = {}
-    
+
     for (const line of lines) {
       // Look for db0, db1, etc.
       const dbMatch = line.match(/^db(\d+):keys=(\d+),expires=(\d+)/)
@@ -209,53 +215,58 @@ export class RedisCollector {
         const [, dbNum, keys, expires] = dbMatch
         databases[`db${dbNum}`] = {
           keys: parseInt(keys),
-          expires: parseInt(expires)
+          expires: parseInt(expires),
         }
       }
     }
-    
+
     // If no databases found, add default db0
     if (Object.keys(databases).length === 0) {
       databases.db0 = { keys: 0, expires: 0 }
     }
-    
+
     return databases
   }
 
   /**
    * Get empty stats with status
    */
-  private getEmptyStats(status: 'healthy' | 'unhealthy' | 'stopped'): RedisStats {
+  private getEmptyStats(
+    status: 'healthy' | 'unhealthy' | 'stopped',
+  ): RedisStats {
     return {
       status,
       memory: {
         used: '0B',
         peak: '0B',
         percentage: 0,
-        evictedKeys: 0
+        evictedKeys: 0,
       },
       performance: {
         connectedClients: 0,
         opsPerSecond: 0,
         hitRate: 0,
         missRate: 0,
-        totalCommands: 0
+        totalCommands: 0,
       },
       persistence: {
         lastSave: 'Never',
         changesSinceSave: 0,
-        aofEnabled: false
+        aofEnabled: false,
       },
       databases: {
-        db0: { keys: 0, expires: 0 }
-      }
+        db0: { keys: 0, expires: 0 },
+      },
     }
   }
 
   /**
    * Execute command with timeout
    */
-  private execWithTimeout(command: string, timeout: number): Promise<{ stdout: string; stderr: string }> {
+  private execWithTimeout(
+    command: string,
+    timeout: number,
+  ): Promise<{ stdout: string; stderr: string }> {
     return new Promise((resolve, reject) => {
       const child = exec(command, (error, stdout, stderr) => {
         if (error) {
@@ -264,12 +275,12 @@ export class RedisCollector {
           resolve({ stdout, stderr })
         }
       })
-      
+
       const timer = setTimeout(() => {
         child.kill()
         reject(new Error(`Command timed out: ${command}`))
       }, timeout)
-      
+
       child.on('exit', () => {
         clearTimeout(timer)
       })

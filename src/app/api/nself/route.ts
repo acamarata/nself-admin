@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { exec } from 'child_process'
+import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
 
 const execAsync = promisify(exec)
@@ -11,21 +11,34 @@ export async function POST(request: NextRequest) {
     if (!command) {
       return NextResponse.json(
         { success: false, error: 'Command is required' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     // Validate allowed commands for security
     const allowedCommands = [
-      'status', 'doctor', 'urls', 'help', 'version',
-      'start', 'stop', 'restart', 'logs', 'ps',
-      'build', 'down', 'up', 'pull', 'info', 'init'
+      'status',
+      'doctor',
+      'urls',
+      'help',
+      'version',
+      'start',
+      'stop',
+      'restart',
+      'logs',
+      'ps',
+      'build',
+      'down',
+      'up',
+      'pull',
+      'info',
+      'init',
     ]
 
     if (!allowedCommands.includes(command)) {
       return NextResponse.json(
         { success: false, error: `Command '${command}' not allowed` },
-        { status: 403 }
+        { status: 403 },
       )
     }
 
@@ -39,9 +52,9 @@ export async function POST(request: NextRequest) {
         ...process.env,
         PATH: process.env.PATH + ':/usr/local/bin',
         // Ensure nself runs in the correct context
-        NSELF_PROJECT_PATH: projectPath
+        NSELF_PROJECT_PATH: projectPath,
       },
-      timeout: 30000 // 30 second timeout
+      timeout: 30000, // 30 second timeout
     })
 
     return NextResponse.json({
@@ -50,21 +63,19 @@ export async function POST(request: NextRequest) {
         command: `nself ${command} ${args.join(' ')}`,
         stdout: stdout.trim(),
         stderr: stderr.trim(),
-        timestamp: new Date().toISOString()
-      }
-    })
-
-  } catch (error: any) {
-    
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to execute nself command',
-        details: error?.message || "Unknown error",
-        stderr: error.stderr || '',
-        stdout: error.stdout || ''
+        timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+    })
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to execute nself command',
+        details: error?.message || 'Unknown error',
+        stderr: error.stderr || '',
+        stdout: error.stdout || '',
+      },
+      { status: 500 },
     )
   }
 }
@@ -73,11 +84,10 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const action = searchParams.get('action') || 'status'
-  
-  try {
 
+  try {
     const projectPath = process.env.PROJECT_PATH || '/project'
-    
+
     let command = ''
     switch (action) {
       case 'status':
@@ -98,7 +108,7 @@ export async function GET(request: NextRequest) {
       default:
         return NextResponse.json(
           { success: false, error: `Unknown action: ${action}` },
-          { status: 400 }
+          { status: 400 },
         )
     }
 
@@ -107,9 +117,9 @@ export async function GET(request: NextRequest) {
       env: {
         ...process.env,
         PATH: process.env.PATH + ':/usr/local/bin',
-        NSELF_PROJECT_PATH: projectPath
+        NSELF_PROJECT_PATH: projectPath,
       },
-      timeout: 30000
+      timeout: 30000,
     })
 
     return NextResponse.json({
@@ -118,19 +128,17 @@ export async function GET(request: NextRequest) {
         action,
         stdout: stdout.trim(),
         stderr: stderr.trim(),
-        timestamp: new Date().toISOString()
-      }
-    })
-
-  } catch (error: any) {
-    
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: `Failed to get ${action} data`,
-        details: error?.message || "Unknown error"
+        timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+    })
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Failed to get ${action} data`,
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
     )
   }
 }

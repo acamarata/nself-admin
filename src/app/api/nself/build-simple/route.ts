@@ -1,14 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
-import fs from 'fs/promises'
-import path from 'path'
 import { readEnvFile } from '@/lib/env-handler'
 import { getProjectPath } from '@/lib/paths'
+import fs from 'fs/promises'
+import { NextRequest, NextResponse } from 'next/server'
+import path from 'path'
 
 // Generate a basic docker-compose.yml based on env settings
 async function generateDockerCompose(config: any): Promise<string> {
   const services: string[] = []
   const volumes: string[] = []
-  
+
   // PostgreSQL (always included)
   services.push(`  postgres:
     image: postgres:16-alpine
@@ -128,7 +128,7 @@ async function generateDockerCompose(config: any): Promise<string> {
     volumes:
       - prometheus_data:/prometheus`)
     volumes.push('prometheus_data')
-    
+
     services.push(`  grafana:
     image: grafana/grafana:latest
     ports:
@@ -138,19 +138,19 @@ async function generateDockerCompose(config: any): Promise<string> {
     volumes:
       - grafana_data:/var/lib/grafana`)
     volumes.push('grafana_data')
-    
+
     services.push(`  loki:
     image: grafana/loki:latest
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml`)
-    
+
     services.push(`  tempo:
     image: grafana/tempo:latest
     command: [ "-config.file=/etc/tempo.yaml" ]
     ports:
       - "3200:3200"`)
-      
+
     services.push(`  alertmanager:
     image: prom/alertmanager:latest
     ports:
@@ -158,7 +158,10 @@ async function generateDockerCompose(config: any): Promise<string> {
   }
 
   // nself-admin (if enabled)
-  if (config.NSELF_ADMIN_ENABLED === 'true' || config.NADMIN_ENABLED === 'true') {
+  if (
+    config.NSELF_ADMIN_ENABLED === 'true' ||
+    config.NADMIN_ENABLED === 'true'
+  ) {
     services.push(`  nself-admin:
     image: acamarata/nself-admin:latest
     ports:
@@ -189,7 +192,7 @@ services:
 ${services.join('\n\n')}
 
 volumes:
-${volumes.map(v => `  ${v}:`).join('\n')}
+${volumes.map((v) => `  ${v}:`).join('\n')}
 `
 
   return dockerCompose
@@ -199,10 +202,10 @@ export async function POST(request: NextRequest) {
   try {
     // Get project path - use the same as other APIs
     const projectPath = getProjectPath()
-    
+
     console.log('=== Simple Build Starting ===')
     console.log('Project path:', projectPath)
-    
+
     // Ensure project directory exists
     try {
       await fs.access(projectPath)
@@ -210,30 +213,30 @@ export async function POST(request: NextRequest) {
       console.error('Project directory does not exist:', projectPath)
       return NextResponse.json(
         { error: `Project directory not found: ${projectPath}` },
-        { status: 400 }
+        { status: 400 },
       )
     }
-    
+
     // Read environment configuration
     const config = await readEnvFile()
     if (!config) {
       return NextResponse.json(
         { error: 'No environment configuration found' },
-        { status: 400 }
+        { status: 400 },
       )
     }
-    
+
     // Generate docker-compose.yml
     const dockerComposeContent = await generateDockerCompose(config)
     const dockerComposePath = path.join(projectPath, 'docker-compose.yml')
-    
+
     // Write the file
     await fs.writeFile(dockerComposePath, dockerComposeContent, 'utf-8')
-    
+
     // Count services
     const serviceMatches = dockerComposeContent.match(/^  \w+:/gm)
     const serviceCount = serviceMatches ? serviceMatches.length : 0
-    
+
     // Create necessary directories
     const dirsToCreate = [
       'nginx/conf.d',
@@ -242,14 +245,14 @@ export async function POST(request: NextRequest) {
       'logs',
       '.volumes/postgres',
       '.volumes/redis',
-      '.volumes/minio'
+      '.volumes/minio',
     ]
-    
+
     for (const dir of dirsToCreate) {
       const dirPath = path.join(projectPath, dir)
       await fs.mkdir(dirPath, { recursive: true }).catch(() => {})
     }
-    
+
     // Create basic nginx config
     const nginxConfig = `server {
     listen 80;
@@ -276,29 +279,28 @@ export async function POST(request: NextRequest) {
         proxy_set_header X-Real-IP $remote_addr;
     }
 }`
-    
+
     const nginxPath = path.join(projectPath, 'nginx/conf.d/default.conf')
     await fs.writeFile(nginxPath, nginxConfig, 'utf-8').catch(() => {})
-    
+
     console.log('=== Build Complete ===')
     console.log(`Generated docker-compose.yml with ${serviceCount} services`)
-    
+
     return NextResponse.json({
       success: true,
       message: 'Project built successfully',
       output: `✓ Generated docker-compose.yml\n✓ ${serviceCount} services configured\n✓ Created project directories\n✓ Configured nginx`,
-      serviceCount
+      serviceCount,
     })
-    
   } catch (error: any) {
     console.error('=== Build Error ===')
     console.error('Error:', error)
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to build project',
-        details: error.message || 'Unknown error'
+        details: error.message || 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

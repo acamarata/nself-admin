@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
-import { exec } from 'child_process'
-import { promisify } from 'util'
 import { getProjectPath } from '@/lib/paths'
+import { exec } from 'child_process'
 import fs from 'fs/promises'
+import { NextResponse } from 'next/server'
 import path from 'path'
+import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
@@ -14,9 +14,12 @@ export async function GET() {
     try {
       const projectPath = getProjectPath()
       const dockerComposePath = path.join(projectPath, 'docker-compose.yml')
-      
+
       try {
-        const dockerComposeContent = await fs.readFile(dockerComposePath, 'utf8')
+        const dockerComposeContent = await fs.readFile(
+          dockerComposePath,
+          'utf8',
+        )
         const projectMatch = dockerComposeContent.match(/# Project: ([^\s\n]+)/)
         if (projectMatch) {
           projectPrefix = projectMatch[1].trim()
@@ -27,81 +30,82 @@ export async function GET() {
     } catch {
       // Path error, use default
     }
-    
+
     // Get list of project containers
-    const { stdout: containerList } = await execAsync("docker ps --format '{{.Names}}'")
-    const projectContainers = containerList.split('\n')
-      .filter(name => {
-        if (!name) return false
-        const lowerName = name.toLowerCase()
-        return (
-          lowerName.startsWith(projectPrefix.toLowerCase() + '_') ||
-          lowerName.startsWith(projectPrefix.toLowerCase() + '-') ||
-          lowerName.startsWith('nself_') ||
-          lowerName.startsWith('nself-') ||
-          // Also check if container name contains common nself service names
-          (['postgres', 'hasura', 'grafana', 'prometheus'].some(service => 
-            lowerName.includes(service)
-          ))
+    const { stdout: containerList } = await execAsync(
+      "docker ps --format '{{.Names}}'",
+    )
+    const projectContainers = containerList.split('\n').filter((name) => {
+      if (!name) return false
+      const lowerName = name.toLowerCase()
+      return (
+        lowerName.startsWith(projectPrefix.toLowerCase() + '_') ||
+        lowerName.startsWith(projectPrefix.toLowerCase() + '-') ||
+        lowerName.startsWith('nself_') ||
+        lowerName.startsWith('nself-') ||
+        // Also check if container name contains common nself service names
+        ['postgres', 'hasura', 'grafana', 'prometheus'].some((service) =>
+          lowerName.includes(service),
         )
-      })
-    
+      )
+    })
+
     if (projectContainers.length === 0) {
       return NextResponse.json({
         success: true,
-        containers: []
+        containers: [],
       })
     }
-    
+
     // Get network stats for each container from /proc/net/dev inside container
     const containerStats = await Promise.all(
       projectContainers.map(async (containerName) => {
         try {
           // Get network stats from inside the container
           const { stdout } = await execAsync(
-            `docker exec ${containerName} cat /proc/net/dev 2>/dev/null | grep -E 'eth0:|eth[0-9]:|ens[0-9]' | head -1`
+            `docker exec ${containerName} cat /proc/net/dev 2>/dev/null | grep -E 'eth0:|eth[0-9]:|ens[0-9]' | head -1`,
           )
-          
+
           // Parse the network stats line
           // Format: interface: rx_bytes rx_packets ... tx_bytes tx_packets ...
           const parts = stdout.trim().split(/\s+/)
-          
+
           if (parts.length >= 10) {
             // rx_bytes is at index 1, tx_bytes is at index 9
             const rxBytes = parseInt(parts[1]) || 0
             const txBytes = parseInt(parts[9]) || 0
-            
+
             return {
               name: containerName,
               rxBytes,
-              txBytes
+              txBytes,
             }
           }
-          
+
           return {
             name: containerName,
             rxBytes: 0,
-            txBytes: 0
+            txBytes: 0,
           }
         } catch (error: any) {
           return {
             name: containerName,
             rxBytes: 0,
-            txBytes: 0
+            txBytes: 0,
           }
         }
-      })
+      }),
     )
-    
+
     return NextResponse.json({
       success: true,
       containers: containerStats,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: 'Failed to get Docker network statistics' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

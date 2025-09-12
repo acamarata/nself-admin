@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export interface DockerContainer {
   id: string
@@ -36,7 +36,7 @@ export function useDockerStatus(refreshInterval = 5000) {
     try {
       const response = await fetch('/api/docker/containers')
       const result = await response.json()
-      
+
       if (result.success) {
         setData(result.data)
         setError(null)

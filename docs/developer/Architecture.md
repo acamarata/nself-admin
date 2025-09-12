@@ -9,26 +9,26 @@ graph TB
     subgraph "Client Layer"
         Browser[Web Browser]
     end
-    
+
     subgraph "nself-admin Container"
         NextJS[Next.js App]
         API[API Routes]
         WS[WebSocket Server]
         SSE[SSE Handler]
     end
-    
+
     subgraph "Integration Layer"
         Docker[Docker API]
         FS[File System]
         PG[PostgreSQL Client]
     end
-    
+
     subgraph "nself Stack"
         Containers[Docker Containers]
         DB[(PostgreSQL)]
         Config[Config Files]
     end
-    
+
     Browser -->|HTTPS| NextJS
     NextJS --> API
     API --> Docker
@@ -36,7 +36,7 @@ graph TB
     API --> PG
     NextJS --> WS
     NextJS --> SSE
-    
+
     Docker --> Containers
     PG --> DB
     FS --> Config
@@ -82,11 +82,11 @@ interface ProjectStore {
   // Project state
   projectStatus: ProjectStatus
   projectInfo: ProjectInfo
-  
+
   // Metrics & monitoring
   systemMetrics: SystemMetrics
   containerStats: ContainerStats[]
-  
+
   // Actions
   checkProjectStatus: () => Promise<void>
   fetchMetrics: () => Promise<void>
@@ -111,6 +111,7 @@ POST   /api/config/env             # Update config
 ### Real-time Communication
 
 #### WebSocket Events
+
 ```javascript
 // Server -> Client Events
 socket.emit('container:update', data)
@@ -123,6 +124,7 @@ socket.emit('metrics:subscribe', interval)
 ```
 
 #### Server-Sent Events
+
 ```javascript
 // Build progress updates
 eventSource.addEventListener('build:progress', (e) => {
@@ -141,7 +143,7 @@ sequenceDiagram
     participant Browser
     participant API
     participant Session
-    
+
     User->>Browser: Enter password
     Browser->>API: POST /api/auth/login
     API->>API: Validate password
@@ -169,14 +171,14 @@ class SimplifiedPollingService {
     const [metrics, containers, status] = await Promise.all([
       fetch('/api/system/metrics'),
       fetch('/api/docker/containers'),
-      fetch('/api/project/status')
+      fetch('/api/project/status'),
     ])
-    
+
     // Update global store
     store.updateCachedData({
       systemMetrics: metrics.data,
       containerStats: containers.data,
-      projectStatus: status.data
+      projectStatus: status.data,
     })
   }
 }
@@ -197,22 +199,22 @@ class SimplifiedPollingService {
 // Docker API Integration
 class DockerService {
   private docker: Dockerode
-  
+
   async listContainers() {
     return this.docker.listContainers({ all: true })
   }
-  
+
   async startContainer(id: string) {
     const container = this.docker.getContainer(id)
     return container.start()
   }
-  
+
   async streamLogs(id: string) {
     const container = this.docker.getContainer(id)
-    return container.logs({ 
-      follow: true, 
-      stdout: true, 
-      stderr: true 
+    return container.logs({
+      follow: true,
+      stdout: true,
+      stderr: true,
     })
   }
 }
@@ -222,9 +224,9 @@ class DockerService {
 
 ```yaml
 volumes:
-  - /var/run/docker.sock:/var/run/docker.sock  # Docker API
-  - ./:/project                                 # Project files
-  - nself-admin-data:/data                     # Persistent data
+  - /var/run/docker.sock:/var/run/docker.sock # Docker API
+  - ./:/project # Project files
+  - nself-admin-data:/data # Persistent data
 ```
 
 ## Build & Deployment

@@ -1,21 +1,40 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { 
-  Database, Play, Save, RefreshCw, AlertCircle, CheckCircle,
-  Activity, HardDrive, Users, Lock, Clock, TrendingUp,
-  Server, Zap, Copy, Download, Settings, Terminal, Search,
-  Eye, Edit3, Trash2, BarChart3, Shield, Network, AlertTriangle
-} from 'lucide-react'
 import { Button } from '@/components/Button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  AlertCircle,
+  CheckCircle,
+  Database,
+  Download,
+  Play,
+  RefreshCw,
+  Save,
+  Settings,
+  Terminal,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface DatabaseStats {
   version: string
@@ -120,24 +139,24 @@ export default function PostgreSQLPage() {
           active: 8,
           idle: 4,
           max: 100,
-          utilization: 12
+          utilization: 12,
         },
         performance: {
           hitRatio: 98.7,
           cacheSize: '256 MB',
           qps: 150,
-          avgQueryTime: 2.5
+          avgQueryTime: 2.5,
         },
         replication: {
           status: 'streaming',
           lag: 0.002,
-          replicas: 1
+          replicas: 1,
         },
         memory: {
           used: '512 MB',
           total: '2 GB',
-          utilization: 25
-        }
+          utilization: 25,
+        },
       })
     } catch (error) {
     } finally {
@@ -149,14 +168,58 @@ export default function PostgreSQLPage() {
     try {
       // Mock data
       setTables([
-        { id: '1', name: 'users', schema: 'public', rows: 15234, size: '12.5 MB', indexes: 3, lastAccess: '2 min ago', status: 'active' },
-        { id: '2', name: 'sessions', schema: 'public', rows: 45821, size: '35.2 MB', indexes: 2, lastAccess: '1 min ago', status: 'active' },
-        { id: '3', name: 'products', schema: 'public', rows: 823, size: '5.8 MB', indexes: 4, lastAccess: '15 min ago', status: 'active' },
-        { id: '4', name: 'orders', schema: 'public', rows: 9521, size: '18.3 MB', indexes: 5, lastAccess: '5 min ago', status: 'active' },
-        { id: '5', name: 'auth_migrations', schema: 'auth', rows: 28, size: '128 KB', indexes: 1, lastAccess: '2 hours ago', status: 'inactive' }
+        {
+          id: '1',
+          name: 'users',
+          schema: 'public',
+          rows: 15234,
+          size: '12.5 MB',
+          indexes: 3,
+          lastAccess: '2 min ago',
+          status: 'active',
+        },
+        {
+          id: '2',
+          name: 'sessions',
+          schema: 'public',
+          rows: 45821,
+          size: '35.2 MB',
+          indexes: 2,
+          lastAccess: '1 min ago',
+          status: 'active',
+        },
+        {
+          id: '3',
+          name: 'products',
+          schema: 'public',
+          rows: 823,
+          size: '5.8 MB',
+          indexes: 4,
+          lastAccess: '15 min ago',
+          status: 'active',
+        },
+        {
+          id: '4',
+          name: 'orders',
+          schema: 'public',
+          rows: 9521,
+          size: '18.3 MB',
+          indexes: 5,
+          lastAccess: '5 min ago',
+          status: 'active',
+        },
+        {
+          id: '5',
+          name: 'auth_migrations',
+          schema: 'auth',
+          rows: 28,
+          size: '128 KB',
+          indexes: 1,
+          lastAccess: '2 hours ago',
+          status: 'inactive',
+        },
       ])
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   const fetchSlowQueries = async () => {
@@ -167,17 +230,16 @@ export default function PostgreSQLPage() {
           query: 'SELECT * FROM users WHERE email LIKE "%@example.com"',
           duration: '2.3s',
           calls: 152,
-          meanTime: '1.8s'
+          meanTime: '1.8s',
         },
         {
           query: 'SELECT COUNT(*) FROM orders JOIN products ON ...',
           duration: '1.5s',
           calls: 89,
-          meanTime: '1.2s'
-        }
+          meanTime: '1.2s',
+        },
       ])
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   const fetchLocks = async () => {
@@ -191,33 +253,47 @@ export default function PostgreSQLPage() {
           relation: 'users',
           mode: 'AccessShareLock',
           granted: true,
-          duration: '00:00:12'
-        }
+          duration: '00:00:12',
+        },
       ])
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   const executeQuery = async () => {
     if (!query.trim()) return
-    
+
     setExecuting(true)
     setQueryResult(null)
-    
+
     try {
       // Simulate query execution
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
       // Mock result
       setQueryResult({
         columns: ['id', 'name', 'email', 'created_at'],
         rows: [
-          { id: 1, name: 'John Doe', email: 'john@example.com', created_at: '2024-01-15' },
-          { id: 2, name: 'Jane Smith', email: 'jane@example.com', created_at: '2024-01-16' },
-          { id: 3, name: 'Bob Johnson', email: 'bob@example.com', created_at: '2024-01-17' }
+          {
+            id: 1,
+            name: 'John Doe',
+            email: 'john@example.com',
+            created_at: '2024-01-15',
+          },
+          {
+            id: 2,
+            name: 'Jane Smith',
+            email: 'jane@example.com',
+            created_at: '2024-01-16',
+          },
+          {
+            id: 3,
+            name: 'Bob Johnson',
+            email: 'bob@example.com',
+            created_at: '2024-01-17',
+          },
         ],
         rowCount: 3,
-        executionTime: 0.023
+        executionTime: 0.023,
       })
     } catch (error: any) {
       setQueryResult({
@@ -225,7 +301,7 @@ export default function PostgreSQLPage() {
         rows: [],
         rowCount: 0,
         executionTime: 0,
-        error: error.message
+        error: error.message,
       })
     } finally {
       setExecuting(false)
@@ -236,13 +312,13 @@ export default function PostgreSQLPage() {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     if (bytes === 0) return '0 B'
     const i = Math.floor(Math.log(bytes) / Math.log(1024))
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i]
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex h-96 items-center justify-center">
+        <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
       </div>
     )
   }
@@ -250,25 +326,27 @@ export default function PostgreSQLPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
+          <h1 className="flex items-center gap-2 text-3xl font-bold">
             <Database className="h-8 w-8" />
             PostgreSQL
           </h1>
-          <p className="text-muted-foreground mt-1">Database management and query console</p>
+          <p className="text-muted-foreground mt-1">
+            Database management and query console
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline">
-            <Settings className="h-4 w-4 mr-1" />
+            <Settings className="mr-1 h-4 w-4" />
             Configure
           </Button>
           <Button variant="outline">
-            <Terminal className="h-4 w-4 mr-1" />
+            <Terminal className="mr-1 h-4 w-4" />
             psql
           </Button>
           <Button onClick={fetchDatabaseStats}>
-            <RefreshCw className="h-4 w-4 mr-1" />
+            <RefreshCw className="mr-1 h-4 w-4" />
             Refresh
           </Button>
         </div>
@@ -276,7 +354,7 @@ export default function PostgreSQLPage() {
 
       {/* Stats Overview */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Connections</CardTitle>
@@ -285,11 +363,11 @@ export default function PostgreSQLPage() {
               <div className="text-2xl font-bold">
                 {stats.connections.active}/{stats.connections.max}
               </div>
-              <Progress 
-                value={(stats.connections.active / stats.connections.max) * 100} 
+              <Progress
+                value={(stats.connections.active / stats.connections.max) * 100}
                 className="mt-2"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-muted-foreground mt-1 text-xs">
                 {stats.connections.idle} idle
               </p>
             </CardContent>
@@ -300,9 +378,11 @@ export default function PostgreSQLPage() {
               <CardTitle className="text-sm">Cache Hit Ratio</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.performance.hitRatio}%</div>
+              <div className="text-2xl font-bold">
+                {stats.performance.hitRatio}%
+              </div>
               <Progress value={stats.performance.hitRatio} className="mt-2" />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Cache size: {stats.performance.cacheSize}
               </p>
             </CardContent>
@@ -314,7 +394,7 @@ export default function PostgreSQLPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.size}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-muted-foreground mt-1 text-xs">
                 {stats.tables} tables
               </p>
             </CardContent>
@@ -327,10 +407,13 @@ export default function PostgreSQLPage() {
             <CardContent>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="text-lg font-bold capitalize">{stats.replication.status}</span>
+                <span className="text-lg font-bold capitalize">
+                  {stats.replication.status}
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Lag: {stats.replication.lag}s • {stats.replication.replicas} replicas
+              <p className="text-muted-foreground mt-1 text-xs">
+                Lag: {stats.replication.lag}s • {stats.replication.replicas}{' '}
+                replicas
               </p>
             </CardContent>
           </Card>
@@ -352,9 +435,12 @@ export default function PostgreSQLPage() {
         <TabsContent value="query" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex items-center justify-between">
                 <CardTitle>SQL Query Console</CardTitle>
-                <Select value={selectedDatabase} onValueChange={setSelectedDatabase}>
+                <Select
+                  value={selectedDatabase}
+                  onValueChange={setSelectedDatabase}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue />
                   </SelectTrigger>
@@ -372,19 +458,19 @@ export default function PostgreSQLPage() {
                 placeholder="Enter SQL query..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="font-mono min-h-[150px]"
+                className="min-h-[150px] font-mono"
               />
-              
+
               <div className="flex gap-2">
                 <Button onClick={executeQuery} disabled={executing}>
-                  <Play className="h-4 w-4 mr-1" />
+                  <Play className="mr-1 h-4 w-4" />
                   {executing ? 'Executing...' : 'Execute'}
                 </Button>
                 <Button variant="outline" onClick={() => setQuery('')}>
                   Clear
                 </Button>
                 <Button variant="outline">
-                  <Save className="h-4 w-4 mr-1" />
+                  <Save className="mr-1 h-4 w-4" />
                   Save Query
                 </Button>
               </div>
@@ -399,22 +485,26 @@ export default function PostgreSQLPage() {
                     </Alert>
                   ) : (
                     <>
-                      <div className="flex justify-between items-center">
-                        <div className="text-sm text-muted-foreground">
-                          {queryResult.rowCount} rows • {queryResult.executionTime}s
+                      <div className="flex items-center justify-between">
+                        <div className="text-muted-foreground text-sm">
+                          {queryResult.rowCount} rows •{' '}
+                          {queryResult.executionTime}s
                         </div>
                         <Button variant="outline">
-                          <Download className="h-4 w-4 mr-1" />
+                          <Download className="mr-1 h-4 w-4" />
                           Export
                         </Button>
                       </div>
-                      
+
                       <ScrollArea className="h-96">
                         <table className="w-full border">
                           <thead>
-                            <tr className="border-b bg-muted">
+                            <tr className="bg-muted border-b">
                               {queryResult.columns.map((col) => (
-                                <th key={col} className="text-left p-2 font-medium">
+                                <th
+                                  key={col}
+                                  className="p-2 text-left font-medium"
+                                >
                                   {col}
                                 </th>
                               ))}
@@ -422,9 +512,12 @@ export default function PostgreSQLPage() {
                           </thead>
                           <tbody>
                             {queryResult.rows.map((row, i) => (
-                              <tr key={i} className="border-b hover:bg-accent">
+                              <tr key={i} className="hover:bg-accent border-b">
                                 {queryResult.columns.map((col) => (
-                                  <td key={col} className="p-2 font-mono text-sm">
+                                  <td
+                                    key={col}
+                                    className="p-2 font-mono text-sm"
+                                  >
                                     {row[col]}
                                   </td>
                                 ))}
@@ -446,17 +539,24 @@ export default function PostgreSQLPage() {
           <Card>
             <CardHeader>
               <CardTitle>Database Tables</CardTitle>
-              <CardDescription>Browse and manage database tables</CardDescription>
+              <CardDescription>
+                Browse and manage database tables
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 {tables.map((table) => (
-                  <div key={table.name} className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent">
+                  <div
+                    key={table.name}
+                    className="hover:bg-accent flex items-center justify-between rounded-lg border p-3"
+                  >
                     <div className="flex items-center gap-3">
-                      <Database className="h-4 w-4 text-muted-foreground" />
+                      <Database className="text-muted-foreground h-4 w-4" />
                       <div>
-                        <p className="font-medium">{table.schema}.{table.name}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium">
+                          {table.schema}.{table.name}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
                           {table.rows.toLocaleString()} rows • {table.size}
                         </p>
                       </div>
@@ -479,14 +579,18 @@ export default function PostgreSQLPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Slow Queries</CardTitle>
-                <CardDescription>Queries taking longer than 1 second</CardDescription>
+                <CardDescription>
+                  Queries taking longer than 1 second
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   {slowQueries.map((q, i) => (
-                    <div key={i} className="p-3 rounded-lg border">
-                      <pre className="text-sm font-mono text-wrap">{q.query}</pre>
-                      <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                    <div key={i} className="rounded-lg border p-3">
+                      <pre className="font-mono text-sm text-wrap">
+                        {q.query}
+                      </pre>
+                      <div className="text-muted-foreground mt-2 flex gap-4 text-sm">
                         <span>Duration: {q.duration}</span>
                         <span>Calls: {q.calls}</span>
                         <span>Mean: {q.meanTime}</span>
@@ -521,30 +625,40 @@ export default function PostgreSQLPage() {
           <Card>
             <CardHeader>
               <CardTitle>Replication Status</CardTitle>
-              <CardDescription>Master-slave replication configuration</CardDescription>
+              <CardDescription>
+                Master-slave replication configuration
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="font-medium">Replication is active and healthy</span>
+                  <span className="font-medium">
+                    Replication is active and healthy
+                  </span>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Primary Server</p>
+                    <p className="text-muted-foreground text-sm">
+                      Primary Server
+                    </p>
                     <p className="font-medium">postgres-master</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Replication Lag</p>
+                    <p className="text-muted-foreground text-sm">
+                      Replication Lag
+                    </p>
                     <p className="font-medium">0.002 seconds</p>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground mb-2">Replica Servers</p>
+                  <p className="text-muted-foreground mb-2 text-sm">
+                    Replica Servers
+                  </p>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between p-2 rounded border">
+                    <div className="flex items-center justify-between rounded border p-2">
                       <span>postgres-slave-1</span>
                       <Badge className="bg-green-500">Streaming</Badge>
                     </div>
@@ -560,31 +674,39 @@ export default function PostgreSQLPage() {
           <Card>
             <CardHeader>
               <CardTitle>Active Connections</CardTitle>
-              <CardDescription>Current database connections and pools</CardDescription>
+              <CardDescription>
+                Current database connections and pools
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Alert className="mb-4">
                 <Users className="h-4 w-4" />
                 <AlertTitle>Connection Pool Status</AlertTitle>
                 <AlertDescription>
-                  {stats?.connections.active} active, {stats?.connections.idle} idle of {stats?.connections.max} max connections
+                  {stats?.connections.active} active, {stats?.connections.idle}{' '}
+                  idle of {stats?.connections.max} max connections
                 </AlertDescription>
               </Alert>
-              
+
               <div className="space-y-2">
-                <div className="grid grid-cols-5 gap-2 p-2 font-medium text-sm border-b">
+                <div className="grid grid-cols-5 gap-2 border-b p-2 text-sm font-medium">
                   <span>PID</span>
                   <span>User</span>
                   <span>Database</span>
                   <span>State</span>
                   <span>Duration</span>
                 </div>
-                {[1,2,3].map(i => (
-                  <div key={i} className="grid grid-cols-5 gap-2 p-2 text-sm hover:bg-accent rounded">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="hover:bg-accent grid grid-cols-5 gap-2 rounded p-2 text-sm"
+                  >
                     <span className="font-mono">1234{i}</span>
                     <span>app_user</span>
                     <span>postgres</span>
-                    <Badge variant="outline" className="w-fit">active</Badge>
+                    <Badge variant="outline" className="w-fit">
+                      active
+                    </Badge>
                     <span>00:02:15</span>
                   </div>
                 ))}
@@ -598,29 +720,35 @@ export default function PostgreSQLPage() {
           <Card>
             <CardHeader>
               <CardTitle>Database Locks</CardTitle>
-              <CardDescription>Current lock status and blocking queries</CardDescription>
+              <CardDescription>
+                Current lock status and blocking queries
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {locks.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-muted-foreground py-8 text-center">
                   No active locks detected
                 </div>
               ) : (
                 <div className="space-y-2">
                   {locks.map((lock, i) => (
-                    <div key={i} className="p-3 rounded-lg border">
+                    <div key={i} className="rounded-lg border p-3">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-muted-foreground">PID:</span> {lock.pid}
+                          <span className="text-muted-foreground">PID:</span>{' '}
+                          {lock.pid}
                         </div>
                         <div>
-                          <span className="text-muted-foreground">User:</span> {lock.user}
+                          <span className="text-muted-foreground">User:</span>{' '}
+                          {lock.user}
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Table:</span> {lock.relation}
+                          <span className="text-muted-foreground">Table:</span>{' '}
+                          {lock.relation}
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Mode:</span> {lock.mode}
+                          <span className="text-muted-foreground">Mode:</span>{' '}
+                          {lock.mode}
                         </div>
                       </div>
                     </div>

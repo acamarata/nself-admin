@@ -1,57 +1,40 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useProjectStore } from '@/stores/projectStore'
-import { usePageData } from '@/hooks/usePageData'
-import { Button } from '@/components/Button'
+import { GridPattern } from '@/components/GridPattern'
 import { HeroPattern } from '@/components/HeroPattern'
 import { ensureCorrectRoute } from '@/lib/routing-logic'
+import { useProjectStore } from '@/stores/projectStore'
 import {
   motion,
   useMotionTemplate,
   useMotionValue,
   type MotionValue,
 } from 'framer-motion'
-import { 
-  Server, 
-  Database, 
-  Cpu, 
-  MemoryStick, 
-  HardDrive, 
-  Network,
+import {
   Activity,
+  AlertCircle,
+  Briefcase,
   CheckCircle,
   Clock,
-  AlertCircle,
-  Play,
-  Container,
-  Settings,
-  Shield,
-  Zap,
-  GitBranch,
-  Lock,
+  Cpu,
+  Database,
   Globe,
-  Layers,
-  Code,
-  Truck,
-  BarChart3,
-  Workflow,
-  Table2,
-  List,
   Grid3x3,
+  HardDrive,
+  Layers,
+  List,
   Mail,
-  Eye,
-  Briefcase,
-  Package,
-  Terminal
+  MemoryStick,
+  Network,
+  Play,
+  Shield,
+  Table2,
+  Terminal,
 } from 'lucide-react'
-import { GridPattern } from '@/components/GridPattern'
-import { apiPost } from '@/lib/api-client'
-import { safeNavigate } from '@/lib/routing'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 // DEV ONLY - REMOVE FOR PRODUCTION
 import { useDevTracking } from '@/hooks/useDevTracking'
-
 
 interface SystemMetrics {
   cpu: number
@@ -70,7 +53,14 @@ interface DockerMetrics {
 
 interface ServiceStatus {
   name: string
-  status: 'running' | 'stopped' | 'error' | 'healthy' | 'unhealthy' | 'restarting' | 'paused'
+  status:
+    | 'running'
+    | 'stopped'
+    | 'error'
+    | 'healthy'
+    | 'unhealthy'
+    | 'restarting'
+    | 'paused'
   health?: string
   uptime?: string
   cpu?: number
@@ -90,10 +80,17 @@ interface ProjectInfoCardProps {
   icon: React.ComponentType<{ className?: string }>
   label: string
   value: string | number
-  pattern: Omit<React.ComponentPropsWithoutRef<typeof GridPattern>, 'width' | 'height' | 'x'>
+  pattern: Omit<
+    React.ComponentPropsWithoutRef<typeof GridPattern>,
+    'width' | 'height' | 'x'
+  >
 }
 
-function ProjectInfoIcon({ icon: Icon }: { icon: React.ComponentType<{ className?: string }> }) {
+function ProjectInfoIcon({
+  icon: Icon,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+}) {
   return (
     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-[2px] transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-blue-400/10 dark:group-hover:ring-blue-400">
       <Icon className="h-4 w-4 stroke-zinc-700 transition-colors duration-300 group-hover:stroke-zinc-900 dark:stroke-zinc-400 dark:group-hover:stroke-blue-400" />
@@ -143,7 +140,12 @@ function ProjectInfoPattern({
   )
 }
 
-function ProjectInfoCard({ icon, label, value, pattern }: ProjectInfoCardProps) {
+function ProjectInfoCard({
+  icon,
+  label,
+  value,
+  pattern,
+}: ProjectInfoCardProps) {
   let mouseX = useMotionValue(0)
   let mouseY = useMotionValue(0)
 
@@ -164,7 +166,7 @@ function ProjectInfoCard({ icon, label, value, pattern }: ProjectInfoCardProps) 
     >
       <ProjectInfoPattern {...pattern} mouseX={mouseX} mouseY={mouseY} />
       <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/7.5 ring-inset group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
-      <div className="relative rounded-2xl px-4 py-6 w-full">
+      <div className="relative w-full rounded-2xl px-4 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <ProjectInfoIcon icon={icon} />
@@ -184,31 +186,62 @@ function ProjectInfoCard({ icon, label, value, pattern }: ProjectInfoCardProps) 
 // Helper function to get service category
 function getServiceCategory(name: string): 'required' | 'optional' | 'user' {
   const lowerName = name.toLowerCase()
-  
+
   // Required services (core stack)
-  if (['postgres', 'postgresql', 'database', 'db'].some(n => lowerName.includes(n))) return 'required'
-  if (['hasura', 'graphql'].some(n => lowerName.includes(n))) return 'required'
-  if (['auth', 'keycloak', 'supabase'].some(n => lowerName.includes(n))) return 'required'
-  if (['nginx', 'proxy', 'gateway', 'traefik'].some(n => lowerName.includes(n))) return 'required'
-  
+  if (
+    ['postgres', 'postgresql', 'database', 'db'].some((n) =>
+      lowerName.includes(n),
+    )
+  )
+    return 'required'
+  if (['hasura', 'graphql'].some((n) => lowerName.includes(n)))
+    return 'required'
+  if (['auth', 'keycloak', 'supabase'].some((n) => lowerName.includes(n)))
+    return 'required'
+  if (
+    ['nginx', 'proxy', 'gateway', 'traefik'].some((n) => lowerName.includes(n))
+  )
+    return 'required'
+
   // Optional services (infrastructure) - but NOT user workers
   if (lowerName.includes('bullmq') || lowerName.includes('bull')) return 'user' // BullMQ workers are custom services
-  if (['minio', 's3'].some(n => lowerName.includes(n))) return 'optional'
-  if (lowerName.includes('storage') && !lowerName.includes('minio')) return 'optional'
-  if (['mailpit'].some(n => lowerName.includes(n))) return 'optional'
-  if (['redis', 'cache', 'memcached'].some(n => lowerName.includes(n))) return 'optional'
-  if (['grafana', 'prometheus', 'loki', 'jaeger', 'alertmanager', 'monitoring'].some(n => lowerName.includes(n))) return 'optional'
-  if (['kafka', 'rabbitmq', 'nats', 'amqp'].some(n => lowerName.includes(n))) return 'optional'
-  if (['elasticsearch', 'elastic', 'kibana', 'logstash'].some(n => lowerName.includes(n))) return 'optional'
-  
+  if (['minio', 's3'].some((n) => lowerName.includes(n))) return 'optional'
+  if (lowerName.includes('storage') && !lowerName.includes('minio'))
+    return 'optional'
+  if (['mailpit'].some((n) => lowerName.includes(n))) return 'optional'
+  if (['redis', 'cache', 'memcached'].some((n) => lowerName.includes(n)))
+    return 'optional'
+  if (
+    [
+      'grafana',
+      'prometheus',
+      'loki',
+      'jaeger',
+      'alertmanager',
+      'monitoring',
+    ].some((n) => lowerName.includes(n))
+  )
+    return 'optional'
+  if (['kafka', 'rabbitmq', 'nats', 'amqp'].some((n) => lowerName.includes(n)))
+    return 'optional'
+  if (
+    ['elasticsearch', 'elastic', 'kibana', 'logstash'].some((n) =>
+      lowerName.includes(n),
+    )
+  )
+    return 'optional'
+
   // Everything else is custom services (including workers)
   return 'user'
 }
 
 // Helper to get service order for default sorting
-function getServiceDefaultOrder(name: string, category: 'required' | 'optional' | 'user'): number {
+function getServiceDefaultOrder(
+  name: string,
+  category: 'required' | 'optional' | 'user',
+): number {
   const lowerName = name.toLowerCase()
-  
+
   if (category === 'required') {
     // Required services order
     if (lowerName.includes('postgres')) return 1
@@ -217,7 +250,7 @@ function getServiceDefaultOrder(name: string, category: 'required' | 'optional' 
     if (lowerName.includes('nginx')) return 4
     return 100
   }
-  
+
   if (category === 'optional') {
     // Optional services order
     if (lowerName.includes('minio')) return 1
@@ -231,7 +264,7 @@ function getServiceDefaultOrder(name: string, category: 'required' | 'optional' 
     if (lowerName.includes('alertmanager')) return 9
     return 100
   }
-  
+
   // User services order (alphabetical within type)
   if (lowerName.includes('nest')) return 10
   if (lowerName.includes('bull')) return 20
@@ -243,7 +276,7 @@ function getServiceDefaultOrder(name: string, category: 'required' | 'optional' 
 // Helper to get service sort order within optional category
 function getOptionalServiceOrder(name: string): number {
   const lowerName = name.toLowerCase()
-  
+
   // Define the preferred order for optional services
   if (lowerName.includes('minio')) return 1
   if (lowerName.includes('storage') && !lowerName.includes('minio')) return 2
@@ -254,7 +287,7 @@ function getOptionalServiceOrder(name: string): number {
   if (lowerName.includes('loki')) return 7
   if (lowerName.includes('jaeger')) return 8
   if (lowerName.includes('alertmanager')) return 9
-  
+
   // Other optional services come after
   return 100
 }
@@ -262,37 +295,42 @@ function getOptionalServiceOrder(name: string): number {
 // Helper to get service display name
 function getServiceDisplayName(name: string): string {
   const lowerName = name.toLowerCase()
-  
+
   // Core services
   if (lowerName.includes('postgres')) return 'PostgreSQL'
   if (lowerName.includes('hasura')) return 'Hasura GraphQL'
   if (lowerName.includes('auth')) return 'Authentication'
   if (lowerName.includes('nginx')) return 'Nginx Proxy'
-  
+
   // Storage services
   if (lowerName.includes('minio')) return 'MinIO Storage'
-  if (lowerName.includes('storage') && !lowerName.includes('minio')) return 'Storage Volume'
-  
+  if (lowerName.includes('storage') && !lowerName.includes('minio'))
+    return 'Storage Volume'
+
   // Mail service
   if (lowerName.includes('mailpit')) return 'Mailpit'
-  if (lowerName.includes('mail') && !lowerName.includes('mailpit')) return 'Mail Service'
-  
+  if (lowerName.includes('mail') && !lowerName.includes('mailpit'))
+    return 'Mail Service'
+
   // Cache
   if (lowerName.includes('redis')) return 'Redis Cache'
-  
+
   // Monitoring stack
   if (lowerName.includes('grafana')) return 'Grafana'
   if (lowerName.includes('prometheus')) return 'Prometheus'
   if (lowerName.includes('loki')) return 'Loki'
   if (lowerName.includes('jaeger')) return 'Jaeger'
   if (lowerName.includes('alertmanager')) return 'Alert Manager'
-  
+
   // User services
   if (lowerName.includes('nest')) return 'NestJS API'
-  if (lowerName.includes('bullmq') || lowerName.includes('bull')) return 'BullMQ Worker'
-  if (lowerName.includes('python') || lowerName.includes('py')) return 'Python Service'
-  if (lowerName.includes('go') && !lowerName.includes('golang')) return 'Go Service'
-  
+  if (lowerName.includes('bullmq') || lowerName.includes('bull'))
+    return 'BullMQ Worker'
+  if (lowerName.includes('python') || lowerName.includes('py'))
+    return 'Python Service'
+  if (lowerName.includes('go') && !lowerName.includes('golang'))
+    return 'Go Service'
+
   // Other infrastructure
   if (lowerName.includes('traefik')) return 'Traefik Proxy'
   if (lowerName.includes('keycloak')) return 'Keycloak Auth'
@@ -300,17 +338,18 @@ function getServiceDisplayName(name: string): string {
   if (lowerName.includes('kafka')) return 'Apache Kafka'
   if (lowerName.includes('rabbitmq')) return 'RabbitMQ'
   if (lowerName.includes('nats')) return 'NATS'
-  if (lowerName.includes('elasticsearch') || lowerName.includes('elastic')) return 'Elasticsearch'
+  if (lowerName.includes('elasticsearch') || lowerName.includes('elastic'))
+    return 'Elasticsearch'
   if (lowerName.includes('kibana')) return 'Kibana'
   if (lowerName.includes('logstash')) return 'Logstash'
-  
+
   // Clean up nself_ prefix for display
   let displayName = name.replace(/^nself[_-]/i, '')
-  
+
   // Capitalize first letter of each word
   return displayName
     .split(/[_-]/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ')
 }
 
@@ -322,42 +361,61 @@ interface UnusedServiceTooltipProps {
   children: React.ReactNode
 }
 
-function UnusedServiceTooltip({ service, children }: UnusedServiceTooltipProps) {
+function UnusedServiceTooltip({
+  service,
+  children,
+}: UnusedServiceTooltipProps) {
   const [showTooltip, setShowTooltip] = useState(false)
-  
+
   const getServiceDescription = (name: string) => {
     const lowerName = name.toLowerCase()
-    if (lowerName.includes('postgres')) return 'PostgreSQL database for persistent data storage'
-    if (lowerName.includes('hasura')) return 'GraphQL API engine for instant APIs over Postgres'
-    if (lowerName.includes('auth')) return 'Authentication service for user management and JWT tokens'
-    if (lowerName.includes('nginx')) return 'Web server and reverse proxy for routing requests'
-    if (lowerName.includes('minio')) return 'S3-compatible object storage for files and media'
-    if (lowerName.includes('storage')) return 'Storage API service for file management'
-    if (lowerName.includes('mailpit')) return 'Email testing tool for development'
-    if (lowerName.includes('redis')) return 'In-memory data store for caching and queues'
-    if (lowerName.includes('grafana')) return 'Metrics visualization and monitoring dashboards'
-    if (lowerName.includes('prometheus')) return 'Time-series database for metrics collection'
-    if (lowerName.includes('loki')) return 'Log aggregation system for centralized logging'
-    if (lowerName.includes('jaeger')) return 'Distributed tracing for performance monitoring'
-    if (lowerName.includes('alertmanager')) return 'Alert routing and management for Prometheus'
+    if (lowerName.includes('postgres'))
+      return 'PostgreSQL database for persistent data storage'
+    if (lowerName.includes('hasura'))
+      return 'GraphQL API engine for instant APIs over Postgres'
+    if (lowerName.includes('auth'))
+      return 'Authentication service for user management and JWT tokens'
+    if (lowerName.includes('nginx'))
+      return 'Web server and reverse proxy for routing requests'
+    if (lowerName.includes('minio'))
+      return 'S3-compatible object storage for files and media'
+    if (lowerName.includes('storage'))
+      return 'Storage API service for file management'
+    if (lowerName.includes('mailpit'))
+      return 'Email testing tool for development'
+    if (lowerName.includes('redis'))
+      return 'In-memory data store for caching and queues'
+    if (lowerName.includes('grafana'))
+      return 'Metrics visualization and monitoring dashboards'
+    if (lowerName.includes('prometheus'))
+      return 'Time-series database for metrics collection'
+    if (lowerName.includes('loki'))
+      return 'Log aggregation system for centralized logging'
+    if (lowerName.includes('jaeger'))
+      return 'Distributed tracing for performance monitoring'
+    if (lowerName.includes('alertmanager'))
+      return 'Alert routing and management for Prometheus'
     if (lowerName.includes('nest')) return 'NestJS backend service'
-    if (lowerName.includes('bull')) return 'BullMQ worker for background job processing'
-    if (lowerName.includes('python')) return 'Python service for data processing'
-    if (lowerName.includes('go')) return 'Go service for high-performance operations'
+    if (lowerName.includes('bull'))
+      return 'BullMQ worker for background job processing'
+    if (lowerName.includes('python'))
+      return 'Python service for data processing'
+    if (lowerName.includes('go'))
+      return 'Go service for high-performance operations'
     return 'Custom service'
   }
-  
+
   return (
     <div className="relative inline-block">
-      <div 
+      <div
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >
         {children}
       </div>
       {showTooltip && (
-        <div className="absolute z-50 left-0 bottom-full mb-2 w-64 p-3 bg-zinc-900 dark:bg-zinc-800 text-white rounded-lg shadow-xl pointer-events-none">
-          <div className="text-xs font-mono text-zinc-400 mb-1">
+        <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-64 rounded-lg bg-zinc-900 p-3 text-white shadow-xl dark:bg-zinc-800">
+          <div className="mb-1 font-mono text-xs text-zinc-400">
             {service.image || 'custom:latest'}
           </div>
           <div className="text-sm text-zinc-200">
@@ -376,7 +434,7 @@ interface StatusTooltipProps {
 
 function StatusTooltip({ service, children }: StatusTooltipProps) {
   const [showTooltip, setShowTooltip] = useState(false)
-  
+
   const getHealthReason = (service: ServiceStatus) => {
     const healthStatus = getHealthStatus(service)
     if (healthStatus === 'healthy') return 'Service is running normally'
@@ -389,24 +447,24 @@ function StatusTooltip({ service, children }: StatusTooltipProps) {
     if (healthStatus === 'stopped') return 'Service is not running'
     return 'Service status is unknown'
   }
-  
+
   const getHealthStatus = (service: ServiceStatus) => {
     if (service.health?.includes('unhealthy')) return 'unhealthy'
     if (service.health?.includes('healthy')) return 'healthy'
     if (service.status === 'running') return 'healthy'
     return service.status
   }
-  
+
   return (
     <div className="relative inline-block">
-      <div 
+      <div
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >
         {children}
       </div>
       {showTooltip && (
-        <div className="absolute z-50 left-0 bottom-full mb-2 w-48 p-2 bg-zinc-900 dark:bg-zinc-800 text-white text-sm rounded-lg shadow-xl pointer-events-none">
+        <div className="pointer-events-none absolute bottom-full left-0 z-50 mb-2 w-48 rounded-lg bg-zinc-900 p-2 text-sm text-white shadow-xl dark:bg-zinc-800">
           {getHealthReason(service)}
         </div>
       )}
@@ -416,17 +474,28 @@ function StatusTooltip({ service, children }: StatusTooltipProps) {
 
 function ContainersTable({ services }: ContainersTableProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('table')
-  const [sortBy, setSortBy] = useState<'default' | 'name' | 'status' | 'cpu' | 'memory'>('default')
+  const [sortBy, setSortBy] = useState<
+    'default' | 'name' | 'status' | 'cpu' | 'memory'
+  >('default')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
-  
+
   // Organize services by category
-  const requiredServices = services.filter(s => getServiceCategory(s.name) === 'required')
-  const optionalServices = services.filter(s => getServiceCategory(s.name) === 'optional')
-  const userServices = services.filter(s => getServiceCategory(s.name) === 'user')
-  
+  const requiredServices = services.filter(
+    (s) => getServiceCategory(s.name) === 'required',
+  )
+  const optionalServices = services.filter(
+    (s) => getServiceCategory(s.name) === 'optional',
+  )
+  const userServices = services.filter(
+    (s) => getServiceCategory(s.name) === 'user',
+  )
+
   // Sort services within each category
-  const sortServices = (serviceList: ServiceStatus[], category: 'required' | 'optional' | 'user') => {
+  const sortServices = (
+    serviceList: ServiceStatus[],
+    category: 'required' | 'optional' | 'user',
+  ) => {
     return [...serviceList].sort((a, b) => {
       switch (sortBy) {
         case 'default':
@@ -446,20 +515,28 @@ function ContainersTable({ services }: ContainersTableProps) {
       }
     })
   }
-  
+
   // Filter services
   const filterServices = (serviceList: ServiceStatus[]) => {
-    return serviceList.filter(s => {
+    return serviceList.filter((s) => {
       if (filterStatus !== 'all' && s.status !== filterStatus) return false
-      if (searchTerm && !s.name.toLowerCase().includes(searchTerm.toLowerCase())) return false
+      if (
+        searchTerm &&
+        !s.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+        return false
       return true
     })
   }
-  
-  const filteredRequired = filterServices(sortServices(requiredServices, 'required'))
-  const filteredOptional = filterServices(sortServices(optionalServices, 'optional'))
+
+  const filteredRequired = filterServices(
+    sortServices(requiredServices, 'required'),
+  )
+  const filteredOptional = filterServices(
+    sortServices(optionalServices, 'optional'),
+  )
   const filteredUser = filterServices(sortServices(userServices, 'user'))
-  
+
   const getHealthStatus = (service: ServiceStatus) => {
     // Parse health status properly
     if (service.health?.includes('unhealthy')) return 'unhealthy'
@@ -467,83 +544,96 @@ function ContainersTable({ services }: ContainersTableProps) {
     if (service.status === 'running') return 'healthy'
     return service.status
   }
-  
+
   const getUptime = (health: string | undefined) => {
     if (!health) return null
     const match = health.match(/Up\s+(.+?)(?:\s+\(|$)/)
     return match ? match[1] : null
   }
-  
+
   const renderServiceRow = (service: ServiceStatus, index: number) => {
     const healthStatus = getHealthStatus(service)
     const uptime = getUptime(service.health)
-    
+
     return (
-      <tr key={`${service.name}-${index}`} className="group hover:bg-blue-50/30 dark:hover:bg-blue-950/10 transition-colors">
-        <td className="px-6 py-4 border-b border-zinc-200/50 dark:border-zinc-700/50">
+      <tr
+        key={`${service.name}-${index}`}
+        className="group transition-colors hover:bg-blue-50/30 dark:hover:bg-blue-950/10"
+      >
+        <td className="border-b border-zinc-200/50 px-6 py-4 dark:border-zinc-700/50">
           <div>
             <div className="text-sm font-medium text-zinc-900 dark:text-white">
               {getServiceDisplayName(service.name)}
             </div>
-            <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            <div className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
               {service.name}
             </div>
           </div>
         </td>
-        <td className="px-6 py-4 border-b border-zinc-200/50 dark:border-zinc-700/50">
+        <td className="border-b border-zinc-200/50 px-6 py-4 dark:border-zinc-700/50">
           <div>
             <div className="flex items-center">
-              <div className={`h-2 w-2 rounded-full mr-2 ${
-                healthStatus === 'healthy' ? 'bg-green-500' :
-                healthStatus === 'unhealthy' ? 'bg-red-500' :
-                healthStatus === 'stopped' ? 'bg-gray-500' :
-                'bg-yellow-500'
-              }`} />
-              <span className={`text-sm font-medium capitalize ${
-                healthStatus === 'healthy' ? 'text-green-600 dark:text-green-400' :
-                healthStatus === 'unhealthy' ? 'text-red-600 dark:text-red-400' :
-                healthStatus === 'stopped' ? 'text-gray-600 dark:text-gray-400' :
-                'text-yellow-600 dark:text-yellow-400'
-              }`}>
+              <div
+                className={`mr-2 h-2 w-2 rounded-full ${
+                  healthStatus === 'healthy'
+                    ? 'bg-green-500'
+                    : healthStatus === 'unhealthy'
+                      ? 'bg-red-500'
+                      : healthStatus === 'stopped'
+                        ? 'bg-gray-500'
+                        : 'bg-yellow-500'
+                }`}
+              />
+              <span
+                className={`text-sm font-medium capitalize ${
+                  healthStatus === 'healthy'
+                    ? 'text-green-600 dark:text-green-400'
+                    : healthStatus === 'unhealthy'
+                      ? 'text-red-600 dark:text-red-400'
+                      : healthStatus === 'stopped'
+                        ? 'text-gray-600 dark:text-gray-400'
+                        : 'text-yellow-600 dark:text-yellow-400'
+                }`}
+              >
                 {healthStatus}
               </span>
             </div>
             {uptime && (
-              <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 ml-4">
+              <div className="mt-1 ml-4 text-xs text-zinc-500 dark:text-zinc-400">
                 Up {uptime}
               </div>
             )}
           </div>
         </td>
-        <td className="px-6 py-4 border-b border-zinc-200/50 dark:border-zinc-700/50">
+        <td className="border-b border-zinc-200/50 px-6 py-4 dark:border-zinc-700/50">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-zinc-700 dark:text-zinc-300">
               {service.cpu ? `${service.cpu.toFixed(1)}%` : '0%'}
             </span>
-            <div className="w-16 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-              <div 
+            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+              <div
                 className="h-full bg-blue-500 transition-all duration-300"
                 style={{ width: `${Math.min(service.cpu || 0, 100)}%` }}
               />
             </div>
           </div>
         </td>
-        <td className="px-6 py-4 border-b border-zinc-200/50 dark:border-zinc-700/50">
+        <td className="border-b border-zinc-200/50 px-6 py-4 dark:border-zinc-700/50">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-zinc-700 dark:text-zinc-300">
               {service.memory ? `${service.memory.toFixed(1)}%` : '0%'}
             </span>
-            <div className="w-16 h-1.5 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-              <div 
+            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+              <div
                 className="h-full bg-emerald-500 transition-all duration-300"
                 style={{ width: `${Math.min(service.memory || 0, 100)}%` }}
               />
             </div>
           </div>
         </td>
-        <td className="px-6 py-4 border-b border-zinc-200/50 dark:border-zinc-700/50">
+        <td className="border-b border-zinc-200/50 px-6 py-4 dark:border-zinc-700/50">
           {service.port ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+            <span className="inline-flex items-center rounded bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
               {service.port}
             </span>
           ) : (
@@ -553,52 +643,49 @@ function ContainersTable({ services }: ContainersTableProps) {
       </tr>
     )
   }
-  
+
   return (
     <div className="mb-16">
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
           Container Services
         </h2>
-        
+
         {/* View Mode Toggle */}
         <div className="flex items-center space-x-4">
-          <div className="flex items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg p-1">
+          <div className="flex items-center rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
             <button
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded ${viewMode === 'table' ? 'bg-white dark:bg-zinc-700 shadow-sm' : ''} transition-all`}
-             
+              className={`rounded p-1.5 ${viewMode === 'table' ? 'bg-white shadow-sm dark:bg-zinc-700' : ''} transition-all`}
             >
               <Table2 className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded ${viewMode === 'list' ? 'bg-white dark:bg-zinc-700 shadow-sm' : ''} transition-all`}
-             
+              className={`rounded p-1.5 ${viewMode === 'list' ? 'bg-white shadow-sm dark:bg-zinc-700' : ''} transition-all`}
             >
               <List className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded ${viewMode === 'grid' ? 'bg-white dark:bg-zinc-700 shadow-sm' : ''} transition-all`}
-             
+              className={`rounded p-1.5 ${viewMode === 'grid' ? 'bg-white shadow-sm dark:bg-zinc-700' : ''} transition-all`}
             >
               <Grid3x3 className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
             </button>
           </div>
-          
+
           <input
             type="text"
             placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:ring-blue-400"
           />
-          
+
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:ring-blue-400"
           >
             <option value="all">All Status</option>
             <option value="healthy">Healthy</option>
@@ -606,11 +693,11 @@ function ContainersTable({ services }: ContainersTableProps) {
             <option value="stopped">Stopped</option>
             <option value="unhealthy">Unhealthy</option>
           </select>
-          
+
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:focus:ring-blue-400"
           >
             <option value="default">Sort by Default</option>
             <option value="name">Sort by Name</option>
@@ -620,25 +707,25 @@ function ContainersTable({ services }: ContainersTableProps) {
           </select>
         </div>
       </div>
-      
-      <div className="not-prose overflow-hidden rounded-2xl bg-white dark:bg-zinc-900/50 ring-1 ring-zinc-200 dark:ring-zinc-700">
+
+      <div className="not-prose overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200 dark:bg-zinc-900/50 dark:ring-zinc-700">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-zinc-50 dark:bg-zinc-800/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                   Service / Container
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                   Status / Uptime
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                   CPU Usage
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                   Memory
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                   Port
                 </th>
               </tr>
@@ -648,48 +735,67 @@ function ContainersTable({ services }: ContainersTableProps) {
               {filteredRequired.length > 0 && (
                 <>
                   <tr>
-                    <td colSpan={5} className="px-6 py-2 border-b border-zinc-200/50 dark:border-zinc-700/30">
-                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <td
+                      colSpan={5}
+                      className="border-b border-zinc-200/50 px-6 py-2 dark:border-zinc-700/30"
+                    >
+                      <span className="text-xs font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                         Required Services
                       </span>
                     </td>
                   </tr>
-                  {filteredRequired.map((service, index) => renderServiceRow(service, index))}
+                  {filteredRequired.map((service, index) =>
+                    renderServiceRow(service, index),
+                  )}
                 </>
               )}
-              
+
               {/* Optional Services */}
               {filteredOptional.length > 0 && (
                 <>
                   <tr>
-                    <td colSpan={5} className="px-6 py-2 border-b border-zinc-200/50 dark:border-zinc-700/30">
-                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <td
+                      colSpan={5}
+                      className="border-b border-zinc-200/50 px-6 py-2 dark:border-zinc-700/30"
+                    >
+                      <span className="text-xs font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                         Optional Services
                       </span>
                     </td>
                   </tr>
-                  {filteredOptional.map((service, index) => renderServiceRow(service, index))}
+                  {filteredOptional.map((service, index) =>
+                    renderServiceRow(service, index),
+                  )}
                 </>
               )}
-              
+
               {/* Custom Services */}
               {filteredUser.length > 0 && (
                 <>
                   <tr>
-                    <td colSpan={5} className="px-6 py-2 border-b border-zinc-200/50 dark:border-zinc-700/30">
-                      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    <td
+                      colSpan={5}
+                      className="border-b border-zinc-200/50 px-6 py-2 dark:border-zinc-700/30"
+                    >
+                      <span className="text-xs font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                         Custom Services
                       </span>
                     </td>
                   </tr>
-                  {filteredUser.map((service, index) => renderServiceRow(service, index))}
+                  {filteredUser.map((service, index) =>
+                    renderServiceRow(service, index),
+                  )}
                 </>
               )}
-              
+
               {services.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                    No containers found. Start your nself services to see them here.
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400"
+                  >
+                    No containers found. Start your nself services to see them
+                    here.
                   </td>
                 </tr>
               )}
@@ -706,22 +812,22 @@ function getCategoryColors(category: 'required' | 'optional' | 'user') {
     case 'required':
       return {
         icon: 'text-blue-600 dark:text-blue-400',
-        bg: 'bg-blue-100 dark:bg-blue-900/30'
+        bg: 'bg-blue-100 dark:bg-blue-900/30',
       }
     case 'optional':
       return {
         icon: 'text-purple-600 dark:text-purple-400',
-        bg: 'bg-purple-100 dark:bg-purple-900/30'
+        bg: 'bg-purple-100 dark:bg-purple-900/30',
       }
     case 'user':
       return {
         icon: 'text-orange-600 dark:text-orange-400',
-        bg: 'bg-orange-100 dark:bg-orange-900/30'
+        bg: 'bg-orange-100 dark:bg-orange-900/30',
       }
     default:
       return {
         icon: 'text-zinc-600 dark:text-zinc-400',
-        bg: 'bg-zinc-100 dark:bg-zinc-900/30'
+        bg: 'bg-zinc-100 dark:bg-zinc-900/30',
       }
   }
 }
@@ -735,9 +841,16 @@ interface BackendServiceCardProps {
   category?: 'required' | 'optional' | 'user'
 }
 
-function BackendServiceCard({ title, services, icon: Icon, description, color, category }: BackendServiceCardProps) {
+function BackendServiceCard({
+  title,
+  services,
+  icon: Icon,
+  description,
+  color,
+  category,
+}: BackendServiceCardProps) {
   const [expanded, setExpanded] = useState(false)
-  
+
   // Sort services based on title
   const sortedServices = [...services].sort((a, b) => {
     if (title === 'Monitoring') {
@@ -750,25 +863,25 @@ function BackendServiceCard({ title, services, icon: Icon, description, color, c
         'alertmanager',
         'cadvisor',
         'postgres_exporter',
-        'node_exporter'
+        'node_exporter',
       ]
-      
+
       const aName = a.name.toLowerCase()
       const bName = b.name.toLowerCase()
-      
+
       // Find positions in order array
-      const aIndex = order.findIndex(item => aName.includes(item))
-      const bIndex = order.findIndex(item => bName.includes(item))
-      
+      const aIndex = order.findIndex((item) => aName.includes(item))
+      const bIndex = order.findIndex((item) => bName.includes(item))
+
       // If both found in order, sort by order
       if (aIndex !== -1 && bIndex !== -1) {
         return aIndex - bIndex
       }
-      
+
       // If only one found, put it first
       if (aIndex !== -1) return -1
       if (bIndex !== -1) return 1
-      
+
       // Otherwise sort alphabetically
       return aName.localeCompare(bName)
     } else if (title === 'API Gateway') {
@@ -781,142 +894,189 @@ function BackendServiceCard({ title, services, icon: Icon, description, color, c
       if (bName.includes('nginx')) return 1
       return aName.localeCompare(bName)
     }
-    
+
     // Default alphabetical sort for other categories
     return a.name.localeCompare(b.name)
   })
-  
-  const runningCount = sortedServices.filter(s => 
-    s.status === 'healthy' || s.status === 'running' || s.status === 'restarting'
+
+  const runningCount = sortedServices.filter(
+    (s) =>
+      s.status === 'healthy' ||
+      s.status === 'running' ||
+      s.status === 'restarting',
   ).length
   const totalCount = sortedServices.length
   const isHealthy = runningCount === totalCount && totalCount > 0
   const categoryColors = category ? getCategoryColors(category) : null
-  
+
   const colorClasses = {
     blue: {
       bg: 'hover:bg-blue-50/50 dark:hover:bg-blue-950/20',
       ring: 'group-hover:ring-blue-500/20 dark:group-hover:ring-blue-400/30',
       icon: 'bg-blue-500/10 dark:bg-blue-400/10 group-hover:bg-blue-500/20 dark:group-hover:bg-blue-400/20',
       iconColor: 'text-blue-600 dark:text-blue-400',
-      status: isHealthy ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'
+      status: isHealthy
+        ? 'text-blue-600 dark:text-blue-400'
+        : 'text-red-600 dark:text-red-400',
     },
     emerald: {
       bg: 'hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20',
       ring: 'group-hover:ring-emerald-500/20 dark:group-hover:ring-emerald-400/30',
       icon: 'bg-emerald-500/10 dark:bg-emerald-400/10 group-hover:bg-emerald-500/20 dark:group-hover:bg-emerald-400/20',
       iconColor: 'text-emerald-600 dark:text-emerald-400',
-      status: isHealthy ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+      status: isHealthy
+        ? 'text-emerald-600 dark:text-emerald-400'
+        : 'text-red-600 dark:text-red-400',
     },
     purple: {
       bg: 'hover:bg-purple-50/50 dark:hover:bg-purple-950/20',
       ring: 'group-hover:ring-purple-500/20 dark:group-hover:ring-purple-400/30',
       icon: 'bg-purple-500/10 dark:bg-purple-400/10 group-hover:bg-purple-500/20 dark:group-hover:bg-purple-400/20',
       iconColor: 'text-purple-600 dark:text-purple-400',
-      status: isHealthy ? 'text-purple-600 dark:text-purple-400' : 'text-red-600 dark:text-red-400'
+      status: isHealthy
+        ? 'text-purple-600 dark:text-purple-400'
+        : 'text-red-600 dark:text-red-400',
     },
     red: {
       bg: 'hover:bg-red-50/50 dark:hover:bg-red-950/20',
       ring: 'group-hover:ring-red-500/20 dark:group-hover:ring-red-400/30',
       icon: 'bg-red-500/10 dark:bg-red-400/10 group-hover:bg-red-500/20 dark:group-hover:bg-red-400/20',
       iconColor: 'text-red-600 dark:text-red-400',
-      status: isHealthy ? 'text-red-600 dark:text-red-400' : 'text-red-600 dark:text-red-400'
+      status: isHealthy
+        ? 'text-red-600 dark:text-red-400'
+        : 'text-red-600 dark:text-red-400',
     },
     orange: {
       bg: 'hover:bg-orange-50/50 dark:hover:bg-orange-950/20',
       ring: 'group-hover:ring-orange-500/20 dark:group-hover:ring-orange-400/30',
       icon: 'bg-orange-500/10 dark:bg-orange-400/10 group-hover:bg-orange-500/20 dark:group-hover:bg-orange-400/20',
       iconColor: 'text-orange-600 dark:text-orange-400',
-      status: isHealthy ? 'text-orange-600 dark:text-orange-400' : 'text-red-600 dark:text-red-400'
+      status: isHealthy
+        ? 'text-orange-600 dark:text-orange-400'
+        : 'text-red-600 dark:text-red-400',
     },
     violet: {
       bg: 'hover:bg-violet-50/50 dark:hover:bg-violet-950/20',
       ring: 'group-hover:ring-violet-500/20 dark:group-hover:ring-violet-400/30',
       icon: 'bg-violet-500/10 dark:bg-violet-400/10 group-hover:bg-violet-500/20 dark:group-hover:bg-violet-400/20',
       iconColor: 'text-violet-600 dark:text-violet-400',
-      status: isHealthy ? 'text-violet-600 dark:text-violet-400' : 'text-red-600 dark:text-red-400'
-    }
+      status: isHealthy
+        ? 'text-violet-600 dark:text-violet-400'
+        : 'text-red-600 dark:text-red-400',
+    },
   }
 
   const classes = colorClasses[color]
 
   return (
-    <div className={`group relative rounded-2xl bg-zinc-50 p-6 dark:bg-white/2.5 transition-colors duration-300 ${classes.bg}`}>
-      <div className={`absolute inset-0 rounded-2xl ring-1 ring-zinc-900/7.5 ring-inset dark:ring-white/10 transition-colors duration-300 ${classes.ring}`} />
-      
+    <div
+      className={`group relative rounded-2xl bg-zinc-50 p-6 transition-colors duration-300 dark:bg-white/2.5 ${classes.bg}`}
+    >
+      <div
+        className={`absolute inset-0 rounded-2xl ring-1 ring-zinc-900/7.5 transition-colors duration-300 ring-inset dark:ring-white/10 ${classes.ring}`}
+      />
+
       <div className="relative">
-        <div className="flex items-center justify-between mb-4">
-          <div className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-300 ${
-            category && categoryColors ? `${categoryColors.bg}` : classes.icon
-          }`}>
-            <Icon className={`h-4 w-4 ${
-              category && categoryColors ? categoryColors.icon : classes.iconColor
-            }`} />
+        <div className="mb-4 flex items-center justify-between">
+          <div
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors duration-300 ${
+              category && categoryColors ? `${categoryColors.bg}` : classes.icon
+            }`}
+          >
+            <Icon
+              className={`h-4 w-4 ${
+                category && categoryColors
+                  ? categoryColors.icon
+                  : classes.iconColor
+              }`}
+            />
           </div>
-          <div className={`text-lg font-bold ${
-            totalCount === 0 ? 'text-gray-400' :
-            runningCount === totalCount ? 'text-blue-600 dark:text-blue-400' :
-            runningCount === 0 ? 'text-red-600 dark:text-red-400' :
-            'text-amber-600 dark:text-amber-400'
-          }`}>
+          <div
+            className={`text-lg font-bold ${
+              totalCount === 0
+                ? 'text-gray-400'
+                : runningCount === totalCount
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : runningCount === 0
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-amber-600 dark:text-amber-400'
+            }`}
+          >
             {totalCount > 0 ? `${runningCount}/${totalCount}` : '0'}
           </div>
         </div>
-        
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white mb-2">
+
+        <h3 className="mb-2 text-sm font-semibold text-zinc-900 dark:text-white">
           {title}
         </h3>
-        
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-4">
+
+        <p className="mb-4 text-xs text-zinc-600 dark:text-zinc-400">
           {description}
         </p>
-        
+
         {sortedServices.length > 0 && (
           <div className="space-y-1">
-            {sortedServices.slice(0, expanded ? sortedServices.length : 3).map((service, index) => (
-              <div key={index} className="flex items-center justify-between text-xs">
-                <span className="text-zinc-700 dark:text-zinc-300 truncate">
-                  {service.name}
-                </span>
-                <div className="flex items-center">
-                  <div className={`h-1.5 w-1.5 rounded-full mr-1 ${
-                    service.status === 'healthy' || service.status === 'running' 
-                      ? 'bg-green-500' 
-                      : service.status === 'error' || service.status === 'unhealthy'
-                        ? 'bg-red-500'
-                      : service.status === 'restarting'
-                        ? 'bg-amber-500'
-                      : service.status === 'paused'
-                        ? 'bg-blue-500'
-                      : 'bg-gray-500'
-                  }`} />
-                  <span className={`capitalize text-xs ${
-                    service.status === 'error' || service.status === 'unhealthy'
-                      ? 'text-red-500 dark:text-red-400 font-medium'
-                      : 'text-zinc-500 dark:text-zinc-400'
-                  }`}>
-                    {service.status === 'healthy' ? 'up' : 
-                     service.status === 'error' ? 'error' :
-                     service.status === 'restarting' ? 'restarting' :
-                     service.status}
+            {sortedServices
+              .slice(0, expanded ? sortedServices.length : 3)
+              .map((service, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between text-xs"
+                >
+                  <span className="truncate text-zinc-700 dark:text-zinc-300">
+                    {service.name}
                   </span>
+                  <div className="flex items-center">
+                    <div
+                      className={`mr-1 h-1.5 w-1.5 rounded-full ${
+                        service.status === 'healthy' ||
+                        service.status === 'running'
+                          ? 'bg-green-500'
+                          : service.status === 'error' ||
+                              service.status === 'unhealthy'
+                            ? 'bg-red-500'
+                            : service.status === 'restarting'
+                              ? 'bg-amber-500'
+                              : service.status === 'paused'
+                                ? 'bg-blue-500'
+                                : 'bg-gray-500'
+                      }`}
+                    />
+                    <span
+                      className={`text-xs capitalize ${
+                        service.status === 'error' ||
+                        service.status === 'unhealthy'
+                          ? 'font-medium text-red-500 dark:text-red-400'
+                          : 'text-zinc-500 dark:text-zinc-400'
+                      }`}
+                    >
+                      {service.status === 'healthy'
+                        ? 'up'
+                        : service.status === 'error'
+                          ? 'error'
+                          : service.status === 'restarting'
+                            ? 'restarting'
+                            : service.status}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
             {sortedServices.length > 3 && (
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
+                className="mt-1 text-xs text-blue-600 hover:underline dark:text-blue-400"
               >
                 {expanded ? 'Show less' : `+${sortedServices.length - 3} more`}
               </button>
             )}
           </div>
         )}
-        
+
         {sortedServices.length === 0 && (
-          <div className="text-xs text-zinc-500 dark:text-zinc-400 italic">
-            {title === 'Applications' ? 'No apps configured yet' : 'No services detected'}
+          <div className="text-xs text-zinc-500 italic dark:text-zinc-400">
+            {title === 'Applications'
+              ? 'No apps configured yet'
+              : 'No services detected'}
           </div>
         )}
       </div>
@@ -928,27 +1088,31 @@ export default function DashboardPage() {
   const router = useRouter()
   // DEV TRACKING - REMOVE FOR PRODUCTION
   const { logEvent, startTimer, endTimer } = useDevTracking('DashboardPage')
-  
+
   // Show loading state immediately while data loads
   const [isInitialLoad, setIsInitialLoad] = useState(true)
-  
+
   // Use cached data from global store
-  const systemMetrics = useProjectStore(state => state.systemMetrics)
-  const containerStats = useProjectStore(state => state.containerStats)
-  const isLoadingMetrics = useProjectStore(state => state.isLoadingMetrics)
-  const isLoadingContainers = useProjectStore(state => state.isLoadingContainers)
-  const lastDataUpdate = useProjectStore(state => state.lastDataUpdate)
-  const fetchAllData = useProjectStore(state => state.fetchAllData)
-  const projectStatus = useProjectStore(state => state.projectStatus)
-  const containersRunning = useProjectStore(state => state.containersRunning)
-  const checkProjectStatus = useProjectStore(state => state.checkProjectStatus)
-  
+  const systemMetrics = useProjectStore((state) => state.systemMetrics)
+  const containerStats = useProjectStore((state) => state.containerStats)
+  const isLoadingMetrics = useProjectStore((state) => state.isLoadingMetrics)
+  const isLoadingContainers = useProjectStore(
+    (state) => state.isLoadingContainers,
+  )
+  const lastDataUpdate = useProjectStore((state) => state.lastDataUpdate)
+  const fetchAllData = useProjectStore((state) => state.fetchAllData)
+  const projectStatus = useProjectStore((state) => state.projectStatus)
+  const containersRunning = useProjectStore((state) => state.containersRunning)
+  const checkProjectStatus = useProjectStore(
+    (state) => state.checkProjectStatus,
+  )
+
   // Mark initial load complete after first render
   useEffect(() => {
     const timer = setTimeout(() => setIsInitialLoad(false), 100)
     return () => clearTimeout(timer)
   }, [])
-  
+
   // Check routing and load dashboard data
   useEffect(() => {
     const initializeDashboard = async () => {
@@ -957,18 +1121,19 @@ export default function DashboardPage() {
       if (redirected) {
         return // Don't load data if we're redirecting
       }
-      
+
       // Immediately fetch data since we're on the dashboard
       // This ensures we get container data quickly to prevent flickering
       fetchAllData()
-      
+
       // Then update project status in parallel (don't wait for it)
       checkProjectStatus()
-      
+
       // Check if services were recently started (within last 30 seconds)
       const recentlyStarted = localStorage.getItem('services_recently_started')
-      const isRecent = recentlyStarted && (Date.now() - parseInt(recentlyStarted)) < 30000
-      
+      const isRecent =
+        recentlyStarted && Date.now() - parseInt(recentlyStarted) < 30000
+
       // If recently started, check again in a few seconds for updated data
       if (isRecent) {
         setTimeout(() => {
@@ -977,7 +1142,7 @@ export default function DashboardPage() {
         }, 3000)
       }
     }
-    
+
     initializeDashboard()
   }, [checkProjectStatus, fetchAllData, router.push])
 
@@ -992,20 +1157,24 @@ export default function DashboardPage() {
 
     return () => clearInterval(interval)
   }, [isInitialLoad, fetchAllData])
-  
+
   // Helper to clean service names (remove project prefix)
   const cleanServiceName = (name: string): string => {
     // Remove common project prefixes like nproj99_ or nself_
     return name.replace(/^(nproj\d+_|nself_|nself-)/, '')
   }
-  
+
   // Transform container stats to services format
   const services: ServiceStatus[] = containerStats.map((c: any) => {
     // Determine status based on health and state
     let status: ServiceStatus['status']
     if (c.health === 'healthy' || (c.state === 'running' && !c.health)) {
       status = 'healthy'
-    } else if (c.health === 'unhealthy' || c.state === 'exited' || c.state === 'dead') {
+    } else if (
+      c.health === 'unhealthy' ||
+      c.state === 'exited' ||
+      c.state === 'dead'
+    ) {
       status = 'error'
     } else if (c.health === 'restarting' || c.state === 'restarting') {
       status = 'restarting'
@@ -1014,68 +1183,80 @@ export default function DashboardPage() {
     } else {
       status = 'stopped'
     }
-    
+
     return {
       name: cleanServiceName(c.name || 'unknown'),
       status,
       health: c.health || c.state,
       cpu: c.stats?.cpu?.percentage || 0,
       memory: c.stats?.memory?.percentage || 0,
-      port: c.ports?.[0]?.public
+      port: c.ports?.[0]?.public,
     }
   })
-  
+
   // Use Docker metrics from system metrics API if available
   const apiDockerMetrics = systemMetrics?.docker
-  
+
   // Debug: Log the metrics to see if they're updating
   useEffect(() => {
     // Metrics debug logging removed
   }, [systemMetrics])
-  
+
   // Calculate Docker metrics from container stats as fallback
   const dockerMemoryUsed = containerStats.reduce((total, c) => {
     return total + (c.stats?.memory?.usage || 0)
   }, 0)
-  
+
   const dockerMemoryLimit = containerStats.reduce((total, c) => {
     return total + (c.stats?.memory?.limit || 0)
   }, 0)
-  
+
   // Derive docker metrics - prefer API data, fallback to calculated
-  const dockerMetrics = apiDockerMetrics ? {
-    ...apiDockerMetrics,
-    cpu: typeof apiDockerMetrics.cpu === 'number' ? apiDockerMetrics.cpu : ((apiDockerMetrics.cpu as any)?.usage || 0),
-    containers: apiDockerMetrics.containers || {
-      total: containerStats.length,
-      running: containerStats.filter(c => c.state === 'running').length,
-      stopped: containerStats.filter(c => c.state !== 'running').length,
-      healthy: containerStats.filter(c => c.health === 'healthy').length
-    }
-  } : {
-    containers: {
-      total: containerStats.length,
-      running: containerStats.filter(c => c.state === 'running').length,
-      stopped: containerStats.filter(c => c.state !== 'running').length,
-      healthy: containerStats.filter(c => c.health === 'healthy').length
-    },
-    memory: {
-      used: Math.round(dockerMemoryUsed / 1024 / 1024 / 1024 * 10) / 10, // Convert to GB
-      total: Math.round(dockerMemoryLimit / 1024 / 1024 / 1024 * 10) / 10
-    },
-    cpu: containerStats.reduce((total, c) => total + (c.stats?.cpu?.percentage || 0), 0),
-    storage: {
-      used: 0,
-      total: 50 // Default 50GB for Docker
-    },
-    network: {
-      rx: 0,
-      tx: 0
-    }
-  }
-  
+  const dockerMetrics = apiDockerMetrics
+    ? {
+        ...apiDockerMetrics,
+        cpu:
+          typeof apiDockerMetrics.cpu === 'number'
+            ? apiDockerMetrics.cpu
+            : (apiDockerMetrics.cpu as any)?.usage || 0,
+        containers: apiDockerMetrics.containers || {
+          total: containerStats.length,
+          running: containerStats.filter((c) => c.state === 'running').length,
+          stopped: containerStats.filter((c) => c.state !== 'running').length,
+          healthy: containerStats.filter((c) => c.health === 'healthy').length,
+        },
+      }
+    : {
+        containers: {
+          total: containerStats.length,
+          running: containerStats.filter((c) => c.state === 'running').length,
+          stopped: containerStats.filter((c) => c.state !== 'running').length,
+          healthy: containerStats.filter((c) => c.health === 'healthy').length,
+        },
+        memory: {
+          used: Math.round((dockerMemoryUsed / 1024 / 1024 / 1024) * 10) / 10, // Convert to GB
+          total: Math.round((dockerMemoryLimit / 1024 / 1024 / 1024) * 10) / 10,
+        },
+        cpu: containerStats.reduce(
+          (total, c) => total + (c.stats?.cpu?.percentage || 0),
+          0,
+        ),
+        storage: {
+          used: 0,
+          total: 50, // Default 50GB for Docker
+        },
+        network: {
+          rx: 0,
+          tx: 0,
+        },
+      }
+
   // Use loading state only for initial load when we have no data at all
-  const loading = !systemMetrics && !containerStats.length && !projectStatus && (isLoadingMetrics || isLoadingContainers)
+  const loading =
+    !systemMetrics &&
+    !containerStats.length &&
+    !projectStatus &&
+    (isLoadingMetrics || isLoadingContainers)
   const refreshing = isLoadingMetrics || isLoadingContainers
 
   // Manual refresh function
@@ -1083,29 +1264,38 @@ export default function DashboardPage() {
     await fetchAllData()
   }
 
-  const runningServices = services.filter(s => s.status === 'healthy' || s.status === 'running').length
+  const runningServices = services.filter(
+    (s) => s.status === 'healthy' || s.status === 'running',
+  ).length
   const totalServices = services.length
   // Check both project status and actual services
-  const hasRunningServices = projectStatus === 'running' || containersRunning > 0 || runningServices > 0
+  const hasRunningServices =
+    projectStatus === 'running' || containersRunning > 0 || runningServices > 0
 
   const [starting, setStarting] = useState(false)
   const [startProgress, setStartProgress] = useState<{
     message: string
     percentage?: number
-    type?: 'status' | 'progress' | 'download' | 'container' | 'error' | 'complete'
+    type?:
+      | 'status'
+      | 'progress'
+      | 'download'
+      | 'container'
+      | 'error'
+      | 'complete'
   }>({ message: '' })
-  
+
   // Frontend apps from config
   const [frontendApps, setFrontendApps] = useState<any[]>([])
   const [loadingApps, setLoadingApps] = useState(false)
 
   // Mouse tracking for cards
-  function MetricCard({ 
-    title, 
-    value, 
-    percentage, 
-    description, 
-    icon: Icon
+  function MetricCard({
+    title,
+    value,
+    percentage,
+    description,
+    icon: Icon,
   }: {
     title: string
     value: string | number
@@ -1127,9 +1317,9 @@ export default function DashboardPage() {
     }
 
     return (
-      <div 
+      <div
         onMouseMove={onMouseMove}
-        className="group relative rounded-2xl bg-zinc-50/90 p-6 dark:bg-white/5 hover:bg-blue-50/80 dark:hover:bg-blue-950/40 transition-colors duration-300"
+        className="group relative rounded-2xl bg-zinc-50/90 p-6 transition-colors duration-300 hover:bg-blue-50/80 dark:bg-white/5 dark:hover:bg-blue-950/40"
       >
         <motion.div
           className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-200 to-blue-100 opacity-0 transition duration-300 group-hover:opacity-100 dark:from-blue-500/40 dark:to-blue-400/30"
@@ -1138,12 +1328,14 @@ export default function DashboardPage() {
             WebkitMaskImage: useMotionTemplate`radial-gradient(250px at ${mouseX}px ${mouseY}px, white, transparent)`,
           }}
         />
-        <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/10 ring-inset group-hover:ring-blue-500/50 dark:ring-white/20 dark:group-hover:ring-blue-400/60 transition-colors duration-300" />
+        <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/10 transition-colors duration-300 ring-inset group-hover:ring-blue-500/50 dark:ring-white/20 dark:group-hover:ring-blue-400/60" />
         <div className="relative">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{title}</h3>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20 dark:bg-blue-400/20 group-hover:bg-blue-500/40 dark:group-hover:bg-blue-400/40 transition-colors duration-300">
-              <Icon className="h-4 w-4 text-blue-600 dark:text-blue-400 group-hover:text-blue-500 dark:group-hover:text-blue-300" />
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+              {title}
+            </h3>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/20 transition-colors duration-300 group-hover:bg-blue-500/40 dark:bg-blue-400/20 dark:group-hover:bg-blue-400/40">
+              <Icon className="h-4 w-4 text-blue-600 group-hover:text-blue-500 dark:text-blue-400 dark:group-hover:text-blue-300" />
             </div>
           </div>
           <div className="mt-4">
@@ -1151,9 +1343,9 @@ export default function DashboardPage() {
               {value}
             </div>
             {percentage !== undefined && (
-              <div className="mt-2 h-2 bg-zinc-200 rounded-full dark:bg-zinc-800">
-                <div 
-                  className="h-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300"
+              <div className="mt-2 h-2 rounded-full bg-zinc-200 dark:bg-zinc-800">
+                <div
+                  className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300"
                   style={{ width: `${Math.min(percentage, 100)}%` }}
                 />
               </div>
@@ -1178,12 +1370,12 @@ export default function DashboardPage() {
       fetchProjectInfo()
     }
   }, [hasRunningServices, loading])
-  
+
   // Fetch frontend apps from config
   useEffect(() => {
     fetchFrontendApps()
   }, [])
-  
+
   const fetchFrontendApps = async () => {
     setLoadingApps(true)
     try {
@@ -1206,80 +1398,82 @@ export default function DashboardPage() {
       if (data.success) {
         setProjectInfo(data.data)
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   const startServices = async () => {
     try {
       setStarting(true)
-      setStartProgress({ message: 'Initializing Docker services...', type: 'status' })
-      
+      setStartProgress({
+        message: 'Initializing Docker services...',
+        type: 'status',
+      })
+
       // Use streaming API for real-time progress
       const response = await fetch('/api/nself/start-stream', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       })
-      
+
       if (!response.ok) {
         throw new Error('Failed to start services')
       }
-      
+
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
-      
+
       if (reader) {
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
-          
+
           const text = decoder.decode(value)
-          const lines = text.split('\n').filter(line => line.trim())
-          
+          const lines = text.split('\n').filter((line) => line.trim())
+
           for (const line of lines) {
             try {
               const data = JSON.parse(line)
-              
+
               switch (data.type) {
                 case 'status':
                 case 'progress':
                   setStartProgress({
                     message: data.message,
                     percentage: data.percentage,
-                    type: data.type
+                    type: data.type,
                   })
                   break
-                  
+
                 case 'download':
                   setStartProgress({
                     message: data.message,
                     percentage: data.percentage,
-                    type: 'download'
+                    type: 'download',
                   })
                   break
-                  
+
                 case 'container':
                   setStartProgress({
                     message: data.message,
-                    type: 'container'
+                    type: 'container',
                   })
                   break
-                  
+
                 case 'error':
                   setStartProgress({
                     message: `Error: ${data.message}`,
-                    type: 'error'
+                    type: 'error',
                   })
                   console.error('Start error:', data.message)
                   break
-                  
+
                 case 'complete':
                   setStartProgress({
                     message: data.message,
                     percentage: 100,
-                    type: 'complete'
+                    type: 'complete',
                   })
                   // Refresh status after completion
                   setTimeout(() => {
@@ -1298,7 +1492,7 @@ export default function DashboardPage() {
       console.error('Failed to start services:', error)
       setStartProgress({
         message: 'Failed to start services. Please check Docker is running.',
-        type: 'error'
+        type: 'error',
       })
     } finally {
       // Keep showing the final message for a bit before clearing
@@ -1310,10 +1504,14 @@ export default function DashboardPage() {
   }
 
   // Show content immediately with loading states
-  const showLoadingState = isInitialLoad || (!systemMetrics && !containerStats.length)
+  const showLoadingState =
+    isInitialLoad || (!systemMetrics && !containerStats.length)
   // Fix flickering: Use multiple signals to determine if services should be shown
   // Check containerStats directly (most reliable), then containersRunning, then projectStatus
-  const showServices = containerStats.length > 0 || containersRunning > 0 || projectStatus === 'running'
+  const showServices =
+    containerStats.length > 0 ||
+    containersRunning > 0 ||
+    projectStatus === 'running'
 
   return (
     <>
@@ -1321,7 +1519,7 @@ export default function DashboardPage() {
 
       {/* Hero Section */}
       <div className="mt-12 mb-4">
-        <h1 className="text-4xl/tight font-extrabold bg-gradient-to-r from-blue-600 to-black bg-clip-text text-transparent sm:text-6xl/tight dark:from-blue-400 dark:to-white">
+        <h1 className="bg-gradient-to-r from-blue-600 to-black bg-clip-text text-4xl/tight font-extrabold text-transparent sm:text-6xl/tight dark:from-blue-400 dark:to-white">
           Dashboard
         </h1>
       </div>
@@ -1344,7 +1542,7 @@ export default function DashboardPage() {
               {/* Docker Memory Usage - Direct from systemMetrics */}
               <MetricCard
                 title="Memory Usage"
-                value={`${Math.round((systemMetrics?.docker?.memory?.percentage || 0))}%`}
+                value={`${Math.round(systemMetrics?.docker?.memory?.percentage || 0)}%`}
                 percentage={systemMetrics?.docker?.memory?.percentage || 0}
                 description={`${systemMetrics?.docker?.memory?.used || 0}GB / ${systemMetrics?.docker?.memory?.total || 0}GB`}
                 icon={MemoryStick}
@@ -1353,8 +1551,12 @@ export default function DashboardPage() {
               {/* Docker Storage - Direct from systemMetrics */}
               <MetricCard
                 title="Storage Usage"
-                value={`${Math.round((systemMetrics?.docker?.storage?.used || 0) / (systemMetrics?.docker?.storage?.total || 1) * 100)}%`}
-                percentage={Math.round((systemMetrics?.docker?.storage?.used || 0) / (systemMetrics?.docker?.storage?.total || 1) * 100)}
+                value={`${Math.round(((systemMetrics?.docker?.storage?.used || 0) / (systemMetrics?.docker?.storage?.total || 1)) * 100)}%`}
+                percentage={Math.round(
+                  ((systemMetrics?.docker?.storage?.used || 0) /
+                    (systemMetrics?.docker?.storage?.total || 1)) *
+                    100,
+                )}
                 description={`${systemMetrics?.docker?.storage?.used || 0}GB / ${systemMetrics?.docker?.storage?.total || 50}GB`}
                 icon={HardDrive}
               />
@@ -1363,82 +1565,106 @@ export default function DashboardPage() {
               <MetricCard
                 title="Network Traffic"
                 value={`${((systemMetrics?.system?.network?.rx || 0) + (systemMetrics?.system?.network?.tx || 0)).toFixed(2)} Mbps`}
-                percentage={Math.min(((systemMetrics?.system?.network?.rx || 0) + (systemMetrics?.system?.network?.tx || 0)) / (systemMetrics?.system?.network?.maxSpeed || 1000) * 100, 100)}
+                percentage={Math.min(
+                  (((systemMetrics?.system?.network?.rx || 0) +
+                    (systemMetrics?.system?.network?.tx || 0)) /
+                    (systemMetrics?.system?.network?.maxSpeed || 1000)) *
+                    100,
+                  100,
+                )}
                 description={`${systemMetrics?.system?.network?.maxSpeed || 1000} Mbps max`}
                 icon={Network}
               />
             </div>
           </div>
-          
+
           {/* Container Status Overview */}
           <div className="mb-16">
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-white mb-8">
+            <h2 className="mb-8 text-2xl font-bold text-zinc-900 dark:text-white">
               Container Status
             </h2>
             <div className="not-prose grid grid-cols-2 gap-8 sm:grid-cols-4">
               {/* Running Containers */}
-              <div className="group relative rounded-2xl bg-zinc-50 p-6 dark:bg-white/2.5 hover:bg-green-50/50 dark:hover:bg-green-950/20 transition-colors duration-300">
+              <div className="group relative rounded-2xl bg-zinc-50 p-6 transition-colors duration-300 hover:bg-green-50/50 dark:bg-white/2.5 dark:hover:bg-green-950/20">
                 <div className="relative">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">Running</h3>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/10 dark:bg-green-400/10 group-hover:bg-green-500/20 dark:group-hover:bg-green-400/20 transition-colors duration-300">
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+                      Running
+                    </h3>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500/10 transition-colors duration-300 group-hover:bg-green-500/20 dark:bg-green-400/10 dark:group-hover:bg-green-400/20">
                       <Play className="h-4 w-4 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <div className="text-2xl font-bold text-zinc-900 dark:text-white">
-                      {services.filter(s => s.status === 'healthy' || s.status === 'running').length}
+                      {
+                        services.filter(
+                          (s) =>
+                            s.status === 'healthy' || s.status === 'running',
+                        ).length
+                      }
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Healthy Containers */}
-              <div className="group relative rounded-2xl bg-zinc-50 p-6 dark:bg-white/2.5 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors duration-300">
+              <div className="group relative rounded-2xl bg-zinc-50 p-6 transition-colors duration-300 hover:bg-blue-50/50 dark:bg-white/2.5 dark:hover:bg-blue-950/20">
                 <div className="relative">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">Healthy</h3>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 dark:bg-blue-400/10 group-hover:bg-blue-500/20 dark:group-hover:bg-blue-400/20 transition-colors duration-300">
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+                      Healthy
+                    </h3>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500/10 transition-colors duration-300 group-hover:bg-blue-500/20 dark:bg-blue-400/10 dark:group-hover:bg-blue-400/20">
                       <CheckCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <div className="text-2xl font-bold text-zinc-900 dark:text-white">
-                      {services.filter(s => s.status === 'healthy').length}
+                      {services.filter((s) => s.status === 'healthy').length}
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Stopped Containers */}
-              <div className="group relative rounded-2xl bg-zinc-50 p-6 dark:bg-white/2.5 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/20 transition-colors duration-300">
+              <div className="group relative rounded-2xl bg-zinc-50 p-6 transition-colors duration-300 hover:bg-zinc-100/50 dark:bg-white/2.5 dark:hover:bg-zinc-800/20">
                 <div className="relative">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">Stopped</h3>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-500/10 dark:bg-zinc-400/10 group-hover:bg-zinc-500/20 dark:group-hover:bg-zinc-400/20 transition-colors duration-300">
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+                      Stopped
+                    </h3>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-500/10 transition-colors duration-300 group-hover:bg-zinc-500/20 dark:bg-zinc-400/10 dark:group-hover:bg-zinc-400/20">
                       <Clock className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <div className="text-2xl font-bold text-zinc-900 dark:text-white">
-                      {services.filter(s => s.status === 'stopped').length}
+                      {services.filter((s) => s.status === 'stopped').length}
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Error Containers */}
-              <div className="group relative rounded-2xl bg-zinc-50 p-6 dark:bg-white/2.5 hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-colors duration-300">
+              <div className="group relative rounded-2xl bg-zinc-50 p-6 transition-colors duration-300 hover:bg-red-50/50 dark:bg-white/2.5 dark:hover:bg-red-950/20">
                 <div className="relative">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">Error</h3>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10 dark:bg-red-400/10 group-hover:bg-red-500/20 dark:group-hover:bg-red-400/20 transition-colors duration-300">
+                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+                      Error
+                    </h3>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500/10 transition-colors duration-300 group-hover:bg-red-500/20 dark:bg-red-400/10 dark:group-hover:bg-red-400/20">
                       <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
                     </div>
                   </div>
                   <div className="mt-4">
                     <div className="text-2xl font-bold text-zinc-900 dark:text-white">
-                      {services.filter(s => s.status === 'error' || s.status === 'unhealthy').length}
+                      {
+                        services.filter(
+                          (s) =>
+                            s.status === 'error' || s.status === 'unhealthy',
+                        ).length
+                      }
                     </div>
                   </div>
                 </div>
@@ -1447,144 +1673,193 @@ export default function DashboardPage() {
           </div>
 
           {/* Backend Stack Overview */}
-          <div className="mb-16 -mt-8">
+          <div className="-mt-8 mb-16">
             <div className="not-prose grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {/* Row 1 - Core Infrastructure */}
               {/* Database Services */}
               <BackendServiceCard
                 title="Database Services"
-                services={services.filter(s => {
+                services={services.filter((s) => {
                   const name = s.name.toLowerCase()
                   // Include postgres and redis, but exclude exporters (those go in monitoring)
-                  return ['postgres', 'postgresql', 'database', 'db', 'redis', 'cache', 'memcached'].some(n => 
-                    name.includes(n)
-                  ) && !name.includes('exporter')
+                  return (
+                    [
+                      'postgres',
+                      'postgresql',
+                      'database',
+                      'db',
+                      'redis',
+                      'cache',
+                      'memcached',
+                    ].some((n) => name.includes(n)) &&
+                    !name.includes('exporter')
+                  )
                 })}
                 icon={Database}
                 description="PostgreSQL, Redis & caching layer"
                 color="blue"
                 category="required"
               />
-              
+
               {/* API Gateway */}
               <BackendServiceCard
                 title="API Gateway"
-                services={services.filter(s => 
-                  ['hasura', 'graphql', 'nginx', 'gateway', 'proxy', 'api'].some(name => 
-                    s.name.toLowerCase().includes(name) && 
-                    !['nest', 'fastapi', 'go', 'python'].some(exclude => 
-                      s.name.toLowerCase().includes(exclude)
-                    )
+                services={services
+                  .filter((s) =>
+                    [
+                      'hasura',
+                      'graphql',
+                      'nginx',
+                      'gateway',
+                      'proxy',
+                      'api',
+                    ].some(
+                      (name) =>
+                        s.name.toLowerCase().includes(name) &&
+                        !['nest', 'fastapi', 'go', 'python'].some((exclude) =>
+                          s.name.toLowerCase().includes(exclude),
+                        ),
+                    ),
                   )
-                ).sort((a, b) => {
-                  // Custom sort: Hasura first, then Nginx, then others
-                  const aName = a.name.toLowerCase()
-                  const bName = b.name.toLowerCase()
-                  if (aName.includes('hasura')) return -1
-                  if (bName.includes('hasura')) return 1
-                  if (aName.includes('nginx')) return -1
-                  if (bName.includes('nginx')) return 1
-                  return aName.localeCompare(bName)
-                })}
+                  .sort((a, b) => {
+                    // Custom sort: Hasura first, then Nginx, then others
+                    const aName = a.name.toLowerCase()
+                    const bName = b.name.toLowerCase()
+                    if (aName.includes('hasura')) return -1
+                    if (bName.includes('hasura')) return 1
+                    if (aName.includes('nginx')) return -1
+                    if (bName.includes('nginx')) return 1
+                    return aName.localeCompare(bName)
+                  })}
                 icon={Globe}
                 description="Nginx, Hasura GraphQL & REST APIs"
                 color="blue"
                 category="required"
               />
-              
+
               {/* Authentication */}
               <BackendServiceCard
                 title="Authentication"
-                services={services.filter(s => 
-                  ['auth', 'jwt', 'oauth', 'keycloak', 'supabase'].some(name => 
-                    s.name.toLowerCase().includes(name) && 
-                    !['alertmanager'].some(exclude => 
-                      s.name.toLowerCase().includes(exclude)
-                    )
-                  )
+                services={services.filter((s) =>
+                  ['auth', 'jwt', 'oauth', 'keycloak', 'supabase'].some(
+                    (name) =>
+                      s.name.toLowerCase().includes(name) &&
+                      !['alertmanager'].some((exclude) =>
+                        s.name.toLowerCase().includes(exclude),
+                      ),
+                  ),
                 )}
                 icon={Shield}
                 description="Auth service, JWT & session management"
                 color="blue"
                 category="required"
               />
-              
+
               {/* Row 2 - Platform Services */}
               {/* Storage */}
               <BackendServiceCard
                 title="Storage"
-                services={services.filter(s => 
-                  ['minio', 's3', 'storage', 'file', 'blob'].some(name => 
-                    s.name.toLowerCase().includes(name)
-                  )
+                services={services.filter((s) =>
+                  ['minio', 's3', 'storage', 'file', 'blob'].some((name) =>
+                    s.name.toLowerCase().includes(name),
+                  ),
                 )}
                 icon={HardDrive}
                 description="MinIO object storage & file management"
                 color="violet"
                 category="optional"
               />
-              
+
               {/* Mail & Search */}
               <BackendServiceCard
                 title="Mail & Search"
-                services={services.filter(s => 
-                  ['meili', 'meilisearch', 'elastic', 'elasticsearch', 'search', 
-                   'mailpit', 'mail', 'smtp', 'email'].some(name => 
-                    s.name.toLowerCase().includes(name) && 
-                    !['bull'].some(exclude => 
-                      s.name.toLowerCase().includes(exclude)
-                    )
-                  )
+                services={services.filter((s) =>
+                  [
+                    'meili',
+                    'meilisearch',
+                    'elastic',
+                    'elasticsearch',
+                    'search',
+                    'mailpit',
+                    'mail',
+                    'smtp',
+                    'email',
+                  ].some(
+                    (name) =>
+                      s.name.toLowerCase().includes(name) &&
+                      !['bull'].some((exclude) =>
+                        s.name.toLowerCase().includes(exclude),
+                      ),
+                  ),
                 )}
                 icon={Mail}
                 description="MeiliSearch, Mailpit & email services"
                 color="violet"
                 category="optional"
               />
-              
+
               {/* Monitoring */}
               <BackendServiceCard
                 title="Monitoring"
-                services={services.filter(s => 
-                  ['prometheus', 'grafana', 'loki', 'tempo', 'jaeger', 'alertmanager', 
-                   'cadvisor', 'exporter', 'monitoring', 'metrics'].some(name => 
-                    s.name.toLowerCase().includes(name)
-                  )
+                services={services.filter((s) =>
+                  [
+                    'prometheus',
+                    'grafana',
+                    'loki',
+                    'tempo',
+                    'jaeger',
+                    'alertmanager',
+                    'cadvisor',
+                    'exporter',
+                    'monitoring',
+                    'metrics',
+                  ].some((name) => s.name.toLowerCase().includes(name)),
                 )}
                 icon={Activity}
                 description="Prometheus, Grafana, Loki & tracing"
                 color="violet"
                 category="optional"
               />
-              
+
               {/* Row 3 - User Applications */}
               {/* Workers & Jobs */}
               <BackendServiceCard
                 title="Workers & Jobs"
-                services={services.filter(s => {
+                services={services.filter((s) => {
                   const name = s.name.toLowerCase()
                   // BullMQ workers, Celery workers, MLflow, or any container with "worker" in the name
-                  return name.includes('bullmq') || name.includes('bull') || 
-                         name.includes('worker') || name.includes('celery') ||
-                         name.includes('mlflow')
+                  return (
+                    name.includes('bullmq') ||
+                    name.includes('bull') ||
+                    name.includes('worker') ||
+                    name.includes('celery') ||
+                    name.includes('mlflow')
+                  )
                 })}
                 icon={Briefcase}
                 description="Background jobs & ML pipelines"
                 color="orange"
                 category="user"
               />
-              
+
               {/* Services */}
               <BackendServiceCard
                 title="Services"
-                services={services.filter(s => {
+                services={services.filter((s) => {
                   const name = s.name.toLowerCase()
                   // NestJS, Go, Python services that are NOT BullMQ workers or MLflow
-                  const isFrameworkService = ['nest', 'go', 'golang', 'python', 'py'].some(n => name.includes(n))
+                  const isFrameworkService = [
+                    'nest',
+                    'go',
+                    'golang',
+                    'python',
+                    'py',
+                  ].some((n) => name.includes(n))
                   // Generic user services (service_X pattern)
                   const isGenericService = /service_\d+/.test(name)
-                  
-                  const isNotWorker = !name.includes('bull') && !name.includes('mlflow')
+
+                  const isNotWorker =
+                    !name.includes('bull') && !name.includes('mlflow')
                   return (isFrameworkService || isGenericService) && isNotWorker
                 })}
                 icon={Terminal}
@@ -1592,27 +1867,36 @@ export default function DashboardPage() {
                 color="orange"
                 category="user"
               />
-              
+
               {/* Applications */}
               <BackendServiceCard
                 title="Applications"
                 services={[
                   // Docker-based frontend containers
-                  ...services.filter(s => {
+                  ...services.filter((s) => {
                     const name = s.name.toLowerCase()
-                    return ['frontend', 'webapp', 'mobile', 'client-app', 'ui-app'].some(n => 
-                      name === n || name.startsWith(n + '-') || name.endsWith('-' + n)
+                    return [
+                      'frontend',
+                      'webapp',
+                      'mobile',
+                      'client-app',
+                      'ui-app',
+                    ].some(
+                      (n) =>
+                        name === n ||
+                        name.startsWith(n + '-') ||
+                        name.endsWith('-' + n),
                     )
                   }),
                   // Config-based frontend apps
-                  ...frontendApps.map(app => ({
+                  ...frontendApps.map((app) => ({
                     name: app.displayName,
                     status: 'healthy' as any, // Config apps are considered configured/healthy
                     health: app.status,
                     cpu: 0,
                     memory: 0,
-                    port: app.port
-                  }))
+                    port: app.port,
+                  })),
                 ]}
                 icon={Layers}
                 description="Frontend & client applications"

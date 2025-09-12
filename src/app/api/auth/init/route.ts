@@ -1,20 +1,24 @@
+import {
+  checkPasswordExists,
+  isDevMode,
+  setupAdminPassword,
+} from '@/lib/auth-db'
 import { NextRequest, NextResponse } from 'next/server'
-import { checkPasswordExists, setupAdminPassword, isDevMode } from '@/lib/auth-db'
 
 export async function GET(request: NextRequest) {
   try {
     const passwordExists = await checkPasswordExists()
     const isDev = await isDevMode()
-    
+
     return NextResponse.json({
       passwordExists,
-      isDevEnv: isDev
+      isDevEnv: isDev,
     })
   } catch (error) {
     console.error('Error checking password setup:', error)
     return NextResponse.json(
       { error: 'Failed to check password setup' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -22,33 +26,33 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { password } = await request.json()
-    
+
     if (!password) {
       return NextResponse.json(
         { error: 'Password is required' },
-        { status: 400 }
+        { status: 400 },
       )
     }
-    
+
     const isDev = await isDevMode()
     const result = await setupAdminPassword(password, isDev)
-    
+
     if (result.success) {
       return NextResponse.json({
         success: true,
-        message: 'Password set successfully'
+        message: 'Password set successfully',
       })
     } else {
       return NextResponse.json(
         { error: result.error || 'Failed to set password' },
-        { status: 400 }
+        { status: 400 },
       )
     }
   } catch (error) {
     console.error('Error setting password:', error)
     return NextResponse.json(
       { error: 'Failed to set password' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

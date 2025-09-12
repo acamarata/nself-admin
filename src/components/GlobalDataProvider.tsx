@@ -1,22 +1,25 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { useProjectStore } from '@/stores/projectStore'
 import { usePathname } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
-import { backgroundDataService } from '@/services/BackgroundDataService'
+import { useEffect } from 'react'
 // import { dockerPollingService } from '@/services/DockerPollingService'
 import { simplifiedPolling } from '@/services/SimplifiedPolling'
 
-export function GlobalDataProvider({ children }: { children: React.ReactNode }) {
+export function GlobalDataProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const pathname = usePathname()
-  const projectStatus = useProjectStore(state => state.projectStatus)
+  const projectStatus = useProjectStore((state) => state.projectStatus)
   const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     // NOTE: Centralized polling service fetches data
     // Pages just read from the store - single source of truth
-    
+
     // Only check project status and start polling if authenticated
     if (isAuthenticated) {
       // Initial project status check
@@ -35,7 +38,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
       simplifiedPolling.stop()
     }
   }, [isAuthenticated])
-  
+
   // React to project status changes
   useEffect(() => {
     // Only manage polling if authenticated
@@ -60,7 +63,7 @@ export function GlobalDataProvider({ children }: { children: React.ReactNode }) 
   //     backgroundDataService.setEnabled('containerStats', true)
   //     backgroundDataService.setEnabled('database', true)
   //     backgroundDataService.setEnabled('systemMetrics', true)
-  //     
+  //
   //     // Use fast intervals for responsive UI
   //     if (pathname === '/' || pathname === '/dashboard') {
   //       // Dashboard needs fast updates

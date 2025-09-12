@@ -136,7 +136,7 @@ services:
     container_name: nself-admin
     restart: unless-stopped
     ports:
-      - "3021:3021"
+      - '3021:3021'
     volumes:
       - /path/to/project:/workspace:rw
       - nself-admin-data:/app/data
@@ -144,7 +144,7 @@ services:
       - NODE_ENV=production
       - NSELF_PROJECT_PATH=/workspace
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3021/api/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3021/api/health']
       interval: 30s
       timeout: 3s
       retries: 3
@@ -175,11 +175,11 @@ services:
       - NODE_ENV=production
       - NSELF_PROJECT_PATH=/workspace
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.nself-admin.rule=Host(`admin.example.com`)"
-      - "traefik.http.routers.nself-admin.entrypoints=websecure"
-      - "traefik.http.routers.nself-admin.tls.certresolver=letsencrypt"
-      - "traefik.http.services.nself-admin.loadbalancer.server.port=3021"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.nself-admin.rule=Host(`admin.example.com`)'
+      - 'traefik.http.routers.nself-admin.entrypoints=websecure'
+      - 'traefik.http.routers.nself-admin.tls.certresolver=letsencrypt'
+      - 'traefik.http.services.nself-admin.loadbalancer.server.port=3021'
 
 networks:
   traefik:
@@ -203,8 +203,8 @@ services:
     container_name: nginx-proxy
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./certs:/etc/nginx/certs:ro
@@ -216,7 +216,7 @@ services:
     container_name: nself-admin
     restart: unless-stopped
     expose:
-      - "3021"
+      - '3021'
     volumes:
       - /path/to/project:/workspace:rw
       - nself-admin-data:/app/data
@@ -299,18 +299,18 @@ docker run -d \
 
 ### Required Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
+| Variable             | Description                  | Default      |
+| -------------------- | ---------------------------- | ------------ |
 | `NSELF_PROJECT_PATH` | Path to project in container | `/workspace` |
 
 ### Optional Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NODE_ENV` | Environment mode | `production` |
-| `PORT` | Internal port | `3021` |
-| `DEBUG` | Enable debug logging | `false` |
-| `TZ` | Timezone | `UTC` |
+| Variable   | Description          | Default      |
+| ---------- | -------------------- | ------------ |
+| `NODE_ENV` | Environment mode     | `production` |
+| `PORT`     | Internal port        | `3021`       |
+| `DEBUG`    | Enable debug logging | `false`      |
+| `TZ`       | Timezone             | `UTC`        |
 
 ### Setting Variables
 

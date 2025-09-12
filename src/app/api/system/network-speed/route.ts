@@ -1,13 +1,13 @@
-import { NextResponse } from 'next/server'
 import { exec } from 'child_process'
-import { promisify } from 'util'
 import fs from 'fs/promises'
+import { NextResponse } from 'next/server'
 import path from 'path'
+import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
 // Cache for speed test results
-let speedCache: { 
+let speedCache: {
   timestamp: number
   ispSpeed?: number
   interfaceSpeed?: number
@@ -19,13 +19,13 @@ const CACHE_DURATION = 3600000 // 1 hour cache for ISP speed tests
 export async function GET() {
   try {
     const now = Date.now()
-    
+
     // Return cached result if recent
-    if (speedCache.timestamp && (now - speedCache.timestamp) < CACHE_DURATION) {
+    if (speedCache.timestamp && now - speedCache.timestamp < CACHE_DURATION) {
       return NextResponse.json({
         success: true,
         data: speedCache,
-        cached: true
+        cached: true,
       })
     }
 
@@ -34,7 +34,7 @@ export async function GET() {
       try {
         // Try to get Wi-Fi transmit rate
         const { stdout: wifiInfo } = await execAsync(
-          "system_profiler SPAirPortDataType 2>/dev/null | grep 'Transmit Rate:' | head -1 | awk '{print $3}'"
+          "system_profiler SPAirPortDataType 2>/dev/null | grep 'Transmit Rate:' | head -1 | awk '{print $3}'",
         )
         const wifiRate = parseInt(wifiInfo.trim())
         if (wifiRate && wifiRate > 0) {
@@ -43,7 +43,9 @@ export async function GET() {
       } catch {
         // Try Ethernet
         try {
-          const { stdout: ethernetInfo } = await execAsync("ifconfig | grep 'media:.*baseT' | head -1")
+          const { stdout: ethernetInfo } = await execAsync(
+            "ifconfig | grep 'media:.*baseT' | head -1",
+          )
           if (ethernetInfo.includes('10000baseT')) return 10000
           if (ethernetInfo.includes('1000baseT')) return 1000
           if (ethernetInfo.includes('100baseT')) return 100
@@ -61,18 +63,18 @@ export async function GET() {
         const testUrls = [
           'https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css',
           'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js',
-          'https://unpkg.com/react@18/umd/react.production.min.js'
+          'https://unpkg.com/react@18/umd/react.production.min.js',
         ]
-        
+
         const speeds: number[] = []
-        
+
         for (const url of testUrls) {
           try {
             const { stdout } = await execAsync(
               `curl -s -w '%{speed_download}' -o /dev/null '${url}'`,
-              { timeout: 3000 }
+              { timeout: 3000 },
             )
-            
+
             const bytesPerSec = parseFloat(stdout)
             if (bytesPerSec > 0) {
               const mbps = (bytesPerSec * 8) / 1000000
@@ -82,7 +84,7 @@ export async function GET() {
             // Skip failed sample
           }
         }
-        
+
         if (speeds.length > 0) {
           // Use the best speed and multiply by factor for actual capacity
           const maxSpeed = Math.max(...speeds)
@@ -94,7 +96,10 @@ export async function GET() {
 
       // Method 2: Check if we have a saved ISP speed from previous speed tests
       try {
-        const configPath = path.join(process.cwd(), '.nself-network-config.json')
+        const configPath = path.join(
+          process.cwd(),
+          '.nself-network-config.json',
+        )
         const configData = await fs.readFile(configPath, 'utf-8')
         const config = JSON.parse(configData)
         if (config.ispSpeed) {
@@ -111,12 +116,16 @@ export async function GET() {
     const getActiveInterface = async () => {
       try {
         // Get the default route interface
-        const { stdout } = await execAsync("route get default 2>/dev/null | grep interface | awk '{print $2}'")
+        const { stdout } = await execAsync(
+          "route get default 2>/dev/null | grep interface | awk '{print $2}'",
+        )
         const interfaceName = stdout.trim()
-        
+
         if (interfaceName) {
           // Check if it's Wi-Fi or Ethernet
-          const { stdout: interfaceInfo } = await execAsync(`ifconfig ${interfaceName} 2>/dev/null | head -1`)
+          const { stdout: interfaceInfo } = await execAsync(
+            `ifconfig ${interfaceName} 2>/dev/null | head -1`,
+          )
           if (interfaceInfo.includes('en0')) {
             return { type: 'wifi', name: interfaceName }
           } else if (interfaceInfo.includes('en')) {
@@ -126,7 +135,9 @@ export async function GET() {
       } catch {
         // Fallback to checking en0 (common Wi-Fi interface)
         try {
-          const { stdout } = await execAsync("ifconfig en0 2>/dev/null | grep 'status: active'")
+          const { stdout } = await execAsync(
+            "ifconfig en0 2>/dev/null | grep 'status: active'",
+          )
           if (stdout) {
             return { type: 'wifi', name: 'en0' }
           }
@@ -134,7 +145,7 @@ export async function GET() {
           // Not active
         }
       }
-      
+
       return { type: 'unknown', name: 'unknown' }
     }
 
@@ -142,13 +153,13 @@ export async function GET() {
     const [interfaceSpeed, ispSpeed, activeInterface] = await Promise.all([
       getInterfaceSpeed(),
       getISPSpeed(),
-      getActiveInterface()
+      getActiveInterface(),
     ])
 
     // Calculate effective speed (the bottleneck)
     let effectiveSpeed = interfaceSpeed
     let bottleneck = 'interface'
-    
+
     if (ispSpeed && ispSpeed < interfaceSpeed) {
       effectiveSpeed = ispSpeed
       bottleneck = 'isp'
@@ -159,7 +170,7 @@ export async function GET() {
       timestamp: now,
       interfaceSpeed,
       ispSpeed,
-      effectiveSpeed
+      effectiveSpeed,
     }
 
     return NextResponse.json({
@@ -169,30 +180,33 @@ export async function GET() {
           type: activeInterface.type,
           name: activeInterface.name,
           speed: interfaceSpeed,
-          speedText: `${interfaceSpeed} Mbps`
+          speedText: `${interfaceSpeed} Mbps`,
         },
         isp: {
           speed: ispSpeed,
           speedText: ispSpeed ? `${ispSpeed} Mbps` : 'Unknown',
-          estimated: true
+          estimated: true,
         },
         effective: {
           speed: effectiveSpeed,
           bottleneck,
-          speedText: `${effectiveSpeed} Mbps`
+          speedText: `${effectiveSpeed} Mbps`,
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       },
-      cached: false
+      cached: false,
     })
   } catch (error: any) {
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Failed to detect network speed',
-        details: error instanceof Error ? error?.message || "Unknown error" : 'Unknown error'
+        details:
+          error instanceof Error
+            ? error?.message || 'Unknown error'
+            : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -206,32 +220,32 @@ export async function POST(request: Request) {
     if (typeof ispSpeed !== 'number' || ispSpeed <= 0) {
       return NextResponse.json(
         { success: false, error: 'Invalid ISP speed value' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     // Save to config file
     const configPath = path.join(process.cwd(), '.nself-network-config.json')
     const config = { ispSpeed, updatedAt: new Date().toISOString() }
-    
+
     await fs.writeFile(configPath, JSON.stringify(config, null, 2))
 
     // Update cache
     speedCache.ispSpeed = ispSpeed
     speedCache.effectiveSpeed = Math.min(
       speedCache.interfaceSpeed || 1000,
-      ispSpeed
+      ispSpeed,
     )
 
     return NextResponse.json({
       success: true,
       message: 'ISP speed saved',
-      data: config
+      data: config,
     })
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: 'Failed to save ISP speed' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

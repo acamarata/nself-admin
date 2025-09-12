@@ -1,11 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Button } from '@/components/Button'
-import { 
-  HeartPulse, CheckCircle, XCircle, AlertTriangle, 
-  RefreshCw, Terminal, Server, Play, Pause, RotateCcw, Wrench
+import {
+  AlertTriangle,
+  CheckCircle,
+  HeartPulse,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  Server,
+  Terminal,
+  Wrench,
+  XCircle,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface ContainerStatus {
   name: string
@@ -29,7 +37,9 @@ interface DoctorResult {
 export default function DoctorPage() {
   const [loading, setLoading] = useState(false)
   const [doctorResult, setDoctorResult] = useState<DoctorResult | null>(null)
-  const [selectedContainer, setSelectedContainer] = useState<string | null>(null)
+  const [selectedContainer, setSelectedContainer] = useState<string | null>(
+    null,
+  )
   const [fixingIssues, setFixingIssues] = useState(false)
 
   const runDiagnostics = async () => {
@@ -38,17 +48,17 @@ export default function DoctorPage() {
       // Get CSRF token
       const csrfToken = document.cookie
         .split('; ')
-        .find(row => row.startsWith('nself-csrf='))
+        .find((row) => row.startsWith('nself-csrf='))
         ?.split('=')[1]
 
       const response = await fetch('/api/nself/doctor', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || ''
-        }
+          'X-CSRF-Token': csrfToken || '',
+        },
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         setDoctorResult(data)
@@ -65,7 +75,7 @@ export default function DoctorPage() {
     try {
       const csrfToken = document.cookie
         .split('; ')
-        .find(row => row.startsWith('nself-csrf='))
+        .find((row) => row.startsWith('nself-csrf='))
         ?.split('=')[1]
 
       // First, try to fix with nself doctor --fix
@@ -73,9 +83,9 @@ export default function DoctorPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || ''
+          'X-CSRF-Token': csrfToken || '',
         },
-        body: JSON.stringify({ fix: true })
+        body: JSON.stringify({ fix: true }),
       })
 
       // Then restart failed containers
@@ -83,8 +93,8 @@ export default function DoctorPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || ''
-        }
+          'X-CSRF-Token': csrfToken || '',
+        },
       })
 
       // Refresh diagnostics
@@ -100,17 +110,17 @@ export default function DoctorPage() {
     try {
       const csrfToken = document.cookie
         .split('; ')
-        .find(row => row.startsWith('nself-csrf='))
+        .find((row) => row.startsWith('nself-csrf='))
         ?.split('=')[1]
 
       await fetch(`/api/docker/containers/${containerName}/restart`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || ''
-        }
+          'X-CSRF-Token': csrfToken || '',
+        },
       })
-      
+
       await runDiagnostics()
     } catch (error) {
       console.error('Failed to restart container:', error)
@@ -162,7 +172,7 @@ export default function DoctorPage() {
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
               System Doctor
             </h1>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
               Diagnose and fix issues with your nself services
             </p>
           </div>
@@ -173,7 +183,9 @@ export default function DoctorPage() {
             variant="secondary"
             disabled={loading}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+            />
             Run Diagnostics
           </Button>
           {doctorResult?.overall !== 'healthy' && (
@@ -184,12 +196,12 @@ export default function DoctorPage() {
             >
               {fixingIssues ? (
                 <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                   Fixing...
                 </>
               ) : (
                 <>
-                  <Wrench className="h-4 w-4 mr-2" />
+                  <Wrench className="mr-2 h-4 w-4" />
                   Auto Fix Issues
                 </>
               )}
@@ -200,21 +212,33 @@ export default function DoctorPage() {
 
       {/* Overall Status */}
       {doctorResult && (
-        <div className={`rounded-xl border-2 p-6 ${getOverallStatusColor(doctorResult.overall)}`}>
+        <div
+          className={`rounded-xl border-2 p-6 ${getOverallStatusColor(doctorResult.overall)}`}
+        >
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold">
-                System Status: {doctorResult.overall === 'healthy' ? 'All Services Healthy' : 
-                              doctorResult.overall === 'partial' ? 'Some Services Need Attention' :
-                              'Critical Issues Detected'}
+                System Status:{' '}
+                {doctorResult.overall === 'healthy'
+                  ? 'All Services Healthy'
+                  : doctorResult.overall === 'partial'
+                    ? 'Some Services Need Attention'
+                    : 'Critical Issues Detected'}
               </h2>
-              <p className="text-sm mt-1 opacity-75">
-                {doctorResult.containers.filter(c => c.status === 'running').length} of {doctorResult.containers.length} containers running
+              <p className="mt-1 text-sm opacity-75">
+                {
+                  doctorResult.containers.filter((c) => c.status === 'running')
+                    .length
+                }{' '}
+                of {doctorResult.containers.length} containers running
               </p>
             </div>
             <div className="text-3xl">
-              {doctorResult.overall === 'healthy' ? '✅' : 
-               doctorResult.overall === 'partial' ? '⚠️' : '❌'}
+              {doctorResult.overall === 'healthy'
+                ? '✅'
+                : doctorResult.overall === 'partial'
+                  ? '⚠️'
+                  : '❌'}
             </div>
           </div>
         </div>
@@ -222,26 +246,30 @@ export default function DoctorPage() {
 
       {/* Container Status Grid */}
       {doctorResult && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 p-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <Server className="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+            <h3 className="mb-4 flex items-center text-lg font-semibold">
+              <Server className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
               Container Status
             </h3>
             <div className="space-y-3">
               {doctorResult.containers.map((container) => (
-                <div 
+                <div
                   key={container.name}
-                  className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                  className="flex cursor-pointer items-center justify-between rounded-lg bg-zinc-50 p-3 transition-colors hover:bg-zinc-100 dark:bg-zinc-900 dark:hover:bg-zinc-800"
                   onClick={() => setSelectedContainer(container.name)}
                 >
                   <div className="flex items-center space-x-3">
                     {getStatusIcon(container.status)}
                     <div>
-                      <p className="font-medium text-sm">{container.name.replace('my_project_', '')}</p>
+                      <p className="text-sm font-medium">
+                        {container.name.replace('my_project_', '')}
+                      </p>
                       <p className="text-xs text-zinc-500">
                         {container.health && `Health: ${container.health}`}
-                        {container.restarts !== undefined && container.restarts > 0 && ` • ${container.restarts} restarts`}
+                        {container.restarts !== undefined &&
+                          container.restarts > 0 &&
+                          ` • ${container.restarts} restarts`}
                       </p>
                     </div>
                   </div>
@@ -252,7 +280,7 @@ export default function DoctorPage() {
                           e.stopPropagation()
                           restartContainer(container.name)
                         }}
-                        className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded"
+                        className="rounded p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                         title="Restart container"
                       >
                         <RotateCcw className="h-4 w-4" />
@@ -263,7 +291,7 @@ export default function DoctorPage() {
                           e.stopPropagation()
                           restartContainer(container.name)
                         }}
-                        className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded"
+                        className="rounded p-1 hover:bg-zinc-200 dark:hover:bg-zinc-700"
                         title="Start container"
                       >
                         <Play className="h-4 w-4" />
@@ -276,21 +304,23 @@ export default function DoctorPage() {
           </div>
 
           {/* System Checks */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-700 p-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <Terminal className="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400" />
+          <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+            <h3 className="mb-4 flex items-center text-lg font-semibold">
+              <Terminal className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
               System Checks
             </h3>
             <div className="space-y-3">
               {doctorResult.systemChecks.map((check, index) => (
-                <div 
+                <div
                   key={index}
-                  className="flex items-start space-x-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-900"
+                  className="flex items-start space-x-3 rounded-lg bg-zinc-50 p-3 dark:bg-zinc-900"
                 >
                   {getStatusIcon(check.status)}
                   <div className="flex-1">
-                    <p className="font-medium text-sm">{check.name}</p>
-                    <p className="text-xs text-zinc-500 mt-1">{check.message}</p>
+                    <p className="text-sm font-medium">{check.name}</p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {check.message}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -301,15 +331,17 @@ export default function DoctorPage() {
 
       {/* Recommendations */}
       {doctorResult && doctorResult.recommendations.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-3 text-blue-900 dark:text-blue-100">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-900/20">
+          <h3 className="mb-3 text-lg font-semibold text-blue-900 dark:text-blue-100">
             Recommendations
           </h3>
           <ul className="space-y-2">
             {doctorResult.recommendations.map((rec, index) => (
               <li key={index} className="flex items-start">
-                <span className="text-blue-600 dark:text-blue-400 mr-2">•</span>
-                <span className="text-sm text-blue-800 dark:text-blue-200">{rec}</span>
+                <span className="mr-2 text-blue-600 dark:text-blue-400">•</span>
+                <span className="text-sm text-blue-800 dark:text-blue-200">
+                  {rec}
+                </span>
               </li>
             ))}
           </ul>
@@ -318,15 +350,15 @@ export default function DoctorPage() {
 
       {/* Container Logs Modal */}
       {selectedContainer && (
-        <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
           onClick={() => setSelectedContainer(null)}
         >
-          <div 
-            className="bg-white dark:bg-zinc-800 rounded-xl p-6 max-w-3xl w-full max-h-[80vh] overflow-auto"
+          <div
+            className="max-h-[80vh] w-full max-w-3xl overflow-auto rounded-xl bg-white p-6 dark:bg-zinc-800"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold">
                 Container Logs: {selectedContainer.replace('my_project_', '')}
               </h3>
@@ -337,8 +369,10 @@ export default function DoctorPage() {
                 ✕
               </button>
             </div>
-            <pre className="bg-zinc-900 text-zinc-100 p-4 rounded-lg text-xs font-mono overflow-x-auto">
-              {doctorResult?.containers.find(c => c.name === selectedContainer)?.logs?.join('\n') || 'No logs available'}
+            <pre className="overflow-x-auto rounded-lg bg-zinc-900 p-4 font-mono text-xs text-zinc-100">
+              {doctorResult?.containers
+                .find((c) => c.name === selectedContainer)
+                ?.logs?.join('\n') || 'No logs available'}
             </pre>
           </div>
         </div>

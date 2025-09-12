@@ -23,35 +23,35 @@ class BackgroundDataService {
       enabled: true,
       interval: 2000, // 2 seconds for quick status updates
       lastFetch: 0,
-      fetcher: this.fetchContainers
+      fetcher: this.fetchContainers,
     })
 
     this.configs.set('containerStats', {
       enabled: true,
       interval: 10000, // 10 seconds for detailed stats (CPU/Memory)
       lastFetch: 0,
-      fetcher: this.fetchContainerStats
+      fetcher: this.fetchContainerStats,
     })
 
     this.configs.set('database', {
       enabled: true,
       interval: 5000, // 5 seconds for database stats
       lastFetch: 0,
-      fetcher: this.fetchDatabase
+      fetcher: this.fetchDatabase,
     })
 
     this.configs.set('systemMetrics', {
       enabled: true,
       interval: 3000, // 3 seconds for system metrics
       lastFetch: 0,
-      fetcher: this.fetchSystemMetrics
+      fetcher: this.fetchSystemMetrics,
     })
 
     this.configs.set('projectStatus', {
       enabled: true,
       interval: 30000, // 30 seconds for project status (rarely changes)
       lastFetch: 0,
-      fetcher: this.fetchProjectStatus
+      fetcher: this.fetchProjectStatus,
     })
   }
 
@@ -59,7 +59,6 @@ class BackgroundDataService {
   start() {
     if (this.isRunning) return
     this.isRunning = true
-
 
     // Start SSE connection for real-time updates if available
     this.connectSSE()
@@ -69,16 +68,15 @@ class BackgroundDataService {
       if (config.enabled) {
         // Initial fetch
         config.fetcher().catch(() => {})
-        
+
         // Set up interval
         const intervalId = setInterval(async () => {
           try {
             await config.fetcher()
             config.lastFetch = Date.now()
-          } catch (err) {
-          }
+          } catch (err) {}
         }, config.interval)
-        
+
         this.intervals.set(key, intervalId)
       }
     })
@@ -89,9 +87,8 @@ class BackgroundDataService {
     if (!this.isRunning) return
     this.isRunning = false
 
-
     // Clear all intervals
-    this.intervals.forEach(interval => clearInterval(interval))
+    this.intervals.forEach((interval) => clearInterval(interval))
     this.intervals.clear()
 
     // Close SSE connection
@@ -106,7 +103,7 @@ class BackgroundDataService {
     try {
       // Try to connect to SSE endpoint if available
       this.eventSource = new EventSource('/api/sse/updates')
-      
+
       this.eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data)
         this.handleRealtimeUpdate(data)
@@ -118,33 +115,32 @@ class BackgroundDataService {
           this.eventSource = null
         }
       }
-    } catch (err) {
-    }
+    } catch (err) {}
   }
 
   // Handle real-time updates from SSE
   private handleRealtimeUpdate(data: any) {
     const store = useProjectStore.getState()
-    
+
     switch (data.type) {
       case 'container-update':
         // Update specific container in store
         const containers = [...store.containerStats]
-        const index = containers.findIndex(c => c.id === data.payload.id)
+        const index = containers.findIndex((c) => c.id === data.payload.id)
         if (index >= 0) {
           containers[index] = { ...containers[index], ...data.payload }
           store.updateCachedData({ containerStats: containers })
         }
         break
-        
+
       case 'metrics-update':
         store.updateCachedData({ systemMetrics: data.payload })
         break
-        
+
       case 'database-update':
-        store.updateCachedData({ 
+        store.updateCachedData({
           databaseStats: data.payload.stats,
-          databaseTables: data.payload.tables 
+          databaseTables: data.payload.tables,
         })
         break
     }
@@ -157,9 +153,12 @@ class BackgroundDataService {
 
     try {
       // Quick fetch without stats for responsive updates
-      const response = await fetch('/api/docker/containers?detailed=true&stats=false', {
-        credentials: 'same-origin'
-      })
+      const response = await fetch(
+        '/api/docker/containers?detailed=true&stats=false',
+        {
+          credentials: 'same-origin',
+        },
+      )
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
@@ -172,9 +171,9 @@ class BackgroundDataService {
             }
             byCategory[category].push(container)
           })
-          
-          store.updateCachedData({ 
-            containerStats: data.data.containers
+
+          store.updateCachedData({
+            containerStats: data.data.containers,
           })
         }
       }
@@ -190,24 +189,29 @@ class BackgroundDataService {
 
     try {
       // Fetch with stats for CPU/Memory data
-      const response = await fetch('/api/docker/containers?detailed=true&stats=true', {
-        credentials: 'same-origin'
-      })
+      const response = await fetch(
+        '/api/docker/containers?detailed=true&stats=true',
+        {
+          credentials: 'same-origin',
+        },
+      )
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
           // Merge stats into existing container data
           const currentContainers = store.containerStats || []
-          const updatedContainers = currentContainers.map(container => {
-            const statsContainer = data.data.containers.find((c: any) => c.id === container.id)
+          const updatedContainers = currentContainers.map((container) => {
+            const statsContainer = data.data.containers.find(
+              (c: any) => c.id === container.id,
+            )
             if (statsContainer) {
               return { ...container, ...statsContainer }
             }
             return container
           })
-          
-          store.updateCachedData({ 
-            containerStats: updatedContainers
+
+          store.updateCachedData({
+            containerStats: updatedContainers,
           })
         }
       }
@@ -225,18 +229,18 @@ class BackgroundDataService {
       // Fetch both in parallel
       const [statsRes, tablesRes] = await Promise.all([
         fetch('/api/database?action=stats'),
-        fetch('/api/database?action=tables')
+        fetch('/api/database?action=tables'),
       ])
-      
+
       const [statsData, tablesData] = await Promise.all([
         statsRes.json(),
-        tablesRes.json()
+        tablesRes.json(),
       ])
-      
+
       const updates: any = {}
       if (statsData.success) updates.databaseStats = statsData.data
       if (tablesData.success) updates.databaseTables = tablesData.data
-      
+
       if (Object.keys(updates).length > 0) {
         store.updateCachedData(updates)
       }
@@ -270,12 +274,12 @@ class BackgroundDataService {
       if (response.ok) {
         const data = await response.json()
         const store = useProjectStore.getState()
-        
+
         store.updateProjectStatus({
           projectStatus: data.projectState || 'unknown',
           hasEnvFile: data.hasEnvFile,
           servicesRunning: data.servicesRunning,
-          containersRunning: data.dockerContainers?.length || 0
+          containersRunning: data.dockerContainers?.length || 0,
         })
       }
     } catch (err) {
@@ -288,19 +292,18 @@ class BackgroundDataService {
     const config = this.configs.get(key)
     if (config) {
       config.interval = interval
-      
+
       // Restart interval if running
       if (this.isRunning && this.intervals.has(key)) {
         clearInterval(this.intervals.get(key)!)
-        
+
         const intervalId = setInterval(async () => {
           try {
             await config.fetcher()
             config.lastFetch = Date.now()
-          } catch (err) {
-          }
+          } catch (err) {}
         }, interval)
-        
+
         this.intervals.set(key, intervalId)
       }
     }
@@ -311,20 +314,19 @@ class BackgroundDataService {
     const config = this.configs.get(key)
     if (config) {
       config.enabled = enabled
-      
+
       if (this.isRunning) {
         if (enabled && !this.intervals.has(key)) {
           // Start this data source
           config.fetcher().catch(() => {})
-          
+
           const intervalId = setInterval(async () => {
             try {
               await config.fetcher()
               config.lastFetch = Date.now()
-            } catch (err) {
-            }
+            } catch (err) {}
           }, config.interval)
-          
+
           this.intervals.set(key, intervalId)
         } else if (!enabled && this.intervals.has(key)) {
           // Stop this data source
@@ -343,7 +345,7 @@ class BackgroundDataService {
         enabled: config.enabled,
         interval: config.interval,
         lastFetch: config.lastFetch,
-        age: Date.now() - config.lastFetch
+        age: Date.now() - config.lastFetch,
       }
     })
     return status

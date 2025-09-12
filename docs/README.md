@@ -9,14 +9,15 @@ nself-admin provides a powerful, user-friendly interface for configuring, buildi
 ## Quick Start
 
 1. **Install and Start**
+
    ```bash
    # Clone the repository
    git clone https://github.com/nself/admin.git
    cd nself-admin
-   
+
    # Install dependencies
    npm install
-   
+
    # Start development server
    PORT=3100 npm run dev
    ```
@@ -35,35 +36,36 @@ nself-admin provides a powerful, user-friendly interface for configuring, buildi
 
 ### Core Documentation
 
-| Document | Description |
-|----------|-------------|
+| Document                                                   | Description                                      |
+| ---------------------------------------------------------- | ------------------------------------------------ |
 | **[ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md)** | Complete reference for all environment variables |
-| **[WIZARD_GUIDE.md](./WIZARD_GUIDE.md)** | Detailed guide for the 6-step setup wizard |
-| **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** | Solutions for common issues and debugging |
-| **[CLI_INTEGRATION.md](./CLI_INTEGRATION.md)** | Integration with nself CLI commands |
-| **[PROJECT_PATH.md](./PROJECT_PATH.md)** | Project path configuration and management |
+| **[WIZARD_GUIDE.md](./WIZARD_GUIDE.md)**                   | Detailed guide for the 6-step setup wizard       |
+| **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)**             | Solutions for common issues and debugging        |
+| **[CLI_INTEGRATION.md](./CLI_INTEGRATION.md)**             | Integration with nself CLI commands              |
+| **[PROJECT_PATH.md](./PROJECT_PATH.md)**                   | Project path configuration and management        |
 
 ### Architecture & Development
 
-| Directory | Contents |
-|-----------|----------|
+| Directory                            | Contents                                 |
+| ------------------------------------ | ---------------------------------------- |
 | **[architecture/](./architecture/)** | System architecture and design decisions |
-| **[developer/](./developer/)** | Developer guides and API documentation |
-| **[deployment/](./deployment/)** | Production deployment guides |
-| **[api/](./api/)** | API endpoint documentation |
-| **[contributing/](./contributing/)** | Contribution guidelines |
+| **[developer/](./developer/)**       | Developer guides and API documentation   |
+| **[deployment/](./deployment/)**     | Production deployment guides             |
+| **[api/](./api/)**                   | API endpoint documentation               |
+| **[contributing/](./contributing/)** | Contribution guidelines                  |
 
 ### Additional Resources
 
-| Document | Description |
-|----------|-------------|
+| Document                           | Description                       |
+| ---------------------------------- | --------------------------------- |
 | **[CHANGELOG.md](./CHANGELOG.md)** | Version history and release notes |
-| **[SECURITY.md](./SECURITY.md)** | Security policies and reporting |
-| **[LICENSE.md](./LICENSE.md)** | License information |
+| **[SECURITY.md](./SECURITY.md)**   | Security policies and reporting   |
+| **[LICENSE.md](./LICENSE.md)**     | License information               |
 
 ## Key Features
 
 ### 🎯 Setup Wizard
+
 - **6-step guided configuration** with progress tracking
 - **Auto-save** functionality preserves changes instantly
 - **Smart defaults** based on environment (dev/staging/prod)
@@ -71,12 +73,14 @@ nself-admin provides a powerful, user-friendly interface for configuring, buildi
 - **Visual builders** for cron schedules and service configuration
 
 ### 🔧 Service Management
+
 - **Core Services**: PostgreSQL, Hasura, Auth, Nginx (always enabled)
 - **Optional Services**: Redis, Storage, Search, Monitoring, Email
 - **Custom Services**: Add your own backend services
 - **Frontend Apps**: Configure multiple frontend applications
 
 ### 📊 Monitoring & Management
+
 - **Real-time logs** from all services
 - **Service health** monitoring
 - **Database management** tools
@@ -84,6 +88,7 @@ nself-admin provides a powerful, user-friendly interface for configuring, buildi
 - **Resource usage** tracking
 
 ### 🔒 Security
+
 - **Admin authentication** with secure sessions
 - **Secret management** with proper validation
 - **Environment isolation** (dev/staging/prod)
@@ -137,6 +142,7 @@ See [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) for complete referenc
 The setup wizard guides you through 6 configuration steps:
 
 ### Step 1: Basic Settings
+
 - Project name and description
 - Environment selection (dev/staging/prod)
 - Domain configuration
@@ -144,11 +150,13 @@ The setup wizard guides you through 6 configuration steps:
 - Automated backup configuration
 
 ### Step 2: Core Services
+
 - View required services
 - Configure advanced settings
 - PostgreSQL, Hasura, Auth, Nginx
 
 ### Step 3: Optional Services
+
 - Storage (MinIO)
 - Redis Cache
 - Search Services (6 engines)
@@ -157,18 +165,21 @@ The setup wizard guides you through 6 configuration steps:
 - nself Admin UI
 
 ### Step 4: Custom Services
+
 - Add backend services
 - Select framework/language
 - Configure ports and routes
 - Set resource limits
 
 ### Step 5: Frontend Applications
+
 - Configure external apps
 - Set unique ports (required!)
 - Define table prefixes
 - Setup Hasura remote schemas
 
 ### Step 6: Review & Build
+
 - Review complete configuration
 - View service summary
 - Initiate build process
@@ -180,13 +191,13 @@ See [WIZARD_GUIDE.md](./WIZARD_GUIDE.md) for detailed information.
 
 ### Common Issues
 
-| Issue | Solution |
-|-------|----------|
-| Port conflicts | Use different ports or stop conflicting services |
-| Build failures | Check Docker daemon and required variables |
-| Service won't start | Verify credentials and check logs |
-| Auto-save stuck | Check file permissions and API endpoints |
-| Variables not loading | Verify file location and syntax |
+| Issue                 | Solution                                         |
+| --------------------- | ------------------------------------------------ |
+| Port conflicts        | Use different ports or stop conflicting services |
+| Build failures        | Check Docker daemon and required variables       |
+| Service won't start   | Verify credentials and check logs                |
+| Auto-save stuck       | Check file permissions and API endpoints         |
+| Variables not loading | Verify file location and syntax                  |
 
 See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for comprehensive solutions.
 
@@ -278,18 +289,21 @@ npm run lint
 Key API routes for wizard and management:
 
 ### Wizard APIs
+
 - `GET /api/wizard/init` - Load configuration
 - `POST /api/wizard/update-env` - Save configuration
 - `GET /api/wizard/load-env` - Read environment files
 - `POST /api/wizard/reset` - Reset configuration
 
 ### Project APIs
+
 - `GET /api/project/status` - Project status
 - `POST /api/nself/build` - Build project
 - `POST /api/nself/start` - Start services
 - `GET /api/docker/status` - Service status
 
 ### Auth APIs
+
 - `POST /api/auth/login` - Admin login
 - `POST /api/auth/logout` - Admin logout
 - `GET /api/auth/session` - Check session
@@ -376,6 +390,6 @@ lsof -i :3100         # Check port usage
 
 ---
 
-*Documentation Version: 1.0.0*
-*Last Updated: 2025-01-05*
-*Specification: nself Environment Variable Specification v1.0*
+_Documentation Version: 1.0.0_
+_Last Updated: 2025-01-05_
+_Specification: nself Environment Variable Specification v1.0_

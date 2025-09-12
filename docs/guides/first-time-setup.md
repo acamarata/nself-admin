@@ -47,18 +47,21 @@ When you first access nAdmin, you'll see the password setup screen:
 ### Password Requirements
 
 #### Development Environment
-Detected when running on localhost or *.local domains:
+
+Detected when running on localhost or \*.local domains:
+
 - Minimum 3 characters
 - No complexity requirements
 - Simplified for quick testing
 
 #### Production Environment
+
 - Minimum 12 characters
 - Must contain:
   - At least one uppercase letter (A-Z)
   - At least one lowercase letter (a-z)
   - At least one number (0-9)
-  - At least one special character (@$!%*?&)
+  - At least one special character (@$!%\*?&)
 
 Example strong password: `MyS3cur3P@ssw0rd!`
 
@@ -75,13 +78,14 @@ Project Information:
   Name: my-awesome-app
   Environment: development
   Region: us-east-1
-  
+
 Organization:
   Name: My Company
   Domain: example.com
 ```
 
 **Fields:**
+
 - **Project Name**: Used for container naming and identification
 - **Environment**: Development, staging, or production
 - **Region**: Deployment region (affects default configurations)
@@ -96,7 +100,7 @@ Database Settings:
   Type: PostgreSQL
   Version: 15
   Port: 5432
-  
+
 Initial Setup:
   Database Name: app_db
   Username: app_user
@@ -105,6 +109,7 @@ Initial Setup:
 ```
 
 **Options:**
+
 - **Auto-migrate**: Run migrations on startup
 - **Seed Data**: Load sample data for development
 - **SSL Mode**: Enable for production
@@ -114,19 +119,20 @@ Initial Setup:
 
 Choose which services to include:
 
-| Service | Description | Default |
-|---------|-------------|---------|
-| **PostgreSQL** | Primary database | ✅ |
-| **Redis** | Caching and sessions | ✅ |
-| **Hasura** | GraphQL engine | ✅ |
-| **MinIO** | S3-compatible storage | ✅ |
-| **Auth Service** | Authentication | ✅ |
-| **NestJS API** | Backend API | ✅ |
-| **BullMQ** | Job queue | ✅ |
-| **Nginx** | Reverse proxy | ✅ |
-| **MailHog** | Email testing | ⬜ |
+| Service          | Description           | Default |
+| ---------------- | --------------------- | ------- |
+| **PostgreSQL**   | Primary database      | ✅      |
+| **Redis**        | Caching and sessions  | ✅      |
+| **Hasura**       | GraphQL engine        | ✅      |
+| **MinIO**        | S3-compatible storage | ✅      |
+| **Auth Service** | Authentication        | ✅      |
+| **NestJS API**   | Backend API           | ✅      |
+| **BullMQ**       | Job queue             | ✅      |
+| **Nginx**        | Reverse proxy         | ✅      |
+| **MailHog**      | Email testing         | ⬜      |
 
 **Service Groups:**
+
 - **Essential**: PostgreSQL, Redis, Auth
 - **API Layer**: Hasura, NestJS
 - **Storage**: MinIO
@@ -143,7 +149,7 @@ Summary:
   Environment: development
   Services: 9 selected
   Database: PostgreSQL 15
-  
+
 Estimated Build Time: 3-5 minutes
 Disk Space Required: ~2GB
 ```
@@ -173,12 +179,15 @@ Building nself project...
 ### What's Happening
 
 1. **Project Initialization**
+
    ```bash
    nself init
    ```
+
    Creates project structure and configuration files
 
 2. **Environment Setup**
+
    ```bash
    # Creates .env files with:
    - Database credentials
@@ -188,6 +197,7 @@ Building nself project...
    ```
 
 3. **Docker Image Pull**
+
    ```bash
    docker pull postgres:15-alpine
    docker pull redis:7-alpine
@@ -203,6 +213,7 @@ Building nself project...
 ### Build Completion
 
 Once complete, you'll see:
+
 ```
 ✅ Build completed successfully!
 
@@ -257,6 +268,7 @@ Action: Check PostgreSQL is running
 ```
 
 **Common Issues:**
+
 - Port conflicts: Change port in configuration
 - Memory limits: Increase Docker resources
 - Network issues: Check Docker network settings
@@ -285,6 +297,7 @@ The dashboard displays:
 ### Service Cards
 
 Each service shows:
+
 - **Status**: Running, Stopped, Error
 - **Health**: Healthy, Unhealthy, Unknown
 - **Actions**: Start, Stop, Restart, Logs
@@ -294,12 +307,12 @@ Each service shows:
 
 Access your services:
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **Hasura Console** | http://localhost:8080 | Admin secret in env |
-| **MinIO Console** | http://localhost:9001 | minioadmin/minioadmin |
-| **PostgreSQL** | localhost:5432 | app_user/[generated] |
-| **Redis** | localhost:6379 | No auth (dev) |
+| Service            | URL                   | Credentials           |
+| ------------------ | --------------------- | --------------------- |
+| **Hasura Console** | http://localhost:8080 | Admin secret in env   |
+| **MinIO Console**  | http://localhost:9001 | minioadmin/minioadmin |
+| **PostgreSQL**     | localhost:5432        | app_user/[generated]  |
+| **Redis**          | localhost:6379        | No auth (dev)         |
 
 ## Step 7: Verify Installation
 
@@ -375,6 +388,7 @@ redis-cli FLUSHALL
 ### 4. Security Hardening
 
 For production:
+
 1. Change default passwords
 2. Enable SSL/TLS
 3. Configure firewall rules
@@ -427,7 +441,6 @@ After resetting, navigate to http://localhost:3021 and you'll be prompted to set
   - Cached project information
   - Audit logs
   - Any other stored configuration
-  
 - **Project Data Safe**: Your actual nself project data is never affected by password reset
 
 - **Container Must Be Running**: For the CLI reset command to work, the nAdmin container must be running
@@ -437,6 +450,7 @@ After resetting, navigate to http://localhost:3021 and you'll be prompted to set
 ### Issue: Can't Access Dashboard
 
 **Solution:**
+
 ```bash
 # Check if container is running
 docker ps | grep nself-admin
@@ -451,6 +465,7 @@ docker restart nself-admin
 ### Issue: Services Won't Start
 
 **Solution:**
+
 ```bash
 # Check Docker resources
 docker system df
@@ -463,6 +478,7 @@ docker system prune -a
 ### Issue: Database Connection Failed
 
 **Solution:**
+
 ```bash
 # Check PostgreSQL is running
 docker ps | grep postgres
@@ -477,6 +493,7 @@ cat .env | grep DATABASE_URL
 ### Issue: Port Already in Use
 
 **Solution:**
+
 ```bash
 # Find what's using the port
 lsof -i :3021

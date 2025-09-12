@@ -45,7 +45,7 @@ export class PostgresCollector {
     data: PostgresStats | null
     timestamp: number
   } = { data: null, timestamp: 0 }
-  
+
   private readonly CACHE_TTL = 5000 // 5 seconds cache
   private readonly containerName = 'nself_postgres' // Default container name
 
@@ -54,16 +54,16 @@ export class PostgresCollector {
    */
   async collect(): Promise<PostgresStats> {
     const now = Date.now()
-    
+
     // Return cached if fresh
-    if (this.cache.data && (now - this.cache.timestamp) < this.CACHE_TTL) {
+    if (this.cache.data && now - this.cache.timestamp < this.CACHE_TTL) {
       return this.cache.data
     }
 
     try {
       // Check if container is running
       const isRunning = await this.checkContainerStatus()
-      
+
       if (!isRunning) {
         return this.getEmptyStats('stopped')
       }
@@ -72,7 +72,7 @@ export class PostgresCollector {
       const [connections, databases, performance] = await Promise.all([
         this.getConnectionStats(),
         this.getDatabaseStats(),
-        this.getPerformanceStats()
+        this.getPerformanceStats(),
       ])
 
       const result: PostgresStats = {
@@ -84,7 +84,7 @@ export class PostgresCollector {
 
       // Update cache
       this.cache = { data: result, timestamp: now }
-      
+
       return result
     } catch (error) {
       return this.getEmptyStats('unhealthy')
@@ -98,7 +98,7 @@ export class PostgresCollector {
     try {
       const { stdout } = await this.execWithTimeout(
         `docker ps --filter "name=${this.containerName}" --format "{{.Status}}"`,
-        2000
+        2000,
       )
       return stdout.trim().toLowerCase().includes('up')
     } catch {
@@ -118,21 +118,24 @@ export class PostgresCollector {
           (SELECT count(*) FROM pg_stat_activity WHERE state = 'idle') as idle,
           (SELECT setting::int FROM pg_settings WHERE name = 'max_connections') as max
       `
-      
+
       const { stdout } = await this.execWithTimeout(
         `docker exec ${this.containerName} psql -U postgres -d nself -t -c "${query}"`,
-        5000
+        5000,
       )
-      
+
       // Parse output (format: "active | idle | max")
-      const [active, idle, max] = stdout.trim().split('|').map(s => parseInt(s.trim()) || 0)
+      const [active, idle, max] = stdout
+        .trim()
+        .split('|')
+        .map((s) => parseInt(s.trim()) || 0)
       const total = active + idle
-      
+
       return {
         active,
         idle,
         max,
-        percentage: Math.round((total / max) * 100)
+        percentage: Math.round((total / max) * 100),
       }
     } catch (error) {
       return { active: 0, idle: 0, max: 100, percentage: 0 }
@@ -154,27 +157,30 @@ export class PostgresCollector {
         WHERE datname NOT IN ('template0', 'template1', 'postgres')
         ORDER BY pg_database_size(datname) DESC
       `
-      
+
       const { stdout } = await this.execWithTimeout(
         `docker exec ${this.containerName} psql -U postgres -t -c "${query}"`,
-        5000
+        5000,
       )
-      
-      const lines = stdout.trim().split('\n').filter(l => l.trim())
+
+      const lines = stdout
+        .trim()
+        .split('\n')
+        .filter((l) => l.trim())
       const databases: DatabaseInfo[] = []
       let totalSize = 0
-      
+
       for (const line of lines) {
-        const parts = line.split('|').map(s => s.trim())
+        const parts = line.split('|').map((s) => s.trim())
         if (parts.length >= 3) {
           const [name, size, tableCount] = parts
           databases.push({
             name,
             size,
             tableCount: parseInt(tableCount) || 0,
-            connections: 0 // Would need separate query per DB
+            connections: 0, // Would need separate query per DB
           })
-          
+
           // Parse size for total
           const sizeMatch = size.match(/([0-9.]+)\s*([A-Z]+)/i)
           if (sizeMatch) {
@@ -186,18 +192,18 @@ export class PostgresCollector {
           }
         }
       }
-      
+
       // Get total database size
       const totalQuery = `SELECT pg_size_pretty(sum(pg_database_size(datname))) FROM pg_database`
       const { stdout: totalOut } = await this.execWithTimeout(
         `docker exec ${this.containerName} psql -U postgres -t -c "${totalQuery}"`,
-        5000
+        5000,
       )
-      
+
       return {
         count: databases.length,
         totalSize: totalOut.trim() || '0 MB',
-        list: databases
+        list: databases,
       }
     } catch (error) {
       return { count: 0, totalSize: '0 MB', list: [] }
@@ -217,29 +223,30 @@ export class PostgresCollector {
           (SELECT ROUND(100.0 * sum(blks_hit) / NULLIF(sum(blks_hit + blks_read), 0), 2) FROM pg_stat_database) as cache_hit_ratio,
           (SELECT ROUND(sum(xact_commit + xact_rollback) / NULLIF(EXTRACT(epoch FROM now() - stats_reset), 0), 2) FROM pg_stat_database WHERE stats_reset IS NOT NULL) as tps
       `
-      
+
       const { stdout } = await this.execWithTimeout(
         `docker exec ${this.containerName} psql -U postgres -d nself -t -c "${query}"`,
-        5000
+        5000,
       )
-      
+
       // Parse output
-      const [activeQueries, slowQueries, cacheHitRatio, tps] = stdout.trim()
+      const [activeQueries, slowQueries, cacheHitRatio, tps] = stdout
+        .trim()
         .split('|')
-        .map(s => parseFloat(s.trim()) || 0)
-      
+        .map((s) => parseFloat(s.trim()) || 0)
+
       return {
         activeQueries: Math.round(activeQueries),
         slowQueries: Math.round(slowQueries),
         cacheHitRatio: Math.round(cacheHitRatio * 10) / 10,
-        transactionsPerSecond: Math.round(tps * 10) / 10
+        transactionsPerSecond: Math.round(tps * 10) / 10,
       }
     } catch (error) {
       return {
         activeQueries: 0,
         slowQueries: 0,
         cacheHitRatio: 0,
-        transactionsPerSecond: 0
+        transactionsPerSecond: 0,
       }
     }
   }
@@ -247,7 +254,9 @@ export class PostgresCollector {
   /**
    * Get empty stats with status
    */
-  private getEmptyStats(status: 'healthy' | 'unhealthy' | 'stopped'): PostgresStats {
+  private getEmptyStats(
+    status: 'healthy' | 'unhealthy' | 'stopped',
+  ): PostgresStats {
     return {
       status,
       connections: { active: 0, idle: 0, max: 100, percentage: 0 },
@@ -256,15 +265,18 @@ export class PostgresCollector {
         activeQueries: 0,
         slowQueries: 0,
         cacheHitRatio: 0,
-        transactionsPerSecond: 0
-      }
+        transactionsPerSecond: 0,
+      },
     }
   }
 
   /**
    * Execute command with timeout
    */
-  private execWithTimeout(command: string, timeout: number): Promise<{ stdout: string; stderr: string }> {
+  private execWithTimeout(
+    command: string,
+    timeout: number,
+  ): Promise<{ stdout: string; stderr: string }> {
     return new Promise((resolve, reject) => {
       const child = exec(command, (error, stdout, stderr) => {
         if (error) {
@@ -273,12 +285,12 @@ export class PostgresCollector {
           resolve({ stdout, stderr })
         }
       })
-      
+
       const timer = setTimeout(() => {
         child.kill()
         reject(new Error(`Command timed out: ${command}`))
       }, timeout)
-      
+
       child.on('exit', () => {
         clearTimeout(timer)
       })

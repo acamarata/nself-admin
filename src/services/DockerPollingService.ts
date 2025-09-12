@@ -7,24 +7,24 @@ import { useProjectStore } from '@/stores/projectStore'
 class DockerPollingService {
   private intervalId: NodeJS.Timeout | null = null
   private isPolling = false
-  
+
   // Start polling Docker stats every second
   start() {
     if (this.isPolling) {
       return
     }
-    
+
     this.isPolling = true
-    
+
     // Initial fetch
     this.fetchDockerStats()
-    
+
     // Poll every second
     this.intervalId = setInterval(() => {
       this.fetchDockerStats()
     }, 1000)
   }
-  
+
   // Stop polling
   stop() {
     if (this.intervalId) {
@@ -33,57 +33,57 @@ class DockerPollingService {
       this.isPolling = false
     }
   }
-  
+
   // Fetch Docker stats and update store
   private async fetchDockerStats() {
     const store = useProjectStore.getState()
-    
+
     // Only fetch if project is running
     if (store.projectStatus !== 'running') {
       return
     }
-    
+
     try {
       // Fetch all metrics and containers in parallel
       const [metricsRes, containersRes] = await Promise.all([
         fetch('/api/system/metrics'),
-        fetch('/api/docker/containers?detailed=true&stats=false')
+        fetch('/api/docker/containers?detailed=true&stats=false'),
       ])
-      
+
       let metricsData: any = null
       let containersData: any = null
-      
+
       if (metricsRes.ok) {
         metricsData = await metricsRes.json()
-        
+
         if (metricsData.success && metricsData.data) {
           // Update store with fresh metrics
-          store.updateCachedData({ 
+          store.updateCachedData({
             systemMetrics: metricsData.data,
-            lastDockerUpdate: Date.now()
+            lastDockerUpdate: Date.now(),
           })
         }
       }
-      
+
       if (containersRes.ok) {
         containersData = await containersRes.json()
-        
+
         if (containersData.success && containersData.data) {
           // Update store with container data
-          store.updateCachedData({ 
-            containerStats: containersData.data || []
+          store.updateCachedData({
+            containerStats: containersData.data || [],
           })
-          
+
           // Log only occasionally to avoid spam
-          if (Math.random() < 0.1 && metricsData) { // 10% chance
+          if (Math.random() < 0.1 && metricsData) {
+            // 10% chance
             // Metrics logging removed
           }
         }
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   }
-  
+
   // Check if service is running
   isRunning() {
     return this.isPolling
@@ -108,13 +108,13 @@ if (typeof window !== 'undefined') {
       }
     }
   })
-  
+
   // Start if already running
   const currentStatus = useProjectStore.getState().projectStatus
   if (currentStatus === 'running') {
     dockerPollingService.start()
   }
-  
+
   // Cleanup on page unload
   window.addEventListener('beforeunload', () => {
     dockerPollingService.stop()

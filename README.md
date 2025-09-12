@@ -33,6 +33,7 @@ Access the dashboard at http://localhost:3021
 ## ✨ Features
 
 ### Core Functionality
+
 - **🔐 Secure Authentication** - Database-backed sessions with bcrypt password hashing
 - **🚀 Project Setup Wizard** - 4-step guided setup for new projects
 - **📊 Real-time Dashboard** - Monitor all services and system metrics
@@ -43,6 +44,7 @@ Access the dashboard at http://localhost:3021
 - **🔍 Log Viewer** - Real-time log streaming from all services
 
 ### Architecture Highlights
+
 - **Zero Footprint** - Never writes to your project directory
 - **Self-Contained** - All state stored in embedded LokiJS database
 - **Docker-First** - Designed to run in containers
@@ -90,11 +92,13 @@ Access the dashboard at http://localhost:3021
 If you need to reset the admin password:
 
 ### Option 1: Using nself CLI (coming soon)
+
 ```bash
 nself admin reset-password
 ```
 
 ### Option 2: Manual Reset
+
 ```bash
 # Stop the container
 docker stop nself-admin
@@ -154,6 +158,7 @@ docker pull acamarata/nself-admin:0.0.3
 ```
 
 Multi-architecture support:
+
 - `linux/amd64`
 - `linux/arm64`
 - `linux/arm/v7`
@@ -161,6 +166,7 @@ Multi-architecture support:
 ## 🗺️ Roadmap
 
 ### Version 0.0.x (Alpha)
+
 - ✅ Basic authentication and session management
 - ✅ LokiJS database integration
 - ✅ Project setup wizard
@@ -169,6 +175,7 @@ Multi-architecture support:
 - ⬜ WebSocket real-time updates
 
 ### Version 0.1.x (Beta)
+
 - ⬜ Multi-user support
 - ⬜ Role-based access control
 - ⬜ Backup/restore functionality
@@ -176,6 +183,7 @@ Multi-architecture support:
 - ⬜ Custom service templates
 
 ### Version 1.0.0 (Stable)
+
 - ⬜ Production-ready features
 - ⬜ Comprehensive test coverage
 - ⬜ Performance optimizations
@@ -186,6 +194,7 @@ Multi-architecture support:
 See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 
 ### Latest: v0.0.3 (2025-01-29)
+
 - 🎯 LokiJS database for all application state
 - 🔐 Improved authentication with database-backed sessions
 - 🚀 4-step project setup wizard
@@ -197,6 +206,7 @@ See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 We welcome contributions! Please see our [Contributing Guide](docs/development/contributing.md) for details.
 
 ### Development Workflow
+
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
@@ -206,6 +216,7 @@ We welcome contributions! Please see our [Contributing Guide](docs/development/c
 ## 📄 License
 
 This project uses a dual licensing model:
+
 - **Free for personal, educational, and non-commercial use**
 - **Commercial license required for business use**
 

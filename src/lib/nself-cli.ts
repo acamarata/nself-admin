@@ -19,9 +19,9 @@ export async function checkNselfCLI(): Promise<boolean> {
       '/usr/local/bin/nself',
       '/usr/bin/nself',
       '~/.nself/bin/nself',
-      '/opt/nself/bin/nself'
+      '/opt/nself/bin/nself',
     ]
-    
+
     for (const path of paths) {
       try {
         await execAsync(`test -f ${path}`)
@@ -43,11 +43,11 @@ export async function getNselfPath(): Promise<string> {
     // Try common paths
     const paths = [
       '/usr/local/bin/nself',
-      '/usr/bin/nself', 
+      '/usr/bin/nself',
       `${process.env.HOME}/.nself/bin/nself`,
-      '/opt/nself/bin/nself'
+      '/opt/nself/bin/nself',
     ]
-    
+
     for (const path of paths) {
       try {
         await execAsync(`test -x ${path}`)
@@ -64,33 +64,37 @@ export async function getNselfPath(): Promise<string> {
 export async function executeNselfCommand(
   command: string,
   args: string[] = [],
-  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {}
+  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
 ): Promise<{ stdout: string; stderr: string; code: number }> {
   const nselfPath = await getNselfPath()
   const cwd = options.cwd || process.env.PROJECT_PATH || '/project'
-  
+
   return new Promise((resolve, reject) => {
     const fullCommand = `${nselfPath} ${command} ${args.join(' ')}`
-    
-    exec(fullCommand, {
-      cwd,
-      env: { ...process.env, ...options.env }
-    }, (error, stdout, stderr) => {
-      if (error && error.code !== 0) {
-        // Some commands return non-zero on expected conditions
-        resolve({
-          stdout: stdout || '',
-          stderr: stderr || error.message,
-          code: error.code || 1
-        })
-      } else {
-        resolve({
-          stdout: stdout || '',
-          stderr: stderr || '',
-          code: 0
-        })
-      }
-    })
+
+    exec(
+      fullCommand,
+      {
+        cwd,
+        env: { ...process.env, ...options.env },
+      },
+      (error, stdout, stderr) => {
+        if (error && error.code !== 0) {
+          // Some commands return non-zero on expected conditions
+          resolve({
+            stdout: stdout || '',
+            stderr: stderr || error.message,
+            code: error.code || 1,
+          })
+        } else {
+          resolve({
+            stdout: stdout || '',
+            stderr: stderr || '',
+            code: 0,
+          })
+        }
+      },
+    )
   })
 }
 
@@ -99,30 +103,30 @@ export function streamNselfCommand(
   command: string,
   args: string[] = [],
   onData: (data: string, type: 'stdout' | 'stderr') => void,
-  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {}
+  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
 ): Promise<{ code: number }> {
   return new Promise(async (resolve, reject) => {
     try {
       const nselfPath = await getNselfPath()
       const cwd = options.cwd || process.env.PROJECT_PATH || '/project'
-      
+
       const child = spawn(nselfPath, [command, ...args], {
         cwd,
-        env: { ...process.env, ...options.env }
+        env: { ...process.env, ...options.env },
       })
-      
+
       child.stdout.on('data', (data) => {
         onData(data.toString(), 'stdout')
       })
-      
+
       child.stderr.on('data', (data) => {
         onData(data.toString(), 'stderr')
       })
-      
+
       child.on('close', (code) => {
         resolve({ code: code || 0 })
       })
-      
+
       child.on('error', (error) => {
         reject(error)
       })
@@ -141,26 +145,27 @@ export const nselfCommands = {
   stop: (args: string[] = []) => executeNselfCommand('stop', args),
   restart: (args: string[] = []) => executeNselfCommand('restart', args),
   reset: (args: string[] = []) => executeNselfCommand('reset', args),
-  
+
   // Status and monitoring
   status: (args: string[] = []) => executeNselfCommand('status', args),
-  logs: (service?: string) => executeNselfCommand('logs', service ? [service] : []),
+  logs: (service?: string) =>
+    executeNselfCommand('logs', service ? [service] : []),
   doctor: () => executeNselfCommand('doctor'),
-  
+
   // Database
-  db: (subcommand: string, args: string[] = []) => 
+  db: (subcommand: string, args: string[] = []) =>
     executeNselfCommand('db', [subcommand, ...args]),
-  
+
   // Backup
   backup: (args: string[] = []) => executeNselfCommand('backup', args),
-  
+
   // Configuration
   email: (args: string[] = []) => executeNselfCommand('email', args),
   ssl: (args: string[] = []) => executeNselfCommand('ssl', args),
-  
+
   // Deployment
   deploy: (args: string[] = []) => executeNselfCommand('deploy', args),
-  
+
   // Version
   version: () => executeNselfCommand('version'),
   update: () => executeNselfCommand('update'),

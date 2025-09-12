@@ -7,7 +7,7 @@
  */
 function getCSRFToken(): string | null {
   if (typeof document === 'undefined') return null
-  
+
   const cookies = document.cookie.split(';')
   for (const cookie of cookies) {
     const [name, value] = cookie.trim().split('=')
@@ -23,39 +23,40 @@ function getCSRFToken(): string | null {
  */
 export async function apiRequest(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<Response> {
   const csrfToken = getCSRFToken()
-  
+
   const headers = new Headers(options.headers)
-  
+
   // Add CSRF token if available and it's a state-changing request
-  if (csrfToken && options.method && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method)) {
+  if (
+    csrfToken &&
+    options.method &&
+    ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method)
+  ) {
     headers.set('x-csrf-token', csrfToken)
   }
-  
+
   // Add JSON content type if body is present and not FormData
   if (options.body && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json')
   }
-  
+
   return fetch(url, {
     ...options,
     headers,
-    credentials: 'same-origin' // Include cookies
+    credentials: 'same-origin', // Include cookies
   })
 }
 
 /**
  * Make a POST request with CSRF protection
  */
-export async function apiPost(
-  url: string,
-  body?: any
-): Promise<Response> {
+export async function apiPost(url: string, body?: any): Promise<Response> {
   return apiRequest(url, {
     method: 'POST',
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
   })
 }
 
@@ -76,12 +77,9 @@ export async function apiDelete(url: string): Promise<Response> {
 /**
  * Make a PUT request with CSRF protection
  */
-export async function apiPut(
-  url: string,
-  body?: any
-): Promise<Response> {
+export async function apiPut(url: string, body?: any): Promise<Response> {
   return apiRequest(url, {
     method: 'PUT',
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? JSON.stringify(body) : undefined,
   })
 }

@@ -83,10 +83,10 @@ class WebSocketService extends EventEmitter {
         this.isConnected = true
         this.reconnectAttempts = 0
         this.emit('connected')
-        
+
         this.startPing()
-        
-        this.subscriptions.forEach(topic => {
+
+        this.subscriptions.forEach((topic) => {
           this.subscribe(topic)
         })
       }
@@ -95,8 +95,7 @@ class WebSocketService extends EventEmitter {
         try {
           const message: WebSocketMessage = JSON.parse(event.data)
           this.handleMessage(message)
-        } catch (error) {
-        }
+        } catch (error) {}
       }
 
       this.ws.onerror = (error) => {
@@ -166,7 +165,7 @@ class WebSocketService extends EventEmitter {
 
     const delay = Math.min(
       this.reconnectDelay * Math.pow(2, this.reconnectAttempts),
-      30000
+      30000,
     )
 
     this.reconnectTimer = setTimeout(() => {
@@ -188,7 +187,7 @@ class WebSocketService extends EventEmitter {
     if (this.isConnected) {
       this.send({
         type: 'subscribe',
-        topic
+        topic,
       })
     }
   }
@@ -198,7 +197,7 @@ class WebSocketService extends EventEmitter {
     if (this.isConnected) {
       this.send({
         type: 'unsubscribe',
-        topic
+        topic,
       })
     }
   }
@@ -208,9 +207,9 @@ class WebSocketService extends EventEmitter {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
     }
-    
+
     this.stopPing()
-    
+
     if (this.ws) {
       this.ws.close()
       this.ws = null

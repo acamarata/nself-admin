@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 interface SystemMetrics {
   system: {
@@ -42,7 +42,7 @@ export function useSystemMetrics(refreshInterval: number = 5000) {
       setError(null)
       const response = await fetch('/api/system/metrics')
       const result = await response.json()
-      
+
       if (result.success) {
         setData(result.data)
       } else {
@@ -57,7 +57,7 @@ export function useSystemMetrics(refreshInterval: number = 5000) {
 
   useEffect(() => {
     fetchMetrics()
-    
+
     const interval = setInterval(fetchMetrics, refreshInterval)
     return () => clearInterval(interval)
   }, [refreshInterval])
@@ -66,6 +66,6 @@ export function useSystemMetrics(refreshInterval: number = 5000) {
     data,
     loading,
     error,
-    refetch: fetchMetrics
+    refetch: fetchMetrics,
   }
 }

@@ -53,7 +53,7 @@ services:
     container_name: nself-admin
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - '3001:3001'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./:/project:rw
@@ -63,31 +63,31 @@ services:
     networks:
       - nself-network
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.admin.rule=Host(`admin.${BASE_DOMAIN}`)"
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.admin.rule=Host(`admin.${BASE_DOMAIN}`)'
 ```
 
 ## Configuration
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ADMIN_PASSWORD` | Admin interface password | (required) |
-| `ADMIN_PORT` | Port to expose admin interface | 3001 |
-| `PROJECT_PATH` | Path to nself project | /project |
-| `AUTO_UPDATE` | Enable automatic updates | true |
-| `UPDATE_CHECK_INTERVAL` | Hours between update checks | 6 |
-| `NODE_ENV` | Environment mode | production |
-| `TZ` | Timezone | UTC |
+| Variable                | Description                    | Default    |
+| ----------------------- | ------------------------------ | ---------- |
+| `ADMIN_PASSWORD`        | Admin interface password       | (required) |
+| `ADMIN_PORT`            | Port to expose admin interface | 3001       |
+| `PROJECT_PATH`          | Path to nself project          | /project   |
+| `AUTO_UPDATE`           | Enable automatic updates       | true       |
+| `UPDATE_CHECK_INTERVAL` | Hours between update checks    | 6          |
+| `NODE_ENV`              | Environment mode               | production |
+| `TZ`                    | Timezone                       | UTC        |
 
 ### Volume Mounts
 
-| Mount Point | Description | Required |
-|-------------|-------------|----------|
-| `/var/run/docker.sock` | Docker socket for container management | Yes |
-| `/project` | Your nself project directory | Yes |
-| `/data` | Persistent data storage | No |
+| Mount Point            | Description                            | Required |
+| ---------------------- | -------------------------------------- | -------- |
+| `/var/run/docker.sock` | Docker socket for container management | Yes      |
+| `/project`             | Your nself project directory           | Yes      |
+| `/data`                | Persistent data storage                | No       |
 
 ## Features
 
@@ -113,21 +113,25 @@ services:
 The admin interface exposes several API endpoints for integration:
 
 ### Health & Status
+
 - `GET /api/health` - Health check endpoint
 - `GET /api/version` - Version information
 - `GET /api/project/status` - Project status
 
 ### Service Management
+
 - `GET /api/docker/containers` - List containers
 - `POST /api/docker/containers/{id}/start` - Start container
 - `POST /api/docker/containers/{id}/stop` - Stop container
 - `POST /api/docker/containers/{id}/restart` - Restart container
 
 ### Configuration
+
 - `GET /api/config/env` - Get environment configuration
 - `POST /api/config/env` - Update environment configuration
 
 ### Updates
+
 - `GET /api/version` - Check for updates
 - `POST /api/version` - Perform update
 
@@ -168,13 +172,13 @@ Current stable version: `1.0.0-beta.3`
 
 ## Docker Image Tags
 
-| Tag | Description |
-|-----|-------------|
-| `latest` | Latest stable release |
-| `1.0.0-beta.3` | Specific version |
-| `1.0` | Latest 1.0.x version |
-| `beta` | Latest beta release |
-| `dev` | Development build (unstable) |
+| Tag            | Description                  |
+| -------------- | ---------------------------- |
+| `latest`       | Latest stable release        |
+| `1.0.0-beta.3` | Specific version             |
+| `1.0`          | Latest 1.0.x version         |
+| `beta`         | Latest beta release          |
+| `dev`          | Development build (unstable) |
 
 ## Platform Support
 

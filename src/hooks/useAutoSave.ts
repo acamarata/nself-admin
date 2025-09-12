@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react'
 import { debounce } from 'lodash'
+import { useCallback, useEffect, useRef } from 'react'
 
 interface AutoSaveOptions {
   onSave: () => Promise<void> | void
@@ -9,16 +9,16 @@ interface AutoSaveOptions {
 
 export function useAutoSave(
   data: any,
-  { onSave, delay = 500, enabled = true }: AutoSaveOptions
+  { onSave, delay = 500, enabled = true }: AutoSaveOptions,
 ) {
   const isFirstRender = useRef(true)
   const saveInProgress = useRef(false)
-  
+
   // Create debounced save function
   const debouncedSave = useRef(
     debounce(async () => {
       if (saveInProgress.current) return
-      
+
       try {
         saveInProgress.current = true
         await onSave()
@@ -27,25 +27,25 @@ export function useAutoSave(
       } finally {
         saveInProgress.current = false
       }
-    }, delay)
+    }, delay),
   ).current
-  
+
   // Save on data changes (but skip first render)
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false
       return
     }
-    
+
     if (enabled) {
       debouncedSave()
     }
-    
+
     return () => {
       debouncedSave.cancel()
     }
   }, [data, enabled, debouncedSave])
-  
+
   // Save immediately function (for navigation, etc)
   const saveNow = useCallback(async () => {
     debouncedSave.cancel()
@@ -53,7 +53,7 @@ export function useAutoSave(
       await onSave()
     }
   }, [debouncedSave, onSave])
-  
+
   // Save on window unload
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -63,13 +63,13 @@ export function useAutoSave(
         onSave()
       }
     }
-    
+
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [debouncedSave, onSave])
-  
+
   return {
     saveNow,
-    isSaving: saveInProgress.current
+    isSaving: saveInProgress.current,
   }
 }

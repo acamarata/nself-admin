@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { exec } from 'child_process'
+import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
 
 const execAsync = promisify(exec)
@@ -32,19 +32,17 @@ export async function GET(request: NextRequest) {
       default:
         return NextResponse.json(
           { success: false, error: `Unknown action: ${action}` },
-          { status: 400 }
+          { status: 400 },
         )
     }
-
   } catch (error: any) {
-    
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Monitoring operation failed',
-        details: error?.message || "Unknown error"
+        details: error?.message || 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -65,19 +63,17 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json(
           { success: false, error: `Unknown action: ${action}` },
-          { status: 400 }
+          { status: 400 },
         )
     }
-
   } catch (error: any) {
-    
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Monitoring operation failed',
-        details: error?.message || "Unknown error"
+        details: error?.message || 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -87,19 +83,20 @@ async function getMonitoringDashboard() {
     const projectPath = process.env.PROJECT_PATH || '/project'
 
     // Get comprehensive system overview
-    const [systemMetrics, dockerStats, serviceHealth, resourceUsage] = await Promise.all([
-      getSystemMetricsData(),
-      getDockerStatsData(),
-      getServiceHealthData(),
-      getResourceUsageData()
-    ])
+    const [systemMetrics, dockerStats, serviceHealth, resourceUsage] =
+      await Promise.all([
+        getSystemMetricsData(),
+        getDockerStatsData(),
+        getServiceHealthData(),
+        getResourceUsageData(),
+      ])
 
     // Get recent alerts
     const alerts = await getRecentAlerts()
 
     // Get service status from nself
     const { stdout: nselfStatus } = await execAsync(
-      `cd ${projectPath} && nself status`
+      `cd ${projectPath} && nself status`,
     )
 
     return NextResponse.json({
@@ -111,18 +108,20 @@ async function getMonitoringDashboard() {
           serviceHealth,
           resourceUsage,
           alerts: alerts.slice(0, 5), // Latest 5 alerts
-          nselfStatus: parseNselfStatus(nselfStatus)
+          nselfStatus: parseNselfStatus(nselfStatus),
         },
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get monitoring dashboard',
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get monitoring dashboard',
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -134,7 +133,7 @@ async function getDetailedMetrics(timeRange: string) {
       memory: await getMemoryMetricsHistory(timeRange),
       disk: await getDiskMetricsHistory(timeRange),
       network: await getNetworkMetricsHistory(timeRange),
-      docker: await getDockerMetricsHistory(timeRange)
+      docker: await getDockerMetricsHistory(timeRange),
     }
 
     return NextResponse.json({
@@ -142,16 +141,18 @@ async function getDetailedMetrics(timeRange: string) {
       data: {
         timeRange,
         metrics,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get detailed metrics',
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get detailed metrics',
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -164,7 +165,7 @@ async function getAllLogs(searchParams: URLSearchParams) {
 
     // Get logs from all services
     const { stdout: dockerLogs } = await execAsync(
-      `cd ${projectPath} && docker-compose logs --tail=${tail} --since=${since}`
+      `cd ${projectPath} && docker-compose logs --tail=${tail} --since=${since}`,
     )
 
     // Parse and format logs
@@ -176,16 +177,18 @@ async function getAllLogs(searchParams: URLSearchParams) {
         logs,
         params: { tail, since, level },
         total: logs.length,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get logs',
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get logs',
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -210,16 +213,18 @@ async function getServiceLogs(service: string, searchParams: URLSearchParams) {
         service,
         logs: logs.trim(),
         params: { tail, since, follow },
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: `Failed to get logs for service '${service}'`,
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Failed to get logs for service '${service}'`,
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -238,7 +243,7 @@ async function getActiveAlerts() {
         title: 'High CPU Usage',
         message: `CPU usage is at ${cpuUsage}%`,
         timestamp: new Date().toISOString(),
-        acknowledged: false
+        acknowledged: false,
       })
     }
 
@@ -252,7 +257,7 @@ async function getActiveAlerts() {
         title: 'High System Memory Usage',
         message: `System memory usage is at ${memoryUsage.percentage}% (${memoryUsage.used}GB / ${memoryUsage.total}GB)`,
         timestamp: new Date().toISOString(),
-        acknowledged: false
+        acknowledged: false,
       })
     }
 
@@ -266,7 +271,7 @@ async function getActiveAlerts() {
         title: 'Disk Space Low',
         message: `Disk usage is at ${diskUsage.percentage}%`,
         timestamp: new Date().toISOString(),
-        acknowledged: false
+        acknowledged: false,
       })
     }
 
@@ -279,17 +284,19 @@ async function getActiveAlerts() {
       data: {
         alerts,
         total: alerts.length,
-        critical: alerts.filter(a => a.severity === 'critical').length,
-        timestamp: new Date().toISOString()
-      }
+        critical: alerts.filter((a) => a.severity === 'critical').length,
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get active alerts',
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get active alerts',
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -303,19 +310,24 @@ async function getSystemHealth() {
       checkDockerHealth(),
       checkDiskSpace(),
       checkMemoryUsage(),
-      checkServiceConnectivity()
+      checkServiceConnectivity(),
     ])
 
     // Get nself doctor output
     const { stdout: doctorOutput, stderr: doctorError } = await execAsync(
-      `cd ${projectPath} && nself doctor`
-    ).catch(error => ({ stdout: '', stderr: error?.message || "Unknown error" }))
+      `cd ${projectPath} && nself doctor`,
+    ).catch((error) => ({
+      stdout: '',
+      stderr: error?.message || 'Unknown error',
+    }))
 
-    const overallHealth = healthChecks.every(check => check.status === 'healthy') 
-      ? 'healthy' 
-      : healthChecks.some(check => check.status === 'critical')
-      ? 'critical'
-      : 'degraded'
+    const overallHealth = healthChecks.every(
+      (check) => check.status === 'healthy',
+    )
+      ? 'healthy'
+      : healthChecks.some((check) => check.status === 'critical')
+        ? 'critical'
+        : 'degraded'
 
     return NextResponse.json({
       success: true,
@@ -324,18 +336,20 @@ async function getSystemHealth() {
         checks: healthChecks,
         doctor: {
           output: doctorOutput.trim(),
-          error: doctorError
+          error: doctorError,
         },
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get system health',
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get system health',
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -347,7 +361,7 @@ async function getPerformanceMetrics(timeRange: string) {
       responseTime: await getResponseTimeMetrics(timeRange),
       throughput: await getThroughputMetrics(timeRange),
       errorRate: await getErrorRateMetrics(timeRange),
-      latency: await getLatencyMetrics(timeRange)
+      latency: await getLatencyMetrics(timeRange),
     }
 
     return NextResponse.json({
@@ -355,16 +369,18 @@ async function getPerformanceMetrics(timeRange: string) {
       data: {
         timeRange,
         metrics,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get performance metrics',
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get performance metrics',
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -374,7 +390,7 @@ async function getResourceUsage() {
       getCurrentCpuUsage(),
       getCurrentMemoryUsage(),
       getCurrentDiskUsage(),
-      getCurrentNetworkUsage()
+      getCurrentNetworkUsage(),
     ])
 
     return NextResponse.json({
@@ -384,16 +400,18 @@ async function getResourceUsage() {
         memory,
         disk,
         network,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get resource usage',
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get resource usage',
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
@@ -414,12 +432,12 @@ async function getDockerStatsData() {
 
 async function getServiceHealthData() {
   const projectPath = process.env.PROJECT_PATH || '/project'
-  
+
   try {
     const { stdout } = await execAsync(
-      `cd ${projectPath} && docker-compose ps --format json`
+      `cd ${projectPath} && docker-compose ps --format json`,
     )
-    
+
     return JSON.parse(stdout)
   } catch (error: any) {
     return []
@@ -431,13 +449,15 @@ async function getResourceUsageData() {
     cpu: await getCurrentCpuUsage(),
     memory: await getCurrentMemoryUsage(),
     disk: await getCurrentDiskUsage(),
-    network: await getCurrentNetworkUsage()
+    network: await getCurrentNetworkUsage(),
   }
 }
 
 async function getCurrentCpuUsage(): Promise<number> {
   try {
-    const { stdout } = await execAsync("top -l 1 -n 0 | grep 'CPU usage' | awk '{print $3}' | sed 's/%//'")
+    const { stdout } = await execAsync(
+      "top -l 1 -n 0 | grep 'CPU usage' | awk '{print $3}' | sed 's/%//'",
+    )
     return parseFloat(stdout.trim()) || 0
   } catch {
     return 0
@@ -449,11 +469,11 @@ async function getCurrentMemoryUsage() {
     const totalMem = require('os').totalmem()
     const freeMem = require('os').freemem()
     const usedMem = totalMem - freeMem
-    
+
     return {
-      used: Math.round(usedMem / (1024 * 1024 * 1024) * 10) / 10,
-      total: Math.round(totalMem / (1024 * 1024 * 1024) * 10) / 10,
-      percentage: Math.round((usedMem / totalMem) * 100)
+      used: Math.round((usedMem / (1024 * 1024 * 1024)) * 10) / 10,
+      total: Math.round((totalMem / (1024 * 1024 * 1024)) * 10) / 10,
+      percentage: Math.round((usedMem / totalMem) * 100),
     }
   } catch {
     return { used: 0, total: 8, percentage: 0 }
@@ -462,12 +482,14 @@ async function getCurrentMemoryUsage() {
 
 async function getCurrentDiskUsage() {
   try {
-    const { stdout } = await execAsync("df -h / | tail -1 | awk '{print $2 \" \" $3 \" \" $5}' | sed 's/G//g' | sed 's/%//'")
+    const { stdout } = await execAsync(
+      "df -h / | tail -1 | awk '{print $2 \" \" $3 \" \" $5}' | sed 's/G//g' | sed 's/%//'",
+    )
     const parts = stdout.trim().split(' ')
     const total = parseFloat(parts[0]) || 100
     const used = parseFloat(parts[1]) || 50
     const percentage = parseInt(parts[2]) || 50
-    
+
     return { used, total, percentage }
   } catch {
     return { used: 50, total: 100, percentage: 50 }
@@ -476,14 +498,16 @@ async function getCurrentDiskUsage() {
 
 async function getCurrentNetworkUsage() {
   try {
-    const { stdout } = await execAsync("netstat -ib | grep -E 'en0|eth0' | head -1 | awk '{print $7 \" \" $10}'")
+    const { stdout } = await execAsync(
+      "netstat -ib | grep -E 'en0|eth0' | head -1 | awk '{print $7 \" \" $10}'",
+    )
     const parts = stdout.trim().split(' ')
     const bytesIn = parseInt(parts[0]) || 0
     const bytesOut = parseInt(parts[1]) || 0
-    
+
     return {
       rx: Math.round(bytesIn / (1024 * 1024) / 60), // Rough MB/s
-      tx: Math.round(bytesOut / (1024 * 1024) / 60)
+      tx: Math.round(bytesOut / (1024 * 1024) / 60),
     }
   } catch {
     return { rx: 0, tx: 0 }
@@ -522,67 +546,76 @@ async function getServiceHealthAlerts() {
 
 async function checkDatabaseHealth() {
   const projectPath = process.env.PROJECT_PATH || '/project'
-  
+
   try {
     const { stdout } = await execAsync(
-      `cd ${projectPath} && docker-compose exec postgres pg_isready -U postgres`
+      `cd ${projectPath} && docker-compose exec postgres pg_isready -U postgres`,
     )
-    
+
     return {
       name: 'Database',
-      status: stdout.includes('accepting connections') ? 'healthy' : 'unhealthy',
+      status: stdout.includes('accepting connections')
+        ? 'healthy'
+        : 'unhealthy',
       message: stdout.trim(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
   } catch (error: any) {
     return {
       name: 'Database',
       status: 'critical',
-      message: error?.message || "Unknown error",
-      timestamp: new Date().toISOString()
+      message: error?.message || 'Unknown error',
+      timestamp: new Date().toISOString(),
     }
   }
 }
 
 async function checkDockerHealth() {
   try {
-    const { stdout } = await execAsync('docker info --format "{{.ServerVersion}}"')
-    
+    const { stdout } = await execAsync(
+      'docker info --format "{{.ServerVersion}}"',
+    )
+
     return {
       name: 'Docker',
       status: 'healthy',
       message: `Docker ${stdout.trim()} is running`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
   } catch (error: any) {
     return {
       name: 'Docker',
       status: 'critical',
-      message: error?.message || "Unknown error",
-      timestamp: new Date().toISOString()
+      message: error?.message || 'Unknown error',
+      timestamp: new Date().toISOString(),
     }
   }
 }
 
 async function checkDiskSpace() {
   const diskUsage = await getCurrentDiskUsage()
-  
+
   return {
     name: 'Disk Space',
-    status: diskUsage.percentage > 90 ? 'critical' : diskUsage.percentage > 80 ? 'warning' : 'healthy',
+    status:
+      diskUsage.percentage > 90
+        ? 'critical'
+        : diskUsage.percentage > 80
+          ? 'warning'
+          : 'healthy',
     message: `${diskUsage.percentage}% used (${diskUsage.used}GB / ${diskUsage.total}GB)`,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }
 }
 
 async function checkMemoryUsage() {
   const memoryUsage = await getCurrentMemoryUsage()
-  
+
   return {
     name: 'Memory',
     status: memoryUsage.percentage > 85 ? 'warning' : 'healthy',
     message: `${memoryUsage.percentage}% used (${memoryUsage.used}GB / ${memoryUsage.total}GB)`,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }
 }
 
@@ -591,7 +624,7 @@ async function checkServiceConnectivity() {
     name: 'Service Connectivity',
     status: 'healthy',
     message: 'All services are reachable',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }
 }
 
@@ -599,45 +632,56 @@ function parseNselfStatus(statusOutput: string) {
   // Parse the colored nself status output
   const lines = statusOutput.split('\n')
   const services = []
-  
+
   for (const line of lines) {
-    if (line.includes('✓') || line.includes('○') || line.includes('●') || line.includes('✗')) {
+    if (
+      line.includes('✓') ||
+      line.includes('○') ||
+      line.includes('●') ||
+      line.includes('✗')
+    ) {
       const serviceName = line.replace(/[✓○●✗\s\u001b\[\d;m]/g, '').trim()
       if (serviceName) {
         services.push({
           name: serviceName,
-          status: line.includes('✓') ? 'healthy' : 
-                  line.includes('●') ? 'running' :
-                  line.includes('○') ? 'stopped' : 'unknown'
+          status: line.includes('✓')
+            ? 'healthy'
+            : line.includes('●')
+              ? 'running'
+              : line.includes('○')
+                ? 'stopped'
+                : 'unknown',
         })
       }
     }
   }
-  
+
   return { services }
 }
 
 function parseDockerLogs(logs: string, level: string) {
-  const lines = logs.split('\n').filter(line => line.trim())
-  
-  return lines.map(line => {
-    const parts = line.split('|')
-    if (parts.length >= 2) {
+  const lines = logs.split('\n').filter((line) => line.trim())
+
+  return lines
+    .map((line) => {
+      const parts = line.split('|')
+      if (parts.length >= 2) {
+        return {
+          timestamp: new Date().toISOString(),
+          service: parts[0].trim(),
+          message: parts.slice(1).join('|').trim(),
+          level: detectLogLevel(line),
+        }
+      }
+
       return {
         timestamp: new Date().toISOString(),
-        service: parts[0].trim(),
-        message: parts.slice(1).join('|').trim(),
-        level: detectLogLevel(line)
+        service: 'unknown',
+        message: line,
+        level: detectLogLevel(line),
       }
-    }
-    
-    return {
-      timestamp: new Date().toISOString(),
-      service: 'unknown',
-      message: line,
-      level: detectLogLevel(line)
-    }
-  }).filter(log => level === 'all' || log.level === level)
+    })
+    .filter((log) => level === 'all' || log.level === level)
 }
 
 function detectLogLevel(logLine: string): string {
@@ -650,10 +694,18 @@ function detectLogLevel(logLine: string): string {
 }
 
 // Placeholder functions for additional features
-async function getResponseTimeMetrics(timeRange: string) { return [] }
-async function getThroughputMetrics(timeRange: string) { return [] }
-async function getErrorRateMetrics(timeRange: string) { return [] }
-async function getLatencyMetrics(timeRange: string) { return [] }
+async function getResponseTimeMetrics(timeRange: string) {
+  return []
+}
+async function getThroughputMetrics(timeRange: string) {
+  return []
+}
+async function getErrorRateMetrics(timeRange: string) {
+  return []
+}
+async function getLatencyMetrics(timeRange: string) {
+  return []
+}
 
 async function createAlert(options: any) {
   return NextResponse.json({ success: true, message: 'Alert created' })

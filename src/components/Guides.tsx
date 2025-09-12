@@ -5,7 +5,8 @@ const guides = [
   {
     href: '/init',
     name: 'Setup Wizard',
-    description: 'Configure your nself stack with the interactive setup wizard.',
+    description:
+      'Configure your nself stack with the interactive setup wizard.',
   },
   {
     href: '/doctor',
@@ -20,7 +21,8 @@ const guides = [
   {
     href: '/monitor',
     name: 'Monitoring',
-    description: 'Monitor system metrics, logs, and service health in real-time.',
+    description:
+      'Monitor system metrics, logs, and service health in real-time.',
   },
 ]
 

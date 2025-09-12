@@ -4,9 +4,6 @@ import { PageTemplate } from '@/components/PageTemplate'
 
 export default function Page() {
   return (
-    <PageTemplate 
-     
-      description="Monitor the health status of all services"
-    />
+    <PageTemplate description="Monitor the health status of all services" />
   )
 }

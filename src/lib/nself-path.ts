@@ -1,6 +1,6 @@
 import { exec } from 'child_process'
-import { promisify } from 'util'
 import fs from 'fs'
+import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
@@ -34,7 +34,7 @@ export async function findNselfPath(): Promise<string> {
     '/opt/homebrew/bin/nself',
     process.env.HOME + '/bin/nself',
     process.env.HOME + '/.local/bin/nself',
-    '/usr/bin/nself'
+    '/usr/bin/nself',
   ]
 
   for (const path of commonPaths) {
@@ -73,7 +73,7 @@ export function findNselfPathSync(): string {
     '/opt/homebrew/bin/nself',
     process.env.HOME + '/bin/nself',
     process.env.HOME + '/.local/bin/nself',
-    '/usr/bin/nself'
+    '/usr/bin/nself',
   ]
 
   for (const path of commonPaths) {

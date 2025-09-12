@@ -1,17 +1,42 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
-import { 
-  RefreshCw, Settings, Search, Filter, Download, Upload, 
-  Shield, Users, Key, Lock, Eye, EyeOff, Edit, Trash2, Plus,
-  Clock, Activity, Globe, AlertCircle, CheckCircle, XCircle,
-  UserCheck, UserX, Mail, Phone, Calendar, MapPin, Building,
-  ExternalLink, Copy, Save, BarChart3, TrendingUp, TrendingDown,
-  Smartphone, Monitor, Tablet, Server, Chrome, Github, Twitter,
-  Facebook, FileText, History, Bell, Zap, Database
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  Chrome,
+  Clock,
+  Copy,
+  Download,
+  Edit,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Facebook,
+  Github,
+  Globe,
+  History,
+  Key,
+  Lock,
+  Mail,
+  Monitor,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Settings,
+  Shield,
+  Smartphone,
+  Tablet,
+  Trash2,
+  TrendingUp,
+  Twitter,
+  Users,
+  XCircle,
 } from 'lucide-react'
+import { useState } from 'react'
 
 interface AuthStats {
   totalUsers: number
@@ -133,44 +158,60 @@ interface SecuritySetting {
 
 function StatsOverview({ stats }: { stats: AuthStats }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+    <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Total Users</p>
-            <p className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Total Users
+            </p>
+            <p className="text-2xl font-bold">
+              {stats.totalUsers.toLocaleString()}
+            </p>
           </div>
-          <Users className="w-6 h-6 text-blue-500" />
+          <Users className="h-6 w-6 text-blue-500" />
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Active Users</p>
-            <p className="text-2xl font-bold text-green-600">{stats.activeUsers.toLocaleString()}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Active Users
+            </p>
+            <p className="text-2xl font-bold text-green-600">
+              {stats.activeUsers.toLocaleString()}
+            </p>
           </div>
-          <Activity className="w-6 h-6 text-green-500" />
+          <Activity className="h-6 w-6 text-green-500" />
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">New Today</p>
-            <p className="text-2xl font-bold text-purple-600">{stats.newRegistrations24h}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              New Today
+            </p>
+            <p className="text-2xl font-bold text-purple-600">
+              {stats.newRegistrations24h}
+            </p>
           </div>
-          <TrendingUp className="w-6 h-6 text-purple-500" />
+          <TrendingUp className="h-6 w-6 text-purple-500" />
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Failed Logins</p>
-            <p className="text-2xl font-bold text-red-600">{stats.failedLogins24h}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Failed Logins
+            </p>
+            <p className="text-2xl font-bold text-red-600">
+              {stats.failedLogins24h}
+            </p>
           </div>
-          <AlertCircle className="w-6 h-6 text-red-500" />
+          <AlertCircle className="h-6 w-6 text-red-500" />
         </div>
       </div>
     </div>
@@ -179,40 +220,64 @@ function StatsOverview({ stats }: { stats: AuthStats }) {
 
 function UserManagement({ users }: { users: User[] }) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'disabled' | 'unverified'>('all')
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'active' | 'disabled' | 'unverified'
+  >('all')
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [sortBy, setSortBy] = useState<'name' | 'email' | 'created' | 'lastLogin'>('created')
+  const [sortBy, setSortBy] = useState<
+    'name' | 'email' | 'created' | 'lastLogin'
+  >('created')
 
   const filteredUsers = users
-    .filter(user => {
-      const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
-      
-      const matchesStatus = statusFilter === 'all' ||
+    .filter((user) => {
+      const matchesSearch =
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.displayName?.toLowerCase().includes(searchTerm.toLowerCase()) ??
+          false)
+
+      const matchesStatus =
+        statusFilter === 'all' ||
         (statusFilter === 'active' && !user.disabled && user.emailVerified) ||
         (statusFilter === 'disabled' && user.disabled) ||
         (statusFilter === 'unverified' && !user.emailVerified)
-      
+
       return matchesSearch && matchesStatus
     })
     .sort((a, b) => {
       switch (sortBy) {
-        case 'name': return (a.displayName || a.email).localeCompare(b.displayName || b.email)
-        case 'email': return a.email.localeCompare(b.email)
-        case 'created': return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        case 'lastLogin': return (new Date(b.lastSignIn || 0).getTime()) - (new Date(a.lastSignIn || 0).getTime())
-        default: return 0
+        case 'name':
+          return (a.displayName || a.email).localeCompare(
+            b.displayName || b.email,
+          )
+        case 'email':
+          return a.email.localeCompare(b.email)
+        case 'created':
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+        case 'lastLogin':
+          return (
+            new Date(b.lastSignIn || 0).getTime() -
+            new Date(a.lastSignIn || 0).getTime()
+          )
+        default:
+          return 0
       }
     })
 
   const getProviderIcon = (providerId: string) => {
     switch (providerId) {
-      case 'google.com': return Chrome
-      case 'github.com': return Github
-      case 'facebook.com': return Facebook
-      case 'twitter.com': return Twitter
-      default: return Mail
+      case 'google.com':
+        return Chrome
+      case 'github.com':
+        return Github
+      case 'facebook.com':
+        return Facebook
+      case 'twitter.com':
+        return Twitter
+      default:
+        return Mail
     }
   }
 
@@ -222,40 +287,40 @@ function UserManagement({ users }: { users: User[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">User Management</h3>
             <div className="flex items-center gap-2">
               <Button variant="outline" className="text-xs">
-                <Download className="w-3 h-3 mr-1" />
+                <Download className="mr-1 h-3 w-3" />
                 Export
               </Button>
               <Button className="text-xs">
-                <Plus className="w-3 h-3 mr-1" />
+                <Plus className="mr-1 h-3 w-3" />
                 Add User
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="space-y-4 p-4">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
               <input
                 type="text"
                 placeholder="Search users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                className="w-full rounded-lg border border-zinc-200 py-2 pr-4 pl-10 dark:border-zinc-700"
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700"
+              className="rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-700"
             >
               <option value="all">All Users</option>
               <option value="active">Active</option>
@@ -266,7 +331,7 @@ function UserManagement({ users }: { users: User[] }) {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700"
+              className="rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-700"
             >
               <option value="created">Sort by Created</option>
               <option value="name">Sort by Name</option>
@@ -276,18 +341,30 @@ function UserManagement({ users }: { users: User[] }) {
           </div>
 
           {selectedUsers.length > 0 && (
-            <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="flex items-center gap-2 rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
               <span className="text-sm font-medium">
                 {selectedUsers.length} users selected
               </span>
-              <div className="flex items-center gap-2 ml-auto">
-                <Button variant="outline" onClick={() => handleBulkAction('enable')} className="text-xs">
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleBulkAction('enable')}
+                  className="text-xs"
+                >
                   Enable
                 </Button>
-                <Button variant="outline" onClick={() => handleBulkAction('disable')} className="text-xs">
+                <Button
+                  variant="outline"
+                  onClick={() => handleBulkAction('disable')}
+                  className="text-xs"
+                >
                   Disable
                 </Button>
-                <Button variant="outline" onClick={() => handleBulkAction('delete')} className="text-xs">
+                <Button
+                  variant="outline"
+                  onClick={() => handleBulkAction('delete')}
+                  className="text-xs"
+                >
                   Delete
                 </Button>
               </div>
@@ -298,12 +375,12 @@ function UserManagement({ users }: { users: User[] }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                  <th className="text-left py-3 px-2">
+                  <th className="px-2 py-3 text-left">
                     <input
                       type="checkbox"
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSelectedUsers(filteredUsers.map(u => u.id))
+                          setSelectedUsers(filteredUsers.map((u) => u.id))
                         } else {
                           setSelectedUsers([])
                         }
@@ -311,108 +388,124 @@ function UserManagement({ users }: { users: User[] }) {
                       className="rounded"
                     />
                   </th>
-                  <th className="text-left py-3 px-2">User</th>
-                  <th className="text-left py-3 px-2">Status</th>
-                  <th className="text-left py-3 px-2">Roles</th>
-                  <th className="text-left py-3 px-2">Providers</th>
-                  <th className="text-left py-3 px-2">Last Login</th>
-                  <th className="text-left py-3 px-2">Actions</th>
+                  <th className="px-2 py-3 text-left">User</th>
+                  <th className="px-2 py-3 text-left">Status</th>
+                  <th className="px-2 py-3 text-left">Roles</th>
+                  <th className="px-2 py-3 text-left">Providers</th>
+                  <th className="px-2 py-3 text-left">Last Login</th>
+                  <th className="px-2 py-3 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.slice(0, 20).map((user) => (
-                  <tr key={user.id} className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
-                    <td className="py-3 px-2">
+                  <tr
+                    key={user.id}
+                    className="border-b border-zinc-100 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-700/50"
+                  >
+                    <td className="px-2 py-3">
                       <input
                         type="checkbox"
                         checked={selectedUsers.includes(user.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedUsers(prev => [...prev, user.id])
+                            setSelectedUsers((prev) => [...prev, user.id])
                           } else {
-                            setSelectedUsers(prev => prev.filter(id => id !== user.id))
+                            setSelectedUsers((prev) =>
+                              prev.filter((id) => id !== user.id),
+                            )
                           }
                         }}
                         className="rounded"
                       />
                     </td>
-                    <td className="py-3 px-2">
+                    <td className="px-2 py-3">
                       <div className="flex items-center gap-3">
                         {user.photoURL ? (
                           <img
                             src={user.photoURL}
                             alt={user.displayName || user.email}
-                            className="w-8 h-8 rounded-full"
+                            className="h-8 w-8 rounded-full"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                            <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
+                            <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                           </div>
                         )}
                         <div>
-                          <div className="font-medium">{user.displayName || user.email}</div>
+                          <div className="font-medium">
+                            {user.displayName || user.email}
+                          </div>
                           {user.displayName && (
-                            <div className="text-xs text-zinc-500">{user.email}</div>
+                            <div className="text-xs text-zinc-500">
+                              {user.email}
+                            </div>
                           )}
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 px-2">
+                    <td className="px-2 py-3">
                       <div className="flex items-center gap-2">
                         {user.disabled ? (
-                          <span className="px-2 py-1 text-xs rounded bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400">
+                          <span className="rounded bg-red-100 px-2 py-1 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-400">
                             Disabled
                           </span>
                         ) : user.emailVerified ? (
-                          <span className="px-2 py-1 text-xs rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                          <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-400">
                             Active
                           </span>
                         ) : (
-                          <span className="px-2 py-1 text-xs rounded bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
+                          <span className="rounded bg-yellow-100 px-2 py-1 text-xs text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
                             Unverified
                           </span>
                         )}
                         {user.mfaEnabled && (
-                          <Shield className="w-4 h-4 text-green-500" />
+                          <Shield className="h-4 w-4 text-green-500" />
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-2">
+                    <td className="px-2 py-3">
                       <div className="flex gap-1">
-                        {user.roles.slice(0, 2).map(role => (
-                          <span key={role} className="px-2 py-1 text-xs rounded bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400">
+                        {user.roles.slice(0, 2).map((role) => (
+                          <span
+                            key={role}
+                            className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                          >
                             {role}
                           </span>
                         ))}
                         {user.roles.length > 2 && (
-                          <span className="text-xs text-zinc-500">+{user.roles.length - 2}</span>
+                          <span className="text-xs text-zinc-500">
+                            +{user.roles.length - 2}
+                          </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-2">
+                    <td className="px-2 py-3">
                       <div className="flex gap-1">
                         {user.providerData.slice(0, 3).map((provider, i) => {
                           const Icon = getProviderIcon(provider.providerId)
                           return (
-                            <Icon key={i} className="w-4 h-4 text-zinc-500" />
+                            <Icon key={i} className="h-4 w-4 text-zinc-500" />
                           )
                         })}
                       </div>
                     </td>
-                    <td className="py-3 px-2 text-xs text-zinc-500">
-                      {user.lastSignIn ? new Date(user.lastSignIn).toLocaleDateString() : 'Never'}
+                    <td className="px-2 py-3 text-xs text-zinc-500">
+                      {user.lastSignIn
+                        ? new Date(user.lastSignIn).toLocaleDateString()
+                        : 'Never'}
                     </td>
-                    <td className="py-3 px-2">
+                    <td className="px-2 py-3">
                       <div className="flex items-center gap-1">
                         <Button
                           variant="outline"
                           onClick={() => setSelectedUser(user)}
                           className="text-xs"
                         >
-                          <Eye className="w-3 h-3" />
+                          <Eye className="h-3 w-3" />
                         </Button>
                         <Button variant="outline" className="text-xs">
-                          <Edit className="w-3 h-3" />
+                          <Edit className="h-3 w-3" />
                         </Button>
                       </div>
                     </td>
@@ -425,8 +518,8 @@ function UserManagement({ users }: { users: User[] }) {
       </div>
 
       {selectedUser && (
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center justify-between">
               <h4 className="text-lg font-semibold">User Details</h4>
               <Button
@@ -439,44 +532,69 @@ function UserManagement({ users }: { users: User[] }) {
             </div>
           </div>
 
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4 p-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Display Name</label>
-                <div className="text-lg font-medium">{selectedUser.displayName || 'Not set'}</div>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  Display Name
+                </label>
+                <div className="text-lg font-medium">
+                  {selectedUser.displayName || 'Not set'}
+                </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Email</label>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  Email
+                </label>
                 <div className="text-lg font-medium">{selectedUser.email}</div>
               </div>
               <div>
-                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Phone</label>
-                <div className="text-lg font-medium">{selectedUser.phoneNumber || 'Not set'}</div>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  Phone
+                </label>
+                <div className="text-lg font-medium">
+                  {selectedUser.phoneNumber || 'Not set'}
+                </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Locale</label>
-                <div className="text-lg font-medium">{selectedUser.locale || 'Not set'}</div>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  Locale
+                </label>
+                <div className="text-lg font-medium">
+                  {selectedUser.locale || 'Not set'}
+                </div>
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 block">Custom Claims</label>
-              <pre className="bg-zinc-50 dark:bg-zinc-900 rounded p-3 text-sm font-mono overflow-x-auto">
+              <label className="mb-2 block text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Custom Claims
+              </label>
+              <pre className="overflow-x-auto rounded bg-zinc-50 p-3 font-mono text-sm dark:bg-zinc-900">
                 {JSON.stringify(selectedUser.customClaims, null, 2)}
               </pre>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 block">Provider Data</label>
+              <label className="mb-2 block text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Provider Data
+              </label>
               <div className="space-y-2">
                 {selectedUser.providerData.map((provider, i) => {
                   const Icon = getProviderIcon(provider.providerId)
                   return (
-                    <div key={i} className="flex items-center gap-3 p-2 rounded bg-zinc-50 dark:bg-zinc-900">
-                      <Icon className="w-5 h-5 text-zinc-500" />
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 rounded bg-zinc-50 p-2 dark:bg-zinc-900"
+                    >
+                      <Icon className="h-5 w-5 text-zinc-500" />
                       <div>
-                        <div className="font-medium text-sm">{provider.providerId}</div>
-                        <div className="text-xs text-zinc-500">{provider.email || provider.uid}</div>
+                        <div className="text-sm font-medium">
+                          {provider.providerId}
+                        </div>
+                        <div className="text-xs text-zinc-500">
+                          {provider.email || provider.uid}
+                        </div>
                       </div>
                     </div>
                   )
@@ -490,72 +608,77 @@ function UserManagement({ users }: { users: User[] }) {
   )
 }
 
-function RolesAndPermissions({ roles, permissions }: { 
+function RolesAndPermissions({
+  roles,
+  permissions,
+}: {
   roles: Role[]
-  permissions: Permission[] 
+  permissions: Permission[]
 }) {
-  const [activeSection, setActiveSection] = useState<'roles' | 'permissions'>('roles')
+  const [activeSection, setActiveSection] = useState<'roles' | 'permissions'>(
+    'roles',
+  )
   const [selectedRole, setSelectedRole] = useState<Role | null>(null)
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700">
+      <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
         <button
           onClick={() => setActiveSection('roles')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             activeSection === 'roles'
               ? 'bg-blue-500 text-white'
-              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
           }`}
         >
-          <Shield className="w-4 h-4" />
+          <Shield className="h-4 w-4" />
           Roles ({roles.length})
         </button>
         <button
           onClick={() => setActiveSection('permissions')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             activeSection === 'permissions'
               ? 'bg-blue-500 text-white'
-              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
           }`}
         >
-          <Key className="w-4 h-4" />
+          <Key className="h-4 w-4" />
           Permissions ({permissions.length})
         </button>
       </div>
 
       {activeSection === 'roles' && (
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Roles</h3>
               <Button className="text-xs">
-                <Plus className="w-3 h-3 mr-1" />
+                <Plus className="mr-1 h-3 w-3" />
                 Create Role
               </Button>
             </div>
           </div>
 
           <div className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {roles.map((role) => (
                 <div
                   key={role.name}
                   onClick={() => setSelectedRole(role)}
-                  className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 cursor-pointer"
+                  className="cursor-pointer rounded-lg border border-zinc-200 p-4 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-blue-500" />
+                      <Shield className="h-5 w-5 text-blue-500" />
                       <span className="font-medium">{role.name}</span>
                     </div>
                     {role.isDefault && (
-                      <span className="px-2 py-1 text-xs rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                      <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-400">
                         Default
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
+                  <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
                     {role.description}
                   </p>
                   <div className="flex items-center justify-between text-xs text-zinc-500">
@@ -570,12 +693,12 @@ function RolesAndPermissions({ roles, permissions }: {
       )}
 
       {activeSection === 'permissions' && (
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Permissions</h3>
               <Button className="text-xs">
-                <Plus className="w-3 h-3 mr-1" />
+                <Plus className="mr-1 h-3 w-3" />
                 Create Permission
               </Button>
             </div>
@@ -586,12 +709,14 @@ function RolesAndPermissions({ roles, permissions }: {
               {permissions.map((permission) => (
                 <div
                   key={permission.name}
-                  className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                  className="flex items-center justify-between rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
                 >
                   <div className="flex items-center gap-3">
-                    <Key className="w-4 h-4 text-yellow-500" />
+                    <Key className="h-4 w-4 text-yellow-500" />
                     <div>
-                      <div className="font-medium text-sm">{permission.name}</div>
+                      <div className="text-sm font-medium">
+                        {permission.name}
+                      </div>
                       <div className="text-xs text-zinc-500">
                         {permission.resource}:{permission.action}
                       </div>
@@ -601,7 +726,7 @@ function RolesAndPermissions({ roles, permissions }: {
                     {permission.description}
                   </div>
                   <Button variant="outline" className="text-xs">
-                    <Edit className="w-3 h-3" />
+                    <Edit className="h-3 w-3" />
                   </Button>
                 </div>
               ))}
@@ -611,10 +736,12 @@ function RolesAndPermissions({ roles, permissions }: {
       )}
 
       {selectedRole && (
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center justify-between">
-              <h4 className="text-lg font-semibold">{selectedRole.name} Role</h4>
+              <h4 className="text-lg font-semibold">
+                {selectedRole.name} Role
+              </h4>
               <Button
                 variant="outline"
                 onClick={() => setSelectedRole(null)}
@@ -625,23 +752,32 @@ function RolesAndPermissions({ roles, permissions }: {
             </div>
           </div>
 
-          <div className="p-4 space-y-4">
+          <div className="space-y-4 p-4">
             <div>
-              <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Description</label>
-              <p className="text-sm mt-1">{selectedRole.description}</p>
+              <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Description
+              </label>
+              <p className="mt-1 text-sm">{selectedRole.description}</p>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 block">
+              <label className="mb-2 block text-sm font-medium text-zinc-600 dark:text-zinc-400">
                 Permissions ({selectedRole.permissions.length})
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                 {selectedRole.permissions.map((permName) => {
-                  const permission = permissions.find(p => p.name === permName)
+                  const permission = permissions.find(
+                    (p) => p.name === permName,
+                  )
                   return (
-                    <div key={permName} className="flex items-center gap-2 p-2 rounded bg-zinc-50 dark:bg-zinc-900">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span className="text-sm">{permission?.description || permName}</span>
+                    <div
+                      key={permName}
+                      className="flex items-center gap-2 rounded bg-zinc-50 p-2 dark:bg-zinc-900"
+                    >
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-sm">
+                        {permission?.description || permName}
+                      </span>
                     </div>
                   )
                 })}
@@ -650,16 +786,16 @@ function RolesAndPermissions({ roles, permissions }: {
 
             <div className="flex gap-2">
               <Button variant="outline" className="text-xs">
-                <Edit className="w-3 h-3 mr-1" />
+                <Edit className="mr-1 h-3 w-3" />
                 Edit Role
               </Button>
               <Button variant="outline" className="text-xs">
-                <Copy className="w-3 h-3 mr-1" />
+                <Copy className="mr-1 h-3 w-3" />
                 Duplicate
               </Button>
               {!selectedRole.isDefault && (
                 <Button variant="outline" className="text-xs">
-                  <Trash2 className="w-3 h-3 mr-1" />
+                  <Trash2 className="mr-1 h-3 w-3" />
                   Delete
                 </Button>
               )}
@@ -672,26 +808,33 @@ function RolesAndPermissions({ roles, permissions }: {
 }
 
 function OAuthConfiguration({ providers }: { providers: OAuthProvider[] }) {
-  const [editingProvider, setEditingProvider] = useState<OAuthProvider | null>(null)
+  const [editingProvider, setEditingProvider] = useState<OAuthProvider | null>(
+    null,
+  )
 
   const getProviderIcon = (providerId: string) => {
     switch (providerId) {
-      case 'google': return Chrome
-      case 'github': return Github
-      case 'facebook': return Facebook
-      case 'twitter': return Twitter
-      default: return Globe
+      case 'google':
+        return Chrome
+      case 'github':
+        return Github
+      case 'facebook':
+        return Facebook
+      case 'twitter':
+        return Twitter
+      default:
+        return Globe
     }
   }
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">OAuth Providers</h3>
             <Button className="text-xs">
-              <Plus className="w-3 h-3 mr-1" />
+              <Plus className="mr-1 h-3 w-3" />
               Add Provider
             </Button>
           </div>
@@ -704,23 +847,25 @@ function OAuthConfiguration({ providers }: { providers: OAuthProvider[] }) {
               return (
                 <div
                   key={provider.providerId}
-                  className="flex items-center justify-between p-4 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                  className="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700"
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className="w-6 h-6" />
+                    <Icon className="h-6 w-6" />
                     <div>
-                      <div className="font-medium capitalize">{provider.providerId}</div>
+                      <div className="font-medium capitalize">
+                        {provider.providerId}
+                      </div>
                       <div className="text-xs text-zinc-500">
                         Client ID: {provider.clientId.substring(0, 20)}...
                       </div>
                     </div>
-                    
+
                     {provider.enabled ? (
-                      <span className="px-2 py-1 text-xs rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                      <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-400">
                         Enabled
                       </span>
                     ) : (
-                      <span className="px-2 py-1 text-xs rounded bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400">
+                      <span className="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400">
                         Disabled
                       </span>
                     )}
@@ -735,7 +880,7 @@ function OAuthConfiguration({ providers }: { providers: OAuthProvider[] }) {
                       onClick={() => setEditingProvider(provider)}
                       className="text-xs"
                     >
-                      <Settings className="w-3 h-3" />
+                      <Settings className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
@@ -746,8 +891,8 @@ function OAuthConfiguration({ providers }: { providers: OAuthProvider[] }) {
       </div>
 
       {editingProvider && (
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center justify-between">
               <h4 className="text-lg font-semibold capitalize">
                 {editingProvider.providerId} Configuration
@@ -762,10 +907,12 @@ function OAuthConfiguration({ providers }: { providers: OAuthProvider[] }) {
             </div>
           </div>
 
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4 p-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Enabled</label>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  Enabled
+                </label>
                 <div className="mt-1">
                   <input
                     type="checkbox"
@@ -775,45 +922,57 @@ function OAuthConfiguration({ providers }: { providers: OAuthProvider[] }) {
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Button Text</label>
+                <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  Button Text
+                </label>
                 <input
                   type="text"
-                  value={editingProvider.buttonText || `Continue with ${editingProvider.providerId}`}
-                  className="w-full mt-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700"
+                  value={
+                    editingProvider.buttonText ||
+                    `Continue with ${editingProvider.providerId}`
+                  }
+                  className="mt-1 w-full rounded border border-zinc-200 px-3 py-2 dark:border-zinc-700"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Client ID</label>
+              <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Client ID
+              </label>
               <input
                 type="text"
                 value={editingProvider.clientId}
-                className="w-full mt-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 font-mono"
+                className="mt-1 w-full rounded border border-zinc-200 px-3 py-2 font-mono dark:border-zinc-700"
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Client Secret</label>
+              <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Client Secret
+              </label>
               <div className="relative mt-1">
                 <input
                   type="password"
                   value={editingProvider.clientSecret}
-                  className="w-full px-3 py-2 pr-10 rounded border border-zinc-200 dark:border-zinc-700 font-mono"
+                  className="w-full rounded border border-zinc-200 px-3 py-2 pr-10 font-mono dark:border-zinc-700"
                 />
-                <button className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <EyeOff className="w-4 h-4 text-zinc-400" />
+                <button className="absolute top-1/2 right-3 -translate-y-1/2">
+                  <EyeOff className="h-4 w-4 text-zinc-400" />
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 block">
+              <label className="mb-2 block text-sm font-medium text-zinc-600 dark:text-zinc-400">
                 Scopes
               </label>
               <div className="flex flex-wrap gap-2">
                 {editingProvider.scopes.map((scope) => (
-                  <span key={scope} className="px-2 py-1 text-xs rounded bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400">
+                  <span
+                    key={scope}
+                    className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                  >
                     {scope}
                   </span>
                 ))}
@@ -822,7 +981,7 @@ function OAuthConfiguration({ providers }: { providers: OAuthProvider[] }) {
 
             <div className="flex gap-2 pt-4">
               <Button className="text-xs">
-                <Save className="w-3 h-3 mr-1" />
+                <Save className="mr-1 h-3 w-3" />
                 Save Changes
               </Button>
               <Button variant="outline" className="text-xs">
@@ -841,8 +1000,8 @@ function JWTConfiguration({ settings }: { settings: JWTSettings }) {
   const [config, setConfig] = useState(settings)
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">JWT Settings</h3>
           <div className="flex items-center gap-2">
@@ -851,12 +1010,12 @@ function JWTConfiguration({ settings }: { settings: JWTSettings }) {
               onClick={() => setEditMode(!editMode)}
               className="text-xs"
             >
-              <Edit className="w-3 h-3 mr-1" />
+              <Edit className="mr-1 h-3 w-3" />
               {editMode ? 'Cancel' : 'Edit'}
             </Button>
             {editMode && (
               <Button className="text-xs">
-                <Save className="w-3 h-3 mr-1" />
+                <Save className="mr-1 h-3 w-3" />
                 Save
               </Button>
             )}
@@ -864,15 +1023,19 @@ function JWTConfiguration({ settings }: { settings: JWTSettings }) {
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="space-y-4 p-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Algorithm</label>
+            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Algorithm
+            </label>
             {editMode ? (
               <select
                 value={config.algorithm}
-                onChange={(e) => setConfig(prev => ({ ...prev, algorithm: e.target.value }))}
-                className="w-full mt-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700"
+                onChange={(e) =>
+                  setConfig((prev) => ({ ...prev, algorithm: e.target.value }))
+                }
+                className="mt-1 w-full rounded border border-zinc-200 px-3 py-2 dark:border-zinc-700"
               >
                 <option value="HS256">HS256</option>
                 <option value="RS256">RS256</option>
@@ -884,13 +1047,17 @@ function JWTConfiguration({ settings }: { settings: JWTSettings }) {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Issuer</label>
+            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Issuer
+            </label>
             {editMode ? (
               <input
                 type="text"
                 value={config.issuer}
-                onChange={(e) => setConfig(prev => ({ ...prev, issuer: e.target.value }))}
-                className="w-full mt-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700"
+                onChange={(e) =>
+                  setConfig((prev) => ({ ...prev, issuer: e.target.value }))
+                }
+                className="mt-1 w-full rounded border border-zinc-200 px-3 py-2 dark:border-zinc-700"
               />
             ) : (
               <div className="mt-1 font-mono">{config.issuer}</div>
@@ -898,13 +1065,17 @@ function JWTConfiguration({ settings }: { settings: JWTSettings }) {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Audience</label>
+            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Audience
+            </label>
             {editMode ? (
               <input
                 type="text"
                 value={config.audience}
-                onChange={(e) => setConfig(prev => ({ ...prev, audience: e.target.value }))}
-                className="w-full mt-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700"
+                onChange={(e) =>
+                  setConfig((prev) => ({ ...prev, audience: e.target.value }))
+                }
+                className="mt-1 w-full rounded border border-zinc-200 px-3 py-2 dark:border-zinc-700"
               />
             ) : (
               <div className="mt-1 font-mono">{config.audience}</div>
@@ -912,13 +1083,20 @@ function JWTConfiguration({ settings }: { settings: JWTSettings }) {
           </div>
 
           <div>
-            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Clock Skew (seconds)</label>
+            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Clock Skew (seconds)
+            </label>
             {editMode ? (
               <input
                 type="number"
                 value={config.allowedClockSkew}
-                onChange={(e) => setConfig(prev => ({ ...prev, allowedClockSkew: parseInt(e.target.value) }))}
-                className="w-full mt-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700"
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    allowedClockSkew: parseInt(e.target.value),
+                  }))
+                }
+                className="mt-1 w-full rounded border border-zinc-200 px-3 py-2 dark:border-zinc-700"
               />
             ) : (
               <div className="mt-1">{config.allowedClockSkew}</div>
@@ -926,66 +1104,91 @@ function JWTConfiguration({ settings }: { settings: JWTSettings }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Access Token Expiry (seconds)</label>
+            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Access Token Expiry (seconds)
+            </label>
             {editMode ? (
               <input
                 type="number"
                 value={config.accessTokenExpiry}
-                onChange={(e) => setConfig(prev => ({ ...prev, accessTokenExpiry: parseInt(e.target.value) }))}
-                className="w-full mt-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700"
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    accessTokenExpiry: parseInt(e.target.value),
+                  }))
+                }
+                className="mt-1 w-full rounded border border-zinc-200 px-3 py-2 dark:border-zinc-700"
               />
             ) : (
-              <div className="mt-1">{config.accessTokenExpiry} ({Math.floor(config.accessTokenExpiry / 60)} minutes)</div>
+              <div className="mt-1">
+                {config.accessTokenExpiry} (
+                {Math.floor(config.accessTokenExpiry / 60)} minutes)
+              </div>
             )}
           </div>
 
           <div>
-            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Refresh Token Expiry (seconds)</label>
+            <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+              Refresh Token Expiry (seconds)
+            </label>
             {editMode ? (
               <input
                 type="number"
                 value={config.refreshTokenExpiry}
-                onChange={(e) => setConfig(prev => ({ ...prev, refreshTokenExpiry: parseInt(e.target.value) }))}
-                className="w-full mt-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700"
+                onChange={(e) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    refreshTokenExpiry: parseInt(e.target.value),
+                  }))
+                }
+                className="mt-1 w-full rounded border border-zinc-200 px-3 py-2 dark:border-zinc-700"
               />
             ) : (
-              <div className="mt-1">{config.refreshTokenExpiry} ({Math.floor(config.refreshTokenExpiry / 3600)} hours)</div>
+              <div className="mt-1">
+                {config.refreshTokenExpiry} (
+                {Math.floor(config.refreshTokenExpiry / 3600)} hours)
+              </div>
             )}
           </div>
         </div>
 
         <div>
-          <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 block">
+          <label className="mb-2 block text-sm font-medium text-zinc-600 dark:text-zinc-400">
             Custom Claims
           </label>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="mb-2 flex items-center gap-2">
             <input
               type="checkbox"
               checked={config.customClaims}
-              onChange={(e) => setConfig(prev => ({ ...prev, customClaims: e.target.checked }))}
+              onChange={(e) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  customClaims: e.target.checked,
+                }))
+              }
               disabled={!editMode}
               className="rounded"
             />
             <span className="text-sm">Enable custom claims in JWT tokens</span>
           </div>
-          
+
           {editMode ? (
             <textarea
               value={JSON.stringify(config.claims, null, 2)}
               onChange={(e) => {
                 try {
                   const parsed = JSON.parse(e.target.value)
-                  setConfig(prev => ({ ...prev, claims: parsed }))
+                  setConfig((prev) => ({ ...prev, claims: parsed }))
                 } catch {
                   // Invalid JSON, ignore
                 }
               }}
-              className="w-full h-32 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 font-mono text-sm"
+              className="h-32 w-full rounded border border-zinc-200 px-3 py-2 font-mono text-sm dark:border-zinc-700"
             />
           ) : (
-            <pre className="bg-zinc-50 dark:bg-zinc-900 rounded p-3 text-sm font-mono overflow-x-auto">
+            <pre className="overflow-x-auto rounded bg-zinc-50 p-3 font-mono text-sm dark:bg-zinc-900">
               {JSON.stringify(config.claims, null, 2)}
             </pre>
           )}
@@ -997,17 +1200,24 @@ function JWTConfiguration({ settings }: { settings: JWTSettings }) {
 
 function SessionManagement({ sessions }: { sessions: Session[] }) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [deviceFilter, setDeviceFilter] = useState<'all' | 'mobile' | 'desktop' | 'tablet'>('all')
+  const [deviceFilter, setDeviceFilter] = useState<
+    'all' | 'mobile' | 'desktop' | 'tablet'
+  >('all')
 
-  const filteredSessions = sessions.filter(session => {
-    const matchesSearch = session.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         session.deviceInfo.ip.includes(searchTerm)
-    
-    const matchesDevice = deviceFilter === 'all' ||
-      (deviceFilter === 'mobile' && session.deviceInfo.device.toLowerCase().includes('mobile')) ||
-      (deviceFilter === 'desktop' && session.deviceInfo.device.toLowerCase().includes('desktop')) ||
-      (deviceFilter === 'tablet' && session.deviceInfo.device.toLowerCase().includes('tablet'))
-    
+  const filteredSessions = sessions.filter((session) => {
+    const matchesSearch =
+      session.userEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      session.deviceInfo.ip.includes(searchTerm)
+
+    const matchesDevice =
+      deviceFilter === 'all' ||
+      (deviceFilter === 'mobile' &&
+        session.deviceInfo.device.toLowerCase().includes('mobile')) ||
+      (deviceFilter === 'desktop' &&
+        session.deviceInfo.device.toLowerCase().includes('desktop')) ||
+      (deviceFilter === 'tablet' &&
+        session.deviceInfo.device.toLowerCase().includes('tablet'))
+
     return matchesSearch && matchesDevice
   })
 
@@ -1018,13 +1228,13 @@ function SessionManagement({ sessions }: { sessions: Session[] }) {
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Active Sessions</h3>
           <div className="flex items-center gap-2">
             <Button variant="outline" className="text-xs">
-              <Download className="w-3 h-3 mr-1" />
+              <Download className="mr-1 h-3 w-3" />
               Export
             </Button>
             <Button variant="outline" className="text-xs">
@@ -1034,23 +1244,23 @@ function SessionManagement({ sessions }: { sessions: Session[] }) {
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 p-4">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               placeholder="Search sessions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700"
+              className="w-full rounded-lg border border-zinc-200 py-2 pr-4 pl-10 dark:border-zinc-700"
             />
           </div>
 
           <select
             value={deviceFilter}
             onChange={(e) => setDeviceFilter(e.target.value as any)}
-            className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700"
+            className="rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-700"
           >
             <option value="all">All Devices</option>
             <option value="mobile">Mobile</option>
@@ -1065,35 +1275,45 @@ function SessionManagement({ sessions }: { sessions: Session[] }) {
             return (
               <div
                 key={session.id}
-                className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                className="flex items-center justify-between rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
               >
                 <div className="flex items-center gap-3">
-                  <DeviceIcon className="w-5 h-5 text-zinc-500" />
+                  <DeviceIcon className="h-5 w-5 text-zinc-500" />
                   <div>
-                    <div className="font-medium text-sm">{session.userEmail}</div>
+                    <div className="text-sm font-medium">
+                      {session.userEmail}
+                    </div>
                     <div className="text-xs text-zinc-500">
-                      {session.deviceInfo.browser} on {session.deviceInfo.os} • {session.deviceInfo.ip}
-                      {session.deviceInfo.location && ` • ${session.deviceInfo.location}`}
+                      {session.deviceInfo.browser} on {session.deviceInfo.os} •{' '}
+                      {session.deviceInfo.ip}
+                      {session.deviceInfo.location &&
+                        ` • ${session.deviceInfo.location}`}
                     </div>
                   </div>
-                  
+
                   {session.isActive ? (
-                    <span className="px-2 py-1 text-xs rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                    <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-400">
                       Active
                     </span>
                   ) : (
-                    <span className="px-2 py-1 text-xs rounded bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400">
+                    <span className="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400">
                       Expired
                     </span>
                   )}
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="text-xs text-zinc-500 text-right">
-                    <div>Created: {new Date(session.createdAt).toLocaleDateString()}</div>
-                    <div>Last: {new Date(session.lastAccessed).toLocaleDateString()}</div>
+                  <div className="text-right text-xs text-zinc-500">
+                    <div>
+                      Created:{' '}
+                      {new Date(session.createdAt).toLocaleDateString()}
+                    </div>
+                    <div>
+                      Last:{' '}
+                      {new Date(session.lastAccessed).toLocaleDateString()}
+                    </div>
                   </div>
-                  
+
                   <Button variant="outline" className="text-xs">
                     Revoke
                   </Button>
@@ -1109,53 +1329,57 @@ function SessionManagement({ sessions }: { sessions: Session[] }) {
 
 function LoginHistory({ attempts }: { attempts: LoginAttempt[] }) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'all' | 'success' | 'failed'>('all')
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'success' | 'failed'
+  >('all')
 
-  const filteredAttempts = attempts.filter(attempt => {
-    const matchesSearch = attempt.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         attempt.ip.includes(searchTerm)
-    const matchesStatus = statusFilter === 'all' ||
+  const filteredAttempts = attempts.filter((attempt) => {
+    const matchesSearch =
+      attempt.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      attempt.ip.includes(searchTerm)
+    const matchesStatus =
+      statusFilter === 'all' ||
       (statusFilter === 'success' && attempt.success) ||
       (statusFilter === 'failed' && !attempt.success)
-    
+
     return matchesSearch && matchesStatus
   })
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Login History</h3>
           <div className="flex items-center gap-2">
             <Button variant="outline" className="text-xs">
-              <Download className="w-3 h-3 mr-1" />
+              <Download className="mr-1 h-3 w-3" />
               Export
             </Button>
             <Button variant="outline" className="text-xs">
-              <Trash2 className="w-3 h-3 mr-1" />
+              <Trash2 className="mr-1 h-3 w-3" />
               Clear Old
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 p-4">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               placeholder="Search login attempts..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700"
+              className="w-full rounded-lg border border-zinc-200 py-2 pr-4 pl-10 dark:border-zinc-700"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700"
+            className="rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-700"
           >
             <option value="all">All Attempts</option>
             <option value="success">Successful</option>
@@ -1167,24 +1391,24 @@ function LoginHistory({ attempts }: { attempts: LoginAttempt[] }) {
           {filteredAttempts.map((attempt) => (
             <div
               key={attempt.id}
-              className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700"
+              className="flex items-center justify-between rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
             >
               <div className="flex items-center gap-3">
                 {attempt.success ? (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <CheckCircle className="h-4 w-4 text-green-500" />
                 ) : (
-                  <XCircle className="w-4 h-4 text-red-500" />
+                  <XCircle className="h-4 w-4 text-red-500" />
                 )}
                 <div>
-                  <div className="font-medium text-sm">{attempt.email}</div>
+                  <div className="text-sm font-medium">{attempt.email}</div>
                   <div className="text-xs text-zinc-500">
                     {attempt.provider} • {attempt.ip}
                     {attempt.city && ` • ${attempt.city}, ${attempt.country}`}
                   </div>
                 </div>
-                
+
                 {!attempt.success && attempt.errorReason && (
-                  <span className="px-2 py-1 text-xs rounded bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400">
+                  <span className="rounded bg-red-100 px-2 py-1 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-400">
                     {attempt.errorReason}
                   </span>
                 )}
@@ -1202,13 +1426,20 @@ function LoginHistory({ attempts }: { attempts: LoginAttempt[] }) {
 }
 
 function SecuritySettings({ settings }: { settings: SecuritySetting[] }) {
-  const [editingSettings, setEditingSettings] = useState<Record<string, any>>({})
+  const [editingSettings, setEditingSettings] = useState<Record<string, any>>(
+    {},
+  )
   const [hasChanges, setHasChanges] = useState(false)
 
-  const categories = ['password', 'session', 'rate_limiting', 'security'] as const
+  const categories = [
+    'password',
+    'session',
+    'rate_limiting',
+    'security',
+  ] as const
 
   const handleSettingChange = (name: string, value: any) => {
-    setEditingSettings(prev => ({ ...prev, [name]: value }))
+    setEditingSettings((prev) => ({ ...prev, [name]: value }))
     setHasChanges(true)
   }
 
@@ -1219,46 +1450,65 @@ function SecuritySettings({ settings }: { settings: SecuritySetting[] }) {
 
   return (
     <div className="space-y-6">
-      {categories.map(category => {
-        const categorySettings = settings.filter(s => s.category === category)
-        
+      {categories.map((category) => {
+        const categorySettings = settings.filter((s) => s.category === category)
+
         return (
-          <div key={category} className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-            <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+          <div
+            key={category}
+            className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800"
+          >
+            <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
               <h3 className="text-lg font-semibold capitalize">
                 {category.replace('_', ' ')} Settings
               </h3>
             </div>
 
-            <div className="p-4 space-y-4">
-              {categorySettings.map(setting => (
-                <div key={setting.name} className="flex items-center justify-between py-3 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+            <div className="space-y-4 p-4">
+              {categorySettings.map((setting) => (
+                <div
+                  key={setting.name}
+                  className="flex items-center justify-between border-b border-zinc-100 py-3 last:border-0 dark:border-zinc-800"
+                >
                   <div className="flex-1">
-                    <div className="font-medium text-sm">{setting.name}</div>
-                    <div className="text-xs text-zinc-500 mt-1">{setting.description}</div>
+                    <div className="text-sm font-medium">{setting.name}</div>
+                    <div className="mt-1 text-xs text-zinc-500">
+                      {setting.description}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-3">
                     {typeof setting.value === 'boolean' ? (
                       <input
                         type="checkbox"
-                        checked={editingSettings[setting.name] ?? setting.enabled}
-                        onChange={(e) => handleSettingChange(setting.name, e.target.checked)}
+                        checked={
+                          editingSettings[setting.name] ?? setting.enabled
+                        }
+                        onChange={(e) =>
+                          handleSettingChange(setting.name, e.target.checked)
+                        }
                         className="rounded"
                       />
                     ) : typeof setting.value === 'number' ? (
                       <input
                         type="number"
                         value={editingSettings[setting.name] ?? setting.value}
-                        onChange={(e) => handleSettingChange(setting.name, parseInt(e.target.value))}
-                        className="w-20 px-2 py-1 text-sm rounded border border-zinc-200 dark:border-zinc-700"
+                        onChange={(e) =>
+                          handleSettingChange(
+                            setting.name,
+                            parseInt(e.target.value),
+                          )
+                        }
+                        className="w-20 rounded border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-700"
                       />
                     ) : (
                       <input
                         type="text"
                         value={editingSettings[setting.name] ?? setting.value}
-                        onChange={(e) => handleSettingChange(setting.name, e.target.value)}
-                        className="w-32 px-2 py-1 text-sm rounded border border-zinc-200 dark:border-zinc-700"
+                        onChange={(e) =>
+                          handleSettingChange(setting.name, e.target.value)
+                        }
+                        className="w-32 rounded border border-zinc-200 px-2 py-1 text-sm dark:border-zinc-700"
                       />
                     )}
                   </div>
@@ -1270,8 +1520,8 @@ function SecuritySettings({ settings }: { settings: SecuritySetting[] }) {
       })}
 
       {hasChanges && (
-        <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <div className="flex items-center gap-2 rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
+          <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <span className="text-sm font-medium">You have unsaved changes</span>
           <div className="ml-auto flex gap-2">
             <Button
@@ -1285,7 +1535,7 @@ function SecuritySettings({ settings }: { settings: SecuritySetting[] }) {
               Cancel
             </Button>
             <Button onClick={saveSettings} className="text-xs">
-              <Save className="w-3 h-3 mr-1" />
+              <Save className="mr-1 h-3 w-3" />
               Save Changes
             </Button>
           </div>
@@ -1307,7 +1557,7 @@ export default function AuthPage() {
     avgSessionDuration: '2h 34m',
     mfaEnabled: 892,
     emailVerified: 14567,
-    passwordResets24h: 8
+    passwordResets24h: 8,
   })
 
   const [users] = useState<User[]>([
@@ -1320,17 +1570,21 @@ export default function AuthPage() {
       createdAt: '2024-01-15T10:30:00.000Z',
       lastSignIn: '2024-01-17T09:15:00.000Z',
       providerData: [
-        { providerId: 'google.com', uid: 'google-uid-123', email: 'john.doe@example.com' },
-        { providerId: 'github.com', uid: 'github-uid-456' }
+        {
+          providerId: 'google.com',
+          uid: 'google-uid-123',
+          email: 'john.doe@example.com',
+        },
+        { providerId: 'github.com', uid: 'github-uid-456' },
       ],
       customClaims: { role: 'admin', department: 'engineering' },
       metadata: {
         creationTime: '2024-01-15T10:30:00.000Z',
-        lastSignInTime: '2024-01-17T09:15:00.000Z'
+        lastSignInTime: '2024-01-17T09:15:00.000Z',
       },
       roles: ['admin', 'user'],
       mfaEnabled: true,
-      photoURL: 'https://avatar.example.com/john.jpg'
+      photoURL: 'https://avatar.example.com/john.jpg',
     },
     {
       id: '2',
@@ -1341,15 +1595,19 @@ export default function AuthPage() {
       createdAt: '2024-01-16T14:20:00.000Z',
       lastSignIn: '2024-01-17T08:30:00.000Z',
       providerData: [
-        { providerId: 'google.com', uid: 'google-uid-789', email: 'jane.smith@example.com' }
+        {
+          providerId: 'google.com',
+          uid: 'google-uid-789',
+          email: 'jane.smith@example.com',
+        },
       ],
       customClaims: { role: 'manager', department: 'product' },
       metadata: {
         creationTime: '2024-01-16T14:20:00.000Z',
-        lastSignInTime: '2024-01-17T08:30:00.000Z'
+        lastSignInTime: '2024-01-17T08:30:00.000Z',
       },
       roles: ['manager', 'user'],
-      mfaEnabled: false
+      mfaEnabled: false,
     },
     {
       id: '3',
@@ -1358,25 +1616,35 @@ export default function AuthPage() {
       disabled: false,
       createdAt: '2024-01-17T10:00:00.000Z',
       providerData: [
-        { providerId: 'password', uid: 'password-uid-101', email: 'unverified@example.com' }
+        {
+          providerId: 'password',
+          uid: 'password-uid-101',
+          email: 'unverified@example.com',
+        },
       ],
       customClaims: {},
       metadata: {
-        creationTime: '2024-01-17T10:00:00.000Z'
+        creationTime: '2024-01-17T10:00:00.000Z',
       },
       roles: ['user'],
-      mfaEnabled: false
-    }
+      mfaEnabled: false,
+    },
   ])
 
   const [roles] = useState<Role[]>([
     {
       name: 'admin',
       description: 'Full system administrator with all permissions',
-      permissions: ['users.read', 'users.write', 'users.delete', 'roles.manage', 'system.config'],
+      permissions: [
+        'users.read',
+        'users.write',
+        'users.delete',
+        'roles.manage',
+        'system.config',
+      ],
       userCount: 5,
       isDefault: false,
-      createdAt: '2024-01-01T00:00:00.000Z'
+      createdAt: '2024-01-01T00:00:00.000Z',
     },
     {
       name: 'manager',
@@ -1384,7 +1652,7 @@ export default function AuthPage() {
       permissions: ['users.read', 'users.write', 'team.manage'],
       userCount: 23,
       isDefault: false,
-      createdAt: '2024-01-01T00:00:00.000Z'
+      createdAt: '2024-01-01T00:00:00.000Z',
     },
     {
       name: 'user',
@@ -1392,19 +1660,59 @@ export default function AuthPage() {
       permissions: ['profile.read', 'profile.write'],
       userCount: 15404,
       isDefault: true,
-      createdAt: '2024-01-01T00:00:00.000Z'
-    }
+      createdAt: '2024-01-01T00:00:00.000Z',
+    },
   ])
 
   const [permissions] = useState<Permission[]>([
-    { name: 'users.read', description: 'View user information', resource: 'users', action: 'read' },
-    { name: 'users.write', description: 'Create and update users', resource: 'users', action: 'write' },
-    { name: 'users.delete', description: 'Delete user accounts', resource: 'users', action: 'delete' },
-    { name: 'roles.manage', description: 'Manage roles and permissions', resource: 'roles', action: 'manage' },
-    { name: 'system.config', description: 'Configure system settings', resource: 'system', action: 'config' },
-    { name: 'team.manage', description: 'Manage team members', resource: 'team', action: 'manage' },
-    { name: 'profile.read', description: 'View own profile', resource: 'profile', action: 'read' },
-    { name: 'profile.write', description: 'Update own profile', resource: 'profile', action: 'write' }
+    {
+      name: 'users.read',
+      description: 'View user information',
+      resource: 'users',
+      action: 'read',
+    },
+    {
+      name: 'users.write',
+      description: 'Create and update users',
+      resource: 'users',
+      action: 'write',
+    },
+    {
+      name: 'users.delete',
+      description: 'Delete user accounts',
+      resource: 'users',
+      action: 'delete',
+    },
+    {
+      name: 'roles.manage',
+      description: 'Manage roles and permissions',
+      resource: 'roles',
+      action: 'manage',
+    },
+    {
+      name: 'system.config',
+      description: 'Configure system settings',
+      resource: 'system',
+      action: 'config',
+    },
+    {
+      name: 'team.manage',
+      description: 'Manage team members',
+      resource: 'team',
+      action: 'manage',
+    },
+    {
+      name: 'profile.read',
+      description: 'View own profile',
+      resource: 'profile',
+      action: 'read',
+    },
+    {
+      name: 'profile.write',
+      description: 'Update own profile',
+      resource: 'profile',
+      action: 'write',
+    },
   ])
 
   const [oauthProviders] = useState<OAuthProvider[]>([
@@ -1414,7 +1722,7 @@ export default function AuthPage() {
       clientId: 'your-google-client-id.apps.googleusercontent.com',
       clientSecret: 'your-google-client-secret',
       scopes: ['email', 'profile'],
-      buttonText: 'Continue with Google'
+      buttonText: 'Continue with Google',
     },
     {
       providerId: 'github',
@@ -1422,7 +1730,7 @@ export default function AuthPage() {
       clientId: 'your-github-client-id',
       clientSecret: 'your-github-client-secret',
       scopes: ['user:email'],
-      buttonText: 'Continue with GitHub'
+      buttonText: 'Continue with GitHub',
     },
     {
       providerId: 'facebook',
@@ -1430,8 +1738,8 @@ export default function AuthPage() {
       clientId: 'your-facebook-client-id',
       clientSecret: 'your-facebook-client-secret',
       scopes: ['email'],
-      buttonText: 'Continue with Facebook'
-    }
+      buttonText: 'Continue with Facebook',
+    },
   ])
 
   const [jwtSettings] = useState<JWTSettings>({
@@ -1444,10 +1752,10 @@ export default function AuthPage() {
       iss: 'https://your-app.com',
       aud: 'your-app-users',
       sub: 'user-id',
-      role: 'user'
+      role: 'user',
     },
     customClaims: true,
-    allowedClockSkew: 60
+    allowedClockSkew: 60,
   })
 
   const [sessions] = useState<Session[]>([
@@ -1460,12 +1768,12 @@ export default function AuthPage() {
         os: 'macOS 14.0',
         browser: 'Chrome 120.0',
         ip: '192.168.1.100',
-        location: 'San Francisco, CA'
+        location: 'San Francisco, CA',
       },
       createdAt: '2024-01-17T09:15:00.000Z',
       lastAccessed: '2024-01-17T10:30:00.000Z',
       expiresAt: '2024-01-18T09:15:00.000Z',
-      isActive: true
+      isActive: true,
     },
     {
       id: 'sess_2',
@@ -1476,13 +1784,13 @@ export default function AuthPage() {
         os: 'iOS 17.0',
         browser: 'Safari',
         ip: '10.0.1.50',
-        location: 'San Francisco, CA'
+        location: 'San Francisco, CA',
       },
       createdAt: '2024-01-16T18:30:00.000Z',
       lastAccessed: '2024-01-17T07:45:00.000Z',
       expiresAt: '2024-01-17T18:30:00.000Z',
-      isActive: true
-    }
+      isActive: true,
+    },
   ])
 
   const [loginAttempts] = useState<LoginAttempt[]>([
@@ -1492,10 +1800,11 @@ export default function AuthPage() {
       success: true,
       timestamp: '2024-01-17T09:15:00.000Z',
       ip: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      userAgent:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
       provider: 'google',
       country: 'US',
-      city: 'San Francisco'
+      city: 'San Francisco',
     },
     {
       id: '2',
@@ -1507,7 +1816,7 @@ export default function AuthPage() {
       provider: 'password',
       errorReason: 'Invalid credentials',
       country: 'Unknown',
-      city: 'Unknown'
+      city: 'Unknown',
     },
     {
       id: '3',
@@ -1518,8 +1827,8 @@ export default function AuthPage() {
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       provider: 'password',
       country: 'US',
-      city: 'New York'
-    }
+      city: 'New York',
+    },
   ])
 
   const [securitySettings] = useState<SecuritySetting[]>([
@@ -1528,61 +1837,63 @@ export default function AuthPage() {
       description: 'Minimum number of characters required for passwords',
       enabled: true,
       value: 8,
-      category: 'password'
+      category: 'password',
     },
     {
       name: 'Require Special Characters',
       description: 'Passwords must contain at least one special character',
       enabled: true,
-      category: 'password'
+      category: 'password',
     },
     {
       name: 'Password Expiry Days',
       description: 'Number of days before passwords expire (0 = never)',
       enabled: false,
       value: 90,
-      category: 'password'
+      category: 'password',
     },
     {
       name: 'Session Timeout',
       description: 'Automatically log out users after inactivity (minutes)',
       enabled: true,
       value: 30,
-      category: 'session'
+      category: 'session',
     },
     {
       name: 'Remember Me Duration',
       description: 'How long "remember me" sessions last (days)',
       enabled: true,
       value: 30,
-      category: 'session'
+      category: 'session',
     },
     {
       name: 'Max Login Attempts',
       description: 'Number of failed login attempts before account lockout',
       enabled: true,
       value: 5,
-      category: 'rate_limiting'
+      category: 'rate_limiting',
     },
     {
       name: 'Account Lockout Duration',
-      description: 'How long accounts remain locked after failed attempts (minutes)',
+      description:
+        'How long accounts remain locked after failed attempts (minutes)',
       enabled: true,
       value: 15,
-      category: 'rate_limiting'
+      category: 'rate_limiting',
     },
     {
       name: 'Require Email Verification',
-      description: 'New users must verify their email before accessing the system',
+      description:
+        'New users must verify their email before accessing the system',
       enabled: true,
-      category: 'security'
+      category: 'security',
     },
     {
       name: 'Enable MFA',
       description: 'Allow users to enable multi-factor authentication',
       enabled: true,
-      category: 'security'
-    }
+      category: 'security',
+    },
   ])
 
   const tabs = [
@@ -1592,35 +1903,35 @@ export default function AuthPage() {
     { id: 'jwt', label: 'JWT Settings', icon: Key },
     { id: 'sessions', label: 'Sessions', icon: Clock },
     { id: 'history', label: 'Login History', icon: History },
-    { id: 'security', label: 'Security', icon: Lock }
+    { id: 'security', label: 'Security', icon: Lock },
   ]
 
   return (
     <>
       <HeroPattern />
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
-                <Shield className="w-8 h-8 text-green-500" />
+              <h1 className="flex items-center gap-3 text-3xl font-bold text-zinc-900 dark:text-white">
+                <Shield className="h-8 w-8 text-green-500" />
                 Auth Service
               </h1>
-              <p className="text-zinc-600 dark:text-zinc-400 mt-1">
+              <p className="mt-1 text-zinc-600 dark:text-zinc-400">
                 User management, authentication, and security configuration
               </p>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline">
-                <ExternalLink className="w-4 h-4 mr-2" />
+                <ExternalLink className="mr-2 h-4 w-4" />
                 Hasura Auth Console
               </Button>
               <Button variant="outline">
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="mr-2 h-4 w-4" />
                 Export Users
               </Button>
               <Button variant="outline">
-                <RefreshCw className="w-4 h-4 mr-2" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
             </div>
@@ -1630,61 +1941,78 @@ export default function AuthPage() {
           <StatsOverview stats={stats} />
 
           {/* Additional Quick Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Email Verified</p>
-                  <p className="text-2xl font-bold">{((stats.emailVerified / stats.totalUsers) * 100).toFixed(1)}%</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Email Verified
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {((stats.emailVerified / stats.totalUsers) * 100).toFixed(
+                      1,
+                    )}
+                    %
+                  </p>
                 </div>
-                <Mail className="w-6 h-6 text-blue-500" />
+                <Mail className="h-6 w-6 text-blue-500" />
               </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">MFA Enabled</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    MFA Enabled
+                  </p>
                   <p className="text-2xl font-bold">{stats.mfaEnabled}</p>
                 </div>
-                <Lock className="w-6 h-6 text-green-500" />
+                <Lock className="h-6 w-6 text-green-500" />
               </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Avg Session</p>
-                  <p className="text-2xl font-bold">{stats.avgSessionDuration}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Avg Session
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {stats.avgSessionDuration}
+                  </p>
                 </div>
-                <Clock className="w-6 h-6 text-purple-500" />
+                <Clock className="h-6 w-6 text-purple-500" />
               </div>
             </div>
 
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Password Resets</p>
-                  <p className="text-2xl font-bold">{stats.passwordResets24h}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Password Resets
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {stats.passwordResets24h}
+                  </p>
                 </div>
-                <Key className="w-6 h-6 text-orange-500" />
+                <Key className="h-6 w-6 text-orange-500" />
               </div>
             </div>
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700 mb-6 overflow-x-auto">
+          <div className="mb-6 flex items-center gap-1 overflow-x-auto rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
                   activeTab === tab.id
                     ? 'bg-blue-500 text-white'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+                    : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className="h-4 w-4" />
                 {tab.label}
               </button>
             ))}
@@ -1693,12 +2021,18 @@ export default function AuthPage() {
 
         {/* Tab Content */}
         {activeTab === 'users' && <UserManagement users={users} />}
-        {activeTab === 'roles' && <RolesAndPermissions roles={roles} permissions={permissions} />}
-        {activeTab === 'oauth' && <OAuthConfiguration providers={oauthProviders} />}
+        {activeTab === 'roles' && (
+          <RolesAndPermissions roles={roles} permissions={permissions} />
+        )}
+        {activeTab === 'oauth' && (
+          <OAuthConfiguration providers={oauthProviders} />
+        )}
         {activeTab === 'jwt' && <JWTConfiguration settings={jwtSettings} />}
         {activeTab === 'sessions' && <SessionManagement sessions={sessions} />}
         {activeTab === 'history' && <LoginHistory attempts={loginAttempts} />}
-        {activeTab === 'security' && <SecuritySettings settings={securitySettings} />}
+        {activeTab === 'security' && (
+          <SecuritySettings settings={securitySettings} />
+        )}
       </div>
     </>
   )

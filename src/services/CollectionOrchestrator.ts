@@ -4,10 +4,13 @@
  */
 
 import { EventEmitter } from 'events'
-import { type ContainerStats, type DockerSystemInfo } from './collectors/DockerAPICollector'
+import {
+  type ContainerStats,
+  type DockerSystemInfo,
+} from './collectors/DockerAPICollector'
 import { getGlobalDockerCollector } from './globalCollectors'
-import { getPostgresCollector, type PostgresStats } from './PostgresCollector'
 import { getHasuraCollector, type HasuraStats } from './HasuraCollector'
+import { getPostgresCollector, type PostgresStats } from './PostgresCollector'
 import { getRedisCollector, type RedisStats } from './RedisCollector'
 
 export interface GlobalState {
@@ -34,29 +37,29 @@ export class CollectionOrchestrator extends EventEmitter {
   private postgresCollector = getPostgresCollector()
   private hasuraCollector = getHasuraCollector()
   private redisCollector = getRedisCollector()
-  
+
   private state: GlobalState = {
     docker: {
       containers: [],
-      system: null
+      system: null,
     },
     services: {
       postgres: null,
       hasura: null,
-      redis: null
+      redis: null,
     },
     metrics: {
       totalCpu: 0,
       totalMemory: { used: 0, total: 0, percentage: 0 },
-      totalNetwork: { rx: 0, tx: 0 }
+      totalNetwork: { rx: 0, tx: 0 },
     },
     lastUpdate: Date.now(),
-    healthy: true
+    healthy: true,
   }
 
   private isRunning = false
   private serviceIntervals: Map<string, NodeJS.Timeout> = new Map()
-  
+
   constructor() {
     super()
     this.setupDockerListeners()
@@ -97,19 +100,19 @@ export class CollectionOrchestrator extends EventEmitter {
    */
   async start() {
     if (this.isRunning) return
-    
+
     this.isRunning = true
 
     try {
       // Start Docker collector (streaming)
       await this.dockerCollector.start()
-      
+
       // Initial load of service data
       await this.loadServiceData()
-      
+
       // Schedule periodic service updates
       this.scheduleServiceUpdates()
-      
+
       this.emit('started')
     } catch (error) {
       this.isRunning = false
@@ -122,18 +125,18 @@ export class CollectionOrchestrator extends EventEmitter {
    */
   async stop() {
     if (!this.isRunning) return
-    
+
     this.isRunning = false
 
     // Stop Docker collector
     await this.dockerCollector.stop()
-    
+
     // Clear service intervals
     for (const interval of this.serviceIntervals.values()) {
       clearInterval(interval)
     }
     this.serviceIntervals.clear()
-    
+
     this.emit('stopped')
   }
 
@@ -144,9 +147,9 @@ export class CollectionOrchestrator extends EventEmitter {
     const tasks = [
       this.loadPostgresData(),
       this.loadHasuraData(),
-      this.loadRedisData()
+      this.loadRedisData(),
     ]
-    
+
     await Promise.allSettled(tasks)
   }
 
@@ -194,26 +197,37 @@ export class CollectionOrchestrator extends EventEmitter {
    */
   private scheduleServiceUpdates() {
     // Update Postgres every 5 seconds
-    this.serviceIntervals.set('postgres', setInterval(() => {
-      if (this.isRunning) this.loadPostgresData()
-    }, 5000))
-    
+    this.serviceIntervals.set(
+      'postgres',
+      setInterval(() => {
+        if (this.isRunning) this.loadPostgresData()
+      }, 5000),
+    )
+
     // Update Hasura every 10 seconds
-    this.serviceIntervals.set('hasura', setInterval(() => {
-      if (this.isRunning) this.loadHasuraData()
-    }, 10000))
-    
+    this.serviceIntervals.set(
+      'hasura',
+      setInterval(() => {
+        if (this.isRunning) this.loadHasuraData()
+      }, 10000),
+    )
+
     // Update Redis every 5 seconds
-    this.serviceIntervals.set('redis', setInterval(() => {
-      if (this.isRunning) this.loadRedisData()
-    }, 5000))
+    this.serviceIntervals.set(
+      'redis',
+      setInterval(() => {
+        if (this.isRunning) this.loadRedisData()
+      }, 5000),
+    )
   }
 
   /**
    * Update container in state
    */
   private updateContainerInState(updatedContainer: ContainerStats) {
-    const index = this.state.docker.containers.findIndex(c => c.id === updatedContainer.id)
+    const index = this.state.docker.containers.findIndex(
+      (c) => c.id === updatedContainer.id,
+    )
     if (index >= 0) {
       this.state.docker.containers[index] = updatedContainer
     } else {
@@ -230,7 +244,7 @@ export class CollectionOrchestrator extends EventEmitter {
     let totalMemLimit = 0
     let totalRx = 0
     let totalTx = 0
-    
+
     for (const container of this.state.docker.containers) {
       if (container.status === 'running') {
         totalCpu += container.cpu
@@ -240,18 +254,21 @@ export class CollectionOrchestrator extends EventEmitter {
         totalTx += container.network.tx
       }
     }
-    
+
     this.state.metrics = {
       totalCpu: Math.round(totalCpu * 10) / 10,
       totalMemory: {
         used: Math.round(totalMemUsed * 100) / 100,
         total: Math.round(totalMemLimit * 100) / 100,
-        percentage: totalMemLimit > 0 ? Math.round((totalMemUsed / totalMemLimit) * 100) : 0
+        percentage:
+          totalMemLimit > 0
+            ? Math.round((totalMemUsed / totalMemLimit) * 100)
+            : 0,
       },
       totalNetwork: {
         rx: Math.round(totalRx * 10) / 10,
-        tx: Math.round(totalTx * 10) / 10
-      }
+        tx: Math.round(totalTx * 10) / 10,
+      },
     }
   }
 
@@ -281,7 +298,7 @@ export class CollectionOrchestrator extends EventEmitter {
    * Get container by ID
    */
   getContainer(id: string): ContainerStats | undefined {
-    return this.state.docker.containers.find(c => c.id === id)
+    return this.state.docker.containers.find((c) => c.id === id)
   }
 
   /**

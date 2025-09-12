@@ -24,7 +24,7 @@ export function determineRoute(status: ProjectStatus): RoutingResult {
   if (!status.hasEnvFile) {
     return {
       route: '/init',
-      reason: 'No environment file found - project not initialized'
+      reason: 'No environment file found - project not initialized',
     }
   }
 
@@ -32,7 +32,7 @@ export function determineRoute(status: ProjectStatus): RoutingResult {
   if (!status.hasDockerCompose) {
     return {
       route: '/init',
-      reason: 'Environment file exists but project not built'
+      reason: 'Environment file exists but project not built',
     }
   }
 
@@ -40,14 +40,14 @@ export function determineRoute(status: ProjectStatus): RoutingResult {
   if (!status.servicesRunning || status.containerCount < 4) {
     return {
       route: '/start',
-      reason: `Services not running (${status.containerCount} containers)`
+      reason: `Services not running (${status.containerCount} containers)`,
     }
   }
 
   // 4. Services running - go to dashboard
   return {
     route: '/',
-    reason: `Services running (${status.containerCount} containers)`
+    reason: `Services running (${status.containerCount} containers)`,
   }
 }
 
@@ -60,7 +60,7 @@ export async function getCorrectRoute(): Promise<RoutingResult> {
     if (!response.ok) {
       return {
         route: '/init',
-        reason: 'Failed to fetch project status - defaulting to init'
+        reason: 'Failed to fetch project status - defaulting to init',
       }
     }
 
@@ -69,7 +69,7 @@ export async function getCorrectRoute(): Promise<RoutingResult> {
   } catch (error) {
     return {
       route: '/init',
-      reason: 'Error checking project status - defaulting to init'
+      reason: 'Error checking project status - defaulting to init',
     }
   }
 }
@@ -78,13 +78,16 @@ export async function getCorrectRoute(): Promise<RoutingResult> {
  * Checks if current page is correct and redirects if needed
  * Returns true if redirect happened, false if current page is correct
  */
-export async function ensureCorrectRoute(currentPath: string, navigate: (path: string) => void): Promise<boolean> {
+export async function ensureCorrectRoute(
+  currentPath: string,
+  navigate: (path: string) => void,
+): Promise<boolean> {
   const result = await getCorrectRoute()
-  
+
   // Normalize paths for comparison
   const targetPath = result.route
   const normalizedCurrentPath = currentPath === '' ? '/' : currentPath
-  
+
   // Check if we're on the correct page
   if (normalizedCurrentPath === targetPath) {
     console.log(`✅ Correct route: ${currentPath} (${result.reason})`)
@@ -92,13 +95,20 @@ export async function ensureCorrectRoute(currentPath: string, navigate: (path: s
   }
 
   // Special cases where current page is acceptable
-  if (targetPath === '/' && ['/services', '/database', '/config', '/monitor'].some(path => normalizedCurrentPath.startsWith(path))) {
+  if (
+    targetPath === '/' &&
+    ['/services', '/database', '/config', '/monitor'].some((path) =>
+      normalizedCurrentPath.startsWith(path),
+    )
+  ) {
     console.log(`✅ Acceptable route: ${currentPath} (services running)`)
     return false // Allow sub-pages when services are running
   }
 
   // Redirect needed
-  console.log(`🔄 Redirecting: ${currentPath} → ${targetPath} (${result.reason})`)
+  console.log(
+    `🔄 Redirecting: ${currentPath} → ${targetPath} (${result.reason})`,
+  )
   navigate(targetPath)
   return true // Redirect happened
 }

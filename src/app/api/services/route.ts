@@ -1,16 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { getDockerSocketPath, getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
-import { promisify } from 'util'
 import Docker from 'dockerode'
-import { getProjectPath, getDockerSocketPath } from '@/lib/paths'
+import { NextRequest, NextResponse } from 'next/server'
+import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
 // Initialize Docker client
 const docker = new Docker(
-  process.env.DOCKER_HOST 
+  process.env.DOCKER_HOST
     ? { host: process.env.DOCKER_HOST }
-    : { socketPath: getDockerSocketPath() }
+    : { socketPath: getDockerSocketPath() },
 )
 
 export async function GET(request: NextRequest) {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         if (!service) {
           return NextResponse.json(
             { success: false, error: 'Service name is required for details' },
-            { status: 400 }
+            { status: 400 },
           )
         }
         return await getServiceDetails(service)
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
         if (!service) {
           return NextResponse.json(
             { success: false, error: 'Service name is required for logs' },
-            { status: 400 }
+            { status: 400 },
           )
         }
         return await getServiceLogs(service, searchParams)
@@ -45,19 +45,17 @@ export async function GET(request: NextRequest) {
       default:
         return NextResponse.json(
           { success: false, error: `Unknown action: ${action}` },
-          { status: 400 }
+          { status: 400 },
         )
     }
-
   } catch (error: any) {
-    
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Services operation failed',
-        details: error?.message || "Unknown error"
+        details: error?.message || 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -69,7 +67,7 @@ export async function POST(request: NextRequest) {
     if (!action) {
       return NextResponse.json(
         { success: false, error: 'Action is required' },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -91,19 +89,17 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json(
           { success: false, error: `Unknown action: ${action}` },
-          { status: 400 }
+          { status: 400 },
         )
     }
-
   } catch (error: any) {
-    
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Service operation failed',
-        details: error?.message || "Unknown error"
+        details: error?.message || 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -112,67 +108,72 @@ async function getServicesList() {
   try {
     // Get all containers
     const containers = await docker.listContainers({ all: true })
-    
+
     // Format service data with enhanced information
-    const services = await Promise.all(containers.map(async (container) => {
-      const containerObj = docker.getContainer(container.Id)
-      const inspect = await containerObj.inspect()
-      
-      return {
-        id: container.Id,
-        name: container.Names[0]?.replace(/^\//, ''),
-        image: container.Image,
-        state: container.State,
-        status: container.Status,
-        ports: container.Ports?.map(p => ({
-          private: p.PrivatePort,
-          public: p.PublicPort,
-          type: p.Type
-        })),
-        labels: container.Labels,
-        created: container.Created,
-        serviceType: getServiceType(container.Names[0], container.Labels),
-        category: getServiceCategory(container.Names[0], container.Labels),
-        health: getHealthStatus(container.Status, container.State),
-        
-        // Enhanced information
-        restartCount: inspect.RestartCount,
-        startedAt: inspect.State.StartedAt,
-        finishedAt: inspect.State.FinishedAt,
-        platform: inspect.Platform,
-        config: {
-          hostname: inspect.Config.Hostname,
-          domainname: inspect.Config.Domainname,
-          user: inspect.Config.User,
-          workingDir: inspect.Config.WorkingDir,
-          entrypoint: inspect.Config.Entrypoint,
-          cmd: inspect.Config.Cmd,
-          env: inspect.Config.Env?.filter(env => 
-            !env.includes('PASSWORD') && !env.includes('SECRET') && !env.includes('KEY')
-          ) // Filter out sensitive data
-        },
-        mounts: inspect.Mounts?.map(mount => ({
-          type: mount.Type,
-          source: mount.Source,
-          destination: mount.Destination,
-          mode: mount.Mode,
-          rw: mount.RW
-        })),
-        networkSettings: {
-          networks: Object.keys(inspect.NetworkSettings.Networks || {}),
-          ipAddress: inspect.NetworkSettings.IPAddress,
-          gateway: inspect.NetworkSettings.Gateway
+    const services = await Promise.all(
+      containers.map(async (container) => {
+        const containerObj = docker.getContainer(container.Id)
+        const inspect = await containerObj.inspect()
+
+        return {
+          id: container.Id,
+          name: container.Names[0]?.replace(/^\//, ''),
+          image: container.Image,
+          state: container.State,
+          status: container.Status,
+          ports: container.Ports?.map((p) => ({
+            private: p.PrivatePort,
+            public: p.PublicPort,
+            type: p.Type,
+          })),
+          labels: container.Labels,
+          created: container.Created,
+          serviceType: getServiceType(container.Names[0], container.Labels),
+          category: getServiceCategory(container.Names[0], container.Labels),
+          health: getHealthStatus(container.Status, container.State),
+
+          // Enhanced information
+          restartCount: inspect.RestartCount,
+          startedAt: inspect.State.StartedAt,
+          finishedAt: inspect.State.FinishedAt,
+          platform: inspect.Platform,
+          config: {
+            hostname: inspect.Config.Hostname,
+            domainname: inspect.Config.Domainname,
+            user: inspect.Config.User,
+            workingDir: inspect.Config.WorkingDir,
+            entrypoint: inspect.Config.Entrypoint,
+            cmd: inspect.Config.Cmd,
+            env: inspect.Config.Env?.filter(
+              (env) =>
+                !env.includes('PASSWORD') &&
+                !env.includes('SECRET') &&
+                !env.includes('KEY'),
+            ), // Filter out sensitive data
+          },
+          mounts: inspect.Mounts?.map((mount) => ({
+            type: mount.Type,
+            source: mount.Source,
+            destination: mount.Destination,
+            mode: mount.Mode,
+            rw: mount.RW,
+          })),
+          networkSettings: {
+            networks: Object.keys(inspect.NetworkSettings.Networks || {}),
+            ipAddress: inspect.NetworkSettings.IPAddress,
+            gateway: inspect.NetworkSettings.Gateway,
+          },
         }
-      }
-    }))
+      }),
+    )
 
     // Group services by category and type
     const grouped = {
-      stack: services.filter(s => s.category === 'stack'),
-      services: services.filter(s => s.category === 'services'),
+      stack: services.filter((s) => s.category === 'stack'),
+      services: services.filter((s) => s.category === 'services'),
       total: services.length,
-      running: services.filter(s => s.state === 'running').length,
-      stopped: services.filter(s => s.state === 'exited').length
+      running: services.filter((s) => s.state === 'running').length,
+      stopped: services.filter((s) => s.state === 'exited').length,
     }
 
     return NextResponse.json({
@@ -182,36 +183,41 @@ async function getServicesList() {
         grouped,
         summary: {
           total: services.length,
-          running: services.filter(s => s.state === 'running').length,
-          stopped: services.filter(s => s.state === 'exited').length,
-          healthy: services.filter(s => s.health === 'healthy').length,
-          unhealthy: services.filter(s => s.health === 'unhealthy').length
+          running: services.filter((s) => s.state === 'running').length,
+          stopped: services.filter((s) => s.state === 'exited').length,
+          healthy: services.filter((s) => s.health === 'healthy').length,
+          unhealthy: services.filter((s) => s.health === 'unhealthy').length,
         },
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get services list',
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get services list',
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
 async function getServiceDetails(serviceName: string) {
   try {
     const containers = await docker.listContainers({ all: true })
-    const container = containers.find(c => 
-      c.Names.some(name => name.includes(serviceName))
+    const container = containers.find((c) =>
+      c.Names.some((name) => name.includes(serviceName)),
     )
 
     if (!container) {
-      return NextResponse.json({
-        success: false,
-        error: `Service '${serviceName}' not found`
-      }, { status: 404 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Service '${serviceName}' not found`,
+        },
+        { status: 404 },
+      )
     }
 
     const containerObj = docker.getContainer(container.Id)
@@ -223,31 +229,39 @@ async function getServiceDetails(serviceName: string) {
       data: {
         container: inspect,
         stats,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: `Failed to get details for service '${serviceName}'`,
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Failed to get details for service '${serviceName}'`,
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
-async function getServiceLogs(serviceName: string, searchParams: URLSearchParams) {
+async function getServiceLogs(
+  serviceName: string,
+  searchParams: URLSearchParams,
+) {
   try {
     const containers = await docker.listContainers({ all: true })
-    const container = containers.find(c => 
-      c.Names.some(name => name.includes(serviceName))
+    const container = containers.find((c) =>
+      c.Names.some((name) => name.includes(serviceName)),
     )
 
     if (!container) {
-      return NextResponse.json({
-        success: false,
-        error: `Service '${serviceName}' not found`
-      }, { status: 404 })
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Service '${serviceName}' not found`,
+        },
+        { status: 404 },
+      )
     }
 
     const tail = searchParams.get('tail') || '100'
@@ -259,7 +273,7 @@ async function getServiceLogs(serviceName: string, searchParams: URLSearchParams
       stderr: true,
       tail: parseInt(tail),
       since: since,
-      timestamps: true
+      timestamps: true,
     })
 
     return NextResponse.json({
@@ -267,70 +281,76 @@ async function getServiceLogs(serviceName: string, searchParams: URLSearchParams
       data: {
         service: serviceName,
         logs: logs.toString(),
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: `Failed to get logs for service '${serviceName}'`,
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Failed to get logs for service '${serviceName}'`,
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
 async function getServicesStats() {
   try {
     const containers = await docker.listContainers({ all: false }) // Only running containers
-    
-    const stats = await Promise.all(containers.map(async (container) => {
-      try {
-        const containerObj = docker.getContainer(container.Id)
-        const stat = await containerObj.stats({ stream: false })
-        
-        return {
-          id: container.Id,
-          name: container.Names[0]?.replace(/^\//, ''),
-          stats: stat,
-          timestamp: new Date().toISOString()
+
+    const stats = await Promise.all(
+      containers.map(async (container) => {
+        try {
+          const containerObj = docker.getContainer(container.Id)
+          const stat = await containerObj.stats({ stream: false })
+
+          return {
+            id: container.Id,
+            name: container.Names[0]?.replace(/^\//, ''),
+            stats: stat,
+            timestamp: new Date().toISOString(),
+          }
+        } catch (error: any) {
+          return {
+            id: container.Id,
+            name: container.Names[0]?.replace(/^\//, ''),
+            error: error?.message || 'Unknown error',
+            timestamp: new Date().toISOString(),
+          }
         }
-      } catch (error: any) {
-        return {
-          id: container.Id,
-          name: container.Names[0]?.replace(/^\//, ''),
-          error: error?.message || "Unknown error",
-          timestamp: new Date().toISOString()
-        }
-      }
-    }))
+      }),
+    )
 
     return NextResponse.json({
       success: true,
-      data: stats
+      data: stats,
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get services stats',
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get services stats',
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
 async function getServicesHealth() {
   try {
     const backendPath = getProjectPath()
-    
+
     // Get nself status
     const { stdout: nselfStatus } = await execAsync(
-      `cd ${backendPath} && nself status`
+      `cd ${backendPath} && nself status`,
     )
-    
+
     // Get Docker health checks
     const { stdout: dockerHealth } = await execAsync(
-      `cd ${backendPath} && docker-compose ps`
+      `cd ${backendPath} && docker-compose ps`,
     )
 
     return NextResponse.json({
@@ -338,29 +358,34 @@ async function getServicesHealth() {
       data: {
         nself_status: nselfStatus.trim(),
         docker_health: dockerHealth.trim(),
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get services health',
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get services health',
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
 async function controlService(serviceName: string, operation: string) {
   if (!serviceName) {
-    return NextResponse.json({
-      success: false,
-      error: 'Service name is required'
-    }, { status: 400 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Service name is required',
+      },
+      { status: 400 },
+    )
   }
 
   const backendPath = '/Users/admin/Sites/nself-admin/.backend'
-  
+
   try {
     let command = ''
     switch (operation) {
@@ -374,14 +399,17 @@ async function controlService(serviceName: string, operation: string) {
         command = `cd ${backendPath} && docker-compose restart ${serviceName}`
         break
       default:
-        return NextResponse.json({
-          success: false,
-          error: `Unknown operation: ${operation}`
-        }, { status: 400 })
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Unknown operation: ${operation}`,
+          },
+          { status: 400 },
+        )
     }
 
     const { stdout, stderr } = await execAsync(command)
-    
+
     return NextResponse.json({
       success: true,
       data: {
@@ -389,27 +417,29 @@ async function controlService(serviceName: string, operation: string) {
         operation,
         stdout: stdout.trim(),
         stderr: stderr.trim(),
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: `Failed to ${operation} service '${serviceName}'`,
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Failed to ${operation} service '${serviceName}'`,
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
 async function scaleService(serviceName: string, replicas: number) {
   const backendPath = '/Users/admin/Sites/nself-admin/.backend'
-  
+
   try {
     const { stdout, stderr } = await execAsync(
-      `cd ${backendPath} && docker-compose up -d --scale ${serviceName}=${replicas}`
+      `cd ${backendPath} && docker-compose up -d --scale ${serviceName}=${replicas}`,
     )
-    
+
     return NextResponse.json({
       success: true,
       data: {
@@ -417,25 +447,30 @@ async function scaleService(serviceName: string, replicas: number) {
         replicas,
         stdout: stdout.trim(),
         stderr: stderr.trim(),
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: `Failed to scale service '${serviceName}' to ${replicas} replicas`,
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Failed to scale service '${serviceName}' to ${replicas} replicas`,
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
 async function batchServiceControl(services: string[], operation: string) {
   if (!services || services.length === 0) {
-    return NextResponse.json({
-      success: false,
-      error: 'Services list is required'
-    }, { status: 400 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Services list is required',
+      },
+      { status: 400 },
+    )
   }
 
   const results = await Promise.all(
@@ -444,9 +479,13 @@ async function batchServiceControl(services: string[], operation: string) {
         const result = await controlService(service, operation)
         return { service, success: true, result }
       } catch (error: any) {
-        return { service, success: false, error: error?.message || "Unknown error" }
+        return {
+          service,
+          success: false,
+          error: error?.message || 'Unknown error',
+        }
       }
-    })
+    }),
   )
 
   return NextResponse.json({
@@ -455,43 +494,45 @@ async function batchServiceControl(services: string[], operation: string) {
       operation,
       services: services.length,
       results,
-      timestamp: new Date().toISOString()
-    }
+      timestamp: new Date().toISOString(),
+    },
   })
 }
 
 async function updateService(serviceName: string, options: any) {
   const backendPath = '/Users/admin/Sites/nself-admin/.backend'
-  
+
   try {
     // Pull latest image and recreate container
     const { stdout, stderr } = await execAsync(
-      `cd ${backendPath} && docker-compose pull ${serviceName} && docker-compose up -d ${serviceName}`
+      `cd ${backendPath} && docker-compose pull ${serviceName} && docker-compose up -d ${serviceName}`,
     )
-    
+
     return NextResponse.json({
       success: true,
       data: {
         service: serviceName,
         stdout: stdout.trim(),
         stderr: stderr.trim(),
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     })
-
   } catch (error: any) {
-    return NextResponse.json({
-      success: false,
-      error: `Failed to update service '${serviceName}'`,
-      details: error?.message || "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Failed to update service '${serviceName}'`,
+        details: error?.message || 'Unknown error',
+      },
+      { status: 500 },
+    )
   }
 }
 
 // Helper functions (same as in docker containers API)
 function getServiceType(containerName: string, labels: any): string {
   const name = containerName?.toLowerCase() || ''
-  
+
   if (name.includes('postgres')) return 'database'
   if (name.includes('hasura')) return 'graphql'
   if (name.includes('auth')) return 'auth'
@@ -508,27 +549,41 @@ function getServiceType(containerName: string, labels: any): string {
   if (name.includes('bullmq')) return 'queue'
   if (name.includes('golang')) return 'golang'
   if (name.includes('python')) return 'python'
-  
+
   return 'unknown'
 }
 
 function getServiceCategory(containerName: string, labels: any): string {
   const serviceType = getServiceType(containerName, labels)
-  
-  const stackServices = ['database', 'graphql', 'auth', 'cache', 'storage', 'proxy', 'monitoring', 'metrics', 'logs', 'tracing', 'alerts', 'email']
-  
+
+  const stackServices = [
+    'database',
+    'graphql',
+    'auth',
+    'cache',
+    'storage',
+    'proxy',
+    'monitoring',
+    'metrics',
+    'logs',
+    'tracing',
+    'alerts',
+    'email',
+  ]
+
   return stackServices.includes(serviceType) ? 'stack' : 'services'
 }
 
 function getHealthStatus(status: string, state: string): string {
   if (state === 'running') {
     if (status.includes('unhealthy')) return 'unhealthy'
-    if (status.includes('starting') || status.includes('health: starting')) return 'starting'
+    if (status.includes('starting') || status.includes('health: starting'))
+      return 'starting'
     return 'healthy'
   }
-  
+
   if (state === 'exited') return 'stopped'
   if (state === 'restarting') return 'starting'
-  
+
   return 'unknown'
 }

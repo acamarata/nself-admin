@@ -16,41 +16,41 @@ const getDbClient = () => {
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const action = searchParams.get('action')
-  
+
   let client: Client | null = null
-  
+
   try {
     client = getDbClient()
     await client.connect()
-    
+
     switch (action) {
       case 'stats': {
         // Get database statistics
         const sizeResult = await client.query(`
           SELECT pg_database_size(current_database()) as size
         `)
-        
+
         const tablesResult = await client.query(`
           SELECT COUNT(*) as count FROM information_schema.tables 
           WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
         `)
-        
+
         const viewsResult = await client.query(`
           SELECT COUNT(*) as count FROM information_schema.tables 
           WHERE table_schema = 'public' AND table_type = 'VIEW'
         `)
-        
+
         const connectionsResult = await client.query(`
           SELECT COUNT(*) as count FROM pg_stat_activity 
           WHERE datname = current_database()
         `)
-        
+
         const versionResult = await client.query('SELECT version()')
-        
+
         const uptimeResult = await client.query(`
           SELECT NOW() - pg_postmaster_start_time() as uptime
         `)
-        
+
         return NextResponse.json({
           success: true,
           data: {
@@ -58,12 +58,15 @@ export async function GET(request: NextRequest) {
             tables: parseInt(tablesResult.rows[0].count),
             views: parseInt(viewsResult.rows[0].count),
             connections: parseInt(connectionsResult.rows[0].count),
-            version: versionResult.rows[0].version.split(' ')[0] + ' ' + versionResult.rows[0].version.split(' ')[1],
-            uptime: formatUptime(uptimeResult.rows[0].uptime)
-          }
+            version:
+              versionResult.rows[0].version.split(' ')[0] +
+              ' ' +
+              versionResult.rows[0].version.split(' ')[1],
+            uptime: formatUptime(uptimeResult.rows[0].uptime),
+          },
         })
       }
-      
+
       case 'tables': {
         // Get all tables and views with metadata
         const result = await client.query(`
@@ -81,62 +84,65 @@ export async function GET(request: NextRequest) {
           GROUP BY t.table_name, t.table_schema, t.table_type, s.n_live_tup
           ORDER BY t.table_schema, t.table_name
         `)
-        
-        const tables = result.rows.map(row => ({
+
+        const tables = result.rows.map((row) => ({
           name: row.name,
           schema: row.schema,
           type: row.type === 'BASE TABLE' ? 'table' : 'view',
           rowCount: parseInt(row.row_count || 0),
           size: row.size,
-          columns: parseInt(row.columns)
+          columns: parseInt(row.columns),
         }))
-        
+
         return NextResponse.json({
           success: true,
-          data: tables
+          data: tables,
         })
       }
-      
+
       case 'table-data': {
         // Get data from a specific table
         const tableName = searchParams.get('table')
         const schema = searchParams.get('schema') || 'public'
         const limit = searchParams.get('limit') || '100'
         const offset = searchParams.get('offset') || '0'
-        
+
         if (!tableName) {
           return NextResponse.json(
             { error: 'Table name is required' },
-            { status: 400 }
+            { status: 400 },
           )
         }
-        
+
         // Validate table exists and get columns
-        const columnsResult = await client.query(`
+        const columnsResult = await client.query(
+          `
           SELECT column_name, data_type, is_nullable
           FROM information_schema.columns
           WHERE table_schema = $1 AND table_name = $2
           ORDER BY ordinal_position
-        `, [schema, tableName])
-        
+        `,
+          [schema, tableName],
+        )
+
         if (columnsResult.rows.length === 0) {
           return NextResponse.json(
             { error: 'Table not found' },
-            { status: 404 }
+            { status: 404 },
           )
         }
-        
+
         // Get table data
         const dataResult = await client.query(
           `SELECT * FROM "${schema}"."${tableName}" LIMIT $1 OFFSET $2`,
-          [parseInt(limit), parseInt(offset)]
+          [parseInt(limit), parseInt(offset)],
         )
-        
+
         // Get total count
         const countResult = await client.query(
-          `SELECT COUNT(*) as count FROM "${schema}"."${tableName}"`
+          `SELECT COUNT(*) as count FROM "${schema}"."${tableName}"`,
         )
-        
+
         return NextResponse.json({
           success: true,
           data: {
@@ -144,25 +150,25 @@ export async function GET(request: NextRequest) {
             rows: dataResult.rows,
             totalCount: parseInt(countResult.rows[0].count),
             limit: parseInt(limit),
-            offset: parseInt(offset)
-          }
+            offset: parseInt(offset),
+          },
         })
       }
-      
+
       default:
-        return NextResponse.json(
-          { error: 'Invalid action' },
-          { status: 400 }
-        )
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
   } catch (error: any) {
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Database operation failed',
-        details: error instanceof Error ? error?.message || "Unknown error" : 'Unknown error'
+        details:
+          error instanceof Error
+            ? error?.message || 'Unknown error'
+            : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   } finally {
     if (client) {
@@ -174,27 +180,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const body = await request.json()
   const { query } = body
-  
+
   if (!query) {
-    return NextResponse.json(
-      { error: 'Query is required' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Query is required' }, { status: 400 })
   }
-  
+
   let client: Client | null = null
-  
+
   try {
     client = getDbClient()
     await client.connect()
-    
+
     const startTime = Date.now()
     const result = await client.query(query)
     const executionTime = Date.now() - startTime
-    
+
     // Determine if it's a SELECT query or not
     const isSelect = query.trim().toUpperCase().startsWith('SELECT')
-    
+
     if (isSelect) {
       return NextResponse.json({
         success: true,
@@ -202,8 +205,8 @@ export async function POST(request: NextRequest) {
           columns: result.fields.map((field: any) => field.name),
           rows: result.rows,
           rowCount: result.rowCount,
-          executionTime: `${executionTime}ms`
-        }
+          executionTime: `${executionTime}ms`,
+        },
       })
     } else {
       return NextResponse.json({
@@ -211,18 +214,21 @@ export async function POST(request: NextRequest) {
         data: {
           rowCount: result.rowCount,
           command: result.command,
-          executionTime: `${executionTime}ms`
-        }
+          executionTime: `${executionTime}ms`,
+        },
       })
     }
   } catch (error: any) {
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: 'Query execution failed',
-        details: error instanceof Error ? error?.message || "Unknown error" : 'Unknown error'
+        details:
+          error instanceof Error
+            ? error?.message || 'Unknown error'
+            : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   } finally {
     if (client) {
@@ -236,13 +242,13 @@ function formatBytes(bytes: number): string {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
   if (bytes === 0) return '0 B'
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
+  return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
 function formatUptime(interval: any): string {
   // Parse PostgreSQL interval format
   if (!interval) return 'Unknown'
-  
+
   // Handle interval object
   if (typeof interval === 'object' && interval !== null) {
     if (interval.days !== undefined) {
@@ -256,10 +262,10 @@ function formatUptime(interval: any): string {
     // Convert object to string
     interval = String(interval)
   }
-  
+
   // Convert to string if not already
   const intervalStr = String(interval)
-  
+
   // Try to match PostgreSQL interval format
   const match = intervalStr.match(/(\d+) days? (\d+):(\d+):(\d+)/)
   if (match) {

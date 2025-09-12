@@ -1,7 +1,13 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
 
 interface AuthContextType {
   isAuthenticated: boolean
@@ -22,19 +28,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // First check if we have a session cookie at all
       // This avoids making unnecessary API calls that result in 401 errors
       const hasCookie = document.cookie.includes('nself-session')
-      
+
       if (!hasCookie) {
         // No session cookie, so don't even try to authenticate
         setIsAuthenticated(false)
         return
       }
-      
+
       // We have a cookie, now check if it's valid
       const response = await fetch('/api/auth/check', {
         method: 'GET',
-        credentials: 'include' // Include cookies
+        credentials: 'include', // Include cookies
       })
-      
+
       if (response.ok) {
         setIsAuthenticated(true)
       } else {
@@ -80,19 +86,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await fetch('/api/auth/login', {
         method: 'DELETE',
-        credentials: 'include'
+        credentials: 'include',
       })
-    } catch (error) {
-    }
-    
+    } catch (error) {}
+
     setIsAuthenticated(false)
     router.push('/login')
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-500"></div>
       </div>
     )
   }

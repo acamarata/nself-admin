@@ -8,15 +8,15 @@ nAdmin uses LokiJS as its embedded database, providing a lightweight, high-perfo
 
 ### Chosen Over Alternatives
 
-| Feature | LokiJS | LowDB | SQLite | NeDB |
-|---------|--------|-------|--------|------|
-| **Size** | 19KB | 10KB | 400KB+ | 50KB |
-| **In-Memory** | ✅ | ❌ | ❌ | ✅ |
-| **Persistence** | ✅ | ✅ | ✅ | ✅ |
-| **Indexes** | ✅ | ❌ | ✅ | ✅ |
-| **TTL Support** | ✅ | ❌ | ❌ | ❌ |
-| **TypeScript** | ✅ | ✅ | ✅ | ❌ |
-| **Transactions** | ✅ | ❌ | ✅ | ❌ |
+| Feature          | LokiJS | LowDB | SQLite | NeDB |
+| ---------------- | ------ | ----- | ------ | ---- |
+| **Size**         | 19KB   | 10KB  | 400KB+ | 50KB |
+| **In-Memory**    | ✅     | ❌    | ❌     | ✅   |
+| **Persistence**  | ✅     | ✅    | ✅     | ✅   |
+| **Indexes**      | ✅     | ❌    | ✅     | ✅   |
+| **TTL Support**  | ✅     | ❌    | ❌     | ❌   |
+| **TypeScript**   | ✅     | ✅    | ✅     | ❌   |
+| **Transactions** | ✅     | ❌    | ✅     | ❌   |
 
 ### Key Benefits
 
@@ -38,14 +38,15 @@ Stores application configuration and settings.
 
 ```typescript
 interface ConfigItem {
-  key: string           // Unique identifier
-  value: any           // Configuration value
-  updatedAt: Date      // Last update timestamp
-  updatedBy?: string   // User who made the change
+  key: string // Unique identifier
+  value: any // Configuration value
+  updatedAt: Date // Last update timestamp
+  updatedBy?: string // User who made the change
 }
 ```
 
 **Example Records**:
+
 ```javascript
 {
   key: "admin_password_hash",
@@ -65,18 +66,19 @@ Manages user authentication sessions with automatic expiration.
 
 ```typescript
 interface SessionItem {
-  token: string        // Unique session token
-  userId: string       // User identifier (currently always 'admin')
-  expiresAt: Date     // Session expiration (24 hours)
-  createdAt: Date     // Creation timestamp
-  ip?: string         // Client IP address
-  userAgent?: string  // Browser user agent
+  token: string // Unique session token
+  userId: string // User identifier (currently always 'admin')
+  expiresAt: Date // Session expiration (24 hours)
+  createdAt: Date // Creation timestamp
+  ip?: string // Client IP address
+  userAgent?: string // Browser user agent
 }
 ```
 
 **TTL Configuration**: Sessions automatically expire after 24 hours
 
 **Example Record**:
+
 ```javascript
 {
   token: "a3f2d8c9b1e4...",
@@ -94,16 +96,17 @@ Caches project information to reduce file system operations.
 
 ```typescript
 interface ProjectCacheItem {
-  key: string         // Cache key
-  value: any         // Cached data
-  cachedAt: Date     // Cache timestamp
-  expiresAt: Date    // Cache expiration (5 minutes)
+  key: string // Cache key
+  value: any // Cached data
+  cachedAt: Date // Cache timestamp
+  expiresAt: Date // Cache expiration (5 minutes)
 }
 ```
 
 **TTL Configuration**: Cache entries expire after 5 minutes
 
 **Common Cache Keys**:
+
 - `project_info` - Basic project information
 - `services_list` - Available services
 - `docker_status` - Container statuses
@@ -115,18 +118,19 @@ Tracks security events and user actions for compliance.
 
 ```typescript
 interface AuditLogItem {
-  action: string      // Action type
-  timestamp: Date     // When it occurred
-  userId?: string     // User who performed action
-  details?: any       // Additional context
-  success: boolean    // Whether action succeeded
-  ip?: string        // Client IP address
+  action: string // Action type
+  timestamp: Date // When it occurred
+  userId?: string // User who performed action
+  details?: any // Additional context
+  success: boolean // Whether action succeeded
+  ip?: string // Client IP address
 }
 ```
 
 **TTL Configuration**: Logs retained for 30 days
 
 **Common Actions**:
+
 - `login_attempt` - Authentication attempt
 - `login_success` - Successful login
 - `password_change` - Password modification
@@ -151,7 +155,7 @@ export async function initDatabase(): Promise<void> {
       setupCollections()
       // Configure TTL
       configureTTL()
-    }
+    },
   })
 }
 ```
@@ -161,33 +165,37 @@ export async function initDatabase(): Promise<void> {
 ```typescript
 function setupCollections() {
   // Config collection with unique index
-  config = db.getCollection('config') || 
-    db.addCollection('config', { 
+  config =
+    db.getCollection('config') ||
+    db.addCollection('config', {
       unique: ['key'],
-      indices: ['key']
+      indices: ['key'],
     })
-  
+
   // Sessions with TTL
-  sessions = db.getCollection('sessions') || 
+  sessions =
+    db.getCollection('sessions') ||
     db.addCollection('sessions', {
       unique: ['token'],
       ttl: 24 * 60 * 60 * 1000, // 24 hours
-      ttlInterval: 60000 // Check every minute
+      ttlInterval: 60000, // Check every minute
     })
-  
+
   // Project cache with TTL
-  projectCache = db.getCollection('project_cache') || 
+  projectCache =
+    db.getCollection('project_cache') ||
     db.addCollection('project_cache', {
       unique: ['key'],
       ttl: 5 * 60 * 1000, // 5 minutes
-      ttlInterval: 30000 // Check every 30 seconds
+      ttlInterval: 30000, // Check every 30 seconds
     })
-  
+
   // Audit log with TTL
-  auditLog = db.getCollection('audit_log') || 
+  auditLog =
+    db.getCollection('audit_log') ||
     db.addCollection('audit_log', {
       ttl: 30 * 24 * 60 * 60 * 1000, // 30 days
-      ttlInterval: 3600000 // Check every hour
+      ttlInterval: 3600000, // Check every hour
     })
 }
 ```
@@ -217,22 +225,22 @@ export async function getAdminPasswordHash(): Promise<string | null> {
 ```typescript
 // Create session
 export async function createSession(
-  userId: string, 
-  ip?: string, 
-  userAgent?: string
+  userId: string,
+  ip?: string,
+  userAgent?: string,
 ): Promise<string> {
   const sessions = db.getCollection('sessions')
   const token = crypto.randomBytes(32).toString('hex')
-  
+
   sessions.insert({
     token,
     userId,
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     createdAt: new Date(),
     ip,
-    userAgent
+    userAgent,
   })
-  
+
   return token
 }
 
@@ -240,13 +248,13 @@ export async function createSession(
 export async function getSession(token: string): Promise<SessionItem | null> {
   const sessions = db.getCollection('sessions')
   const session = sessions.findOne({ token })
-  
+
   if (!session) return null
   if (new Date(session.expiresAt) < new Date()) {
     sessions.remove(session)
     return null
   }
-  
+
   return session
 }
 ```
@@ -258,14 +266,14 @@ export async function getSession(token: string): Promise<SessionItem | null> {
 export async function setCacheValue(key: string, value: any): Promise<void> {
   const cache = db.getCollection('project_cache')
   const existing = cache.findOne({ key })
-  
+
   const data = {
     key,
     value,
     cachedAt: new Date(),
-    expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
   }
-  
+
   if (existing) {
     Object.assign(existing, data)
     cache.update(existing)
@@ -278,13 +286,13 @@ export async function setCacheValue(key: string, value: any): Promise<void> {
 export async function getCacheValue(key: string): Promise<any> {
   const cache = db.getCollection('project_cache')
   const record = cache.findOne({ key })
-  
+
   if (!record) return null
   if (new Date(record.expiresAt) < new Date()) {
     cache.remove(record)
     return null
   }
-  
+
   return record.value
 }
 ```
@@ -407,11 +415,11 @@ When scaling beyond single-user:
 ```typescript
 // Future multi-database architecture
 interface DatabaseAdapter {
-  config: LokiJS        // Application settings
-  sessions: Redis       // User sessions
-  users: PostgreSQL     // User accounts
-  audit: PostgreSQL     // Audit logs
-  cache: Redis          // Application cache
+  config: LokiJS // Application settings
+  sessions: Redis // User sessions
+  users: PostgreSQL // User accounts
+  audit: PostgreSQL // Audit logs
+  cache: Redis // Application cache
 }
 ```
 
@@ -435,6 +443,7 @@ chown node:node /app/data/nadmin.db
 ### Sensitive Data
 
 Never store in database:
+
 - Plain text passwords
 - API keys (use environment variables)
 - SSL certificates
@@ -466,7 +475,7 @@ export async function getDatabaseMetrics() {
     activeSessions: db.getCollection('sessions').count(),
     cacheEntries: db.getCollection('project_cache').count(),
     auditLogs: db.getCollection('audit_log').count(),
-    databaseSize: await fs.stat(DB_PATH).size
+    databaseSize: await fs.stat(DB_PATH).size,
   }
 }
 ```

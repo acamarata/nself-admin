@@ -1,30 +1,33 @@
+import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
-import fs from 'fs/promises'
 
 export async function POST(req: NextRequest) {
   try {
     const { key, value, remove = false, environment } = await req.json()
-    
+
     if (!key) {
       return NextResponse.json(
         { error: 'Environment variable key is required' },
-        { status: 400 }
+        { status: 400 },
       )
     }
-    
+
     // Get project path
-    const projectPath = process.env.NSELF_PROJECT_PATH || process.env.PROJECT_PATH || '../nself-project'
-    const absoluteProjectPath = path.isAbsolute(projectPath) 
-      ? projectPath 
+    const projectPath =
+      process.env.NSELF_PROJECT_PATH ||
+      process.env.PROJECT_PATH ||
+      '../nself-project'
+    const absoluteProjectPath = path.isAbsolute(projectPath)
+      ? projectPath
       : path.join(process.cwd(), projectPath)
-    
+
     // Determine which env file to write to based on environment
     // For initial setup, write to .env.{environment} (team settings)
     // For personal overrides, write to .env.local
     const envFileName = environment ? `.env.${environment}` : '.env.local'
     const envPath = path.join(absoluteProjectPath, envFileName)
-    
+
     // Read existing .env.local or create if doesn't exist
     let envContent = ''
     try {
@@ -35,32 +38,34 @@ export async function POST(req: NextRequest) {
       }
       // File doesn't exist, will create it
     }
-    
+
     // Parse existing content into lines
     const lines = envContent.split('\n')
     let found = false
-    
+
     // Update or remove the variable
-    const newLines = lines.map(line => {
-      // Skip comments and empty lines
-      if (line.trim().startsWith('#') || line.trim() === '') {
-        return line
-      }
-      
-      // Check if this line contains our key
-      const match = line.match(/^([^=]+)=(.*)$/)
-      if (match && match[1].trim() === key) {
-        found = true
-        if (remove) {
-          return null // Remove this line
-        } else {
-          return `${key}=${value}`
+    const newLines = lines
+      .map((line) => {
+        // Skip comments and empty lines
+        if (line.trim().startsWith('#') || line.trim() === '') {
+          return line
         }
-      }
-      
-      return line
-    }).filter(line => line !== null)
-    
+
+        // Check if this line contains our key
+        const match = line.match(/^([^=]+)=(.*)$/)
+        if (match && match[1].trim() === key) {
+          found = true
+          if (remove) {
+            return null // Remove this line
+          } else {
+            return `${key}=${value}`
+          }
+        }
+
+        return line
+      })
+      .filter((line) => line !== null)
+
     // If not found and not removing, add the variable
     if (!found && !remove) {
       // Add a newline if file doesn't end with one
@@ -69,21 +74,21 @@ export async function POST(req: NextRequest) {
       }
       newLines.push(`${key}=${value}`)
     }
-    
+
     // Write back to file
     await fs.writeFile(envPath, newLines.join('\n'))
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       success: true,
       message: remove ? `Removed ${key}` : `Updated ${key}`,
       key,
-      value: remove ? undefined : value
+      value: remove ? undefined : value,
     })
   } catch (error) {
     console.error('Error updating environment variable:', error)
     return NextResponse.json(
       { error: 'Failed to update environment variable' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -92,24 +97,27 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const { variables, environment } = await req.json()
-    
+
     if (!variables || !Array.isArray(variables)) {
       return NextResponse.json(
         { error: 'Variables array is required' },
-        { status: 400 }
+        { status: 400 },
       )
     }
-    
+
     // Get project path
-    const projectPath = process.env.NSELF_PROJECT_PATH || process.env.PROJECT_PATH || '../nself-project'
-    const absoluteProjectPath = path.isAbsolute(projectPath) 
-      ? projectPath 
+    const projectPath =
+      process.env.NSELF_PROJECT_PATH ||
+      process.env.PROJECT_PATH ||
+      '../nself-project'
+    const absoluteProjectPath = path.isAbsolute(projectPath)
+      ? projectPath
       : path.join(process.cwd(), projectPath)
-    
+
     // Determine which env file to write to based on environment
     const envFileName = environment ? `.env.${environment}` : '.env.local'
     const envPath = path.join(absoluteProjectPath, envFileName)
-    
+
     // Read existing .env.local
     let envContent = ''
     try {
@@ -119,18 +127,18 @@ export async function PUT(req: NextRequest) {
         throw error
       }
     }
-    
+
     // Parse into key-value pairs
     const envVars: Record<string, string> = {}
     const lines = envContent.split('\n')
-    
-    lines.forEach(line => {
+
+    lines.forEach((line) => {
       if (!line.trim().startsWith('#') && line.includes('=')) {
         const [key, ...valueParts] = line.split('=')
         envVars[key.trim()] = valueParts.join('=').trim()
       }
     })
-    
+
     // Apply updates
     variables.forEach(({ key, value, remove }) => {
       if (remove) {
@@ -139,25 +147,25 @@ export async function PUT(req: NextRequest) {
         envVars[key] = value
       }
     })
-    
+
     // Rebuild content
     const newContent = Object.entries(envVars)
       .map(([key, value]) => `${key}=${value}`)
       .join('\n')
-    
+
     // Write back
     await fs.writeFile(envPath, newContent)
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       success: true,
       message: `Updated ${variables.length} variables`,
-      count: variables.length
+      count: variables.length,
     })
   } catch (error) {
     console.error('Error updating environment variables:', error)
     return NextResponse.json(
       { error: 'Failed to update environment variables' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

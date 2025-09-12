@@ -12,22 +12,22 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 Before creating bug reports, please check existing issues as you might find out that you don't need to create one. When you are creating a bug report, please include as many details as possible:
 
-* **Use a clear and descriptive title**
-* **Describe the exact steps to reproduce the problem**
-* **Provide specific examples to demonstrate the steps**
-* **Describe the behavior you observed and expected**
-* **Include screenshots and animated GIFs if possible**
-* **Include your environment details** (OS, Docker version, browser, etc.)
+- **Use a clear and descriptive title**
+- **Describe the exact steps to reproduce the problem**
+- **Provide specific examples to demonstrate the steps**
+- **Describe the behavior you observed and expected**
+- **Include screenshots and animated GIFs if possible**
+- **Include your environment details** (OS, Docker version, browser, etc.)
 
 ### Suggesting Enhancements
 
 Enhancement suggestions are tracked as GitHub issues. When creating an enhancement suggestion, please include:
 
-* **Use a clear and descriptive title**
-* **Provide a detailed description of the suggested enhancement**
-* **Provide specific examples to demonstrate the enhancement**
-* **Describe the current behavior and expected behavior**
-* **Explain why this enhancement would be useful**
+- **Use a clear and descriptive title**
+- **Provide a detailed description of the suggested enhancement**
+- **Provide specific examples to demonstrate the enhancement**
+- **Describe the current behavior and expected behavior**
+- **Explain why this enhancement would be useful**
 
 ### Pull Requests
 
@@ -42,10 +42,10 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### Prerequisites
 
-* Node.js 20+
-* Docker
-* Git
-* npm or yarn
+- Node.js 20+
+- Docker
+- Git
+- npm or yarn
 
 ### Local Development
 
@@ -115,10 +115,10 @@ nself-admin/
 
 ### TypeScript
 
-* Use TypeScript for all new code
-* Define interfaces for all props and state
-* Avoid `any` type - use `unknown` if type is truly unknown
-* Export types separately from implementations
+- Use TypeScript for all new code
+- Define interfaces for all props and state
+- Avoid `any` type - use `unknown` if type is truly unknown
+- Export types separately from implementations
 
 ```typescript
 // Good
@@ -135,22 +135,22 @@ export function Button({ label, onClick, variant = 'primary' }: ButtonProps) {
 
 ### React Components
 
-* Use functional components with hooks
-* Keep components small and focused
-* Extract reusable logic into custom hooks
-* Use proper prop types and default values
+- Use functional components with hooks
+- Keep components small and focused
+- Extract reusable logic into custom hooks
+- Use proper prop types and default values
 
 ```typescript
 // Good component example
 export function ServiceCard({ service, onRestart }: ServiceCardProps) {
   const [isRestarting, setIsRestarting] = useState(false)
-  
+
   const handleRestart = async () => {
     setIsRestarting(true)
     await onRestart(service.id)
     setIsRestarting(false)
   }
-  
+
   return (
     <Card>
       <CardHeader>{service.name}</CardHeader>
@@ -158,7 +158,7 @@ export function ServiceCard({ service, onRestart }: ServiceCardProps) {
         <ServiceStatus status={service.status} />
       </CardContent>
       <CardFooter>
-        <Button 
+        <Button
           onClick={handleRestart}
           disabled={isRestarting}
         >
@@ -172,36 +172,36 @@ export function ServiceCard({ service, onRestart }: ServiceCardProps) {
 
 ### API Routes
 
-* Use proper HTTP methods (GET, POST, PUT, DELETE)
-* Return consistent response formats
-* Include proper error handling
-* Validate input data
+- Use proper HTTP methods (GET, POST, PUT, DELETE)
+- Return consistent response formats
+- Include proper error handling
+- Validate input data
 
 ```typescript
 // Good API route example
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    
+
     // Validate input
     if (!body.containerId) {
       return NextResponse.json(
         { success: false, error: 'Container ID required' },
-        { status: 400 }
+        { status: 400 },
       )
     }
-    
+
     // Perform action
     const result = await restartContainer(body.containerId)
-    
+
     return NextResponse.json({
       success: true,
-      data: result
+      data: result,
     })
   } catch (error) {
     return NextResponse.json(
       { success: false, error: error.message },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -209,10 +209,10 @@ export async function POST(request: Request) {
 
 ### State Management
 
-* Use Zustand for global state
-* Keep stores focused and small
-* Use proper TypeScript types
-* Include selectors for performance
+- Use Zustand for global state
+- Keep stores focused and small
+- Use proper TypeScript types
+- Include selectors for performance
 
 ```typescript
 // Good store example
@@ -220,11 +220,11 @@ interface DockerStore {
   containers: Container[]
   isLoading: boolean
   error: string | null
-  
+
   // Actions
   fetchContainers: () => Promise<void>
   restartContainer: (id: string) => Promise<void>
-  
+
   // Selectors
   getContainerById: (id: string) => Container | undefined
 }
@@ -234,16 +234,17 @@ interface DockerStore {
 
 We follow conventional commits specification:
 
-* `feat:` New feature
-* `fix:` Bug fix
-* `docs:` Documentation only changes
-* `style:` Code style changes (formatting, etc.)
-* `refactor:` Code change that neither fixes a bug nor adds a feature
-* `perf:` Performance improvement
-* `test:` Adding or updating tests
-* `chore:` Changes to build process or auxiliary tools
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation only changes
+- `style:` Code style changes (formatting, etc.)
+- `refactor:` Code change that neither fixes a bug nor adds a feature
+- `perf:` Performance improvement
+- `test:` Adding or updating tests
+- `chore:` Changes to build process or auxiliary tools
 
 Examples:
+
 ```bash
 git commit -m "feat: add container restart functionality"
 git commit -m "fix: resolve memory leak in polling service"
@@ -254,10 +255,10 @@ git commit -m "docs: update API documentation"
 
 ### Unit Tests
 
-* Write tests for all utility functions
-* Test component rendering and interactions
-* Mock external dependencies
-* Aim for >80% code coverage
+- Write tests for all utility functions
+- Test component rendering and interactions
+- Mock external dependencies
+- Aim for >80% code coverage
 
 ```typescript
 // Example test
@@ -267,15 +268,15 @@ describe('ServiceCard', () => {
     render(<ServiceCard service={service} />)
     expect(screen.getByText('nginx')).toBeInTheDocument()
   })
-  
+
   it('should call onRestart when button clicked', async () => {
     const onRestart = jest.fn()
     const service = { id: '1', name: 'nginx', status: 'running' }
-    
+
     render(<ServiceCard service={service} onRestart={onRestart} />)
-    
+
     await userEvent.click(screen.getByRole('button', { name: /restart/i }))
-    
+
     expect(onRestart).toHaveBeenCalledWith('1')
   })
 })
@@ -283,19 +284,19 @@ describe('ServiceCard', () => {
 
 ### Integration Tests
 
-* Test API routes with real database connections
-* Test WebSocket connections
-* Test Docker API interactions
-* Use test containers when possible
+- Test API routes with real database connections
+- Test WebSocket connections
+- Test Docker API interactions
+- Use test containers when possible
 
 ## Documentation
 
-* Update docs for any user-facing changes
-* Include JSDoc comments for complex functions
-* Update API documentation for endpoint changes
-* Include examples in documentation
+- Update docs for any user-facing changes
+- Include JSDoc comments for complex functions
+- Update API documentation for endpoint changes
+- Include examples in documentation
 
-```typescript
+````typescript
 /**
  * Restarts a Docker container
  * @param containerId - The ID of the container to restart
@@ -307,10 +308,12 @@ describe('ServiceCard', () => {
  * console.log(status) // { running: true, uptime: 0 }
  * ```
  */
-export async function restartContainer(containerId: string): Promise<ContainerStatus> {
+export async function restartContainer(
+  containerId: string,
+): Promise<ContainerStatus> {
   // Implementation
 }
-```
+````
 
 ## Release Process
 
@@ -322,15 +325,16 @@ export async function restartContainer(containerId: string): Promise<ContainerSt
 
 ## Getting Help
 
-* **Discord**: Join our [Discord server](https://discord.gg/nself)
-* **GitHub Discussions**: Ask questions in [Discussions](https://github.com/acamarata/nself-admin/discussions)
-* **Issue Tracker**: Report bugs in [Issues](https://github.com/acamarata/nself-admin/issues)
+- **Discord**: Join our [Discord server](https://discord.gg/nself)
+- **GitHub Discussions**: Ask questions in [Discussions](https://github.com/acamarata/nself-admin/discussions)
+- **Issue Tracker**: Report bugs in [Issues](https://github.com/acamarata/nself-admin/issues)
 
 ## Recognition
 
 Contributors will be recognized in:
-* CONTRIBUTORS.md file
-* GitHub contributors page
-* Release notes for significant contributions
+
+- CONTRIBUTORS.md file
+- GitHub contributors page
+- Release notes for significant contributions
 
 Thank you for contributing to nself-admin! 🎉

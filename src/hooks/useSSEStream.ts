@@ -3,8 +3,8 @@
  * Manages SSE connection with automatic reconnection and Zustand updates
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react'
 import { useCentralDataStore } from '@/stores/centralDataStore'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export interface SSEState {
   connected: boolean
@@ -18,83 +18,81 @@ export function useSSEStream() {
     connected: false,
     reconnecting: false,
     error: null,
-    lastUpdate: 0
+    lastUpdate: 0,
   })
-  
+
   const eventSourceRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const reconnectAttemptsRef = useRef(0)
   const maxReconnectAttempts = 10
   const baseReconnectDelay = 1000 // Start with 1 second
-  
+
   // Get store update functions
   const updateStore = useCentralDataStore((state) => state.updateFromSSE)
-  
+
   /**
    * Connect to SSE stream
    */
   const connect = useCallback(() => {
     // Clean up existing connection
     disconnect()
-    
-    setState(prev => ({ ...prev, reconnecting: true, error: null }))
-    
+
+    setState((prev) => ({ ...prev, reconnecting: true, error: null }))
+
     try {
       const eventSource = new EventSource('/api/sse/stream')
       eventSourceRef.current = eventSource
-      
+
       // Handle connection open
       eventSource.onopen = () => {
         setState({
           connected: true,
           reconnecting: false,
           error: null,
-          lastUpdate: Date.now()
+          lastUpdate: Date.now(),
         })
         reconnectAttemptsRef.current = 0
       }
-      
+
       // Handle messages
       eventSource.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data)
           handleMessage(message)
-        } catch (error) {
-        }
+        } catch (error) {}
       }
-      
+
       // Handle errors
       eventSource.onerror = (error) => {
-        
         // Check if this is a connection failure
         if (eventSource.readyState === EventSource.CLOSED) {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             connected: false,
             reconnecting: true,
-            error: 'Connection lost'
+            error: 'Connection lost',
           }))
-          
+
           // Clean up current connection
           eventSource.close()
           eventSourceRef.current = null
-          
+
           // Attempt reconnection with exponential backoff
           scheduleReconnect()
         }
       }
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         connected: false,
         reconnecting: false,
-        error: 'Failed to connect'
+        error: 'Failed to connect',
       }))
       scheduleReconnect()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  
+
   /**
    * Disconnect from SSE stream
    */
@@ -103,78 +101,77 @@ export function useSSEStream() {
       clearTimeout(reconnectTimeoutRef.current)
       reconnectTimeoutRef.current = null
     }
-    
+
     if (eventSourceRef.current) {
       eventSourceRef.current.close()
       eventSourceRef.current = null
     }
-    
+
     setState({
       connected: false,
       reconnecting: false,
       error: null,
-      lastUpdate: 0
+      lastUpdate: 0,
     })
   }
-  
+
   /**
    * Schedule reconnection with exponential backoff
    */
   const scheduleReconnect = () => {
     if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         reconnecting: false,
-        error: 'Max reconnection attempts reached. Please refresh the page.'
+        error: 'Max reconnection attempts reached. Please refresh the page.',
       }))
       return
     }
-    
+
     // Calculate delay with exponential backoff (max 30 seconds)
     const delay = Math.min(
       baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current),
-      30000
+      30000,
     )
-    
-    
+
     reconnectTimeoutRef.current = setTimeout(() => {
       reconnectAttemptsRef.current++
       connect()
     }, delay)
   }
-  
+
   /**
    * Handle incoming SSE message
    */
   const handleMessage = (message: any) => {
     const { type, data } = message
-    
+
     switch (type) {
       case 'initial':
       case 'state':
         // Update entire state
         updateStore(data)
-        setState(prev => ({ ...prev, lastUpdate: Date.now() }))
+        setState((prev) => ({ ...prev, lastUpdate: Date.now() }))
         break
-        
+
       case 'dockerEvent':
         // Handle Docker events if needed
         break
-        
+
       case 'serviceUpdate':
         // Handle service-specific updates
         break
-        
+
       case 'ping':
         // Keep-alive ping
         console.debug('[SSE Client] Ping received')
         break
-        
+
       default:
         console.warn('[SSE Client] Unknown message type:', type)
     }
   }
-  
+
   /**
    * Manual refresh
    */
@@ -182,14 +179,13 @@ export function useSSEStream() {
     try {
       const response = await fetch('/api/sse/stream', { method: 'POST' })
       const result = await response.json()
-    } catch (error) {
-    }
+    } catch (error) {}
   }
-  
+
   // Setup connection on mount
   useEffect(() => {
     connect()
-    
+
     // Handle page visibility changes
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -201,25 +197,25 @@ export function useSSEStream() {
         }
       }
     }
-    
+
     // Handle online/offline
     const handleOnline = () => {
       reconnectAttemptsRef.current = 0
       connect()
     }
-    
+
     const handleOffline = () => {
       disconnect()
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
-        error: 'Network offline'
+        error: 'Network offline',
       }))
     }
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-    
+
     // Cleanup on unmount
     return () => {
       disconnect()
@@ -228,13 +224,13 @@ export function useSSEStream() {
       window.removeEventListener('offline', handleOffline)
     }
   }, [connect]) // Include connect function
-  
+
   return {
     ...state,
     refresh,
     reconnect: () => {
       reconnectAttemptsRef.current = 0
       connect()
-    }
+    },
   }
 }

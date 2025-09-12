@@ -10,7 +10,7 @@ export function useDataFetch() {
 
   useEffect(() => {
     isMountedRef.current = true
-    
+
     return () => {
       isMountedRef.current = false
       // Abort any pending requests when component unmounts
@@ -33,7 +33,7 @@ export function useDataFetch() {
     try {
       const response = await fetch(url, {
         ...options,
-        signal: abortControllerRef.current.signal
+        signal: abortControllerRef.current.signal,
       })
 
       // Only process response if component is still mounted
@@ -47,7 +47,7 @@ export function useDataFetch() {
       if (error instanceof Error && error.name === 'AbortError') {
         return null
       }
-      
+
       // Re-throw other errors
       throw error
     } finally {
@@ -66,6 +66,6 @@ export function useDataFetch() {
         abortControllerRef.current.abort()
         abortControllerRef.current = null
       }
-    }
+    },
   }
 }

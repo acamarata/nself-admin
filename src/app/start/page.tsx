@@ -1,25 +1,39 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Server, CheckCircle, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/Button'
-import { HeroPattern } from '@/components/HeroPattern'
-import { useProjectStore } from '@/stores/projectStore'
-import { ensureCorrectRoute } from '@/lib/routing-logic'
 import { GridPattern } from '@/components/GridPattern'
-import { useMotionValue, motion, useMotionTemplate } from 'framer-motion'
+import { HeroPattern } from '@/components/HeroPattern'
 import { safeNavigate } from '@/lib/routing'
+import { ensureCorrectRoute } from '@/lib/routing-logic'
+import { useProjectStore } from '@/stores/projectStore'
 import type { MotionValue } from 'framer-motion'
+import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
+import {
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  Server,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 interface ProjectInfoCardProps {
   icon: React.ComponentType<{ className?: string }>
   label: string
   value: string | number
-  pattern: Omit<React.ComponentPropsWithoutRef<typeof GridPattern>, 'width' | 'height' | 'x'>
+  pattern: Omit<
+    React.ComponentPropsWithoutRef<typeof GridPattern>,
+    'width' | 'height' | 'x'
+  >
 }
 
-function ProjectInfoIcon({ icon: Icon }: { icon: React.ComponentType<{ className?: string }> }) {
+function ProjectInfoIcon({
+  icon: Icon,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+}) {
   return (
     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900/5 ring-1 ring-zinc-900/25 backdrop-blur-[2px] transition duration-300 group-hover:bg-white/50 group-hover:ring-zinc-900/25 dark:bg-white/7.5 dark:ring-white/15 dark:group-hover:bg-blue-400/10 dark:group-hover:ring-blue-400">
       <Icon className="h-4 w-4 stroke-zinc-700 transition-colors duration-300 group-hover:stroke-zinc-900 dark:stroke-zinc-400 dark:group-hover:stroke-blue-400" />
@@ -69,7 +83,12 @@ function ProjectInfoPattern({
   )
 }
 
-function ProjectInfoCard({ icon, label, value, pattern }: ProjectInfoCardProps) {
+function ProjectInfoCard({
+  icon,
+  label,
+  value,
+  pattern,
+}: ProjectInfoCardProps) {
   let mouseX = useMotionValue(0)
   let mouseY = useMotionValue(0)
 
@@ -90,7 +109,7 @@ function ProjectInfoCard({ icon, label, value, pattern }: ProjectInfoCardProps) 
     >
       <ProjectInfoPattern {...pattern} mouseX={mouseX} mouseY={mouseY} />
       <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/7.5 ring-inset group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
-      <div className="relative rounded-2xl px-4 py-6 w-full">
+      <div className="relative w-full rounded-2xl px-4 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <ProjectInfoIcon icon={icon} />
@@ -108,9 +127,12 @@ function ProjectInfoCard({ icon, label, value, pattern }: ProjectInfoCardProps) 
 }
 
 // Helper to get detailed service information
-function getServiceInfo(name: string): { description: string; details: string[] } {
+function getServiceInfo(name: string): {
+  description: string
+  details: string[]
+} {
   const lowerName = name.toLowerCase()
-  
+
   // Core services
   if (lowerName === 'postgres') {
     return {
@@ -119,8 +141,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: postgres',
         'Image: postgres:15-alpine',
         'Port: 5432',
-        'Stores all application data'
-      ]
+        'Stores all application data',
+      ],
     }
   }
   if (lowerName === 'hasura') {
@@ -130,8 +152,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: hasura',
         'Image: hasura/graphql-engine:v2.36.0',
         'Port: 8080',
-        'Instant GraphQL API with subscriptions'
-      ]
+        'Instant GraphQL API with subscriptions',
+      ],
     }
   }
   if (lowerName === 'auth') {
@@ -141,8 +163,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: auth',
         'Image: nhost/hasura-auth:0.36.0',
         'Port: 4000',
-        'JWT tokens & session management'
-      ]
+        'JWT tokens & session management',
+      ],
     }
   }
   if (lowerName === 'nginx') {
@@ -152,11 +174,11 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: nginx',
         'Image: nginx:alpine',
         'Ports: 80, 443',
-        'Routes requests & SSL termination'
-      ]
+        'Routes requests & SSL termination',
+      ],
     }
   }
-  
+
   // Storage services
   if (lowerName === 'minio') {
     return {
@@ -165,8 +187,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: minio',
         'Image: minio/minio:latest',
         'Ports: 9000, 9001',
-        'S3-compatible storage'
-      ]
+        'S3-compatible storage',
+      ],
     }
   }
   if (lowerName === 'storage') {
@@ -176,11 +198,11 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: storage',
         'Image: nhost/hasura-storage:0.6.1',
         'Port: 5001',
-        'S3-compatible API for file operations'
-      ]
+        'S3-compatible API for file operations',
+      ],
     }
   }
-  
+
   // Optional services
   if (lowerName === 'nself-admin') {
     return {
@@ -189,8 +211,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: nself-admin',
         'Image: acamarata/nself-admin:latest',
         'Port: 3021',
-        'Web management interface'
-      ]
+        'Web management interface',
+      ],
     }
   }
   if (lowerName === 'mailpit') {
@@ -200,8 +222,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: mailpit',
         'Image: axllent/mailpit:latest',
         'Ports: 1025, 8025',
-        'Email testing & capture'
-      ]
+        'Email testing & capture',
+      ],
     }
   }
   if (lowerName === 'meilisearch') {
@@ -211,8 +233,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: meilisearch',
         'Image: getmeili/meilisearch:v1.5',
         'Port: 7700',
-        'Full-text search engine'
-      ]
+        'Full-text search engine',
+      ],
     }
   }
   if (lowerName === 'redis') {
@@ -222,8 +244,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: redis',
         'Image: redis:7-alpine',
         'Port: 6379',
-        'In-memory data store'
-      ]
+        'In-memory data store',
+      ],
     }
   }
   if (lowerName === 'mlflow') {
@@ -233,11 +255,11 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: mlflow',
         'Image: ghcr.io/mlflow/mlflow:v2.9.2',
         'Port: 5001',
-        'ML lifecycle management'
-      ]
+        'ML lifecycle management',
+      ],
     }
   }
-  
+
   // Monitoring stack
   if (lowerName === 'grafana') {
     return {
@@ -246,8 +268,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: grafana',
         'Image: grafana/grafana:10.2.3',
         'Port: 3000',
-        'Metrics visualization'
-      ]
+        'Metrics visualization',
+      ],
     }
   }
   if (lowerName === 'prometheus') {
@@ -257,8 +279,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: prometheus',
         'Image: prom/prometheus:v2.48.1',
         'Port: 9090',
-        'Time-series database'
-      ]
+        'Time-series database',
+      ],
     }
   }
   if (lowerName === 'loki') {
@@ -268,8 +290,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: loki',
         'Image: grafana/loki:2.9.3',
         'Port: 3100',
-        'Centralized logging'
-      ]
+        'Centralized logging',
+      ],
     }
   }
   if (lowerName === 'tempo') {
@@ -279,8 +301,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: tempo',
         'Image: grafana/tempo:2.3.1',
         'Port: 3200',
-        'Distributed tracing'
-      ]
+        'Distributed tracing',
+      ],
     }
   }
   if (lowerName === 'jaeger') {
@@ -290,8 +312,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: jaeger',
         'Image: jaegertracing/all-in-one:1.52',
         'Port: 16686',
-        'Trace visualization'
-      ]
+        'Trace visualization',
+      ],
     }
   }
   if (lowerName === 'alertmanager') {
@@ -301,8 +323,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: alertmanager',
         'Image: prom/alertmanager:v0.26.0',
         'Port: 9093',
-        'Alert routing & notifications'
-      ]
+        'Alert routing & notifications',
+      ],
     }
   }
   if (lowerName === 'node-exporter') {
@@ -312,8 +334,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: node-exporter',
         'Image: prom/node-exporter:v1.7.0',
         'Port: 9100',
-        'Host system metrics'
-      ]
+        'Host system metrics',
+      ],
     }
   }
   if (lowerName === 'postgres-exporter') {
@@ -323,8 +345,8 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: postgres-exporter',
         'Image: prometheuscommunity/postgres-exporter:v0.15.0',
         'Port: 9187',
-        'Database performance metrics'
-      ]
+        'Database performance metrics',
+      ],
     }
   }
   if (lowerName === 'cadvisor') {
@@ -334,11 +356,11 @@ function getServiceInfo(name: string): { description: string; details: string[] 
         'Container: cadvisor',
         'Image: gcr.io/cadvisor/cadvisor:v0.47.2',
         'Port: 8080',
-        'Container resource usage'
-      ]
+        'Container resource usage',
+      ],
     }
   }
-  
+
   // Custom services
   if (lowerName.startsWith('cs')) {
     const serviceNum = name.replace(/cs/i, '')
@@ -347,15 +369,15 @@ function getServiceInfo(name: string): { description: string; details: string[] 
       details: [
         `Container: ${name}`,
         'User-defined service',
-        'Check .env file for details'
-      ]
+        'Check .env file for details',
+      ],
     }
   }
-  
+
   // Default
   return {
     description: name,
-    details: ['Service component']
+    details: ['Service component'],
   }
 }
 
@@ -368,30 +390,30 @@ function getServiceDescription(name: string): string {
 // Helper to get service display name
 function getServiceDisplayName(name: string): string {
   const lowerName = name.toLowerCase()
-  
+
   // Core services
   if (lowerName === 'postgres') return 'PostgreSQL'
   if (lowerName === 'hasura') return 'Hasura GraphQL'
   if (lowerName === 'auth') return 'Authentication'
   if (lowerName === 'nginx') return 'Nginx Proxy'
-  
+
   // Storage services
   if (lowerName === 'minio') return 'MinIO Storage'
   if (lowerName === 'storage') return 'Storage API'
-  
+
   // Mail & Search
   if (lowerName === 'mailpit') return 'Mailpit'
   if (lowerName === 'meilisearch') return 'MeiliSearch'
-  
+
   // Cache
   if (lowerName === 'redis') return 'Redis Cache'
-  
+
   // ML
   if (lowerName === 'mlflow') return 'MLflow'
-  
+
   // Admin UI
   if (lowerName === 'nself-admin') return 'nself Admin UI'
-  
+
   // Monitoring stack
   if (lowerName === 'grafana') return 'Grafana'
   if (lowerName === 'prometheus') return 'Prometheus'
@@ -402,14 +424,15 @@ function getServiceDisplayName(name: string): string {
   if (lowerName === 'postgres-exporter') return 'Database Metrics'
   if (lowerName === 'cadvisor') return 'Container Metrics'
   if (lowerName === 'jaeger') return 'Jaeger'
-  
+
   // Admin
   if (lowerName === 'nself-admin') return 'nself Admin UI'
-  
+
   // Default: capitalize and clean up
-  return name.replace(/[-_]/g, ' ')
+  return name
+    .replace(/[-_]/g, ' ')
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
 }
 
@@ -425,13 +448,21 @@ export default function StartPage() {
   const [startProgress, setStartProgress] = useState<{
     message: string
     percentage?: number
-    type?: 'status' | 'progress' | 'download' | 'container' | 'error' | 'complete'
+    type?:
+      | 'status'
+      | 'progress'
+      | 'download'
+      | 'container'
+      | 'error'
+      | 'complete'
     instructions?: string[]
   }>({ message: '' })
-  
-  const checkProjectStatus = useProjectStore(state => state.checkProjectStatus)
-  const projectStatus = useProjectStore(state => state.projectStatus)
-  
+
+  const checkProjectStatus = useProjectStore(
+    (state) => state.checkProjectStatus,
+  )
+  const projectStatus = useProjectStore((state) => state.projectStatus)
+
   // Check routing and load start page data
   useEffect(() => {
     const initializeStartPage = async () => {
@@ -441,7 +472,7 @@ export default function StartPage() {
         if (redirected) {
           return // Don't load data if we're redirecting
         }
-        
+
         await checkProjectStatus()
         setInitialCheck(false)
       } catch (error) {
@@ -449,7 +480,7 @@ export default function StartPage() {
         setInitialCheck(false)
       }
     }
-    
+
     initializeStartPage()
   }, [checkProjectStatus, router.push])
 
@@ -470,7 +501,7 @@ export default function StartPage() {
       console.error('Failed to fetch project info:', error)
     }
   }
-  
+
   const fetchServiceDetails = async () => {
     try {
       setLoadingServices(true)
@@ -489,111 +520,124 @@ export default function StartPage() {
   const startServices = async () => {
     try {
       setStarting(true)
-      setStartProgress({ message: 'Initializing Docker services...', type: 'status' })
-      
+      setStartProgress({
+        message: 'Initializing Docker services...',
+        type: 'status',
+      })
+
       // Get CSRF token from cookie
       const csrfToken = document.cookie
         .split('; ')
-        .find(row => row.startsWith('nself-csrf='))
+        .find((row) => row.startsWith('nself-csrf='))
         ?.split('=')[1]
-      
+
       // Use streaming API for real-time progress
       const response = await fetch('/api/nself/start-stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken || ''
-        }
+          'X-CSRF-Token': csrfToken || '',
+        },
       })
-      
+
       if (!response.ok) {
         const errorText = await response.text()
         console.error('Start failed with status:', response.status)
         console.error('Error response:', errorText)
-        throw new Error(`Failed to start services: ${response.status} - ${errorText}`)
+        throw new Error(
+          `Failed to start services: ${response.status} - ${errorText}`,
+        )
       }
-      
+
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
-      
+
       if (reader) {
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
-          
+
           const chunk = decoder.decode(value)
-          const lines = chunk.split('\n').filter(line => line.trim())
-          
+          const lines = chunk.split('\n').filter((line) => line.trim())
+
           for (const line of lines) {
             try {
               const data = JSON.parse(line)
-              
+
               switch (data.type) {
                 case 'status':
                   setStartProgress({
                     message: data.message,
-                    type: 'status'
+                    type: 'status',
                   })
                   break
-                  
+
                 case 'progress':
                   setStartProgress({
                     message: data.message,
                     percentage: data.percentage,
-                    type: 'progress'
+                    type: 'progress',
                   })
                   break
-                  
+
                 case 'download':
                   setStartProgress({
                     message: data.message,
                     percentage: data.percentage,
-                    type: 'download'
+                    type: 'download',
                   })
                   break
-                  
+
                 case 'container':
                   setStartProgress({
                     message: data.message || `Starting containers...`,
                     percentage: data.percentage,
-                    type: 'container'
+                    type: 'container',
                   })
                   // Update if we have current/total info
                   if (data.current && data.total) {
                     setStartProgress({
                       message: `Starting containers: ${data.current}/${data.total}`,
                       percentage: data.percentage,
-                      type: 'container'
+                      type: 'container',
                     })
                   }
                   break
-                  
+
                 case 'error':
                   // Store full error details including instructions
                   const errorProgress: any = {
                     message: data.message || 'An error occurred',
-                    type: 'error'
+                    type: 'error',
                   }
-                  
+
                   // Store instructions if provided
                   if (data.instructions) {
                     errorProgress.instructions = data.instructions
                   }
-                  
+
                   setStartProgress(errorProgress)
-                  console.error('Start error:', data.message, data.errorOutput, data.instructions)
+                  console.error(
+                    'Start error:',
+                    data.message,
+                    data.errorOutput,
+                    data.instructions,
+                  )
                   setStarting(false) // Reset starting state on error
                   break
-                  
+
                 case 'complete':
                   setStartProgress({
                     message: data.message,
                     percentage: 100,
-                    type: 'complete'
+                    type: 'complete',
                   })
                   // Mark that services were recently started
-                  localStorage.setItem('services_recently_started', Date.now().toString())
-                  
+                  localStorage.setItem(
+                    'services_recently_started',
+                    Date.now().toString(),
+                  )
+
                   // Wait longer and verify services are actually running before redirect
                   setTimeout(async () => {
                     // Check if services are actually running
@@ -620,7 +664,7 @@ export default function StartPage() {
       console.error('Failed to start services:', error)
       setStartProgress({
         message: 'Failed to start services. Please check Docker is running.',
-        type: 'error'
+        type: 'error',
       })
     } finally {
       // Keep showing the final message for a bit before clearing
@@ -634,14 +678,16 @@ export default function StartPage() {
   // Show loading state while checking if we should redirect
   if (initialCheck) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800">
         <HeroPattern />
         <div className="relative z-10 text-center">
           <div className="animate-pulse">
-            <div className="mx-auto h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center dark:bg-blue-500/10">
-              <div className="h-6 w-6 rounded-full bg-blue-500 animate-ping" />
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-500/10">
+              <div className="h-6 w-6 animate-ping rounded-full bg-blue-500" />
             </div>
-            <p className="mt-4 text-zinc-600 dark:text-zinc-400">Checking services...</p>
+            <p className="mt-4 text-zinc-600 dark:text-zinc-400">
+              Checking services...
+            </p>
           </div>
         </div>
       </div>
@@ -649,20 +695,20 @@ export default function StartPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800">
       <HeroPattern />
-      
-      <div className="relative z-10 max-w-2xl w-full mx-auto px-6">
+
+      <div className="relative z-10 mx-auto w-full max-w-2xl px-6">
         <div className="group relative rounded-2xl bg-zinc-50 p-8 dark:bg-white/2.5">
           <div className="absolute inset-0 rounded-2xl ring-1 ring-zinc-900/7.5 ring-inset group-hover:ring-zinc-900/10 dark:ring-white/10 dark:group-hover:ring-white/20" />
           <div className="relative text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center dark:bg-blue-500/10">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-500/10">
               <div className="h-6 w-6 rounded-full bg-blue-500" />
             </div>
             <h2 className="mt-4 text-2xl font-bold text-zinc-900 dark:text-white">
               Ready to Launch
             </h2>
-            
+
             {projectInfo && (
               <>
                 {/* First Row: Status and Environment */}
@@ -673,281 +719,416 @@ export default function StartPage() {
                     value="Built"
                     pattern={{
                       y: 22,
-                      squares: [[0, 1]]
+                      squares: [[0, 1]],
                     }}
                   />
                   <ProjectInfoCard
                     icon={Server}
                     label="Env"
-                    value={projectInfo.environment === 'dev' ? 'Dev' : 
-                           projectInfo.environment === 'staging' ? 'Staging' : 
-                           projectInfo.environment === 'production' ? 'Prod' : 'Dev'}
+                    value={
+                      projectInfo.environment === 'dev'
+                        ? 'Dev'
+                        : projectInfo.environment === 'staging'
+                          ? 'Staging'
+                          : projectInfo.environment === 'production'
+                            ? 'Prod'
+                            : 'Dev'
+                    }
                     pattern={{
                       y: 16,
-                      squares: [[0, 1], [1, 3]]
+                      squares: [
+                        [0, 1],
+                        [1, 3],
+                      ],
                     }}
                   />
                 </div>
-                
+
                 {/* Second Row: Project Name and Base Domain */}
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 p-3 border border-blue-200 dark:border-blue-800">
-                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">Project Name</div>
-                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-200 mt-1 text-center">{projectInfo.projectName || 'nself-project'}</div>
+                  <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 dark:border-blue-800 dark:from-blue-900/20 dark:to-blue-800/10">
+                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                      Project Name
+                    </div>
+                    <div className="mt-1 text-center text-sm font-semibold text-blue-900 dark:text-blue-200">
+                      {projectInfo.projectName || 'nself-project'}
+                    </div>
                   </div>
-                  <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 p-3 border border-blue-200 dark:border-blue-800">
-                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">Base Domain</div>
-                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-200 mt-1 text-center">{projectInfo.domain || 'localhost'}</div>
+                  <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 dark:border-blue-800 dark:from-blue-900/20 dark:to-blue-800/10">
+                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                      Base Domain
+                    </div>
+                    <div className="mt-1 text-center text-sm font-semibold text-blue-900 dark:text-blue-200">
+                      {projectInfo.domain || 'localhost'}
+                    </div>
                   </div>
                 </div>
-                
+
                 {/* Third Row: Database Name and Database Password */}
                 <div className="mt-3 grid grid-cols-2 gap-3">
-                  <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 p-3 border border-blue-200 dark:border-blue-800">
-                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">Database Name</div>
-                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-200 mt-1 text-center">{projectInfo.databaseName || 'postgres'}</div>
+                  <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 dark:border-blue-800 dark:from-blue-900/20 dark:to-blue-800/10">
+                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                      Database Name
+                    </div>
+                    <div className="mt-1 text-center text-sm font-semibold text-blue-900 dark:text-blue-200">
+                      {projectInfo.databaseName || 'postgres'}
+                    </div>
                   </div>
-                  <div className="rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 p-3 border border-blue-200 dark:border-blue-800">
-                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">Database Password</div>
-                    <div className="flex items-center justify-center mt-1 gap-2">
-                      <div className="text-sm font-semibold text-blue-900 dark:text-blue-200 text-center">
-                        {showDbPassword ? (projectInfo?.dbPassword || 'No password found') : '••••••••'}
+                  <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 p-3 dark:border-blue-800 dark:from-blue-900/20 dark:to-blue-800/10">
+                    <div className="text-xs font-medium text-blue-700 dark:text-blue-400">
+                      Database Password
+                    </div>
+                    <div className="mt-1 flex items-center justify-center gap-2">
+                      <div className="text-center text-sm font-semibold text-blue-900 dark:text-blue-200">
+                        {showDbPassword
+                          ? projectInfo?.dbPassword || 'No password found'
+                          : '••••••••'}
                       </div>
                       <button
                         onClick={() => setShowDbPassword(!showDbPassword)}
                         className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                       >
-                        {showDbPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                        {showDbPassword ? (
+                          <EyeOff className="h-3.5 w-3.5" />
+                        ) : (
+                          <Eye className="h-3.5 w-3.5" />
+                        )}
                       </button>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-3">
-                  <div className="rounded-xl bg-zinc-50/50 dark:bg-zinc-800/30 p-3">
+                  <div className="rounded-xl bg-zinc-50/50 p-3 dark:bg-zinc-800/30">
                     <button
                       onClick={() => setShowDetails(!showDetails)}
-                      className="w-full flex items-center justify-between text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                      className="flex w-full items-center justify-between text-sm font-semibold text-zinc-700 transition-colors hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
                     >
                       <span>
-                        Total Services: <span className="text-blue-600 dark:text-blue-400 font-bold">
+                        Total Services:{' '}
+                        <span className="font-bold text-blue-600 dark:text-blue-400">
                           {projectInfo?.totalServices || 0}
                         </span>
                       </span>
-                      {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      {showDetails ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
                     </button>
                     {showDetails && (
-                    <div className="space-y-3 mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-700">
-                      {/* Required Services */}
-                      {projectInfo.servicesByCategory?.required?.length > 0 && (
-                        <div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                              Required ({projectInfo.servicesByCategory.required.length})
-                            </span>
-                          </div>
-                          <div className="space-y-1 ml-4">
-                            {projectInfo.servicesByCategory.required.map((service: string, idx: number) => {
-                              const serviceData = serviceDetails?.[service]
-                              const info = serviceData ? {
-                                description: getServiceDisplayName(service),
-                                details: [
-                                  serviceData.container_name && `Container: ${serviceData.container_name}`,
-                                  serviceData.image && `Image: ${serviceData.image}`,
-                                  serviceData.ports?.length > 0 && `Ports: ${serviceData.ports.map((p: string) => p.split(':')[0]).join(', ')}`,
-                                  serviceData.restart && `Restart: ${serviceData.restart}`
-                                ].filter(Boolean)
-                              } : getServiceInfo(service)
-                              return (
-                                <div key={service} className="flex items-center space-x-2 text-sm">
-                                  <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
-                                  <span className="text-zinc-700 dark:text-zinc-300">{getServiceDisplayName(service)}</span>
-                                  <div className="relative group/tooltip inline-flex isolate">
-                                    <svg 
-                                      className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-help flex-shrink-0" 
-                                      fill="none" 
-                                      stroke="currentColor" 
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <div className="absolute left-0 bottom-full mb-2 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 w-72 p-3 text-xs text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none">
-                                      <div className="font-semibold mb-2">{info.description}</div>
-                                      <div className="space-y-1 text-gray-300">
-                                        {info.details.map((detail, i) => (
-                                          <div key={i} className="text-xs">{detail}</div>
-                                        ))}
-                                      </div>
-                                      <div className="absolute left-2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Optional Services */}
-                      {projectInfo.servicesByCategory?.optional?.length > 0 && (
-                        <div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
-                              Optional ({projectInfo.servicesByCategory.optional.length})
-                            </span>
-                          </div>
-                          <div className="space-y-1 ml-4">
-                            {projectInfo.servicesByCategory.optional.map((service: string, idx: number) => {
-                              const serviceData = serviceDetails?.[service]
-                              const info = serviceData ? {
-                                description: getServiceDisplayName(service),
-                                details: [
-                                  serviceData.container_name && `Container: ${serviceData.container_name}`,
-                                  serviceData.image && `Image: ${serviceData.image}`,
-                                  serviceData.ports?.length > 0 && `Ports: ${serviceData.ports.map((p: string) => p.split(':')[0]).join(', ')}`,
-                                  serviceData.restart && `Restart: ${serviceData.restart}`
-                                ].filter(Boolean)
-                              } : getServiceInfo(service)
-                              return (
-                                <div key={service} className="flex items-center space-x-2 text-sm">
-                                  <div className="h-1.5 w-1.5 rounded-full bg-purple-500"></div>
-                                  <span className="text-zinc-700 dark:text-zinc-300">{getServiceDisplayName(service)}</span>
-                                  <div className="relative group/tooltip inline-flex isolate">
-                                    <svg 
-                                      className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-help flex-shrink-0" 
-                                      fill="none" 
-                                      stroke="currentColor" 
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <div className="absolute left-0 bottom-full mb-2 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 w-72 p-3 text-xs text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none">
-                                      <div className="font-semibold mb-2">{info.description}</div>
-                                      <div className="space-y-1 text-gray-300">
-                                        {info.details.map((detail, i) => (
-                                          <div key={i} className="text-xs">{detail}</div>
-                                        ))}
-                                      </div>
-                                      <div className="absolute left-2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Custom Services */}
-                      {projectInfo.servicesByCategory?.user?.length > 0 && (
-                        <div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
-                              Custom ({projectInfo.servicesByCategory.user.length})
-                            </span>
-                          </div>
-                          <div className="space-y-1 ml-4">
-                            {projectInfo.servicesByCategory.user.map((service: string, idx: number) => {
-                              const serviceData = serviceDetails?.[service]
-                              const info = serviceData ? {
-                                description: `Custom Service: ${service}`,
-                                details: [
-                                  serviceData.container_name && `Container: ${serviceData.container_name}`,
-                                  serviceData.image && `Image: ${serviceData.image}`,
-                                  serviceData.ports?.length > 0 && `Ports: ${serviceData.ports.map((p: string) => p.split(':')[0]).join(', ')}`,
-                                  serviceData.customInfo?.type && `Type: ${serviceData.customInfo.type}`,
-                                  serviceData.customInfo?.route && `Route: ${serviceData.customInfo.route}`,
-                                  serviceData.restart && `Restart: ${serviceData.restart}`
-                                ].filter(Boolean)
-                              } : getServiceInfo(service)
-                              return (
-                                <div key={service} className="flex items-center space-x-2 text-sm">
-                                  <div className="h-1.5 w-1.5 rounded-full bg-orange-500"></div>
-                                  <span className="text-zinc-700 dark:text-zinc-300">{getServiceDisplayName(service)}</span>
-                                  <div className="relative group/tooltip inline-flex isolate">
-                                    <svg 
-                                      className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-help flex-shrink-0" 
-                                      fill="none" 
-                                      stroke="currentColor" 
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <div className="absolute left-0 bottom-full mb-2 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 w-72 p-3 text-xs text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none">
-                                      <div className="font-semibold mb-2">{info.description}</div>
-                                      <div className="space-y-1 text-gray-300">
-                                        {info.details.map((detail, i) => (
-                                          <div key={i} className="text-xs">{detail}</div>
-                                        ))}
-                                      </div>
-                                      <div className="absolute left-2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                                    </div>
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Frontend Apps */}
-                      {projectInfo.frontendApps && projectInfo.frontendApps.length > 0 && (
-                        <div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                              Frontend Apps ({projectInfo.frontendApps.length})
-                            </span>
-                          </div>
-                          <div className="space-y-1 ml-4">
-                            {projectInfo.frontendApps.map((app: any) => (
-                              <div key={app.name} className="flex items-center space-x-2 text-sm">
-                                <div className="h-1.5 w-1.5 rounded-full bg-indigo-500"></div>
-                                <span className="text-zinc-700 dark:text-zinc-300">{app.label} (port {app.port})</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Backup Status */}
-                      {projectInfo.backupEnabled && (
-                        <div>
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
-                              Backups
-                            </span>
-                          </div>
-                          <div className="space-y-1 ml-4">
-                            <div className="flex items-center space-x-2 text-sm">
-                              <div className="h-1.5 w-1.5 rounded-full bg-gray-500"></div>
-                              <span className="text-zinc-700 dark:text-zinc-300">
-                                Enabled
+                      <div className="mt-3 space-y-3 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                        {/* Required Services */}
+                        {projectInfo.servicesByCategory?.required?.length >
+                          0 && (
+                          <div>
+                            <div className="mb-2 flex items-center space-x-2">
+                              <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                Required (
+                                {projectInfo.servicesByCategory.required.length}
+                                )
                               </span>
-                              <div className="relative group/tooltip inline-flex isolate">
-                                <svg 
-                                  className="w-4 h-4 text-zinc-400 dark:text-zinc-500 cursor-help flex-shrink-0" 
-                                  fill="none" 
-                                  stroke="currentColor" 
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <div className="absolute left-0 bottom-full mb-2 opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 z-50 w-72 p-3 text-xs text-white bg-gray-900 rounded-lg shadow-lg pointer-events-none">
-                                  <div className="font-semibold mb-2">Database Backups</div>
-                                  <div className="space-y-1 text-gray-300">
-                                    <div className="text-xs">Status: Enabled</div>
-                                    <div className="text-xs">Schedule: {projectInfo.backupSchedule || 'Daily at 2AM'}</div>
-                                    <div className="text-xs">Type: PostgreSQL dumps</div>
-                                    <div className="text-xs">Retention: 7 days</div>
+                            </div>
+                            <div className="ml-4 space-y-1">
+                              {projectInfo.servicesByCategory.required.map(
+                                (service: string, idx: number) => {
+                                  const serviceData = serviceDetails?.[service]
+                                  const info = serviceData
+                                    ? {
+                                        description:
+                                          getServiceDisplayName(service),
+                                        details: [
+                                          serviceData.container_name &&
+                                            `Container: ${serviceData.container_name}`,
+                                          serviceData.image &&
+                                            `Image: ${serviceData.image}`,
+                                          serviceData.ports?.length > 0 &&
+                                            `Ports: ${serviceData.ports.map((p: string) => p.split(':')[0]).join(', ')}`,
+                                          serviceData.restart &&
+                                            `Restart: ${serviceData.restart}`,
+                                        ].filter(Boolean),
+                                      }
+                                    : getServiceInfo(service)
+                                  return (
+                                    <div
+                                      key={service}
+                                      className="flex items-center space-x-2 text-sm"
+                                    >
+                                      <div className="h-1.5 w-1.5 rounded-full bg-blue-500"></div>
+                                      <span className="text-zinc-700 dark:text-zinc-300">
+                                        {getServiceDisplayName(service)}
+                                      </span>
+                                      <div className="group/tooltip relative isolate inline-flex">
+                                        <svg
+                                          className="h-4 w-4 flex-shrink-0 cursor-help text-zinc-400 dark:text-zinc-500"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                          />
+                                        </svg>
+                                        <div className="pointer-events-none invisible absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg bg-gray-900 p-3 text-xs text-white opacity-0 shadow-lg transition-all duration-200 group-hover/tooltip:visible group-hover/tooltip:opacity-100">
+                                          <div className="mb-2 font-semibold">
+                                            {info.description}
+                                          </div>
+                                          <div className="space-y-1 text-gray-300">
+                                            {info.details.map((detail, i) => (
+                                              <div key={i} className="text-xs">
+                                                {detail}
+                                              </div>
+                                            ))}
+                                          </div>
+                                          <div className="absolute top-full left-2 h-0 w-0 border-t-4 border-r-4 border-l-4 border-transparent border-t-gray-900"></div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                },
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Optional Services */}
+                        {projectInfo.servicesByCategory?.optional?.length >
+                          0 && (
+                          <div>
+                            <div className="mb-2 flex items-center space-x-2">
+                              <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+                                Optional (
+                                {projectInfo.servicesByCategory.optional.length}
+                                )
+                              </span>
+                            </div>
+                            <div className="ml-4 space-y-1">
+                              {projectInfo.servicesByCategory.optional.map(
+                                (service: string, idx: number) => {
+                                  const serviceData = serviceDetails?.[service]
+                                  const info = serviceData
+                                    ? {
+                                        description:
+                                          getServiceDisplayName(service),
+                                        details: [
+                                          serviceData.container_name &&
+                                            `Container: ${serviceData.container_name}`,
+                                          serviceData.image &&
+                                            `Image: ${serviceData.image}`,
+                                          serviceData.ports?.length > 0 &&
+                                            `Ports: ${serviceData.ports.map((p: string) => p.split(':')[0]).join(', ')}`,
+                                          serviceData.restart &&
+                                            `Restart: ${serviceData.restart}`,
+                                        ].filter(Boolean),
+                                      }
+                                    : getServiceInfo(service)
+                                  return (
+                                    <div
+                                      key={service}
+                                      className="flex items-center space-x-2 text-sm"
+                                    >
+                                      <div className="h-1.5 w-1.5 rounded-full bg-purple-500"></div>
+                                      <span className="text-zinc-700 dark:text-zinc-300">
+                                        {getServiceDisplayName(service)}
+                                      </span>
+                                      <div className="group/tooltip relative isolate inline-flex">
+                                        <svg
+                                          className="h-4 w-4 flex-shrink-0 cursor-help text-zinc-400 dark:text-zinc-500"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                          />
+                                        </svg>
+                                        <div className="pointer-events-none invisible absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg bg-gray-900 p-3 text-xs text-white opacity-0 shadow-lg transition-all duration-200 group-hover/tooltip:visible group-hover/tooltip:opacity-100">
+                                          <div className="mb-2 font-semibold">
+                                            {info.description}
+                                          </div>
+                                          <div className="space-y-1 text-gray-300">
+                                            {info.details.map((detail, i) => (
+                                              <div key={i} className="text-xs">
+                                                {detail}
+                                              </div>
+                                            ))}
+                                          </div>
+                                          <div className="absolute top-full left-2 h-0 w-0 border-t-4 border-r-4 border-l-4 border-transparent border-t-gray-900"></div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                },
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Custom Services */}
+                        {projectInfo.servicesByCategory?.user?.length > 0 && (
+                          <div>
+                            <div className="mb-2 flex items-center space-x-2">
+                              <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                                Custom (
+                                {projectInfo.servicesByCategory.user.length})
+                              </span>
+                            </div>
+                            <div className="ml-4 space-y-1">
+                              {projectInfo.servicesByCategory.user.map(
+                                (service: string, idx: number) => {
+                                  const serviceData = serviceDetails?.[service]
+                                  const info = serviceData
+                                    ? {
+                                        description: `Custom Service: ${service}`,
+                                        details: [
+                                          serviceData.container_name &&
+                                            `Container: ${serviceData.container_name}`,
+                                          serviceData.image &&
+                                            `Image: ${serviceData.image}`,
+                                          serviceData.ports?.length > 0 &&
+                                            `Ports: ${serviceData.ports.map((p: string) => p.split(':')[0]).join(', ')}`,
+                                          serviceData.customInfo?.type &&
+                                            `Type: ${serviceData.customInfo.type}`,
+                                          serviceData.customInfo?.route &&
+                                            `Route: ${serviceData.customInfo.route}`,
+                                          serviceData.restart &&
+                                            `Restart: ${serviceData.restart}`,
+                                        ].filter(Boolean),
+                                      }
+                                    : getServiceInfo(service)
+                                  return (
+                                    <div
+                                      key={service}
+                                      className="flex items-center space-x-2 text-sm"
+                                    >
+                                      <div className="h-1.5 w-1.5 rounded-full bg-orange-500"></div>
+                                      <span className="text-zinc-700 dark:text-zinc-300">
+                                        {getServiceDisplayName(service)}
+                                      </span>
+                                      <div className="group/tooltip relative isolate inline-flex">
+                                        <svg
+                                          className="h-4 w-4 flex-shrink-0 cursor-help text-zinc-400 dark:text-zinc-500"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                          />
+                                        </svg>
+                                        <div className="pointer-events-none invisible absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg bg-gray-900 p-3 text-xs text-white opacity-0 shadow-lg transition-all duration-200 group-hover/tooltip:visible group-hover/tooltip:opacity-100">
+                                          <div className="mb-2 font-semibold">
+                                            {info.description}
+                                          </div>
+                                          <div className="space-y-1 text-gray-300">
+                                            {info.details.map((detail, i) => (
+                                              <div key={i} className="text-xs">
+                                                {detail}
+                                              </div>
+                                            ))}
+                                          </div>
+                                          <div className="absolute top-full left-2 h-0 w-0 border-t-4 border-r-4 border-l-4 border-transparent border-t-gray-900"></div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                },
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Frontend Apps */}
+                        {projectInfo.frontendApps &&
+                          projectInfo.frontendApps.length > 0 && (
+                            <div>
+                              <div className="mb-2 flex items-center space-x-2">
+                                <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                                  Frontend Apps (
+                                  {projectInfo.frontendApps.length})
+                                </span>
+                              </div>
+                              <div className="ml-4 space-y-1">
+                                {projectInfo.frontendApps.map((app: any) => (
+                                  <div
+                                    key={app.name}
+                                    className="flex items-center space-x-2 text-sm"
+                                  >
+                                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-500"></div>
+                                    <span className="text-zinc-700 dark:text-zinc-300">
+                                      {app.label} (port {app.port})
+                                    </span>
                                   </div>
-                                  <div className="absolute left-2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Backup Status */}
+                        {projectInfo.backupEnabled && (
+                          <div>
+                            <div className="mb-2 flex items-center space-x-2">
+                              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                                Backups
+                              </span>
+                            </div>
+                            <div className="ml-4 space-y-1">
+                              <div className="flex items-center space-x-2 text-sm">
+                                <div className="h-1.5 w-1.5 rounded-full bg-gray-500"></div>
+                                <span className="text-zinc-700 dark:text-zinc-300">
+                                  Enabled
+                                </span>
+                                <div className="group/tooltip relative isolate inline-flex">
+                                  <svg
+                                    className="h-4 w-4 flex-shrink-0 cursor-help text-zinc-400 dark:text-zinc-500"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                  </svg>
+                                  <div className="pointer-events-none invisible absolute bottom-full left-0 z-50 mb-2 w-72 rounded-lg bg-gray-900 p-3 text-xs text-white opacity-0 shadow-lg transition-all duration-200 group-hover/tooltip:visible group-hover/tooltip:opacity-100">
+                                    <div className="mb-2 font-semibold">
+                                      Database Backups
+                                    </div>
+                                    <div className="space-y-1 text-gray-300">
+                                      <div className="text-xs">
+                                        Status: Enabled
+                                      </div>
+                                      <div className="text-xs">
+                                        Schedule:{' '}
+                                        {projectInfo.backupSchedule ||
+                                          'Daily at 2AM'}
+                                      </div>
+                                      <div className="text-xs">
+                                        Type: PostgreSQL dumps
+                                      </div>
+                                      <div className="text-xs">
+                                        Retention: 7 days
+                                      </div>
+                                    </div>
+                                    <div className="absolute top-full left-2 h-0 w-0 border-t-4 border-r-4 border-l-4 border-transparent border-t-gray-900"></div>
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -956,102 +1137,155 @@ export default function StartPage() {
 
             <div className="mt-6">
               <div className="flex flex-col items-center space-y-3">
-                <Button 
+                <Button
                   onClick={startServices}
                   variant="primary"
                   disabled={starting}
-                  className="px-8 py-3 text-base font-semibold shadow-lg hover:shadow-xl transition-shadow"
+                  className="px-8 py-3 text-base font-semibold shadow-lg transition-shadow hover:shadow-xl"
                 >
                   {starting ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
                       Starting Services...
                     </>
                   ) : (
                     <>
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <svg
+                        className="mr-2 h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
                       Launch All Services
                     </>
                   )}
                 </Button>
-                
+
                 {/* Only show description and options when NOT starting */}
                 {!starting && (
                   <>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-500 text-center leading-tight">
-                      This will run <span className="font-medium">nself start</span> which uses Docker Compose<br />
-                      to launch all {projectInfo?.totalServices || 0} services with smart defaults and auto-recovery.
+                    <p className="text-center text-xs leading-tight text-zinc-500 dark:text-zinc-500">
+                      This will run{' '}
+                      <span className="font-medium">nself start</span> which
+                      uses Docker Compose
+                      <br />
+                      to launch all {projectInfo?.totalServices || 0} services
+                      with smart defaults and auto-recovery.
                     </p>
-                    
+
                     {/* Edit/Reset Options */}
-                    <div className="flex items-center gap-3 mt-4 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+                    <div className="mt-4 flex items-center gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-700">
                       <button
-                        onClick={() => safeNavigate(router, '/init/1', true)} 
-                        className="text-sm px-4 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        onClick={() => safeNavigate(router, '/init/1', true)}
+                        className="rounded-lg px-4 py-2 text-sm text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
                       >
-                        <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        <svg
+                          className="mr-1 inline h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
                         </svg>
                         Edit Build
                       </button>
                       <button
                         onClick={() => {
-                          if (confirm('This will completely reset your project and delete all configuration. Are you sure?')) {
+                          if (
+                            confirm(
+                              'This will completely reset your project and delete all configuration. Are you sure?',
+                            )
+                          ) {
                             safeNavigate(router, '/init/reset', true) // Force navigation to reset
                           }
                         }}
-                        className="text-sm px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        className="rounded-lg px-4 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                       >
-                        <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        <svg
+                          className="mr-1 inline h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
                         </svg>
                         Reset Project
                       </button>
                     </div>
                   </>
                 )}
-                
+
                 {/* Progress Message - Show when starting or has message */}
                 {(starting || startProgress.message) && (
-                  <div className="text-center space-y-3 max-w-md mt-4">
-                    <p className={`text-sm font-medium ${
-                      startProgress.type === 'error' 
-                        ? 'text-red-600 dark:text-red-400'
-                        : startProgress.type === 'complete'
-                        ? 'text-green-600 dark:text-green-400'
-                        : startProgress.type === 'download'
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : 'text-zinc-600 dark:text-zinc-400'
-                    }`}>
+                  <div className="mt-4 max-w-md space-y-3 text-center">
+                    <p
+                      className={`text-sm font-medium ${
+                        startProgress.type === 'error'
+                          ? 'text-red-600 dark:text-red-400'
+                          : startProgress.type === 'complete'
+                            ? 'text-green-600 dark:text-green-400'
+                            : startProgress.type === 'download'
+                              ? 'text-blue-600 dark:text-blue-400'
+                              : 'text-zinc-600 dark:text-zinc-400'
+                      }`}
+                    >
                       {startProgress.message}
                     </p>
-                    
+
                     {/* Show instructions if present (for errors) */}
-                    {startProgress.instructions && startProgress.instructions.length > 0 && (
-                      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                        <div className="text-left space-y-1">
-                          {startProgress.instructions.map((instruction, index) => (
-                            <div key={index} className="text-xs text-red-700 dark:text-red-300">
-                              {instruction}
-                            </div>
-                          ))}
+                    {startProgress.instructions &&
+                      startProgress.instructions.length > 0 && (
+                        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+                          <div className="space-y-1 text-left">
+                            {startProgress.instructions.map(
+                              (instruction, index) => (
+                                <div
+                                  key={index}
+                                  className="text-xs text-red-700 dark:text-red-300"
+                                >
+                                  {instruction}
+                                </div>
+                              ),
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    
+                      )}
+
                     {/* Progress Bar */}
-                    {startProgress.percentage !== undefined && startProgress.percentage > 0 && startProgress.type !== 'error' && (
-                      <div className="w-full bg-zinc-200 dark:bg-zinc-700 rounded-full h-1.5">
-                        <div 
-                          className="bg-blue-600 dark:bg-blue-400 h-1.5 rounded-full transition-all duration-300"
-                          style={{ width: `${startProgress.percentage}%` }}
-                        />
-                      </div>
-                    )}
-                    
+                    {startProgress.percentage !== undefined &&
+                      startProgress.percentage > 0 &&
+                      startProgress.type !== 'error' && (
+                        <div className="h-1.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-700">
+                          <div
+                            className="h-1.5 rounded-full bg-blue-600 transition-all duration-300 dark:bg-blue-400"
+                            style={{ width: `${startProgress.percentage}%` }}
+                          />
+                        </div>
+                      )}
+
                     {/* Retry button on error */}
                     {startProgress.type === 'error' && !starting && (
                       <button
@@ -1059,7 +1293,7 @@ export default function StartPage() {
                           setStartProgress({ message: '' })
                           startServices()
                         }}
-                        className="mt-2 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                        className="mt-2 rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition-colors hover:bg-red-700"
                       >
                         Retry
                       </button>

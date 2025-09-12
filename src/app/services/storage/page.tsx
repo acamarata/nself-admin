@@ -1,17 +1,40 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
-import { 
-  HardDrive, Folder, FileText, Image, Video, Music, Archive,
-  Upload, Download, Trash2, Search, Filter, MoreVertical,
-  Plus, Settings, Share, Eye, Edit3, Copy, Move, Lock,
-  Unlock, Key, Users, Calendar, Info, RefreshCw, ArrowUp,
-  ArrowDown, Grid, List, FolderOpen, File, Shield,
-  AlertCircle, CheckCircle, Clock, Activity, Database,
-  Server, Link, ExternalLink, Layers, Globe, Code
+import {
+  AlertCircle,
+  Archive,
+  CheckCircle,
+  Copy,
+  Database,
+  Download,
+  Edit3,
+  Eye,
+  File,
+  FileText,
+  Folder,
+  FolderOpen,
+  Globe,
+  Grid,
+  HardDrive,
+  Image,
+  List,
+  Lock,
+  MoreVertical,
+  Music,
+  Plus,
+  RefreshCw,
+  Search,
+  Settings,
+  Share,
+  Shield,
+  Trash2,
+  Unlock,
+  Upload,
+  Video,
 } from 'lucide-react'
+import { useState } from 'react'
 
 interface StorageObject {
   id: string
@@ -64,7 +87,7 @@ const mockBuckets: Bucket[] = [
     region: 'us-east-1',
     versioning: true,
     encryption: true,
-    notifications: false
+    notifications: false,
   },
   {
     id: '2',
@@ -76,7 +99,7 @@ const mockBuckets: Bucket[] = [
     region: 'us-east-1',
     versioning: false,
     encryption: false,
-    notifications: true
+    notifications: true,
   },
   {
     id: '3',
@@ -88,8 +111,8 @@ const mockBuckets: Bucket[] = [
     region: 'us-east-1',
     versioning: true,
     encryption: true,
-    notifications: true
-  }
+    notifications: true,
+  },
 ]
 
 const mockObjects: StorageObject[] = [
@@ -103,7 +126,7 @@ const mockObjects: StorageObject[] = [
     permissions: 'rwx',
     bucket: 'nself-uploads',
     path: '/documents',
-    isPublic: false
+    isPublic: false,
   },
   {
     id: '2',
@@ -118,7 +141,7 @@ const mockObjects: StorageObject[] = [
     contentType: 'image/png',
     etag: 'abc123def456',
     isPublic: false,
-    thumbnail: '/api/thumbnails/user-profile.png'
+    thumbnail: '/api/thumbnails/user-profile.png',
   },
   {
     id: '3',
@@ -132,7 +155,7 @@ const mockObjects: StorageObject[] = [
     path: '/documents/presentation.pdf',
     contentType: 'application/pdf',
     etag: 'def456ghi789',
-    isPublic: true
+    isPublic: true,
   },
   {
     id: '4',
@@ -146,8 +169,8 @@ const mockObjects: StorageObject[] = [
     path: '/media/demo-video.mp4',
     contentType: 'video/mp4',
     etag: 'ghi789jkl012',
-    isPublic: false
-  }
+    isPublic: false,
+  },
 ]
 
 const mockPolicies: StoragePolicy[] = [
@@ -158,7 +181,7 @@ const mockPolicies: StoragePolicy[] = [
     effect: 'Allow',
     actions: ['s3:GetObject'],
     resources: ['arn:aws:s3:::nself-static/*'],
-    principal: '*'
+    principal: '*',
   },
   {
     id: '2',
@@ -167,7 +190,7 @@ const mockPolicies: StoragePolicy[] = [
     effect: 'Allow',
     actions: ['s3:*'],
     resources: ['arn:aws:s3:::nself-uploads/*'],
-    principal: 'arn:aws:iam::123456789:user/admin'
+    principal: 'arn:aws:iam::123456789:user/admin',
   },
   {
     id: '3',
@@ -176,15 +199,15 @@ const mockPolicies: StoragePolicy[] = [
     effect: 'Allow',
     actions: ['s3:GetObject', 's3:ListBucket'],
     resources: ['arn:aws:s3:::nself-backups/*'],
-    principal: 'arn:aws:iam::123456789:role/backup-reader'
-  }
+    principal: 'arn:aws:iam::123456789:role/backup-reader',
+  },
 ]
 
 function formatSize(bytes: number): string {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
   if (bytes === 0) return '0 B'
   const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
+  return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
 function formatDate(dateString: string): string {
@@ -193,79 +216,100 @@ function formatDate(dateString: string): string {
 
 function getFileIcon(object: StorageObject) {
   if (object.type === 'folder') return Folder
-  
+
   const ext = object.name.split('.').pop()?.toLowerCase()
   const contentType = object.contentType?.toLowerCase()
-  
+
   if (contentType?.startsWith('image/')) return Image
   if (contentType?.startsWith('video/')) return Video
   if (contentType?.startsWith('audio/')) return Music
   if (ext === 'pdf' || contentType?.includes('pdf')) return FileText
   if (['zip', 'rar', 'tar', 'gz'].includes(ext || '')) return Archive
-  
+
   return File
 }
 
-function BucketCard({ bucket, onAction }: { bucket: Bucket; onAction: (action: string, id: string) => void }) {
+function BucketCard({
+  bucket,
+  onAction,
+}: {
+  bucket: Bucket
+  onAction: (action: string, id: string) => void
+}) {
   const policyConfig = {
-    'private': { color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300', icon: Lock },
-    'public-read': { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300', icon: Eye },
-    'public-read-write': { color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300', icon: Unlock }
+    private: {
+      color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+      icon: Lock,
+    },
+    'public-read': {
+      color:
+        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+      icon: Eye,
+    },
+    'public-read-write': {
+      color:
+        'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+      icon: Unlock,
+    },
   }
 
   const config = policyConfig[bucket.policy]
   const PolicyIcon = config.icon
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6 shadow-sm">
-      <div className="flex items-start justify-between mb-4">
+    <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="mb-4 flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-            <HardDrive className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-900/20">
+            <HardDrive className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-zinc-900 dark:text-white">{bucket.name}</h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+            <h3 className="font-semibold text-zinc-900 dark:text-white">
+              {bucket.name}
+            </h3>
+            <div className="mt-1 flex items-center gap-2">
+              <span
+                className={`rounded-full px-2 py-1 text-xs font-medium ${config.color}`}
+              >
                 {bucket.policy}
               </span>
-              <PolicyIcon className="w-3 h-3 text-zinc-500" />
+              <PolicyIcon className="h-3 w-3 text-zinc-500" />
             </div>
           </div>
         </div>
-        
-        <div className="relative group">
-          <button className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700">
-            <MoreVertical className="w-4 h-4" />
+
+        <div className="group relative">
+          <button className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700">
+            <MoreVertical className="h-4 w-4" />
           </button>
-          <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+          <div className="invisible absolute right-0 z-10 mt-1 w-48 rounded-lg border border-zinc-200 bg-white opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 dark:border-zinc-700 dark:bg-zinc-800">
             <button
               onClick={() => onAction('browse', bucket.id)}
-              className="w-full px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center gap-2"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700"
             >
-              <FolderOpen className="w-4 h-4" />
+              <FolderOpen className="h-4 w-4" />
               Browse
             </button>
             <button
               onClick={() => onAction('policy', bucket.id)}
-              className="w-full px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center gap-2"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700"
             >
-              <Shield className="w-4 h-4" />
+              <Shield className="h-4 w-4" />
               Manage Policy
             </button>
             <button
               onClick={() => onAction('settings', bucket.id)}
-              className="w-full px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center gap-2"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="h-4 w-4" />
               Settings
             </button>
             <hr className="my-1 border-zinc-200 dark:border-zinc-700" />
             <button
               onClick={() => onAction('delete', bucket.id)}
-              className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center gap-2"
+              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="h-4 w-4" />
               Delete
             </button>
           </div>
@@ -297,19 +341,19 @@ function BucketCard({ bucket, onAction }: { bucket: Bucket; onAction: (action: s
         <div className="flex items-center gap-4 text-xs">
           {bucket.versioning && (
             <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-              <CheckCircle className="w-3 h-3" />
+              <CheckCircle className="h-3 w-3" />
               Versioning
             </div>
           )}
           {bucket.encryption && (
             <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-              <Shield className="w-3 h-3" />
+              <Shield className="h-3 w-3" />
               Encrypted
             </div>
           )}
           {bucket.notifications && (
             <div className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
-              <AlertCircle className="w-3 h-3" />
+              <AlertCircle className="h-3 w-3" />
               Notifications
             </div>
           )}
@@ -319,16 +363,24 @@ function BucketCard({ bucket, onAction }: { bucket: Bucket; onAction: (action: s
   )
 }
 
-function ObjectRow({ object, onAction }: { object: StorageObject; onAction: (action: string, object: StorageObject) => void }) {
+function ObjectRow({
+  object,
+  onAction,
+}: {
+  object: StorageObject
+  onAction: (action: string, object: StorageObject) => void
+}) {
   const Icon = getFileIcon(object)
 
   return (
     <tr className="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <Icon className="w-5 h-5 text-blue-500" />
+          <Icon className="h-5 w-5 text-blue-500" />
           <div>
-            <div className="font-medium text-sm text-zinc-900 dark:text-white">{object.name}</div>
+            <div className="text-sm font-medium text-zinc-900 dark:text-white">
+              {object.name}
+            </div>
             <div className="text-xs text-zinc-500">{object.path}</div>
           </div>
         </div>
@@ -344,12 +396,12 @@ function ObjectRow({ object, onAction }: { object: StorageObject; onAction: (act
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono bg-zinc-100 dark:bg-zinc-700 px-2 py-1 rounded">
+          <span className="rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-700">
             {object.permissions}
           </span>
           {object.isPublic && (
             <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
-              <Globe className="w-3 h-3" />
+              <Globe className="h-3 w-3" />
               <span className="text-xs">Public</span>
             </div>
           )}
@@ -359,31 +411,27 @@ function ObjectRow({ object, onAction }: { object: StorageObject; onAction: (act
         <div className="flex items-center gap-1">
           <button
             onClick={() => onAction('download', object)}
-            className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-           
+            className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700"
           >
-            <Download className="w-3 h-3" />
+            <Download className="h-3 w-3" />
           </button>
           <button
             onClick={() => onAction('share', object)}
-            className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-           
+            className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700"
           >
-            <Share className="w-3 h-3" />
+            <Share className="h-3 w-3" />
           </button>
           <button
             onClick={() => onAction('edit', object)}
-            className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-           
+            className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700"
           >
-            <Edit3 className="w-3 h-3" />
+            <Edit3 className="h-3 w-3" />
           </button>
           <button
             onClick={() => onAction('delete', object)}
-            className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700"
-           
+            className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700"
           >
-            <Trash2 className="w-3 h-3" />
+            <Trash2 className="h-3 w-3" />
           </button>
         </div>
       </td>
@@ -391,49 +439,65 @@ function ObjectRow({ object, onAction }: { object: StorageObject; onAction: (act
   )
 }
 
-function PolicyCard({ policy, onAction }: { policy: StoragePolicy; onAction: (action: string, id: string) => void }) {
+function PolicyCard({
+  policy,
+  onAction,
+}: {
+  policy: StoragePolicy
+  onAction: (action: string, id: string) => void
+}) {
   const effectConfig = {
-    'Allow': { color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20' },
-    'Deny': { color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' }
+    Allow: {
+      color: 'text-green-600 dark:text-green-400',
+      bg: 'bg-green-50 dark:bg-green-900/20',
+    },
+    Deny: {
+      color: 'text-red-600 dark:text-red-400',
+      bg: 'bg-red-50 dark:bg-red-900/20',
+    },
   }
 
   const config = effectConfig[policy.effect]
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-4">
-      <div className="flex items-start justify-between mb-3">
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="mb-3 flex items-start justify-between">
         <div>
-          <h3 className="font-semibold text-zinc-900 dark:text-white">{policy.name}</h3>
+          <h3 className="font-semibold text-zinc-900 dark:text-white">
+            {policy.name}
+          </h3>
           <p className="text-sm text-zinc-500">{policy.bucket}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`px-2 py-1 rounded text-xs font-medium ${config.bg} ${config.color}`}>
+          <span
+            className={`rounded px-2 py-1 text-xs font-medium ${config.bg} ${config.color}`}
+          >
             {policy.effect}
           </span>
-          <div className="relative group">
-            <button className="p-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-700">
-              <MoreVertical className="w-3 h-3" />
+          <div className="group relative">
+            <button className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700">
+              <MoreVertical className="h-3 w-3" />
             </button>
-            <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-zinc-200 dark:border-zinc-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+            <div className="invisible absolute right-0 z-10 mt-1 w-32 rounded-lg border border-zinc-200 bg-white opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 dark:border-zinc-700 dark:bg-zinc-800">
               <button
                 onClick={() => onAction('edit', policy.id)}
-                className="w-full px-3 py-2 text-left text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center gap-2"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700"
               >
-                <Edit3 className="w-3 h-3" />
+                <Edit3 className="h-3 w-3" />
                 Edit
               </button>
               <button
                 onClick={() => onAction('copy', policy.id)}
-                className="w-full px-3 py-2 text-left text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700 flex items-center gap-2"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700"
               >
-                <Copy className="w-3 h-3" />
+                <Copy className="h-3 w-3" />
                 Copy
               </button>
               <button
                 onClick={() => onAction('delete', policy.id)}
-                className="w-full px-3 py-2 text-left text-xs hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center gap-2"
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
               >
-                <Trash2 className="w-3 h-3" />
+                <Trash2 className="h-3 w-3" />
                 Delete
               </button>
             </div>
@@ -448,11 +512,15 @@ function PolicyCard({ policy, onAction }: { policy: StoragePolicy; onAction: (ac
         </div>
         <div>
           <span className="text-zinc-500 dark:text-zinc-400">Principal: </span>
-          <span className="font-medium font-mono text-xs">{policy.principal}</span>
+          <span className="font-mono text-xs font-medium">
+            {policy.principal}
+          </span>
         </div>
         <div>
           <span className="text-zinc-500 dark:text-zinc-400">Resources: </span>
-          <span className="font-medium font-mono text-xs">{policy.resources[0]}</span>
+          <span className="font-mono text-xs font-medium">
+            {policy.resources[0]}
+          </span>
         </div>
       </div>
     </div>
@@ -463,7 +531,9 @@ export default function StoragePage() {
   const [buckets, setBuckets] = useState<Bucket[]>(mockBuckets)
   const [objects, setObjects] = useState<StorageObject[]>(mockObjects)
   const [policies, setPolicies] = useState<StoragePolicy[]>(mockPolicies)
-  const [activeTab, setActiveTab] = useState<'buckets' | 'browser' | 'policies'>('buckets')
+  const [activeTab, setActiveTab] = useState<
+    'buckets' | 'browser' | 'policies'
+  >('buckets')
   const [selectedBucket, setSelectedBucket] = useState<string>('nself-uploads')
   const [currentPath, setCurrentPath] = useState<string>('/')
   const [searchQuery, setSearchQuery] = useState('')
@@ -489,12 +559,14 @@ export default function StoragePage() {
     setTimeout(() => setLoading(false), 1000)
   }
 
-  const filteredObjects = objects.filter(obj => {
+  const filteredObjects = objects.filter((obj) => {
     if (obj.bucket !== selectedBucket) return false
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
-      return obj.name.toLowerCase().includes(query) ||
-             obj.path.toLowerCase().includes(query)
+      return (
+        obj.name.toLowerCase().includes(query) ||
+        obj.path.toLowerCase().includes(query)
+      )
     }
     return true
   })
@@ -503,34 +575,31 @@ export default function StoragePage() {
     totalBuckets: buckets.length,
     totalObjects: buckets.reduce((acc, b) => acc + b.objectCount, 0),
     totalSize: buckets.reduce((acc, b) => acc + b.totalSize, 0),
-    publicBuckets: buckets.filter(b => b.policy !== 'private').length
+    publicBuckets: buckets.filter((b) => b.policy !== 'private').length,
   }
 
   return (
     <>
       <HeroPattern />
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">Storage Manager</h1>
-              <p className="text-zinc-600 dark:text-zinc-400 mt-1">
-                MinIO object storage management with bucket browser and access policies
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
+                Storage Manager
+              </h1>
+              <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+                MinIO object storage management with bucket browser and access
+                policies
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="filled"
-                className="flex items-center gap-2"
-              >
-                <Upload className="w-4 h-4" />
+              <Button variant="filled" className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
                 Upload
               </Button>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
+              <Button variant="outline" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
                 New Bucket
               </Button>
               <Button
@@ -538,61 +607,75 @@ export default function StoragePage() {
                 variant="outline"
                 className="flex items-center gap-2"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="h-4 w-4" />
                 Refresh
               </Button>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+          <div className="mb-6 grid grid-cols-4 gap-4">
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Buckets</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Buckets
+                  </p>
                   <p className="text-2xl font-bold">{stats.totalBuckets}</p>
                 </div>
-                <HardDrive className="w-8 h-8 text-blue-500" />
+                <HardDrive className="h-8 w-8 text-blue-500" />
               </div>
             </div>
-            
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Objects</p>
-                  <p className="text-2xl font-bold">{stats.totalObjects.toLocaleString()}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Objects
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {stats.totalObjects.toLocaleString()}
+                  </p>
                 </div>
-                <File className="w-8 h-8 text-green-500" />
+                <File className="h-8 w-8 text-green-500" />
               </div>
             </div>
-            
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Total Size</p>
-                  <p className="text-lg font-bold">{formatSize(stats.totalSize)}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Total Size
+                  </p>
+                  <p className="text-lg font-bold">
+                    {formatSize(stats.totalSize)}
+                  </p>
                 </div>
-                <Database className="w-8 h-8 text-purple-500" />
+                <Database className="h-8 w-8 text-purple-500" />
               </div>
             </div>
-            
-            <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Public</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.publicBuckets}</p>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    Public
+                  </p>
+                  <p className="text-2xl font-bold text-yellow-600">
+                    {stats.publicBuckets}
+                  </p>
                 </div>
-                <Globe className="w-8 h-8 text-yellow-500" />
+                <Globe className="h-8 w-8 text-yellow-500" />
               </div>
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="border-b border-zinc-200 dark:border-zinc-700 mb-6">
+          <div className="mb-6 border-b border-zinc-200 dark:border-zinc-700">
             <nav className="flex space-x-8">
               <button
                 onClick={() => setActiveTab('buckets')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`border-b-2 px-1 py-2 text-sm font-medium ${
                   activeTab === 'buckets'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -602,7 +685,7 @@ export default function StoragePage() {
               </button>
               <button
                 onClick={() => setActiveTab('browser')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`border-b-2 px-1 py-2 text-sm font-medium ${
                   activeTab === 'browser'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -612,7 +695,7 @@ export default function StoragePage() {
               </button>
               <button
                 onClick={() => setActiveTab('policies')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`border-b-2 px-1 py-2 text-sm font-medium ${
                   activeTab === 'policies'
                     ? 'border-blue-500 text-blue-600 dark:text-blue-400'
                     : 'border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -624,45 +707,49 @@ export default function StoragePage() {
           </div>
 
           {/* Search and Controls */}
-          <div className="flex items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-2 flex-1">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div className="flex flex-1 items-center gap-2">
+              <div className="relative max-w-md flex-1">
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                 <input
                   type="text"
-                  placeholder={activeTab === 'browser' ? 'Search files...' : 'Search...'}
+                  placeholder={
+                    activeTab === 'browser' ? 'Search files...' : 'Search...'
+                  }
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                  className="w-full rounded-lg border border-zinc-200 bg-white py-2 pr-4 pl-10 dark:border-zinc-700 dark:bg-zinc-800"
                 />
               </div>
-              
+
               {activeTab === 'browser' && (
                 <select
                   value={selectedBucket}
                   onChange={(e) => setSelectedBucket(e.target.value)}
-                  className="px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                  className="rounded-lg border border-zinc-200 bg-white px-4 py-2 dark:border-zinc-700 dark:bg-zinc-800"
                 >
-                  {buckets.map(bucket => (
-                    <option key={bucket.id} value={bucket.id}>{bucket.name}</option>
+                  {buckets.map((bucket) => (
+                    <option key={bucket.id} value={bucket.id}>
+                      {bucket.name}
+                    </option>
                   ))}
                 </select>
               )}
             </div>
 
             {activeTab === 'browser' && (
-              <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700">
+              <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-500 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
+                  className={`rounded p-2 ${viewMode === 'grid' ? 'bg-blue-500 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
                 >
-                  <Grid className="w-4 h-4" />
+                  <Grid className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-500 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
+                  className={`rounded p-2 ${viewMode === 'list' ? 'bg-blue-500 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
                 >
-                  <List className="w-4 h-4" />
+                  <List className="h-4 w-4" />
                 </button>
               </div>
             )}
@@ -671,8 +758,8 @@ export default function StoragePage() {
 
         {/* Tab Content */}
         {activeTab === 'buckets' && (
-          <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {buckets.map(bucket => (
+          <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+            {buckets.map((bucket) => (
               <BucketCard
                 key={bucket.id}
                 bucket={bucket}
@@ -686,28 +773,40 @@ export default function StoragePage() {
           <div className="space-y-4">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-              <HardDrive className="w-4 h-4" />
-              <span>{buckets.find(b => b.id === selectedBucket)?.name}</span>
+              <HardDrive className="h-4 w-4" />
+              <span>{buckets.find((b) => b.id === selectedBucket)?.name}</span>
               <span>/</span>
               <span>{currentPath}</span>
             </div>
 
             {/* File List */}
-            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+            <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-zinc-50 dark:bg-zinc-900/50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Size</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Modified</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Owner</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Permissions</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                        Name
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                        Size
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                        Modified
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                        Owner
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                        Permissions
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-200 dark:divide-zinc-700">
-                    {filteredObjects.map(object => (
+                    {filteredObjects.map((object) => (
                       <ObjectRow
                         key={object.id}
                         object={object}
@@ -723,19 +822,18 @@ export default function StoragePage() {
 
         {activeTab === 'policies' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Access Policies</h2>
-              <Button
-                variant="filled"
-                className="flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+                Access Policies
+              </h2>
+              <Button variant="filled" className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
                 New Policy
               </Button>
             </div>
-            
-            <div className="grid lg:grid-cols-2 gap-4">
-              {policies.map(policy => (
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              {policies.map((policy) => (
                 <PolicyCard
                   key={policy.id}
                   policy={policy}
@@ -745,11 +843,13 @@ export default function StoragePage() {
             </div>
 
             {/* Policy JSON Editor */}
-            <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Policy Editor</h3>
-              <div className="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4">
-                <pre className="text-sm text-zinc-700 dark:text-zinc-300 overflow-x-auto">
-{`{
+            <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+              <h3 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">
+                Policy Editor
+              </h3>
+              <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-900">
+                <pre className="overflow-x-auto text-sm text-zinc-700 dark:text-zinc-300">
+                  {`{
   "Version": "2012-10-17",
   "Statement": [
     {
@@ -762,11 +862,15 @@ export default function StoragePage() {
 }`}
                 </pre>
               </div>
-              <div className="flex items-center gap-2 mt-4">
-                <Button variant="filled" className="text-sm">Apply Policy</Button>
-                <Button variant="outline" className="text-sm">Validate</Button>
+              <div className="mt-4 flex items-center gap-2">
+                <Button variant="filled" className="text-sm">
+                  Apply Policy
+                </Button>
                 <Button variant="outline" className="text-sm">
-                  <Copy className="w-3 h-3 mr-1" />
+                  Validate
+                </Button>
+                <Button variant="outline" className="text-sm">
+                  <Copy className="mr-1 h-3 w-3" />
                   Copy
                 </Button>
               </div>

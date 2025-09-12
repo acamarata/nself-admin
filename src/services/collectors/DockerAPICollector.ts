@@ -14,7 +14,7 @@ export interface ContainerStats {
   health?: 'healthy' | 'unhealthy' | 'starting' | 'none'
   cpu: number
   memory: {
-    used: number  // GB
+    used: number // GB
     limit: number // GB
     percentage: number
   }
@@ -23,7 +23,7 @@ export interface ContainerStats {
     tx: number // MB
   }
   blockIO: {
-    read: number  // MB
+    read: number // MB
     write: number // MB
   }
   pids: number
@@ -58,13 +58,13 @@ export class DockerAPICollector extends EventEmitter {
 
   constructor() {
     super()
-    
+
     // Determine Docker socket path based on platform
     const socketPath = this.getDockerSocketPath()
-    
+
     // Connect to Docker via socket
-    this.docker = new Docker({ 
-      socketPath
+    this.docker = new Docker({
+      socketPath,
     })
   }
 
@@ -75,22 +75,24 @@ export class DockerAPICollector extends EventEmitter {
     // Check for Docker Desktop on macOS
     const fs = require('fs')
     const os = require('os')
-    
+
     // Common Docker socket locations
     const socketPaths = [
       '/var/run/docker.sock', // Linux standard
       `${os.homedir()}/.docker/run/docker.sock`, // Docker Desktop on macOS
       '/var/run/docker.sock', // Docker in Docker
     ]
-    
+
     for (const path of socketPaths) {
       if (fs.existsSync(path)) {
         return path
       }
     }
-    
+
     // Fallback to standard location
-    console.warn('[DockerAPI] Docker socket not found at common locations, using default')
+    console.warn(
+      '[DockerAPI] Docker socket not found at common locations, using default',
+    )
     return '/var/run/docker.sock'
   }
 
@@ -99,24 +101,22 @@ export class DockerAPICollector extends EventEmitter {
    */
   async start() {
     if (this.isRunning) return
-    
+
     this.isRunning = true
 
     try {
       // Initial load of containers and system info
       await this.loadSystemInfo()
       await this.loadContainers()
-      
+
       // Start listening to Docker events
       this.startEventStream()
-      
+
       // Start stats streaming for all running containers
       await this.startStatsStreaming()
-      
+
       // Periodic system info refresh (every 10s)
-      this.updateInterval = setInterval(() => {
-      }, 10000)
-      
+      this.updateInterval = setInterval(() => {}, 10000)
     } catch (error) {
       this.isRunning = false
       throw error
@@ -128,15 +128,14 @@ export class DockerAPICollector extends EventEmitter {
    */
   async stop() {
     if (!this.isRunning) return
-    
+
     this.isRunning = false
 
     // Stop all stats streams
     for (const [id, stream] of this.statsStreams) {
       try {
         stream.destroy()
-      } catch (error) {
-      }
+      } catch (error) {}
     }
     this.statsStreams.clear()
 
@@ -151,7 +150,6 @@ export class DockerAPICollector extends EventEmitter {
       clearInterval(this.updateInterval)
       this.updateInterval = null
     }
-
   }
 
   /**
@@ -164,14 +162,14 @@ export class DockerAPICollector extends EventEmitter {
         this.docker.listContainers({ all: true }),
         this.docker.listImages(),
         this.docker.listVolumes(),
-        this.docker.listNetworks()
+        this.docker.listNetworks(),
       ])
 
       const containerCounts = {
         total: containers.length,
-        running: containers.filter(c => c.State === 'running').length,
-        stopped: containers.filter(c => c.State === 'exited').length,
-        paused: containers.filter(c => c.State === 'paused').length
+        running: containers.filter((c) => c.State === 'running').length,
+        stopped: containers.filter((c) => c.State === 'exited').length,
+        paused: containers.filter((c) => c.State === 'paused').length,
       }
 
       this.systemInfo = {
@@ -182,12 +180,11 @@ export class DockerAPICollector extends EventEmitter {
         cpus: info.NCPU || 0,
         memoryTotal: (info.MemTotal || 0) / (1024 * 1024 * 1024), // Convert to GB
         dockerVersion: info.ServerVersion || 'unknown',
-        storageDriver: info.Driver || 'unknown'
+        storageDriver: info.Driver || 'unknown',
       }
 
       this.emit('systemInfo', this.systemInfo)
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   /**
@@ -196,9 +193,9 @@ export class DockerAPICollector extends EventEmitter {
   private async loadContainers() {
     try {
       const containers = await this.docker.listContainers({ all: true })
-      
+
       // Clear containers that no longer exist
-      const currentIds = new Set(containers.map(c => c.Id))
+      const currentIds = new Set(containers.map((c) => c.Id))
       for (const id of this.containers.keys()) {
         if (!currentIds.has(id)) {
           this.containers.delete(id)
@@ -210,7 +207,9 @@ export class DockerAPICollector extends EventEmitter {
       for (const container of containers) {
         const stats: ContainerStats = {
           id: container.Id,
-          name: container.Names[0]?.replace(/^\//, '') || container.Id.substring(0, 12),
+          name:
+            container.Names[0]?.replace(/^\//, '') ||
+            container.Id.substring(0, 12),
           status: this.mapContainerState(container.State),
           health: this.mapHealthStatus(container.Status),
           cpu: 0,
@@ -219,7 +218,7 @@ export class DockerAPICollector extends EventEmitter {
           blockIO: { read: 0, write: 0 },
           pids: 0,
           restartCount: 0,
-          uptime: container.Status || ''
+          uptime: container.Status || '',
         }
 
         this.containers.set(container.Id, stats)
@@ -232,8 +231,7 @@ export class DockerAPICollector extends EventEmitter {
 
       const containerList = Array.from(this.containers.values())
       this.emit('containers', containerList)
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   /**
@@ -242,26 +240,25 @@ export class DockerAPICollector extends EventEmitter {
   private async startEventStream() {
     try {
       this.eventStream = await this.docker.getEvents()
-      
+
       let buffer = ''
-      
+
       this.eventStream.on('data', (chunk: Buffer) => {
         // Docker events can come as multiple JSON objects in one chunk
         // We need to split them and parse each one
         buffer += chunk.toString()
         const lines = buffer.split('\n')
-        
+
         // Keep the last incomplete line in the buffer
         buffer = lines.pop() || ''
-        
+
         // Process complete lines
         for (const line of lines) {
           if (line.trim()) {
             try {
               const event = JSON.parse(line)
               this.handleDockerEvent(event)
-            } catch (error) {
-            }
+            } catch (error) {}
           }
         }
       })
@@ -272,8 +269,7 @@ export class DockerAPICollector extends EventEmitter {
           setTimeout(() => this.startEventStream(), 5000)
         }
       })
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   /**
@@ -281,7 +277,7 @@ export class DockerAPICollector extends EventEmitter {
    */
   private handleDockerEvent(event: any) {
     const { Type, Action, Actor } = event
-    
+
     if (Type === 'container') {
       const containerId = Actor?.ID
       if (!containerId) return
@@ -325,8 +321,10 @@ export class DockerAPICollector extends EventEmitter {
    * Start streaming stats for all running containers
    */
   private async startStatsStreaming() {
-    const containers = await this.docker.listContainers({ filters: { status: ['running'] } })
-    
+    const containers = await this.docker.listContainers({
+      filters: { status: ['running'] },
+    })
+
     for (const container of containers) {
       this.startStatsStreamForContainer(container.Id)
     }
@@ -341,19 +339,17 @@ export class DockerAPICollector extends EventEmitter {
       return
     }
 
-    
     try {
       const container = this.docker.getContainer(containerId)
       const stream = await container.stats({ stream: true })
-      
+
       this.statsStreams.set(containerId, stream)
 
       stream.on('data', (chunk: Buffer) => {
         try {
           const stats = JSON.parse(chunk.toString())
           this.processContainerStats(containerId, stats)
-        } catch (error) {
-        }
+        } catch (error) {}
       })
 
       stream.on('error', (error: Error) => {
@@ -363,8 +359,7 @@ export class DockerAPICollector extends EventEmitter {
       stream.on('end', () => {
         this.statsStreams.delete(containerId)
       })
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   /**
@@ -391,14 +386,17 @@ export class DockerAPICollector extends EventEmitter {
     }
 
     const container = this.containers.get(containerId)!
-    
+
     // Calculate CPU percentage
-    const cpuDelta = rawStats.cpu_stats.cpu_usage.total_usage - 
-                     rawStats.precpu_stats.cpu_usage.total_usage
-    const systemDelta = rawStats.cpu_stats.system_cpu_usage - 
-                        rawStats.precpu_stats.system_cpu_usage
+    const cpuDelta =
+      rawStats.cpu_stats.cpu_usage.total_usage -
+      rawStats.precpu_stats.cpu_usage.total_usage
+    const systemDelta =
+      rawStats.cpu_stats.system_cpu_usage -
+      rawStats.precpu_stats.system_cpu_usage
     const cpuCount = rawStats.cpu_stats.online_cpus || 1
-    const cpuPercent = systemDelta > 0 ? (cpuDelta / systemDelta) * cpuCount * 100 : 0
+    const cpuPercent =
+      systemDelta > 0 ? (cpuDelta / systemDelta) * cpuCount * 100 : 0
 
     // Calculate memory
     const memUsage = rawStats.memory_stats.usage || 0
@@ -406,7 +404,8 @@ export class DockerAPICollector extends EventEmitter {
     const memPercent = memLimit > 0 ? (memUsage / memLimit) * 100 : 0
 
     // Calculate network I/O (cumulative)
-    let rx = 0, tx = 0
+    let rx = 0,
+      tx = 0
     if (rawStats.networks) {
       for (const net of Object.values(rawStats.networks) as any[]) {
         rx += net.rx_bytes || 0
@@ -415,7 +414,8 @@ export class DockerAPICollector extends EventEmitter {
     }
 
     // Calculate block I/O
-    let blockRead = 0, blockWrite = 0
+    let blockRead = 0,
+      blockWrite = 0
     if (rawStats.blkio_stats?.io_service_bytes_recursive) {
       for (const io of rawStats.blkio_stats.io_service_bytes_recursive) {
         if (io.op === 'Read') blockRead += io.value
@@ -428,15 +428,15 @@ export class DockerAPICollector extends EventEmitter {
     container.memory = {
       used: memUsage / (1024 * 1024 * 1024), // Convert to GB
       limit: memLimit / (1024 * 1024 * 1024),
-      percentage: Math.round(memPercent)
+      percentage: Math.round(memPercent),
     }
     container.network = {
       rx: rx / (1024 * 1024), // Convert to MB
-      tx: tx / (1024 * 1024)
+      tx: tx / (1024 * 1024),
     }
     container.blockIO = {
       read: blockRead / (1024 * 1024),
-      write: blockWrite / (1024 * 1024)
+      write: blockWrite / (1024 * 1024),
     }
     container.pids = rawStats.pids_stats?.current || 0
 
@@ -450,12 +450,18 @@ export class DockerAPICollector extends EventEmitter {
    */
   private mapContainerState(state: string): ContainerStats['status'] {
     switch (state.toLowerCase()) {
-      case 'running': return 'running'
-      case 'exited': return 'stopped'
-      case 'paused': return 'paused'
-      case 'restarting': return 'restarting'
-      case 'dead': return 'dead'
-      default: return 'stopped'
+      case 'running':
+        return 'running'
+      case 'exited':
+        return 'stopped'
+      case 'paused':
+        return 'paused'
+      case 'restarting':
+        return 'restarting'
+      case 'dead':
+        return 'dead'
+      default:
+        return 'stopped'
     }
   }
 
@@ -476,7 +482,7 @@ export class DockerAPICollector extends EventEmitter {
     return {
       containers: Array.from(this.containers.values()),
       systemInfo: this.systemInfo,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
   }
 

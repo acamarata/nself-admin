@@ -1,10 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowRight, ArrowLeft, Database, Shield, Server, Globe, Wrench } from 'lucide-react'
-import { StepWrapper } from '../StepWrapper'
 import ServiceConfigModal from '@/components/ServiceConfigModal'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Database,
+  Globe,
+  Server,
+  Shield,
+  Wrench,
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { StepWrapper } from '../StepWrapper'
 
 export default function InitStep2() {
   const router = useRouter()
@@ -16,7 +24,7 @@ export default function InitStep2() {
     postgresql: {},
     hasura: {},
     auth: {},
-    nginx: {}
+    nginx: {},
   })
 
   // Load configuration from .env.local on mount
@@ -39,7 +47,7 @@ export default function InitStep2() {
     } catch (error) {
       console.error('Error checking project status:', error)
     }
-    
+
     // Load configuration if env file exists
     loadConfiguration()
   }
@@ -55,15 +63,15 @@ export default function InitStep2() {
             databaseName: data.config.databaseName,
             databasePassword: data.config.databasePassword,
             environment: data.config.environment,
-            adminEmail: data.config.adminEmail
+            adminEmail: data.config.adminEmail,
           })
           // Load any existing service configs
-          setServiceConfigs(prev => ({
+          setServiceConfigs((prev) => ({
             ...prev,
             postgresql: data.config.postgresqlConfig || {},
             hasura: data.config.hasuraConfig || {},
             auth: data.config.authConfig || {},
-            nginx: data.config.nginxConfig || {}
+            nginx: data.config.nginxConfig || {},
           }))
         }
       }
@@ -79,14 +87,14 @@ export default function InitStep2() {
     try {
       // Get the environment from localStorage (set in step 1)
       const environment = localStorage.getItem('wizard_environment') || 'dev'
-      
+
       // Save service configurations to .env.local
       const response = await fetch('/api/wizard/update-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           config: {
-            environment,  // Include environment to write to correct file
+            environment, // Include environment to write to correct file
             postgresqlEnabled: true,
             hasuraEnabled: true,
             authEnabled: true,
@@ -94,12 +102,12 @@ export default function InitStep2() {
             postgresqlConfig: serviceConfigs.postgresql,
             hasuraConfig: serviceConfigs.hasura,
             authConfig: serviceConfigs.auth,
-            nginxConfig: serviceConfigs.nginx
-          }, 
-          step: 'required' 
-        })
+            nginxConfig: serviceConfigs.nginx,
+          },
+          step: 'required',
+        }),
       })
-      
+
       if (response.ok) {
         // Don't set loading to false - let the page transition handle it
         router.push('/init/3')
@@ -124,22 +132,22 @@ export default function InitStep2() {
 
   const handleSaveConfig = async (service: string, config: any) => {
     // Save to local state
-    setServiceConfigs(prev => ({
+    setServiceConfigs((prev) => ({
       ...prev,
-      [service]: config
+      [service]: config,
     }))
-    
+
     // Save to env file immediately for all service configurations
     try {
       // Get the environment from localStorage (set in step 1)
       const environment = localStorage.getItem('wizard_environment') || 'dev'
-      
+
       const updateConfig: any = {
-        environment  // Always include environment
+        environment, // Always include environment
       }
-      
+
       // Map service to appropriate config key
-      switch(service) {
+      switch (service) {
         case 'postgresql':
           updateConfig.postgresqlConfig = config
           break
@@ -153,16 +161,16 @@ export default function InitStep2() {
           updateConfig.nginxConfig = config
           break
       }
-      
+
       const response = await fetch('/api/wizard/update-env', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           config: updateConfig,
-          step: 'required' 
-        })
+          step: 'required',
+        }),
       })
-      
+
       if (!response.ok) {
         console.error(`Failed to save ${service} configuration`)
       }
@@ -177,29 +185,29 @@ export default function InitStep2() {
       name: 'PostgreSQL',
       icon: Database,
       description: 'Primary database for all services',
-      configurable: true
+      configurable: true,
     },
     {
       key: 'hasura',
       name: 'Hasura GraphQL',
       icon: Server,
       description: 'Instant GraphQL API for your database',
-      configurable: true
+      configurable: true,
     },
     {
       key: 'auth',
       name: 'Hasura Auth',
       icon: Shield,
       description: 'User authentication and authorization',
-      configurable: true
+      configurable: true,
     },
     {
       key: 'nginx',
       name: 'Nginx',
       icon: Globe,
       description: 'Reverse proxy and load balancer',
-      configurable: true
-    }
+      configurable: true,
+    },
   ]
 
   // Show loading skeleton while initial data loads
@@ -209,16 +217,19 @@ export default function InitStep2() {
         <div className="space-y-4">
           {/* Loading skeleton for service cards */}
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="p-4 border-2 border-zinc-200 dark:border-zinc-700 rounded-lg">
+            <div
+              key={i}
+              className="rounded-lg border-2 border-zinc-200 p-4 dark:border-zinc-700"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse"></div>
+                  <div className="h-8 w-8 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
                   <div>
-                    <div className="h-5 w-32 bg-zinc-200 dark:bg-zinc-700 rounded animate-pulse mb-2"></div>
-                    <div className="h-3 w-48 bg-zinc-100 dark:bg-zinc-800 rounded animate-pulse"></div>
+                    <div className="mb-2 h-5 w-32 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700"></div>
+                    <div className="h-3 w-48 animate-pulse rounded bg-zinc-100 dark:bg-zinc-800"></div>
                   </div>
                 </div>
-                <div className="h-8 w-20 bg-zinc-200 dark:bg-zinc-700 rounded-full animate-pulse"></div>
+                <div className="h-8 w-20 animate-pulse rounded-full bg-zinc-200 dark:bg-zinc-700"></div>
               </div>
             </div>
           ))}
@@ -235,10 +246,10 @@ export default function InitStep2() {
           return (
             <div
               key={service.key}
-              className="flex items-center justify-between p-4 border-2 border-blue-500/30 rounded-lg bg-blue-50/50 dark:bg-blue-900/10"
+              className="flex items-center justify-between rounded-lg border-2 border-blue-500/30 bg-blue-50/50 p-4 dark:bg-blue-900/10"
             >
               <div className="flex items-center space-x-4">
-                <div className="p-2 bg-white dark:bg-zinc-800 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="rounded-lg border border-blue-200 bg-white p-2 dark:border-blue-800 dark:bg-zinc-800">
                   <Icon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
@@ -257,7 +268,7 @@ export default function InitStep2() {
                 {service.configurable && (
                   <button
                     onClick={() => handleConfigure(service.key)}
-                    className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer"
+                    className="inline-flex cursor-pointer items-center gap-1 text-xs text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                   >
                     <Wrench className="h-3 w-3" />
                     <span className="cursor-pointer">Configure</span>
@@ -273,7 +284,7 @@ export default function InitStep2() {
       <div className="flex justify-between pt-4">
         <button
           onClick={handleBack}
-          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-zinc-900 py-1 px-3 text-white hover:bg-zinc-700 dark:bg-zinc-500/10 dark:text-zinc-400 dark:ring-1 dark:ring-inset dark:ring-zinc-400/20 dark:hover:bg-zinc-400/10 dark:hover:text-zinc-300 dark:hover:ring-zinc-300"
+          className="inline-flex items-center justify-center gap-0.5 overflow-hidden rounded-full bg-zinc-900 px-3 py-1 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-500/10 dark:text-zinc-400 dark:ring-1 dark:ring-zinc-400/20 dark:ring-inset dark:hover:bg-zinc-400/10 dark:hover:text-zinc-300 dark:hover:ring-zinc-300"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back</span>
@@ -281,12 +292,12 @@ export default function InitStep2() {
         <button
           onClick={handleNext}
           disabled={loading}
-          className="inline-flex items-center gap-0.5 justify-center overflow-hidden text-sm font-medium transition rounded-full bg-blue-600 py-1 px-3 text-white hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-inset dark:ring-blue-400/20 dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:cursor-pointer disabled:cursor-not-allowed"
+          className="inline-flex cursor-pointer items-center justify-center gap-0.5 overflow-hidden rounded-full bg-blue-600 px-3 py-1 text-sm font-medium text-white transition hover:cursor-pointer hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-blue-400/20 dark:ring-inset dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300"
         >
           {loading ? (
             <>
               <span>Saving</span>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-blue-400"></div>
+              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white dark:border-blue-400"></div>
             </>
           ) : (
             <>

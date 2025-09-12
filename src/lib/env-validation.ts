@@ -10,24 +10,32 @@ const passwordValidator = z.string().refine(
     // In production, enforce strong password requirements
     if (process.env.NODE_ENV === 'production') {
       if (password.length < 12) return false
-      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)) return false
-      
-      const weakPasswords = ['admin123', 'changeme', 'changeme123', 'password', 'default']
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password))
+        return false
+
+      const weakPasswords = [
+        'admin123',
+        'changeme',
+        'changeme123',
+        'password',
+        'default',
+      ]
       if (weakPasswords.includes(password.toLowerCase())) return false
     }
     return password.length >= 8 // Minimum for development
   },
   {
-    message: process.env.NODE_ENV === 'production' 
-      ? 'Password must be at least 12 characters with uppercase, lowercase, number, and special character'
-      : 'Password must be at least 8 characters'
-  }
+    message:
+      process.env.NODE_ENV === 'production'
+        ? 'Password must be at least 12 characters with uppercase, lowercase, number, and special character'
+        : 'Password must be at least 8 characters',
+  },
 )
 
 const envSchema = z.object({
   // Required environment variables
   ADMIN_PASSWORD: passwordValidator.optional(), // Made optional, will generate if not provided
-  
+
   // Optional with defaults
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
   PORT: z.string().regex(/^\d+$/, 'Port must be a number').default('3021'),
@@ -35,7 +43,7 @@ const envSchema = z.object({
   AUTO_UPDATE: z.enum(['true', 'false']).default('true'),
   UPDATE_CHECK_INTERVAL: z.string().regex(/^\d+$/).default('6'),
   TZ: z.string().default('UTC'),
-  
+
   // Optional
   ADMIN_PASSWORD_IS_HASHED: z.enum(['true', 'false']).optional(),
   NEXT_PUBLIC_API_URL: z.string().url().optional(),
@@ -52,12 +60,21 @@ export function validateEnv(): EnvConfig {
   try {
     // Check for weak passwords before validation
     if (process.env.ADMIN_PASSWORD) {
-      const weakPasswords = ['admin123', 'changeme', 'changeme123', 'password123', 'test123', 'demo123']
+      const weakPasswords = [
+        'admin123',
+        'changeme',
+        'changeme123',
+        'password123',
+        'test123',
+        'demo123',
+      ]
       if (weakPasswords.includes(process.env.ADMIN_PASSWORD)) {
         console.warn('\n⚠️  WARNING: Weak admin password detected!')
         if (process.env.NODE_ENV === 'production') {
           console.error('❌ CRITICAL: Cannot use weak passwords in production!')
-          console.error('   Please set a strong ADMIN_PASSWORD in your environment')
+          console.error(
+            '   Please set a strong ADMIN_PASSWORD in your environment',
+          )
           console.error('   Password requirements:')
           console.error('   - At least 12 characters')
           console.error('   - Include uppercase and lowercase letters')
@@ -65,17 +82,19 @@ export function validateEnv(): EnvConfig {
           console.error('   - Avoid common passwords\n')
           process.exit(1)
         }
-        console.warn('   Change the ADMIN_PASSWORD before deploying to production\n')
+        console.warn(
+          '   Change the ADMIN_PASSWORD before deploying to production\n',
+        )
       }
     }
-    
+
     const env = envSchema.parse(process.env)
     return env as EnvConfig
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       const missingVars = error.issues.map((e) => e.path.join('.')).join(', ')
       console.error(`\n❌ Environment validation failed: ${missingVars}`)
-      
+
       // In production, exit the process
       if (process.env.NODE_ENV === 'production') {
         process.exit(1)
@@ -95,7 +114,7 @@ export function checkRuntimeEnvironment() {
     writePermissions: false,
     nselfCli: false,
   }
-  
+
   // Check Docker socket
   try {
     const fs = require('fs')
@@ -104,7 +123,7 @@ export function checkRuntimeEnvironment() {
   } catch {
     console.warn('⚠️ Docker socket not accessible')
   }
-  
+
   // Check project directory
   try {
     const fs = require('fs')
@@ -114,7 +133,7 @@ export function checkRuntimeEnvironment() {
   } catch {
     console.warn('⚠️ Project directory not accessible')
   }
-  
+
   // Check write permissions for data directory
   try {
     const fs = require('fs')
@@ -123,7 +142,7 @@ export function checkRuntimeEnvironment() {
   } catch {
     console.warn('⚠️ Data directory not writable')
   }
-  
+
   // Check nself CLI availability
   try {
     const { execSync } = require('child_process')
@@ -132,7 +151,7 @@ export function checkRuntimeEnvironment() {
   } catch {
     console.warn('⚠️ nself CLI not found in PATH')
   }
-  
+
   return checks
 }
 
@@ -141,22 +160,24 @@ export function checkRuntimeEnvironment() {
  */
 export function initializeEnvironment() {
   console.log('🔒 Initializing security configuration...')
-  
+
   const config = validateEnv()
   const runtime = checkRuntimeEnvironment()
-  
+
   // Security checks summary
   if (!config.ADMIN_PASSWORD && process.env.NODE_ENV !== 'production') {
-    console.log('⚠️  No admin password set - will generate secure password on first use')
+    console.log(
+      '⚠️  No admin password set - will generate secure password on first use',
+    )
   }
-  
+
   if (runtime.dockerSocket) {
     console.log('✅ Docker socket accessible')
   }
-  
+
   if (runtime.nselfCli) {
     console.log('✅ nself CLI available')
   }
-  
+
   return { config, runtime }
 }

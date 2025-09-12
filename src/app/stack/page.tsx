@@ -3,10 +3,5 @@
 import { PageTemplate } from '@/components/PageTemplate'
 
 export default function Page() {
-  return (
-    <PageTemplate 
-     
-      description="Manage all core stack services"
-    />
-  )
+  return <PageTemplate description="Manage all core stack services" />
 }

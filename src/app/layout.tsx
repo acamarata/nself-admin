@@ -1,15 +1,15 @@
-import { type Metadata, type Viewport } from 'next'
 import { Providers } from '@/app/providers'
-import { Layout } from '@/components/Layout'
-import { AuthProvider } from '@/contexts/AuthContext'
-import { ProjectStateWrapper } from '@/components/ProjectStateWrapper'
-import { GlobalDataProvider } from '@/components/GlobalDataProvider'
-import { ErrorSuppressor } from '@/components/ErrorSuppressor'
-import { PWARegister } from '@/components/PWARegister'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { ToastProvider } from '@/components/Toast'
 import { ConfirmProvider } from '@/components/ConfirmDialog'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ErrorSuppressor } from '@/components/ErrorSuppressor'
+import { GlobalDataProvider } from '@/components/GlobalDataProvider'
+import { Layout } from '@/components/Layout'
+import { ProjectStateWrapper } from '@/components/ProjectStateWrapper'
+import { PWARegister } from '@/components/PWARegister'
+import { ToastProvider } from '@/components/Toast'
+import { AuthProvider } from '@/contexts/AuthContext'
 import '@/styles/tailwind.css'
+import { type Metadata, type Viewport } from 'next'
 // DEV ONLY - REMOVE FOR PRODUCTION
 import '@/services/DevLogger'
 
@@ -26,7 +26,8 @@ export const metadata: Metadata = {
     template: '%s - nAdmin',
     default: 'nAdmin - nself Administration Overview',
   },
-  description: 'Web-based administration interface for the nself CLI backend stack',
+  description:
+    'Web-based administration interface for the nself CLI backend stack',
   manifest: '/site.webmanifest',
   appleWebApp: {
     capable: true,
@@ -53,7 +54,7 @@ export default function RootLayout({
 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
-      <body className="flex min-h-full antialiased bg-gradient-to-b from-slate-50 via-white to-slate-100 dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800 bg-fixed">
+      <body className="flex min-h-full bg-gradient-to-b from-slate-50 via-white to-slate-100 bg-fixed antialiased dark:from-zinc-900 dark:via-zinc-900 dark:to-zinc-800">
         <ErrorSuppressor />
         <PWARegister />
         <ErrorBoundary>

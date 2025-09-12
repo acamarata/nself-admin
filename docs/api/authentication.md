@@ -11,12 +11,14 @@ nAdmin uses session-based authentication with bcrypt password hashing and CSRF p
 Check if initial password setup is required.
 
 **Request**
+
 ```http
 POST /api/auth/setup
 Content-Type: application/json
 ```
 
 **Response**
+
 ```json
 {
   "passwordExists": false,
@@ -25,6 +27,7 @@ Content-Type: application/json
 ```
 
 **Status Codes**
+
 - `200` - Success
 - `500` - Server error
 
@@ -35,6 +38,7 @@ Content-Type: application/json
 Authenticate user and create session.
 
 **Request**
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -46,6 +50,7 @@ Content-Type: application/json
 ```
 
 **Response**
+
 ```json
 {
   "success": true,
@@ -54,12 +59,14 @@ Content-Type: application/json
 ```
 
 **Headers Set**
+
 ```http
 Set-Cookie: nself-session=<token>; HttpOnly; SameSite=Strict; Path=/; Max-Age=86400
 Set-Cookie: nself-csrf=<token>; SameSite=Strict; Path=/; Max-Age=86400
 ```
 
 **Status Codes**
+
 - `200` - Login successful
 - `400` - Invalid request or validation error
 - `401` - Invalid credentials
@@ -72,12 +79,14 @@ Set-Cookie: nself-csrf=<token>; SameSite=Strict; Path=/; Max-Age=86400
 Verify current session status.
 
 **Request**
+
 ```http
 GET /api/auth/check
 Cookie: nself-session=<token>
 ```
 
 **Response**
+
 ```json
 {
   "authenticated": true,
@@ -87,6 +96,7 @@ Cookie: nself-session=<token>
 ```
 
 **Status Codes**
+
 - `200` - Session valid
 - `401` - No session or expired
 - `500` - Server error
@@ -98,6 +108,7 @@ Cookie: nself-session=<token>
 End current session.
 
 **Request**
+
 ```http
 POST /api/auth/logout
 Cookie: nself-session=<token>
@@ -105,6 +116,7 @@ X-CSRF-Token: <csrf-token>
 ```
 
 **Response**
+
 ```json
 {
   "success": true,
@@ -113,12 +125,14 @@ X-CSRF-Token: <csrf-token>
 ```
 
 **Headers Set**
+
 ```http
 Set-Cookie: nself-session=; HttpOnly; Path=/; Max-Age=0
 Set-Cookie: nself-csrf=; Path=/; Max-Age=0
 ```
 
 **Status Codes**
+
 - `200` - Logout successful
 - `401` - Not authenticated
 - `403` - CSRF token invalid
@@ -131,6 +145,7 @@ Set-Cookie: nself-csrf=; Path=/; Max-Age=0
 Change admin password (requires authentication).
 
 **Request**
+
 ```http
 POST /api/auth/change-password
 Cookie: nself-session=<token>
@@ -144,6 +159,7 @@ Content-Type: application/json
 ```
 
 **Response**
+
 ```json
 {
   "success": true,
@@ -152,6 +168,7 @@ Content-Type: application/json
 ```
 
 **Status Codes**
+
 - `200` - Password changed
 - `400` - Validation error
 - `401` - Not authenticated or wrong current password
@@ -172,7 +189,7 @@ sequenceDiagram
     API->>Database: Check password exists
     Database-->>API: No password
     API-->>Browser: {passwordExists: false}
-    
+
     Browser->>API: POST /api/auth/login
     Note over API: {password: "new-pass", isSetup: true}
     API->>API: Validate password rules
@@ -221,17 +238,19 @@ sequenceDiagram
 ### Password Requirements
 
 #### Development Mode
+
 - Minimum 3 characters
 - No complexity requirements
-- Detected by hostname patterns (localhost, *.local, etc.)
+- Detected by hostname patterns (localhost, \*.local, etc.)
 
 #### Production Mode
+
 - Minimum 12 characters
 - Must contain:
   - Uppercase letter (A-Z)
   - Lowercase letter (a-z)
   - Number (0-9)
-  - Special character (@$!%*?&)
+  - Special character (@$!%\*?&)
 
 ### Password Hashing
 
@@ -244,6 +263,7 @@ const hash = await bcrypt.hash(password, SALT_ROUNDS)
 ### Session Management
 
 #### Session Token
+
 - Cryptographically random 32-byte token
 - Stored as hex string (64 characters)
 - Generated using Node.js crypto module
@@ -253,11 +273,13 @@ const token = crypto.randomBytes(32).toString('hex')
 ```
 
 #### Session Storage
+
 - Server-side only (not in JWT)
 - 24-hour TTL with automatic cleanup
 - Includes IP and User-Agent for security
 
 #### Cookie Settings
+
 ```typescript
 // Session cookie (HttpOnly)
 {
@@ -291,14 +313,14 @@ All state-changing requests require CSRF token:
 // Client-side
 const csrfToken = document.cookie
   .split('; ')
-  .find(row => row.startsWith('nself-csrf='))
+  .find((row) => row.startsWith('nself-csrf='))
   ?.split('=')[1]
 
 fetch('/api/auth/logout', {
   method: 'POST',
   headers: {
-    'X-CSRF-Token': csrfToken
-  }
+    'X-CSRF-Token': csrfToken,
+  },
 })
 ```
 
@@ -356,26 +378,26 @@ export function useAuth() {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
+      body: JSON.stringify({ password }),
     })
-    
+
     if (res.ok) {
       setIsAuthenticated(true)
       return { success: true }
     }
-    
+
     const error = await res.json()
     return { success: false, error: error.message }
   }
 
   const logout = async () => {
     const csrfToken = getCookie('nself-csrf')
-    
+
     await fetch('/api/auth/logout', {
       method: 'POST',
-      headers: { 'X-CSRF-Token': csrfToken }
+      headers: { 'X-CSRF-Token': csrfToken },
     })
-    
+
     setIsAuthenticated(false)
   }
 
@@ -390,7 +412,7 @@ export function useAuth() {
 import axios from 'axios'
 
 // Add CSRF token to all requests
-axios.interceptors.request.use(config => {
+axios.interceptors.request.use((config) => {
   const csrfToken = getCookie('nself-csrf')
   if (csrfToken && ['post', 'put', 'delete', 'patch'].includes(config.method)) {
     config.headers['X-CSRF-Token'] = csrfToken
@@ -400,13 +422,13 @@ axios.interceptors.request.use(config => {
 
 // Handle 401 responses
 axios.interceptors.response.use(
-  response => response,
-  error => {
+  (response) => response,
+  (error) => {
     if (error.response?.status === 401) {
       window.location.href = '/login'
     }
     return Promise.reject(error)
-  }
+  },
 )
 ```
 
@@ -415,6 +437,7 @@ axios.interceptors.response.use(
 ### Common Errors
 
 #### Invalid Credentials
+
 ```json
 {
   "error": "Invalid password",
@@ -423,6 +446,7 @@ axios.interceptors.response.use(
 ```
 
 #### Session Expired
+
 ```json
 {
   "error": "Session expired",
@@ -431,6 +455,7 @@ axios.interceptors.response.use(
 ```
 
 #### CSRF Token Invalid
+
 ```json
 {
   "error": "CSRF token validation failed",
@@ -439,6 +464,7 @@ axios.interceptors.response.use(
 ```
 
 #### Password Validation Failed
+
 ```json
 {
   "error": "Password must be at least 12 characters",
@@ -452,20 +478,21 @@ axios.interceptors.response.use(
 
 ### Error Codes
 
-| Code | Description |
-|------|-------------|
-| `AUTH_INVALID_CREDENTIALS` | Wrong password |
-| `AUTH_SESSION_EXPIRED` | Session has expired |
-| `AUTH_SESSION_INVALID` | Session token invalid |
-| `AUTH_CSRF_INVALID` | CSRF token missing or invalid |
-| `AUTH_PASSWORD_WEAK` | Password doesn't meet requirements |
-| `AUTH_PASSWORD_EXISTS` | Password already set (setup) |
-| `AUTH_NOT_AUTHENTICATED` | No valid session |
-| `AUTH_RATE_LIMITED` | Too many attempts |
+| Code                       | Description                        |
+| -------------------------- | ---------------------------------- |
+| `AUTH_INVALID_CREDENTIALS` | Wrong password                     |
+| `AUTH_SESSION_EXPIRED`     | Session has expired                |
+| `AUTH_SESSION_INVALID`     | Session token invalid              |
+| `AUTH_CSRF_INVALID`        | CSRF token missing or invalid      |
+| `AUTH_PASSWORD_WEAK`       | Password doesn't meet requirements |
+| `AUTH_PASSWORD_EXISTS`     | Password already set (setup)       |
+| `AUTH_NOT_AUTHENTICATED`   | No valid session                   |
+| `AUTH_RATE_LIMITED`        | Too many attempts                  |
 
 ## Testing
 
 ### Setup Password
+
 ```bash
 curl -X POST http://localhost:3021/api/auth/login \
   -H "Content-Type: application/json" \
@@ -473,6 +500,7 @@ curl -X POST http://localhost:3021/api/auth/login \
 ```
 
 ### Login
+
 ```bash
 curl -X POST http://localhost:3021/api/auth/login \
   -H "Content-Type: application/json" \
@@ -481,12 +509,14 @@ curl -X POST http://localhost:3021/api/auth/login \
 ```
 
 ### Check Session
+
 ```bash
 curl http://localhost:3021/api/auth/check \
   -b cookies.txt
 ```
 
 ### Logout
+
 ```bash
 # Get CSRF token
 CSRF=$(curl -s http://localhost:3021/api/auth/check -b cookies.txt | grep -o 'nself-csrf=[^;]*' | cut -d= -f2)

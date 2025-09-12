@@ -1,30 +1,32 @@
-import { NextRequest } from 'next/server'
-import { spawn } from 'child_process'
 import { getProjectPath } from '@/lib/paths'
-import path from 'path'
+import { spawn } from 'child_process'
 import fs from 'fs'
+import { NextRequest } from 'next/server'
+import path from 'path'
 
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder()
   const projectPath = getProjectPath()
-  
+
   console.log('Start-stream API called')
   console.log('Project path:', projectPath)
   console.log('Current working directory:', process.cwd())
-  
+
   // Check if docker-compose.yml exists
   const dockerComposePath = path.join(projectPath, 'docker-compose.yml')
   console.log('Checking for docker-compose.yml at:', dockerComposePath)
-  
+
   if (!fs.existsSync(dockerComposePath)) {
     console.error('docker-compose.yml not found!')
     return new Response(
-      encoder.encode(JSON.stringify({
-        type: 'error',
-        message: 'No docker-compose.yml found in project directory',
-        error: `Project not initialized at ${projectPath}. Run nself init and nself build first.`
-      }) + '\n'),
-      { status: 400 }
+      encoder.encode(
+        JSON.stringify({
+          type: 'error',
+          message: 'No docker-compose.yml found in project directory',
+          error: `Project not initialized at ${projectPath}. Run nself init and nself build first.`,
+        }) + '\n',
+      ),
+      { status: 400 },
     )
   }
 
@@ -33,17 +35,17 @@ export async function POST(request: NextRequest) {
       try {
         // Find nself CLI - use absolute path
         let nselfPath: string | null = null
-        
+
         // Check known locations in order of preference
         const possiblePaths = [
-          '/Users/admin/Sites/nself/bin/nself',  // Development location
-          '/Users/admin/bin/nself',              // User bin (symlink)
-          '/usr/local/bin/nself',                // Common installation
-          '/opt/homebrew/bin/nself',             // Homebrew location
+          '/Users/admin/Sites/nself/bin/nself', // Development location
+          '/Users/admin/bin/nself', // User bin (symlink)
+          '/usr/local/bin/nself', // Common installation
+          '/opt/homebrew/bin/nself', // Homebrew location
           process.env.HOME + '/bin/nself',
-          process.env.HOME + '/.local/bin/nself'
+          process.env.HOME + '/.local/bin/nself',
         ]
-        
+
         // Find the first existing and executable path
         for (const path of possiblePaths) {
           try {
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
             console.log('Error checking path:', path, err)
           }
         }
-        
+
         // If not found in known locations, try to find in PATH
         if (!nselfPath) {
           console.log('Checking PATH for nself...')
@@ -76,102 +78,128 @@ export async function POST(request: NextRequest) {
               resolve(code === 0 ? output.trim() : '')
             })
           })
-          
+
           if (result) {
             nselfPath = result
             console.log('Found nself in PATH at:', nselfPath)
           }
         }
-        
+
         // If no nself found, return error with installation instructions
         if (!nselfPath) {
           console.error('nself CLI not found in any expected location')
-          controller.enqueue(encoder.encode(JSON.stringify({
-            type: 'error',
-            message: 'nself CLI not found. Please install or reinstall nself.',
-            error: 'The nself command-line tool is required but was not found on your system.',
-            instructions: [
-              'To install nself:',
-              '1. Visit https://github.com/acamarata/nself',
-              '2. Follow the installation instructions for your operating system',
-              '3. Ensure nself is in your PATH or installed in /usr/local/bin',
-              '4. Try running "nself version" in your terminal to verify installation'
-            ]
-          }) + '\n'))
+          controller.enqueue(
+            encoder.encode(
+              JSON.stringify({
+                type: 'error',
+                message:
+                  'nself CLI not found. Please install or reinstall nself.',
+                error:
+                  'The nself command-line tool is required but was not found on your system.',
+                instructions: [
+                  'To install nself:',
+                  '1. Visit https://github.com/acamarata/nself',
+                  '2. Follow the installation instructions for your operating system',
+                  '3. Ensure nself is in your PATH or installed in /usr/local/bin',
+                  '4. Try running "nself version" in your terminal to verify installation',
+                ],
+              }) + '\n',
+            ),
+          )
           controller.close()
           return
         }
-        
+
         console.log('Using nself command:', nselfPath)
-        
+
         // First, check which images need to be pulled
         const checkProcess = spawn('docker-compose', ['config', '--images'], {
           cwd: projectPath,
           env: {
             ...process.env,
-            PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin'
-          }
+            PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin',
+          },
         })
 
         let allImages: string[] = []
         let imageData = ''
-        
+
         checkProcess.stdout.on('data', (data) => {
           imageData += data.toString()
         })
 
         await new Promise((resolve) => {
           checkProcess.on('close', () => {
-            allImages = imageData.split('\n').filter(img => img.trim())
+            allImages = imageData.split('\n').filter((img) => img.trim())
             resolve(undefined)
           })
         })
 
-        controller.enqueue(encoder.encode(JSON.stringify({
-          type: 'status',
-          message: `Checking ${allImages.length} Docker images...`,
-          totalImages: allImages.length
-        }) + '\n'))
+        controller.enqueue(
+          encoder.encode(
+            JSON.stringify({
+              type: 'status',
+              message: `Checking ${allImages.length} Docker images...`,
+              totalImages: allImages.length,
+            }) + '\n',
+          ),
+        )
 
         // Check which images are already downloaded
         const localImages = await checkLocalImages()
-        const imagesToPull = allImages.filter(img => !localImages.includes(img))
-        
+        const imagesToPull = allImages.filter(
+          (img) => !localImages.includes(img),
+        )
+
         if (imagesToPull.length > 0) {
-          controller.enqueue(encoder.encode(JSON.stringify({
-            type: 'progress',
-            message: `Downloading ${imagesToPull.length} of ${allImages.length} images...`,
-            imagesToPull: imagesToPull.length,
-            totalImages: allImages.length,
-            percentage: Math.round(((allImages.length - imagesToPull.length) / allImages.length) * 100)
-          }) + '\n'))
+          controller.enqueue(
+            encoder.encode(
+              JSON.stringify({
+                type: 'progress',
+                message: `Downloading ${imagesToPull.length} of ${allImages.length} images...`,
+                imagesToPull: imagesToPull.length,
+                totalImages: allImages.length,
+                percentage: Math.round(
+                  ((allImages.length - imagesToPull.length) /
+                    allImages.length) *
+                    100,
+                ),
+              }) + '\n',
+            ),
+          )
         }
 
         // Start services using nself start
-        controller.enqueue(encoder.encode(JSON.stringify({
-          type: 'status',
-          message: 'Starting services with nself CLI...',
-          command: `${nselfPath} start`,
-          cwd: projectPath
-        }) + '\n'))
-        
+        controller.enqueue(
+          encoder.encode(
+            JSON.stringify({
+              type: 'status',
+              message: 'Starting services with nself CLI...',
+              command: `${nselfPath} start`,
+              cwd: projectPath,
+            }) + '\n',
+          ),
+        )
+
         console.log('Executing nself start:', {
           command: nselfPath,
           args: ['start'],
-          cwd: projectPath
+          cwd: projectPath,
         })
-        
+
         const composeProcess = spawn(nselfPath!, ['start'], {
           cwd: projectPath,
           env: {
             ...process.env,
-            PATH: '/Users/admin/bin:/usr/local/bin:/opt/homebrew/bin:' + process.env.PATH,
+            PATH:
+              '/Users/admin/bin:/usr/local/bin:/opt/homebrew/bin:' +
+              process.env.PATH,
             COMPOSE_PARALLEL_LIMIT: '4',
-            NSELF_PROJECT_PATH: projectPath,  // Make sure nself knows the project path
-            HOME: process.env.HOME || '/Users/admin'
+            NSELF_PROJECT_PATH: projectPath, // Make sure nself knows the project path
+            HOME: process.env.HOME || '/Users/admin',
           },
-          shell: false,  // Don't use shell to avoid path issues
-          stdio: ['pipe', 'pipe', 'pipe']  // Capture all streams
+          shell: false, // Don't use shell to avoid path issues
+          stdio: ['pipe', 'pipe', 'pipe'], // Capture all streams
         })
 
         let pulledImages = 0
@@ -183,98 +211,139 @@ export async function POST(request: NextRequest) {
           // Remove ANSI color codes
           const output = data.toString().replace(/\x1b\[[0-9;]*m/g, '')
           const lines = output.split('\n')
-          
+
           for (const line of lines) {
             // Track image pulling
-            if (line.includes('Pulling') && !line.includes('Pulling fs layer')) {
+            if (
+              line.includes('Pulling') &&
+              !line.includes('Pulling fs layer')
+            ) {
               const match = line.match(/(\w+)\s+Pulling/)
               if (match) {
-                controller.enqueue(encoder.encode(JSON.stringify({
-                  type: 'progress',
-                  message: `Pulling image for ${match[1]}...`,
-                  service: match[1]
-                }) + '\n'))
+                controller.enqueue(
+                  encoder.encode(
+                    JSON.stringify({
+                      type: 'progress',
+                      message: `Pulling image for ${match[1]}...`,
+                      service: match[1],
+                    }) + '\n',
+                  ),
+                )
               }
             }
-            
+
             // Track download progress
             if (line.includes('Downloading')) {
-              const match = line.match(/\[([=>]+)\s*\]\s*([\d.]+)MB\/([\d.]+)MB/)
+              const match = line.match(
+                /\[([=>]+)\s*\]\s*([\d.]+)MB\/([\d.]+)MB/,
+              )
               if (match) {
                 const current = parseFloat(match[2])
                 const total = parseFloat(match[3])
                 const percentage = Math.round((current / total) * 100)
                 const progressMsg = `Downloading: ${percentage}% (${current.toFixed(1)}MB/${total.toFixed(1)}MB)`
-                
+
                 if (progressMsg !== lastProgress) {
                   lastProgress = progressMsg
-                  controller.enqueue(encoder.encode(JSON.stringify({
-                    type: 'download',
-                    message: progressMsg,
-                    percentage
-                  }) + '\n'))
+                  controller.enqueue(
+                    encoder.encode(
+                      JSON.stringify({
+                        type: 'download',
+                        message: progressMsg,
+                        percentage,
+                      }) + '\n',
+                    ),
+                  )
                 }
               }
             }
-            
+
             // Track pull completion
             if (line.includes('Pull complete')) {
               pulledImages++
-              controller.enqueue(encoder.encode(JSON.stringify({
-                type: 'progress',
-                message: `Downloaded ${pulledImages} images...`,
-                pulledImages
-              }) + '\n'))
+              controller.enqueue(
+                encoder.encode(
+                  JSON.stringify({
+                    type: 'progress',
+                    message: `Downloaded ${pulledImages} images...`,
+                    pulledImages,
+                  }) + '\n',
+                ),
+              )
             }
-            
+
             // Track container creation
             if (line.includes('Creating') || line.includes('Starting')) {
-              const match = line.match(/(Creating|Starting)\s+(.+?)(?:\s+\.\.\.|$)/)
+              const match = line.match(
+                /(Creating|Starting)\s+(.+?)(?:\s+\.\.\.|$)/,
+              )
               if (match) {
                 startedContainers++
-                controller.enqueue(encoder.encode(JSON.stringify({
-                  type: 'container',
-                  message: `${match[1]} ${match[2]}...`,
-                  action: match[1].toLowerCase(),
-                  container: match[2],
-                  startedContainers
-                }) + '\n'))
+                controller.enqueue(
+                  encoder.encode(
+                    JSON.stringify({
+                      type: 'container',
+                      message: `${match[1]} ${match[2]}...`,
+                      action: match[1].toLowerCase(),
+                      container: match[2],
+                      startedContainers,
+                    }) + '\n',
+                  ),
+                )
               }
             }
 
             // Handle errors
             if (line.toLowerCase().includes('error')) {
-              controller.enqueue(encoder.encode(JSON.stringify({
-                type: 'error',
-                message: line.trim()
-              }) + '\n'))
+              controller.enqueue(
+                encoder.encode(
+                  JSON.stringify({
+                    type: 'error',
+                    message: line.trim(),
+                  }) + '\n',
+                ),
+              )
             }
-            
+
             // Track nself specific output
-            if (line.includes('✓') || line.includes('Starting') || line.includes('Restarting')) {
+            if (
+              line.includes('✓') ||
+              line.includes('Starting') ||
+              line.includes('Restarting')
+            ) {
               // Parse "Starting Docker containers... (12/20)" format
-              const containerMatch = line.match(/Starting Docker containers.*\((\d+)\/(\d+)\)/)
+              const containerMatch = line.match(
+                /Starting Docker containers.*\((\d+)\/(\d+)\)/,
+              )
               if (containerMatch) {
                 const current = parseInt(containerMatch[1])
                 const total = parseInt(containerMatch[2])
                 const percentage = Math.round((current / total) * 100)
-                controller.enqueue(encoder.encode(JSON.stringify({
-                  type: 'container',
-                  message: `Starting containers: ${current}/${total}`,
-                  current,
-                  total,
-                  percentage
-                }) + '\n'))
+                controller.enqueue(
+                  encoder.encode(
+                    JSON.stringify({
+                      type: 'container',
+                      message: `Starting containers: ${current}/${total}`,
+                      current,
+                      total,
+                      percentage,
+                    }) + '\n',
+                  ),
+                )
               } else {
-                controller.enqueue(encoder.encode(JSON.stringify({
-                  type: 'progress',
-                  message: line.trim()
-                }) + '\n'))
+                controller.enqueue(
+                  encoder.encode(
+                    JSON.stringify({
+                      type: 'progress',
+                      message: line.trim(),
+                    }) + '\n',
+                  ),
+                )
               }
             }
           }
         }
-        
+
         // Use the same handler for both stdout and stderr
         composeProcess.stderr.on('data', handleOutput)
         composeProcess.stdout.on('data', handleOutput)
@@ -282,27 +351,27 @@ export async function POST(request: NextRequest) {
         // Collect all output for debugging
         let allOutput = ''
         let errorOutput = ''
-        
+
         composeProcess.stdout.on('data', (data) => {
           allOutput += data.toString()
         })
-        
+
         composeProcess.stderr.on('data', (data) => {
           errorOutput += data.toString()
         })
-        
+
         // Wait for process to complete
         await new Promise<void>((resolve) => {
           let hasErrors = false
-          
+
           composeProcess.on('error', (error: any) => {
             hasErrors = true
             console.error('Process spawn error:', error)
-            
+
             // More helpful error messages based on error code
             let errorMessage = 'Failed to start services'
             let instructions: string[] = []
-            
+
             if (error.code === 'ENOENT') {
               errorMessage = 'nself CLI executable not found'
               instructions = [
@@ -311,7 +380,7 @@ export async function POST(request: NextRequest) {
                 '1. Run "nself version" in your terminal to check if it\'s installed',
                 '2. If not installed, visit https://github.com/acamarata/nself',
                 '3. Follow the installation instructions for your OS',
-                '4. Restart this application after installation'
+                '4. Restart this application after installation',
               ]
             } else if (error.code === 'EACCES') {
               errorMessage = 'Permission denied when executing nself'
@@ -319,7 +388,7 @@ export async function POST(request: NextRequest) {
                 'The nself command exists but is not executable.',
                 'To fix this:',
                 `1. Run: chmod +x ${nselfPath}`,
-                '2. Try again'
+                '2. Try again',
               ]
             } else if (error.code === 127) {
               errorMessage = 'Command not found'
@@ -329,92 +398,123 @@ export async function POST(request: NextRequest) {
                 'To fix this:',
                 '1. Ensure nself is installed',
                 '2. Add nself to your PATH or install it in /usr/local/bin',
-                '3. Restart your terminal and this application'
+                '3. Restart your terminal and this application',
               ]
             } else {
               errorMessage = `Process error: ${error.message}`
             }
-            
-            controller.enqueue(encoder.encode(JSON.stringify({
-              type: 'error',
-              message: errorMessage,
-              details: error.toString(),
-              code: error.code,
-              instructions
-            }) + '\n'))
+
+            controller.enqueue(
+              encoder.encode(
+                JSON.stringify({
+                  type: 'error',
+                  message: errorMessage,
+                  details: error.toString(),
+                  code: error.code,
+                  instructions,
+                }) + '\n',
+              ),
+            )
           })
-          
+
           composeProcess.on('close', (code) => {
             console.log('nself start process closed with code:', code)
             console.log('Output:', allOutput)
             console.log('Error output:', errorOutput)
-            
+
             // Check if containers were actually started or already running
-            const hasStartedContainers = allOutput.includes('Container') || 
-                                       allOutput.includes('Started') || 
-                                       errorOutput.includes('Container')
-            
+            const hasStartedContainers =
+              allOutput.includes('Container') ||
+              allOutput.includes('Started') ||
+              errorOutput.includes('Container')
+
             // Check if services are already running (common case for exit code 1)
-            const alreadyRunning = allOutput.includes('already running') || 
-                                 allOutput.includes('Already running') ||
-                                 errorOutput.includes('already running') ||
-                                 errorOutput.includes('Already running')
-            
+            const alreadyRunning =
+              allOutput.includes('already running') ||
+              allOutput.includes('Already running') ||
+              errorOutput.includes('already running') ||
+              errorOutput.includes('Already running')
+
             // nself CLI returns 1 when services are already running or on some non-fatal issues
             // Check if we saw actual errors or if services are running
-            if (code === 0 || hasStartedContainers || alreadyRunning || 
-                (code === 1 && (!hasErrors || startedContainers > 0))) {
-              
+            if (
+              code === 0 ||
+              hasStartedContainers ||
+              alreadyRunning ||
+              (code === 1 && (!hasErrors || startedContainers > 0))
+            ) {
               // Check how many containers are actually running
-              const checkContainers = spawn('docker', ['ps', '--format', '{{.Names}}'], {
-                cwd: projectPath
-              })
-              
+              const checkContainers = spawn(
+                'docker',
+                ['ps', '--format', '{{.Names}}'],
+                {
+                  cwd: projectPath,
+                },
+              )
+
               let containerList = ''
               checkContainers.stdout.on('data', (data) => {
                 containerList += data.toString()
               })
-              
+
               checkContainers.on('close', () => {
-                const runningContainers = containerList.split('\n').filter(name => 
-                  name.includes('nproj')
-                ).length
-                
+                const runningContainers = containerList
+                  .split('\n')
+                  .filter((name) => name.includes('nproj')).length
+
                 if (runningContainers > 0) {
-                  controller.enqueue(encoder.encode(JSON.stringify({
-                    type: 'complete',
-                    message: `Services are running! (${runningContainers} containers active)`,
-                    startedContainers: runningContainers,
-                    exitCode: code,
-                    hasStartedContainers: true
-                  }) + '\n'))
+                  controller.enqueue(
+                    encoder.encode(
+                      JSON.stringify({
+                        type: 'complete',
+                        message: `Services are running! (${runningContainers} containers active)`,
+                        startedContainers: runningContainers,
+                        exitCode: code,
+                        hasStartedContainers: true,
+                      }) + '\n',
+                    ),
+                  )
                 } else if (code === 0) {
-                  controller.enqueue(encoder.encode(JSON.stringify({
-                    type: 'complete',
-                    message: 'Services start process completed successfully!',
-                    startedContainers,
-                    exitCode: code,
-                    hasStartedContainers
-                  }) + '\n'))
+                  controller.enqueue(
+                    encoder.encode(
+                      JSON.stringify({
+                        type: 'complete',
+                        message:
+                          'Services start process completed successfully!',
+                        startedContainers,
+                        exitCode: code,
+                        hasStartedContainers,
+                      }) + '\n',
+                    ),
+                  )
                 } else {
-                  controller.enqueue(encoder.encode(JSON.stringify({
-                    type: 'error',
-                    message: 'Services may not have started properly. Please check Docker Desktop.',
-                    exitCode: code,
-                    output: allOutput.slice(-500),
-                    errorOutput: errorOutput.slice(-500)
-                  }) + '\n'))
+                  controller.enqueue(
+                    encoder.encode(
+                      JSON.stringify({
+                        type: 'error',
+                        message:
+                          'Services may not have started properly. Please check Docker Desktop.',
+                        exitCode: code,
+                        output: allOutput.slice(-500),
+                        errorOutput: errorOutput.slice(-500),
+                      }) + '\n',
+                    ),
+                  )
                 }
                 resolve()
               })
             } else {
-              controller.enqueue(encoder.encode(JSON.stringify({
-                type: 'error',
-                message: `Process exited with code ${code}`,
-                exitCode: code,
-                output: allOutput.slice(-500),  // Last 500 chars
-                errorOutput: errorOutput.slice(-500)  // Last 500 chars
-              }) + '\n'))
+              controller.enqueue(
+                encoder.encode(
+                  JSON.stringify({
+                    type: 'error',
+                    message: `Process exited with code ${code}`,
+                    exitCode: code,
+                    output: allOutput.slice(-500), // Last 500 chars
+                    errorOutput: errorOutput.slice(-500), // Last 500 chars
+                  }) + '\n',
+                ),
+              )
               // Still resolve to allow partial success
               resolve()
             }
@@ -423,38 +523,48 @@ export async function POST(request: NextRequest) {
 
         controller.close()
       } catch (error: any) {
-        controller.enqueue(encoder.encode(JSON.stringify({
-          type: 'error',
-          message: error.message || 'Unknown error occurred'
-        }) + '\n'))
+        controller.enqueue(
+          encoder.encode(
+            JSON.stringify({
+              type: 'error',
+              message: error.message || 'Unknown error occurred',
+            }) + '\n',
+          ),
+        )
         controller.close()
       }
-    }
+    },
   })
 
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
-    }
+      Connection: 'keep-alive',
+    },
   })
 }
 
 async function checkLocalImages(): Promise<string[]> {
   return new Promise((resolve) => {
-    const checkProcess = spawn('docker', ['images', '--format', '{{.Repository}}:{{.Tag}}'])
+    const checkProcess = spawn('docker', [
+      'images',
+      '--format',
+      '{{.Repository}}:{{.Tag}}',
+    ])
     let imageData = ''
-    
+
     checkProcess.stdout.on('data', (data) => {
       imageData += data.toString()
     })
-    
+
     checkProcess.on('close', () => {
-      const images = imageData.split('\n').filter(img => img.trim() && img !== '<none>:<none>')
+      const images = imageData
+        .split('\n')
+        .filter((img) => img.trim() && img !== '<none>:<none>')
       resolve(images)
     })
-    
+
     checkProcess.on('error', () => {
       resolve([]) // Return empty array if docker command fails
     })

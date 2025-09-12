@@ -8,7 +8,9 @@ export async function GET(request: NextRequest) {
   const writer = stream.writable.getWriter()
 
   // Send initial connection message
-  writer.write(encoder.encode('data: {"type":"connected","message":"SSE connected"}\n\n'))
+  writer.write(
+    encoder.encode('data: {"type":"connected","message":"SSE connected"}\n\n'),
+  )
 
   // Set up periodic updates (example - in production, this would be event-driven)
   const interval = setInterval(async () => {
@@ -20,12 +22,12 @@ export async function GET(request: NextRequest) {
           id: 'example-container',
           health: Math.random() > 0.5 ? 'healthy' : 'unhealthy',
           cpu: Math.random() * 100,
-          memory: Math.random() * 8
-        }
+          memory: Math.random() * 8,
+        },
       }
-      
+
       await writer.write(
-        encoder.encode(`data: ${JSON.stringify(healthUpdate)}\n\n`)
+        encoder.encode(`data: ${JSON.stringify(healthUpdate)}\n\n`),
       )
     } catch (error: any) {
       // Client disconnected
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   })
 }

@@ -24,6 +24,7 @@ nself admin
 ```
 
 This command will:
+
 1. Pull the latest nAdmin Docker image
 2. Start the container on port 3021
 3. Mount your project directory as a volume
@@ -55,7 +56,7 @@ services:
     image: acamarata/nself-admin:latest
     container_name: nself-admin
     ports:
-      - "3021:3021"
+      - '3021:3021'
     volumes:
       - /path/to/your/project:/workspace:rw
       - nself-admin-data:/app/data
@@ -93,6 +94,7 @@ Then access at http://localhost:8080
 ### Required Volumes
 
 1. **Project Directory**: Your nself project mounted at `/workspace`
+
    ```bash
    -v /path/to/your/project:/workspace:rw
    ```
@@ -116,12 +118,12 @@ chmod -R 755 /path/to/your/project
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NSELF_PROJECT_PATH` | Path to project inside container | `/workspace` |
-| `NODE_ENV` | Environment mode | `production` |
-| `PORT` | Internal port | `3021` |
-| `HOSTNAME` | Container hostname | Auto-detected |
+| Variable             | Description                      | Default       |
+| -------------------- | -------------------------------- | ------------- |
+| `NSELF_PROJECT_PATH` | Path to project inside container | `/workspace`  |
+| `NODE_ENV`           | Environment mode                 | `production`  |
+| `PORT`               | Internal port                    | `3021`        |
+| `HOSTNAME`           | Container hostname               | Auto-detected |
 
 ## Verification
 
@@ -144,6 +146,7 @@ docker logs nself-admin
 Open your browser to http://localhost:3021
 
 You should see:
+
 - First-time setup: Password configuration screen
 - Returning user: Login screen
 - After login: Project setup wizard or dashboard
@@ -204,7 +207,7 @@ docker volume rm nself-admin-data
 
 On first launch, you'll be prompted to set an admin password. The requirements depend on your environment:
 
-- **Development** (localhost, *.local): Minimum 3 characters
+- **Development** (localhost, \*.local): Minimum 3 characters
 - **Production**: Minimum 12 characters with uppercase, lowercase, number, and special character
 
 ### Resetting Password
@@ -212,17 +215,20 @@ On first launch, you'll be prompted to set an admin password. The requirements d
 If you need to reset the admin password:
 
 #### Using nself CLI (Recommended)
+
 ```bash
 nself admin reset-password
 ```
 
 This command will:
+
 1. Stop the nAdmin container
 2. Clear the password from the database
 3. Restart the container
 4. Prompt for a new password on next login
 
 #### Manual Reset
+
 ```bash
 # Delete the database file
 docker exec nself-admin rm /app/data/nadmin.db
@@ -238,6 +244,7 @@ docker restart nself-admin
 ### Container Won't Start
 
 Check logs for errors:
+
 ```bash
 docker logs nself-admin
 ```
@@ -245,6 +252,7 @@ docker logs nself-admin
 ### Permission Denied
 
 Ensure proper volume permissions:
+
 ```bash
 docker exec nself-admin ls -la /workspace
 ```
@@ -252,6 +260,7 @@ docker exec nself-admin ls -la /workspace
 ### Port Already in Use
 
 Find what's using port 3021:
+
 ```bash
 lsof -i :3021
 ```

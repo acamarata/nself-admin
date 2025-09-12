@@ -1,34 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs/promises'
+import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
 
 export async function GET(request: NextRequest) {
   try {
     // Get the project path
-    const projectPath = process.env.NSELF_PROJECT_PATH || path.join(process.cwd(), '..', 'nself-project')
-    
+    const projectPath =
+      process.env.NSELF_PROJECT_PATH ||
+      path.join(process.cwd(), '..', 'nself-project')
+
     // Try to read from multiple env files in priority order to get current config
     let envContent = ''
-    const filesToTry = ['.env', '.env.prod', '.env.staging', '.env.dev']  // Reverse priority for reading
-    
+    const filesToTry = ['.env', '.env.prod', '.env.staging', '.env.dev'] // Reverse priority for reading
+
     for (const fileName of filesToTry) {
       try {
         const filePath = path.join(projectPath, fileName)
         const content = await fs.readFile(filePath, 'utf8')
-        envContent = content + '\n' + envContent  // Prepend so later files override
+        envContent = content + '\n' + envContent // Prepend so later files override
       } catch {
         // File doesn't exist, continue
       }
     }
-    
+
     if (envContent) {
-      
       // Parse env file into config object
       const config: any = {
         projectName: '',
-        environment: 'development',  // nself default
-        domain: 'local.nself.org',  // nself default  
-        databaseName: 'nself',  // nself default
+        environment: 'development', // nself default
+        domain: 'local.nself.org', // nself default
+        databaseName: 'nself', // nself default
         backupSchedule: '0 2 * * *',
         optionalServices: {
           redis: false,
@@ -36,25 +37,25 @@ export async function GET(request: NextRequest) {
           monitoring: false,
           mlflow: false,
           search: { enabled: false, provider: 'auto' },
-          admin: false
+          admin: false,
         },
         customServices: [],
-        frontendApps: []
+        frontendApps: [],
       }
-      
+
       // Parse each line
       const lines = envContent.split('\n')
       for (const line of lines) {
         const trimmed = line.trim()
         if (!trimmed || trimmed.startsWith('#')) continue
-        
+
         const match = trimmed.match(/^([^=]+)=(.*)$/)
         if (match) {
           const key = match[1].trim()
           const value = match[2].trim().replace(/^["']|["']$/g, '')
-          
+
           // Map env variables to config
-          switch(key) {
+          switch (key) {
             case 'PROJECT_NAME':
               config.projectName = value
               break
@@ -96,9 +97,14 @@ export async function GET(request: NextRequest) {
               // Parse user services format: "service1:nest:4000,service2:express:4001"
               if (value) {
                 const services = value.split(',')
-                config.customServices = services.map(s => {
+                config.customServices = services.map((s) => {
                   const [name, framework, port, route] = s.split(':')
-                  return { name, framework, port: parseInt(port) || 4000, route: route || '' }
+                  return {
+                    name,
+                    framework,
+                    port: parseInt(port) || 4000,
+                    route: route || '',
+                  }
                 })
               }
               break
@@ -106,14 +112,15 @@ export async function GET(request: NextRequest) {
               // Parse frontend apps format: "app_1:App 1:app1_:3001:app1"
               if (value) {
                 const apps = value.split(',')
-                config.frontendApps = apps.map(a => {
-                  const [name, displayName, tablePrefix, port, subdomain] = a.split(':')
+                config.frontendApps = apps.map((a) => {
+                  const [name, displayName, tablePrefix, port, subdomain] =
+                    a.split(':')
                   return {
                     name,
                     displayName,
                     tablePrefix,
                     port: parseInt(port) || 3000,
-                    subdomain
+                    subdomain,
                   }
                 })
               }
@@ -121,27 +128,25 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-      
+
       return NextResponse.json({
         success: true,
         config,
-        hasEnvFile: true
+        hasEnvFile: true,
       })
-      
     } else {
       // No env files exist
       return NextResponse.json({
         success: true,
         config: null,
-        hasEnvFile: false
+        hasEnvFile: false,
       })
     }
-    
   } catch (error: any) {
     console.error('Error loading env config:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to load configuration' },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import React, { Component, ReactNode } from 'react'
 import { AlertTriangle } from 'lucide-react'
+import React, { Component, ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
@@ -39,27 +39,30 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-[400px] flex items-center justify-center p-8">
-          <div className="max-w-md w-full">
-            <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-6 text-center">
-              <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
+        <div className="flex min-h-[400px] items-center justify-center p-8">
+          <div className="w-full max-w-md">
+            <div className="rounded-lg bg-red-50 p-6 text-center dark:bg-red-900/20">
+              <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+              <h2 className="mb-2 text-lg font-semibold text-red-900 dark:text-red-100">
                 Something went wrong
               </h2>
-              <p className="text-sm text-red-700 dark:text-red-300 mb-4">
+              <p className="mb-4 text-sm text-red-700 dark:text-red-300">
                 {this.state.error?.message || 'An unexpected error occurred'}
               </p>
-              {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
-                <details className="text-left mt-4 p-3 bg-red-100 dark:bg-red-900/30 rounded text-xs">
-                  <summary className="cursor-pointer font-medium mb-2">Error Details</summary>
-                  <pre className="overflow-auto text-red-800 dark:text-red-200">
-                    {this.state.errorInfo.componentStack}
-                  </pre>
-                </details>
-              )}
+              {process.env.NODE_ENV === 'development' &&
+                this.state.errorInfo && (
+                  <details className="mt-4 rounded bg-red-100 p-3 text-left text-xs dark:bg-red-900/30">
+                    <summary className="mb-2 cursor-pointer font-medium">
+                      Error Details
+                    </summary>
+                    <pre className="overflow-auto text-red-800 dark:text-red-200">
+                      {this.state.errorInfo.componentStack}
+                    </pre>
+                  </details>
+                )}
               <button
                 onClick={this.handleReset}
-                className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white transition-colors hover:bg-red-700"
               >
                 Try Again
               </button>
@@ -76,7 +79,7 @@ export class ErrorBoundary extends Component<Props, State> {
 // Hook for functional components
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  fallback?: ReactNode
+  fallback?: ReactNode,
 ) {
   return function WithErrorBoundary(props: P) {
     return (

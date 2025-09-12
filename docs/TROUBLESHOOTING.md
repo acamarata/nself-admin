@@ -54,6 +54,7 @@ docker-compose exec postgres psql -U postgres -d nself -c "SELECT 1"
 ### nself-admin Won't Start
 
 #### Symptom
+
 ```
 Error: Cannot find module 'xyz'
 ```
@@ -61,6 +62,7 @@ Error: Cannot find module 'xyz'
 #### Causes & Solutions
 
 1. **Missing dependencies**
+
    ```bash
    npm install
    # or
@@ -68,16 +70,18 @@ Error: Cannot find module 'xyz'
    ```
 
 2. **Wrong Node version**
+
    ```bash
    node --version  # Should be 18+
    nvm use 18     # If using nvm
    ```
 
 3. **Port already in use**
+
    ```bash
    # Check what's using port 3100
    lsof -i :3100
-   
+
    # Kill process or use different port
    PORT=3101 npm run dev
    ```
@@ -85,17 +89,21 @@ Error: Cannot find module 'xyz'
 ### Docker Not Found
 
 #### Symptom
+
 ```
 docker: command not found
 ```
 
 #### Solution
+
 Install Docker Desktop:
+
 - Mac: https://docs.docker.com/desktop/mac/install/
 - Windows: https://docs.docker.com/desktop/windows/install/
 - Linux: https://docs.docker.com/engine/install/
 
 Verify installation:
+
 ```bash
 docker --version
 docker-compose --version
@@ -108,6 +116,7 @@ docker-compose --version
 ### Wizard Not Loading
 
 #### Symptoms
+
 - Blank page
 - Infinite loading
 - "No project detected"
@@ -115,15 +124,17 @@ docker-compose --version
 #### Solutions
 
 1. **Check project path**
+
    ```bash
    echo $NSELF_PROJECT_PATH
    # Should point to your project directory
-   
+
    # Set if missing
    export NSELF_PROJECT_PATH=/path/to/project
    ```
 
 2. **Initialize project**
+
    ```bash
    cd /path/to/project
    nself init
@@ -136,6 +147,7 @@ docker-compose --version
 ### Auto-Save Not Working
 
 #### Symptoms
+
 - "Auto-saving..." stuck
 - Changes not persisting
 - Configuration lost on refresh
@@ -143,14 +155,16 @@ docker-compose --version
 #### Solutions
 
 1. **Check file permissions**
+
    ```bash
    ls -la .env*
    # Should be writable by current user
-   
+
    chmod 644 .env.dev
    ```
 
 2. **Check API endpoints**
+
    ```bash
    curl http://localhost:3100/api/wizard/update-env
    # Should not return 404
@@ -164,16 +178,19 @@ docker-compose --version
 ### Validation Errors
 
 #### "Invalid project name"
+
 - Use lowercase letters, numbers, dashes only
 - No spaces or special characters
 - Example: `my-awesome-app`
 
 #### "Invalid domain"
+
 - Development: Use `localhost` or `.local` domains
 - Production: Use valid FQDN
 - No protocol (http://) in domain field
 
 #### "Port already in use"
+
 - Choose different port
 - Valid range: 3000-9999
 - Check reserved ports list
@@ -185,9 +202,11 @@ docker-compose --version
 ### Variables Not Loading
 
 #### Symptom
+
 Services start with default values instead of configured ones
 
 #### Diagnosis
+
 ```bash
 # Check file exists
 cat .env.dev
@@ -202,26 +221,29 @@ docker-compose exec <service> env | grep PROJECT_NAME
 #### Solutions
 
 1. **File in wrong location**
+
    ```bash
    # Files should be in project root
    ls -la /path/to/project/.env*
    ```
 
 2. **Wrong environment**
+
    ```bash
    # Check current environment
    echo $ENV
-   
+
    # Set correct environment
    export ENV=dev
    ```
 
 3. **Syntax errors**
+
    ```bash
    # No spaces around =
    CORRECT=value
    WRONG = value
-   
+
    # Quote values with spaces
    CORRECT="value with spaces"
    WRONG=value with spaces
@@ -231,12 +253,12 @@ docker-compose exec <service> env | grep PROJECT_NAME
 
 Old variables still being used? Update them:
 
-| Old | New |
-|-----|-----|
-| `NADMIN_ENABLED` | `NSELF_ADMIN_ENABLED` |
-| `MINIO_ENABLED` | `STORAGE_ENABLED` |
-| `DB_BACKUP_*` | `BACKUP_*` |
-| `ELASTICSEARCH_ENABLED` | `SEARCH_ENABLED` |
+| Old                     | New                   |
+| ----------------------- | --------------------- |
+| `NADMIN_ENABLED`        | `NSELF_ADMIN_ENABLED` |
+| `MINIO_ENABLED`         | `STORAGE_ENABLED`     |
+| `DB_BACKUP_*`           | `BACKUP_*`            |
+| `ELASTICSEARCH_ENABLED` | `SEARCH_ENABLED`      |
 
 ---
 
@@ -245,6 +267,7 @@ Old variables still being used? Update them:
 ### PostgreSQL Won't Start
 
 #### Symptoms
+
 ```
 postgres exited with code 1
 FATAL: password authentication failed
@@ -253,12 +276,14 @@ FATAL: password authentication failed
 #### Solutions
 
 1. **Reset database**
+
    ```bash
    docker-compose down -v  # Warning: Deletes data
    docker-compose up -d postgres
    ```
 
 2. **Check credentials**
+
    ```bash
    grep POSTGRES .env.dev
    # Ensure POSTGRES_PASSWORD is set
@@ -273,18 +298,21 @@ FATAL: password authentication failed
 ### Hasura Console Not Loading
 
 #### Symptoms
+
 - Console shows "Error"
 - Can't access localhost:3000
 
 #### Solutions
 
 1. **Check admin secret**
+
    ```bash
    # Must be 32+ characters
    grep HASURA_GRAPHQL_ADMIN_SECRET .env.dev
    ```
 
 2. **Enable console**
+
    ```bash
    # Add to .env.dev
    HASURA_GRAPHQL_ENABLE_CONSOLE=true
@@ -298,12 +326,14 @@ FATAL: password authentication failed
 ### Storage (MinIO) Issues
 
 #### Symptoms
+
 - Can't upload files
 - MinIO console not accessible
 
 #### Solutions
 
 1. **Check credentials**
+
    ```bash
    # Password must be 8+ characters
    grep MINIO_ROOT_PASSWORD .env.dev
@@ -323,6 +353,7 @@ FATAL: password authentication failed
 ### Build Fails
 
 #### Symptom
+
 ```
 Error during build process
 docker-compose.yml not found
@@ -331,12 +362,14 @@ docker-compose.yml not found
 #### Solutions
 
 1. **Run from correct directory**
+
    ```bash
    cd /path/to/project
    nself build
    ```
 
 2. **Check Docker daemon**
+
    ```bash
    docker ps
    # If error, start Docker Desktop
@@ -353,6 +386,7 @@ docker-compose.yml not found
 #### Solutions
 
 1. **Start services**
+
    ```bash
    nself start
    # or
@@ -360,6 +394,7 @@ docker-compose.yml not found
    ```
 
 2. **Check logs**
+
    ```bash
    docker-compose logs <service-name>
    ```
@@ -376,6 +411,7 @@ docker-compose.yml not found
 ### Connection Refused
 
 #### Symptom
+
 ```
 could not connect to server: Connection refused
 ```
@@ -383,6 +419,7 @@ could not connect to server: Connection refused
 #### Solutions
 
 1. **Wait for database**
+
    ```bash
    # Database takes time to initialize
    docker-compose logs -f postgres
@@ -398,6 +435,7 @@ could not connect to server: Connection refused
 ### Migration Errors
 
 #### Symptom
+
 ```
 ERROR: relation does not exist
 ```
@@ -405,6 +443,7 @@ ERROR: relation does not exist
 #### Solutions
 
 1. **Run migrations**
+
    ```bash
    docker-compose exec hasura hasura migrate apply
    ```
@@ -424,6 +463,7 @@ ERROR: relation does not exist
 #### Solutions
 
 1. **Reset password**
+
    ```bash
    # Remove password from database
    rm data/nadmin.db
@@ -437,6 +477,7 @@ ERROR: relation does not exist
 ### JWT Errors
 
 #### Symptom
+
 ```
 Invalid JWT token
 JWT secret key too short
@@ -445,6 +486,7 @@ JWT secret key too short
 #### Solutions
 
 1. **Check key length**
+
    ```bash
    # Must be 32+ characters
    grep HASURA_JWT_KEY .env.dev | wc -c
@@ -464,6 +506,7 @@ JWT secret key too short
 ### Port Already in Use
 
 #### Diagnosis
+
 ```bash
 # Find what's using a port
 lsof -i :3100
@@ -473,11 +516,13 @@ netstat -an | grep 3100
 #### Solutions
 
 1. **Kill process**
+
    ```bash
    kill -9 <PID>
    ```
 
 2. **Use different port**
+
    ```bash
    PORT=3101 npm run dev
    ```
@@ -491,21 +536,24 @@ netstat -an | grep 3100
 ### Cannot Access Services
 
 #### Symptom
+
 - Can't reach http://localhost:3100
 - ERR_CONNECTION_REFUSED
 
 #### Solutions
 
 1. **Check firewall**
+
    ```bash
    # Mac
    sudo pfctl -s rules
-   
+
    # Linux
    sudo iptables -L
    ```
 
 2. **Check Docker network**
+
    ```bash
    docker network ls
    docker-compose ps
@@ -523,6 +571,7 @@ netstat -an | grep 3100
 ### Slow Response Times
 
 #### Diagnosis
+
 ```bash
 # Check resource usage
 docker stats
@@ -534,12 +583,14 @@ docker-compose logs --tail=100
 #### Solutions
 
 1. **Increase resources**
+
    ```bash
    # Docker Desktop: Preferences > Resources
    # Increase CPUs and Memory
    ```
 
 2. **Enable caching**
+
    ```bash
    REDIS_ENABLED=true
    ```
@@ -554,6 +605,7 @@ docker-compose logs --tail=100
 #### Solutions
 
 1. **Set memory limits**
+
    ```bash
    # In docker-compose.yml
    services:
@@ -574,17 +626,20 @@ docker-compose logs --tail=100
 ### Docker Daemon Not Running
 
 #### Symptom
+
 ```
 Cannot connect to the Docker daemon
 ```
 
 #### Solution
+
 - Start Docker Desktop application
 - Linux: `sudo systemctl start docker`
 
 ### Out of Disk Space
 
 #### Symptom
+
 ```
 no space left on device
 ```
@@ -592,11 +647,13 @@ no space left on device
 #### Solutions
 
 1. **Clean Docker**
+
    ```bash
    docker system prune -a --volumes
    ```
 
 2. **Check disk usage**
+
    ```bash
    docker system df
    df -h
@@ -609,6 +666,7 @@ no space left on device
 ### Container Keeps Restarting
 
 #### Diagnosis
+
 ```bash
 docker-compose logs <service>
 docker inspect <container> | grep -i restart
@@ -617,6 +675,7 @@ docker inspect <container> | grep -i restart
 #### Solutions
 
 1. **Check exit code**
+
    ```bash
    docker ps -a
    # Look at STATUS column
@@ -627,7 +686,7 @@ docker inspect <container> | grep -i restart
    # docker-compose.yml
    services:
      service:
-       restart: "no"  # For debugging
+       restart: 'no' # For debugging
    ```
 
 ---
@@ -705,15 +764,16 @@ docker-compose exec -T postgres psql -U postgres nself < backup.sql
    - Discord/Slack history
 
 3. **Gather information**
+
    ```bash
    # System info
    uname -a
    docker --version
    node --version
-   
+
    # Error logs
    docker-compose logs > logs.txt
-   
+
    # Configuration (remove secrets!)
    cat .env.dev | grep -v PASSWORD | grep -v SECRET
    ```
@@ -736,6 +796,7 @@ docker-compose exec -T postgres psql -U postgres nself < backup.sql
 ### Reporting Bugs
 
 Include:
+
 1. **Environment**
    - OS and version
    - Docker version
@@ -762,20 +823,20 @@ Include:
 
 ### Quick Reference
 
-| Error | Likely Cause | Solution |
-|-------|--------------|----------|
-| `EADDRINUSE` | Port in use | Change port or kill process |
-| `ECONNREFUSED` | Service not running | Start service or check port |
-| `EACCES` | Permission denied | Check file permissions |
-| `ENOENT` | File not found | Verify file path |
-| `password authentication failed` | Wrong credentials | Check env file |
-| `JWT secret too short` | Secret < 32 chars | Generate longer secret |
-| `Invalid project name` | Special characters | Use only lowercase and dashes |
-| `Container unhealthy` | Health check failing | Check service logs |
-| `no space left on device` | Disk full | Clean Docker or free space |
-| `network not found` | Docker network issue | Recreate with docker-compose up |
+| Error                            | Likely Cause         | Solution                        |
+| -------------------------------- | -------------------- | ------------------------------- |
+| `EADDRINUSE`                     | Port in use          | Change port or kill process     |
+| `ECONNREFUSED`                   | Service not running  | Start service or check port     |
+| `EACCES`                         | Permission denied    | Check file permissions          |
+| `ENOENT`                         | File not found       | Verify file path                |
+| `password authentication failed` | Wrong credentials    | Check env file                  |
+| `JWT secret too short`           | Secret < 32 chars    | Generate longer secret          |
+| `Invalid project name`           | Special characters   | Use only lowercase and dashes   |
+| `Container unhealthy`            | Health check failing | Check service logs              |
+| `no space left on device`        | Disk full            | Clean Docker or free space      |
+| `network not found`              | Docker network issue | Recreate with docker-compose up |
 
 ---
 
-*Last Updated: 2025-01-05*
-*Version: 1.0.0*
+_Last Updated: 2025-01-05_
+_Version: 1.0.0_

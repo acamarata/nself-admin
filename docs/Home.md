@@ -9,23 +9,27 @@ nself-admin is a web-based administration interface for the [nself CLI](https://
 ## Quick Links
 
 ### Getting Started
+
 - [Installation Guide](./deployment/Installation.md)
 - [Development Setup](./developer/Setup.md)
 - [Architecture Overview](./developer/Architecture.md)
 
 ### For Contributors
+
 - [Contributing Guide](./contributing/CONTRIBUTING.md)
 - [Code of Conduct](./contributing/CODE_OF_CONDUCT.md)
 - [Development Workflow](./contributing/Workflow.md)
 - [Testing Guide](./developer/Testing.md)
 
 ### API & Integration
+
 - [API Reference](./api/Reference.md)
 - [Authentication](./api/Authentication.md)
 - [WebSocket Events](./api/WebSocket.md)
 - [CLI Integration](./deployment/CLI_Integration.md)
 
 ### Deployment
+
 - [Docker Deployment](./deployment/Docker.md)
 - [Configuration Options](./deployment/Configuration.md)
 - [Multi-Architecture Builds](./deployment/Multi-Arch.md)

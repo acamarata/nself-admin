@@ -1,17 +1,32 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
-import { 
-  Send, Plus, Save, Trash2, Copy, Download, Upload,
-  ChevronDown, ChevronRight, Eye, EyeOff, Code, FileText,
-  Clock, Bookmark, Settings, Search, Filter, Edit,
-  Globe, Lock, Key, Database, Zap, RefreshCw,
-  AlertCircle, CheckCircle, Info, X, Play, Folder,
-  FolderOpen, MoreVertical, Star, Share, History,
-  Terminal, Bug, TestTube, Layers, ArrowRight
+import {
+  ChevronDown,
+  ChevronRight,
+  Code,
+  Copy,
+  Database,
+  Download,
+  Edit,
+  FileText,
+  Folder,
+  FolderOpen,
+  Globe,
+  History,
+  Lock,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Send,
+  Terminal,
+  Trash2,
+  Upload,
+  X,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface ApiRequest {
   id: string
@@ -91,11 +106,11 @@ interface Parameter {
   description?: string
 }
 
-function RequestBuilder({ 
-  request, 
-  onRequestChange, 
+function RequestBuilder({
+  request,
+  onRequestChange,
   onSendRequest,
-  environments 
+  environments,
 }: {
   request: ApiRequest
   onRequestChange: (request: ApiRequest) => void
@@ -105,16 +120,16 @@ function RequestBuilder({
   const [showAuth, setShowAuth] = useState(false)
   const [showHeaders, setShowHeaders] = useState(false)
   const [showBody, setShowBody] = useState(request.method !== 'GET')
-  
+
   const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
-  
+
   const addHeader = () => {
     onRequestChange({
       ...request,
-      headers: { ...request.headers, '': '' }
+      headers: { ...request.headers, '': '' },
     })
   }
-  
+
   const updateHeader = (oldKey: string, newKey: string, value: string) => {
     const newHeaders = { ...request.headers }
     if (oldKey !== newKey) {
@@ -125,204 +140,273 @@ function RequestBuilder({
     }
     onRequestChange({
       ...request,
-      headers: newHeaders
+      headers: newHeaders,
     })
   }
-  
+
   const removeHeader = (key: string) => {
     const newHeaders = { ...request.headers }
     delete newHeaders[key]
     onRequestChange({
       ...request,
-      headers: newHeaders
+      headers: newHeaders,
     })
   }
-  
+
   const getMethodColor = (method: string) => {
     switch (method) {
-      case 'GET': return 'bg-green-500'
-      case 'POST': return 'bg-blue-500'
-      case 'PUT': return 'bg-yellow-500'
-      case 'DELETE': return 'bg-red-500'
-      case 'PATCH': return 'bg-purple-500'
-      default: return 'bg-gray-500'
+      case 'GET':
+        return 'bg-green-500'
+      case 'POST':
+        return 'bg-blue-500'
+      case 'PUT':
+        return 'bg-yellow-500'
+      case 'DELETE':
+        return 'bg-red-500'
+      case 'PATCH':
+        return 'bg-purple-500'
+      default:
+        return 'bg-gray-500'
     }
   }
-  
+
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-6 border-b border-zinc-200 dark:border-zinc-700">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Request Builder</h2>
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-6 dark:border-zinc-700">
+        <div className="mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+            Request Builder
+          </h2>
           {environments.length > 0 && (
             <select
               value={request.environment || ''}
-              onChange={(e) => onRequestChange({ ...request, environment: e.target.value })}
-              className="px-3 py-1 text-sm rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+              onChange={(e) =>
+                onRequestChange({ ...request, environment: e.target.value })
+              }
+              className="rounded border border-zinc-200 bg-white px-3 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800"
             >
               <option value="">No Environment</option>
-              {environments.map(env => (
-                <option key={env.id} value={env.id}>{env.name}</option>
+              {environments.map((env) => (
+                <option key={env.id} value={env.id}>
+                  {env.name}
+                </option>
               ))}
             </select>
           )}
         </div>
-        
-        <div className="flex gap-2 mb-4">
+
+        <div className="mb-4 flex gap-2">
           <select
             value={request.method}
-            onChange={(e) => onRequestChange({ ...request, method: e.target.value as ApiRequest['method'] })}
-            className="px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 font-medium"
+            onChange={(e) =>
+              onRequestChange({
+                ...request,
+                method: e.target.value as ApiRequest['method'],
+              })
+            }
+            className="rounded border border-zinc-200 bg-white px-3 py-2 font-medium dark:border-zinc-700 dark:bg-zinc-800"
           >
-            {methods.map(method => (
-              <option key={method} value={method}>{method}</option>
+            {methods.map((method) => (
+              <option key={method} value={method}>
+                {method}
+              </option>
             ))}
           </select>
-          
+
           <input
             type="text"
             placeholder="https://api.example.com/endpoint"
             value={request.url}
-            onChange={(e) => onRequestChange({ ...request, url: e.target.value })}
-            className="flex-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+            onChange={(e) =>
+              onRequestChange({ ...request, url: e.target.value })
+            }
+            className="flex-1 rounded border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800"
           />
-          
+
           <Button
             onClick={() => onSendRequest(request)}
             disabled={!request.url}
             className="flex items-center gap-2"
           >
-            <Send className="w-4 h-4" />
+            <Send className="h-4 w-4" />
             Send
           </Button>
         </div>
-        
+
         <div className="flex items-center gap-4 text-sm">
           <button
             onClick={() => setShowAuth(!showAuth)}
-            className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+            className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
           >
-            <Lock className="w-4 h-4" />
+            <Lock className="h-4 w-4" />
             Authorization
-            {showAuth ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            {showAuth ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
           </button>
-          
+
           <button
             onClick={() => setShowHeaders(!showHeaders)}
-            className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+            className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="h-4 w-4" />
             Headers ({Object.keys(request.headers).length})
-            {showHeaders ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            {showHeaders ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
           </button>
-          
+
           {request.method !== 'GET' && request.method !== 'HEAD' && (
             <button
               onClick={() => setShowBody(!showBody)}
-              className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+              className="flex items-center gap-2 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
             >
-              <Code className="w-4 h-4" />
+              <Code className="h-4 w-4" />
               Body
-              {showBody ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              {showBody ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
             </button>
           )}
         </div>
       </div>
-      
+
       {showAuth && (
-        <div className="p-6 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
-          <h3 className="font-medium text-zinc-900 dark:text-white mb-3">Authorization</h3>
+        <div className="border-b border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-700 dark:bg-zinc-900/50">
+          <h3 className="mb-3 font-medium text-zinc-900 dark:text-white">
+            Authorization
+          </h3>
           <div className="space-y-4">
             <select
               value={request.auth?.type || 'none'}
-              onChange={(e) => onRequestChange({
-                ...request,
-                auth: { ...request.auth, type: e.target.value as any }
-              })}
-              className="w-full px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+              onChange={(e) =>
+                onRequestChange({
+                  ...request,
+                  auth: { ...request.auth, type: e.target.value as any },
+                })
+              }
+              className="w-full rounded border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800"
             >
               <option value="none">No Auth</option>
               <option value="bearer">Bearer Token</option>
               <option value="basic">Basic Auth</option>
               <option value="api-key">API Key</option>
             </select>
-            
+
             {request.auth?.type === 'bearer' && (
               <input
                 type="password"
                 placeholder="Token"
                 value={request.auth.token || ''}
-                onChange={(e) => onRequestChange({
-                  ...request,
-                  auth: { type: 'bearer', ...request.auth, token: e.target.value }
-                })}
-                className="w-full px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                onChange={(e) =>
+                  onRequestChange({
+                    ...request,
+                    auth: {
+                      type: 'bearer',
+                      ...request.auth,
+                      token: e.target.value,
+                    },
+                  })
+                }
+                className="w-full rounded border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800"
               />
             )}
-            
+
             {request.auth?.type === 'basic' && (
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="Username"
                   value={request.auth.username || ''}
-                  onChange={(e) => onRequestChange({
-                    ...request,
-                    auth: { type: 'basic', ...request.auth, username: e.target.value }
-                  })}
-                  className="px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                  onChange={(e) =>
+                    onRequestChange({
+                      ...request,
+                      auth: {
+                        type: 'basic',
+                        ...request.auth,
+                        username: e.target.value,
+                      },
+                    })
+                  }
+                  className="rounded border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800"
                 />
                 <input
                   type="password"
                   placeholder="Password"
                   value={request.auth.password || ''}
-                  onChange={(e) => onRequestChange({
-                    ...request,
-                    auth: { type: 'basic', ...request.auth, password: e.target.value }
-                  })}
-                  className="px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                  onChange={(e) =>
+                    onRequestChange({
+                      ...request,
+                      auth: {
+                        type: 'basic',
+                        ...request.auth,
+                        password: e.target.value,
+                      },
+                    })
+                  }
+                  className="rounded border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800"
                 />
               </div>
             )}
-            
+
             {request.auth?.type === 'api-key' && (
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
                   placeholder="Header Name (e.g., X-API-Key)"
                   value={request.auth.apiKeyHeader || ''}
-                  onChange={(e) => onRequestChange({
-                    ...request,
-                    auth: { type: 'api-key', ...request.auth, apiKeyHeader: e.target.value }
-                  })}
-                  className="px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                  onChange={(e) =>
+                    onRequestChange({
+                      ...request,
+                      auth: {
+                        type: 'api-key',
+                        ...request.auth,
+                        apiKeyHeader: e.target.value,
+                      },
+                    })
+                  }
+                  className="rounded border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800"
                 />
                 <input
                   type="password"
                   placeholder="API Key"
                   value={request.auth.apiKey || ''}
-                  onChange={(e) => onRequestChange({
-                    ...request,
-                    auth: { type: 'api-key', ...request.auth, apiKey: e.target.value }
-                  })}
-                  className="px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                  onChange={(e) =>
+                    onRequestChange({
+                      ...request,
+                      auth: {
+                        type: 'api-key',
+                        ...request.auth,
+                        apiKey: e.target.value,
+                      },
+                    })
+                  }
+                  className="rounded border border-zinc-200 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800"
                 />
               </div>
             )}
           </div>
         </div>
       )}
-      
+
       {showHeaders && (
-        <div className="p-6 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/50">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium text-zinc-900 dark:text-white">Headers</h3>
+        <div className="border-b border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-700 dark:bg-zinc-900/50">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-medium text-zinc-900 dark:text-white">
+              Headers
+            </h3>
             <Button onClick={addHeader} variant="outline" className="text-xs">
-              <Plus className="w-3 h-3 mr-1" />
+              <Plus className="mr-1 h-3 w-3" />
               Add Header
             </Button>
           </div>
-          
+
           <div className="space-y-2">
             {Object.entries(request.headers).map(([key, value], index) => (
               <div key={index} className="flex items-center gap-2">
@@ -331,41 +415,45 @@ function RequestBuilder({
                   placeholder="Header name"
                   value={key}
                   onChange={(e) => updateHeader(key, e.target.value, value)}
-                  className="flex-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm"
+                  className="flex-1 rounded border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
                 />
                 <input
                   type="text"
                   placeholder="Header value"
                   value={value}
                   onChange={(e) => updateHeader(key, key, e.target.value)}
-                  className="flex-1 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm"
+                  className="flex-1 rounded border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
                 />
                 <button
                   onClick={() => removeHeader(key)}
-                  className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                  className="rounded p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             ))}
-            
+
             {Object.keys(request.headers).length === 0 && (
-              <div className="text-center py-4 text-zinc-500">
+              <div className="py-4 text-center text-zinc-500">
                 No headers added
               </div>
             )}
           </div>
         </div>
       )}
-      
+
       {showBody && request.method !== 'GET' && request.method !== 'HEAD' && (
-        <div className="p-6 bg-zinc-50 dark:bg-zinc-900/50">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-medium text-zinc-900 dark:text-white">Request Body</h3>
+        <div className="bg-zinc-50 p-6 dark:bg-zinc-900/50">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-medium text-zinc-900 dark:text-white">
+              Request Body
+            </h3>
             <select
               value={request.bodyType}
-              onChange={(e) => onRequestChange({ ...request, bodyType: e.target.value as any })}
-              className="px-3 py-1 text-sm rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+              onChange={(e) =>
+                onRequestChange({ ...request, bodyType: e.target.value as any })
+              }
+              className="rounded border border-zinc-200 bg-white px-3 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800"
             >
               <option value="none">None</option>
               <option value="json">JSON</option>
@@ -373,17 +461,21 @@ function RequestBuilder({
               <option value="raw">Raw</option>
             </select>
           </div>
-          
+
           {request.bodyType !== 'none' && (
             <textarea
               placeholder={
-                request.bodyType === 'json' ? '{\n  "key": "value"\n}' :
-                request.bodyType === 'form' ? 'key1=value1&key2=value2' :
-                'Raw request body'
+                request.bodyType === 'json'
+                  ? '{\n  "key": "value"\n}'
+                  : request.bodyType === 'form'
+                    ? 'key1=value1&key2=value2'
+                    : 'Raw request body'
               }
               value={request.body || ''}
-              onChange={(e) => onRequestChange({ ...request, body: e.target.value })}
-              className="w-full h-48 px-3 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 font-mono text-sm resize-vertical"
+              onChange={(e) =>
+                onRequestChange({ ...request, body: e.target.value })
+              }
+              className="resize-vertical h-48 w-full rounded border border-zinc-200 bg-white px-3 py-2 font-mono text-sm dark:border-zinc-700 dark:bg-zinc-800"
             />
           )}
         </div>
@@ -393,28 +485,33 @@ function RequestBuilder({
 }
 
 function ResponseViewer({ response }: { response: ApiResponse | null }) {
-  const [activeTab, setActiveTab] = useState<'body' | 'headers' | 'cookies'>('body')
+  const [activeTab, setActiveTab] = useState<'body' | 'headers' | 'cookies'>(
+    'body',
+  )
   const [bodyFormat, setBodyFormat] = useState<'pretty' | 'raw'>('pretty')
-  
+
   if (!response) {
     return (
-      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 h-96 flex items-center justify-center">
+      <div className="flex h-96 items-center justify-center rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
         <div className="text-center text-zinc-500">
-          <Terminal className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <Terminal className="mx-auto mb-3 h-12 w-12 opacity-50" />
           <p>Send a request to see the response</p>
         </div>
       </div>
     )
   }
-  
+
   const getStatusColor = (status: number) => {
-    if (status >= 200 && status < 300) return 'text-green-600 dark:text-green-400'
-    if (status >= 300 && status < 400) return 'text-yellow-600 dark:text-yellow-400'
-    if (status >= 400 && status < 500) return 'text-orange-600 dark:text-orange-400'
+    if (status >= 200 && status < 300)
+      return 'text-green-600 dark:text-green-400'
+    if (status >= 300 && status < 400)
+      return 'text-yellow-600 dark:text-yellow-400'
+    if (status >= 400 && status < 500)
+      return 'text-orange-600 dark:text-orange-400'
     if (status >= 500) return 'text-red-600 dark:text-red-400'
     return 'text-zinc-600 dark:text-zinc-400'
   }
-  
+
   const formatJson = (jsonString: string) => {
     try {
       return JSON.stringify(JSON.parse(jsonString), null, 2)
@@ -422,18 +519,20 @@ function ResponseViewer({ response }: { response: ApiResponse | null }) {
       return jsonString
     }
   }
-  
+
   const formatSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
-  
+
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-6 border-b border-zinc-200 dark:border-zinc-700">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">Response</h2>
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-6 dark:border-zinc-700">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+            Response
+          </h2>
           <div className="flex items-center gap-4 text-sm">
             <span className={`font-medium ${getStatusColor(response.status)}`}>
               {response.status} {response.statusText}
@@ -443,13 +542,13 @@ function ResponseViewer({ response }: { response: ApiResponse | null }) {
             </span>
           </div>
         </div>
-        
-        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-700 rounded-lg p-1 w-fit">
+
+        <div className="flex w-fit items-center gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-700">
           <button
             onClick={() => setActiveTab('body')}
-            className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+            className={`rounded px-3 py-1 text-sm font-medium transition-all ${
               activeTab === 'body'
-                ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-600 dark:text-white'
                 : 'text-zinc-600 dark:text-zinc-400'
             }`}
           >
@@ -457,9 +556,9 @@ function ResponseViewer({ response }: { response: ApiResponse | null }) {
           </button>
           <button
             onClick={() => setActiveTab('headers')}
-            className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+            className={`rounded px-3 py-1 text-sm font-medium transition-all ${
               activeTab === 'headers'
-                ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-600 dark:text-white'
                 : 'text-zinc-600 dark:text-zinc-400'
             }`}
           >
@@ -467,9 +566,9 @@ function ResponseViewer({ response }: { response: ApiResponse | null }) {
           </button>
           <button
             onClick={() => setActiveTab('cookies')}
-            className={`px-3 py-1 rounded text-sm font-medium transition-all ${
+            className={`rounded px-3 py-1 text-sm font-medium transition-all ${
               activeTab === 'cookies'
-                ? 'bg-white dark:bg-zinc-600 text-zinc-900 dark:text-white shadow-sm'
+                ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-600 dark:text-white'
                 : 'text-zinc-600 dark:text-zinc-400'
             }`}
           >
@@ -477,10 +576,10 @@ function ResponseViewer({ response }: { response: ApiResponse | null }) {
           </button>
         </div>
       </div>
-      
+
       {activeTab === 'body' && (
         <div className="p-6">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3 flex items-center justify-between">
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
               Content-Type: {response.headers['content-type'] || 'Unknown'}
             </div>
@@ -490,39 +589,45 @@ function ResponseViewer({ response }: { response: ApiResponse | null }) {
                 variant="outline"
                 className="text-xs"
               >
-                <Copy className="w-3 h-3 mr-1" />
+                <Copy className="mr-1 h-3 w-3" />
                 Copy
               </Button>
               <select
                 value={bodyFormat}
-                onChange={(e) => setBodyFormat(e.target.value as 'pretty' | 'raw')}
-                className="px-2 py-1 text-xs rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
+                onChange={(e) =>
+                  setBodyFormat(e.target.value as 'pretty' | 'raw')
+                }
+                className="rounded border border-zinc-200 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-800"
               >
                 <option value="pretty">Pretty</option>
                 <option value="raw">Raw</option>
               </select>
             </div>
           </div>
-          
-          <div className="bg-zinc-900 text-green-400 rounded-lg p-4 overflow-auto max-h-96">
-            <pre className="text-sm font-mono whitespace-pre-wrap">
-              {bodyFormat === 'pretty' && response.headers['content-type']?.includes('json')
+
+          <div className="max-h-96 overflow-auto rounded-lg bg-zinc-900 p-4 text-green-400">
+            <pre className="font-mono text-sm whitespace-pre-wrap">
+              {bodyFormat === 'pretty' &&
+              response.headers['content-type']?.includes('json')
                 ? formatJson(response.body)
                 : response.body}
             </pre>
           </div>
         </div>
       )}
-      
+
       {activeTab === 'headers' && (
         <div className="p-6">
           <div className="space-y-2">
             {Object.entries(response.headers).map(([key, value]) => (
-              <div key={key} className="flex items-start gap-4 py-2 border-b border-zinc-100 dark:border-zinc-700 last:border-0">
-                <span className="font-medium text-zinc-900 dark:text-white min-w-0 flex-shrink-0 w-32">
+              <div
+                key={key}
+                className="flex items-start gap-4 border-b border-zinc-100 py-2 last:border-0 dark:border-zinc-700"
+              >
+                <span className="w-32 min-w-0 flex-shrink-0 font-medium text-zinc-900 dark:text-white">
                   {key}:
                 </span>
-                <span className="text-zinc-600 dark:text-zinc-400 font-mono text-sm break-all">
+                <span className="font-mono text-sm break-all text-zinc-600 dark:text-zinc-400">
                   {value}
                 </span>
               </div>
@@ -530,11 +635,11 @@ function ResponseViewer({ response }: { response: ApiResponse | null }) {
           </div>
         </div>
       )}
-      
+
       {activeTab === 'cookies' && (
         <div className="p-6">
-          <div className="text-center py-8 text-zinc-500">
-            <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <div className="py-8 text-center text-zinc-500">
+            <Database className="mx-auto mb-2 h-8 w-8 opacity-50" />
             <p>No cookies in response</p>
           </div>
         </div>
@@ -543,19 +648,21 @@ function ResponseViewer({ response }: { response: ApiResponse | null }) {
   )
 }
 
-function CollectionManager({ 
-  collections, 
-  onCollectionSelect, 
+function CollectionManager({
+  collections,
+  onCollectionSelect,
   onRequestSelect,
-  requests 
+  requests,
 }: {
   collections: Collection[]
   onCollectionSelect: (collection: Collection) => void
   onRequestSelect: (request: ApiRequest) => void
   requests: ApiRequest[]
 }) {
-  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set())
-  
+  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
+    new Set(),
+  )
+
   const toggleCollection = (collectionId: string) => {
     const newExpanded = new Set(expandedCollections)
     if (newExpanded.has(collectionId)) {
@@ -565,46 +672,59 @@ function CollectionManager({
     }
     setExpandedCollections(newExpanded)
   }
-  
+
   const getMethodColor = (method: string) => {
     switch (method) {
-      case 'GET': return 'text-green-600 dark:text-green-400'
-      case 'POST': return 'text-blue-600 dark:text-blue-400'
-      case 'PUT': return 'text-yellow-600 dark:text-yellow-400'
-      case 'DELETE': return 'text-red-600 dark:text-red-400'
-      case 'PATCH': return 'text-purple-600 dark:text-purple-400'
-      default: return 'text-zinc-600 dark:text-zinc-400'
+      case 'GET':
+        return 'text-green-600 dark:text-green-400'
+      case 'POST':
+        return 'text-blue-600 dark:text-blue-400'
+      case 'PUT':
+        return 'text-yellow-600 dark:text-yellow-400'
+      case 'DELETE':
+        return 'text-red-600 dark:text-red-400'
+      case 'PATCH':
+        return 'text-purple-600 dark:text-purple-400'
+      default:
+        return 'text-zinc-600 dark:text-zinc-400'
     }
   }
-  
+
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-zinc-900 dark:text-white">Collections</h3>
+          <h3 className="font-semibold text-zinc-900 dark:text-white">
+            Collections
+          </h3>
           <Button variant="outline" className="text-xs">
-            <Plus className="w-3 h-3 mr-1" />
+            <Plus className="mr-1 h-3 w-3" />
             New Collection
           </Button>
         </div>
       </div>
-      
+
       <div className="max-h-96 overflow-y-auto">
-        {collections.map(collection => {
+        {collections.map((collection) => {
           const isExpanded = expandedCollections.has(collection.id)
-          const collectionRequests = requests.filter(r => collection.requests.includes(r.id))
-          
+          const collectionRequests = requests.filter((r) =>
+            collection.requests.includes(r.id),
+          )
+
           return (
-            <div key={collection.id} className="border-b border-zinc-200 dark:border-zinc-700 last:border-0">
+            <div
+              key={collection.id}
+              className="border-b border-zinc-200 last:border-0 dark:border-zinc-700"
+            >
               <button
                 onClick={() => toggleCollection(collection.id)}
-                className="w-full p-4 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-left"
+                className="flex w-full items-center justify-between p-4 text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
               >
                 <div className="flex items-center gap-2">
                   {isExpanded ? (
-                    <FolderOpen className="w-4 h-4 text-blue-500" />
+                    <FolderOpen className="h-4 w-4 text-blue-500" />
                   ) : (
-                    <Folder className="w-4 h-4 text-zinc-500" />
+                    <Folder className="h-4 w-4 text-zinc-500" />
                   )}
                   <span className="font-medium text-zinc-900 dark:text-white">
                     {collection.name}
@@ -614,21 +734,23 @@ function CollectionManager({
                   </span>
                 </div>
                 {isExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-zinc-500" />
+                  <ChevronDown className="h-4 w-4 text-zinc-500" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 text-zinc-500" />
+                  <ChevronRight className="h-4 w-4 text-zinc-500" />
                 )}
               </button>
-              
+
               {isExpanded && (
                 <div className="pb-2">
-                  {collectionRequests.map(request => (
+                  {collectionRequests.map((request) => (
                     <button
                       key={request.id}
                       onClick={() => onRequestSelect(request)}
-                      className="w-full p-3 pl-12 flex items-center gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-left"
+                      className="flex w-full items-center gap-2 p-3 pl-12 text-left hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
                     >
-                      <span className={`text-xs font-medium ${getMethodColor(request.method)}`}>
+                      <span
+                        className={`text-xs font-medium ${getMethodColor(request.method)}`}
+                      >
                         {request.method}
                       </span>
                       <span className="text-sm text-zinc-900 dark:text-white">
@@ -636,7 +758,7 @@ function CollectionManager({
                       </span>
                     </button>
                   ))}
-                  
+
                   {collectionRequests.length === 0 && (
                     <div className="p-3 pl-12 text-sm text-zinc-500">
                       No requests in this collection
@@ -647,10 +769,10 @@ function CollectionManager({
             </div>
           )
         })}
-        
+
         {collections.length === 0 && (
           <div className="p-8 text-center text-zinc-500">
-            <Folder className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <Folder className="mx-auto mb-2 h-8 w-8 opacity-50" />
             <p>No collections created</p>
           </div>
         )}
@@ -659,70 +781,81 @@ function CollectionManager({
   )
 }
 
-function RequestHistory({ 
-  history, 
-  onRequestSelect 
+function RequestHistory({
+  history,
+  onRequestSelect,
 }: {
   history: ApiRequest[]
   onRequestSelect: (request: ApiRequest) => void
 }) {
   const [searchQuery, setSearchQuery] = useState('')
-  
-  const filteredHistory = history.filter(request =>
-    request.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    request.method.toLowerCase().includes(searchQuery.toLowerCase())
+
+  const filteredHistory = history.filter(
+    (request) =>
+      request.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.url.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.method.toLowerCase().includes(searchQuery.toLowerCase()),
   )
-  
+
   const getMethodColor = (method: string) => {
     switch (method) {
-      case 'GET': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-      case 'POST': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-      case 'PUT': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-      case 'DELETE': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-      case 'PATCH': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+      case 'GET':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+      case 'POST':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+      case 'PUT':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+      case 'DELETE':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+      case 'PATCH':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
     }
   }
-  
+
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-zinc-900 dark:text-white">Request History</h3>
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="font-semibold text-zinc-900 dark:text-white">
+            Request History
+          </h3>
           <Button variant="outline" className="text-xs">
-            <Trash2 className="w-3 h-3 mr-1" />
+            <Trash2 className="mr-1 h-3 w-3" />
             Clear
           </Button>
         </div>
-        
+
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input
             type="text"
             placeholder="Search history..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm"
+            className="w-full rounded border border-zinc-200 bg-white py-2 pr-4 pl-10 text-sm dark:border-zinc-700 dark:bg-zinc-800"
           />
         </div>
       </div>
-      
+
       <div className="max-h-96 overflow-y-auto">
-        {filteredHistory.map(request => (
+        {filteredHistory.map((request) => (
           <button
             key={request.id}
             onClick={() => onRequestSelect(request)}
-            className="w-full p-4 flex items-center gap-3 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 text-left border-b border-zinc-200 dark:border-zinc-700 last:border-0"
+            className="flex w-full items-center gap-3 border-b border-zinc-200 p-4 text-left last:border-0 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-700/50"
           >
-            <span className={`px-2 py-1 rounded text-xs font-medium ${getMethodColor(request.method)}`}>
+            <span
+              className={`rounded px-2 py-1 text-xs font-medium ${getMethodColor(request.method)}`}
+            >
               {request.method}
             </span>
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-zinc-900 dark:text-white truncate">
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-medium text-zinc-900 dark:text-white">
                 {request.name}
               </div>
-              <div className="text-sm text-zinc-500 truncate">
+              <div className="truncate text-sm text-zinc-500">
                 {request.url}
               </div>
             </div>
@@ -731,10 +864,10 @@ function RequestHistory({
             </div>
           </button>
         ))}
-        
+
         {filteredHistory.length === 0 && (
           <div className="p-8 text-center text-zinc-500">
-            <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <History className="mx-auto mb-2 h-8 w-8 opacity-50" />
             <p>{searchQuery ? 'No matching requests' : 'No request history'}</p>
           </div>
         )}
@@ -743,60 +876,71 @@ function RequestHistory({
   )
 }
 
-function EnvironmentManager({ 
-  environments, 
-  onEnvironmentUpdate 
+function EnvironmentManager({
+  environments,
+  onEnvironmentUpdate,
 }: {
   environments: Environment[]
   onEnvironmentUpdate: (environments: Environment[]) => void
 }) {
   const [selectedEnv, setSelectedEnv] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  
+
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-zinc-900 dark:text-white">Environments</h3>
-          <Button onClick={() => setIsCreating(true)} variant="outline" className="text-xs">
-            <Plus className="w-3 h-3 mr-1" />
+          <h3 className="font-semibold text-zinc-900 dark:text-white">
+            Environments
+          </h3>
+          <Button
+            onClick={() => setIsCreating(true)}
+            variant="outline"
+            className="text-xs"
+          >
+            <Plus className="mr-1 h-3 w-3" />
             New Environment
           </Button>
         </div>
       </div>
-      
+
       <div className="p-4">
-        {environments.map(env => (
-          <div key={env.id} className="mb-4 p-3 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-zinc-900 dark:text-white">{env.name}</h4>
+        {environments.map((env) => (
+          <div
+            key={env.id}
+            className="mb-4 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="font-medium text-zinc-900 dark:text-white">
+                {env.name}
+              </h4>
               <div className="flex items-center gap-2">
                 <Button variant="outline" className="text-xs">
-                  <Edit className="w-3 h-3 mr-1" />
+                  <Edit className="mr-1 h-3 w-3" />
                   Edit
                 </Button>
                 <Button variant="outline" className="text-xs">
-                  <Trash2 className="w-3 h-3 mr-1" />
+                  <Trash2 className="mr-1 h-3 w-3" />
                   Delete
                 </Button>
               </div>
             </div>
-            
+
             {env.baseUrl && (
-              <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
+              <div className="mb-2 text-sm text-zinc-600 dark:text-zinc-400">
                 Base URL: {env.baseUrl}
               </div>
             )}
-            
+
             <div className="text-xs text-zinc-500">
               {Object.keys(env.variables).length} variables
             </div>
           </div>
         ))}
-        
+
         {environments.length === 0 && (
-          <div className="text-center py-8 text-zinc-500">
-            <Globe className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <div className="py-8 text-center text-zinc-500">
+            <Globe className="mx-auto mb-2 h-8 w-8 opacity-50" />
             <p>No environments configured</p>
           </div>
         )}
@@ -812,19 +956,23 @@ export default function ApiExplorerPage() {
     method: 'GET',
     url: '',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
     bodyType: 'json',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   })
-  
-  const [currentResponse, setCurrentResponse] = useState<ApiResponse | null>(null)
+
+  const [currentResponse, setCurrentResponse] = useState<ApiResponse | null>(
+    null,
+  )
   const [collections, setCollections] = useState<Collection[]>([])
   const [requestHistory, setRequestHistory] = useState<ApiRequest[]>([])
   const [environments, setEnvironments] = useState<Environment[]>([])
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'collections' | 'history' | 'environments' | 'docs'>('collections')
-  
+  const [activeTab, setActiveTab] = useState<
+    'collections' | 'history' | 'environments' | 'docs'
+  >('collections')
+
   useEffect(() => {
     // Load mock data
     const mockCollections: Collection[] = [
@@ -834,7 +982,7 @@ export default function ApiExplorerPage() {
         description: 'User management endpoints',
         requests: ['req1', 'req2'],
         variables: { baseUrl: 'https://api.example.com' },
-        baseUrl: 'https://api.example.com'
+        baseUrl: 'https://api.example.com',
       },
       {
         id: '2',
@@ -842,19 +990,19 @@ export default function ApiExplorerPage() {
         description: 'Authentication endpoints',
         requests: ['req3'],
         variables: { baseUrl: 'https://auth.example.com' },
-        baseUrl: 'https://auth.example.com'
-      }
+        baseUrl: 'https://auth.example.com',
+      },
     ]
-    
+
     const mockHistory: ApiRequest[] = [
       {
         id: 'req1',
         name: 'Get Users',
         method: 'GET',
         url: 'https://api.example.com/users',
-        headers: { 'Authorization': 'Bearer token123' },
+        headers: { Authorization: 'Bearer token123' },
         bodyType: 'none',
-        timestamp: '2024-01-15T10:30:00Z'
+        timestamp: '2024-01-15T10:30:00Z',
       },
       {
         id: 'req2',
@@ -864,7 +1012,7 @@ export default function ApiExplorerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: '{"name": "John Doe", "email": "john@example.com"}',
         bodyType: 'json',
-        timestamp: '2024-01-15T10:25:00Z'
+        timestamp: '2024-01-15T10:25:00Z',
       },
       {
         id: 'req3',
@@ -874,42 +1022,42 @@ export default function ApiExplorerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: '{"username": "admin", "password": "password"}',
         bodyType: 'json',
-        timestamp: '2024-01-15T10:20:00Z'
-      }
+        timestamp: '2024-01-15T10:20:00Z',
+      },
     ]
-    
+
     const mockEnvironments: Environment[] = [
       {
         id: '1',
         name: 'Development',
         variables: {
           baseUrl: 'http://localhost:3000',
-          apiKey: 'dev-key-123'
+          apiKey: 'dev-key-123',
         },
-        baseUrl: 'http://localhost:3000'
+        baseUrl: 'http://localhost:3000',
       },
       {
         id: '2',
         name: 'Production',
         variables: {
           baseUrl: 'https://api.example.com',
-          apiKey: 'prod-key-456'
+          apiKey: 'prod-key-456',
         },
-        baseUrl: 'https://api.example.com'
-      }
+        baseUrl: 'https://api.example.com',
+      },
     ]
-    
+
     setCollections(mockCollections)
     setRequestHistory(mockHistory)
     setEnvironments(mockEnvironments)
   }, [])
-  
+
   const handleSendRequest = async (request: ApiRequest) => {
     setLoading(true)
-    
+
     // Simulate API request
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
     // Mock response
     const mockResponse: ApiResponse = {
       status: 200,
@@ -917,117 +1065,127 @@ export default function ApiExplorerPage() {
       headers: {
         'content-type': 'application/json',
         'content-length': '156',
-        'server': 'nginx/1.18.0',
-        'date': new Date().toISOString()
+        server: 'nginx/1.18.0',
+        date: new Date().toISOString(),
       },
-      body: JSON.stringify({
-        success: true,
-        data: {
-          users: [
-            { id: 1, name: 'John Doe', email: 'john@example.com' },
-            { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
-          ]
+      body: JSON.stringify(
+        {
+          success: true,
+          data: {
+            users: [
+              { id: 1, name: 'John Doe', email: 'john@example.com' },
+              { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
+            ],
+          },
+          meta: {
+            total: 2,
+            page: 1,
+            limit: 10,
+          },
         },
-        meta: {
-          total: 2,
-          page: 1,
-          limit: 10
-        }
-      }, null, 2),
+        null,
+        2,
+      ),
       size: 156,
       time: 245,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     }
-    
+
     setCurrentResponse(mockResponse)
-    
+
     // Add to history
-    const requestWithId = { ...request, id: Date.now().toString(), timestamp: new Date().toISOString() }
-    setRequestHistory(prev => [requestWithId, ...prev.slice(0, 19)]) // Keep last 20
-    
+    const requestWithId = {
+      ...request,
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+    }
+    setRequestHistory((prev) => [requestWithId, ...prev.slice(0, 19)]) // Keep last 20
+
     setLoading(false)
   }
-  
+
   const handleRequestSelect = (request: ApiRequest) => {
     setCurrentRequest({ ...request, id: Date.now().toString() })
   }
-  
+
   const handleSaveRequest = () => {
     // Save request logic would go here
   }
-  
+
   return (
     <>
       <HeroPattern />
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">API Explorer</h1>
-              <p className="text-zinc-600 dark:text-zinc-400 mt-1">
+              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
+                API Explorer
+              </h1>
+              <p className="mt-1 text-zinc-600 dark:text-zinc-400">
                 Test and explore REST APIs with an intuitive interface
               </p>
             </div>
             <div className="flex items-center gap-2">
               <Button onClick={handleSaveRequest} variant="outline">
-                <Save className="w-4 h-4 mr-2" />
+                <Save className="mr-2 h-4 w-4" />
                 Save Request
               </Button>
               <Button variant="outline">
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="mr-2 h-4 w-4" />
                 Export Collection
               </Button>
             </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-12 gap-6">
           {/* Sidebar */}
           <div className="col-span-12 lg:col-span-3">
-            <div className="space-y-4 sticky top-6">
-              <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700">
+            <div className="sticky top-6 space-y-4">
+              <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
                 <button
                   onClick={() => setActiveTab('collections')}
-                  className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all ${
+                  className={`flex-1 rounded px-3 py-2 text-sm font-medium transition-all ${
                     activeTab === 'collections'
                       ? 'bg-blue-500 text-white'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                      : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700'
                   }`}
                 >
-                  <Folder className="w-4 h-4 mx-auto" />
+                  <Folder className="mx-auto h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setActiveTab('history')}
-                  className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all ${
+                  className={`flex-1 rounded px-3 py-2 text-sm font-medium transition-all ${
                     activeTab === 'history'
                       ? 'bg-blue-500 text-white'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                      : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700'
                   }`}
                 >
-                  <History className="w-4 h-4 mx-auto" />
+                  <History className="mx-auto h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setActiveTab('environments')}
-                  className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all ${
+                  className={`flex-1 rounded px-3 py-2 text-sm font-medium transition-all ${
                     activeTab === 'environments'
                       ? 'bg-blue-500 text-white'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                      : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700'
                   }`}
                 >
-                  <Globe className="w-4 h-4 mx-auto" />
+                  <Globe className="mx-auto h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setActiveTab('docs')}
-                  className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all ${
+                  className={`flex-1 rounded px-3 py-2 text-sm font-medium transition-all ${
                     activeTab === 'docs'
                       ? 'bg-blue-500 text-white'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700'
+                      : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700'
                   }`}
                 >
-                  <FileText className="w-4 h-4 mx-auto" />
+                  <FileText className="mx-auto h-4 w-4" />
                 </button>
               </div>
-              
+
               {activeTab === 'collections' && (
                 <CollectionManager
                   collections={collections}
@@ -1039,29 +1197,31 @@ export default function ApiExplorerPage() {
                   requests={requestHistory}
                 />
               )}
-              
+
               {activeTab === 'history' && (
                 <RequestHistory
                   history={requestHistory}
                   onRequestSelect={handleRequestSelect}
                 />
               )}
-              
+
               {activeTab === 'environments' && (
                 <EnvironmentManager
                   environments={environments}
                   onEnvironmentUpdate={setEnvironments}
                 />
               )}
-              
+
               {activeTab === 'docs' && (
-                <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-                  <h3 className="font-semibold text-zinc-900 dark:text-white mb-4">API Documentation</h3>
-                  <div className="text-center py-8 text-zinc-500">
-                    <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+                  <h3 className="mb-4 font-semibold text-zinc-900 dark:text-white">
+                    API Documentation
+                  </h3>
+                  <div className="py-8 text-center text-zinc-500">
+                    <FileText className="mx-auto mb-2 h-8 w-8 opacity-50" />
                     <p>Import OpenAPI spec to view documentation</p>
                     <Button variant="outline" className="mt-3 text-xs">
-                      <Upload className="w-3 h-3 mr-1" />
+                      <Upload className="mr-1 h-3 w-3" />
                       Import Spec
                     </Button>
                   </div>
@@ -1069,7 +1229,7 @@ export default function ApiExplorerPage() {
               )}
             </div>
           </div>
-          
+
           {/* Main Content */}
           <div className="col-span-12 lg:col-span-9">
             <div className="space-y-6">
@@ -1079,16 +1239,18 @@ export default function ApiExplorerPage() {
                 onSendRequest={handleSendRequest}
                 environments={environments}
               />
-              
+
               {loading && (
-                <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
+                <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
                   <div className="flex items-center justify-center">
-                    <RefreshCw className="w-6 h-6 text-blue-500 animate-spin mr-3" />
-                    <span className="text-zinc-600 dark:text-zinc-400">Sending request...</span>
+                    <RefreshCw className="mr-3 h-6 w-6 animate-spin text-blue-500" />
+                    <span className="text-zinc-600 dark:text-zinc-400">
+                      Sending request...
+                    </span>
                   </div>
                 </div>
               )}
-              
+
               <ResponseViewer response={currentResponse} />
             </div>
           </div>

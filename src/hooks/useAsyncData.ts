@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface UseAsyncDataOptions {
   /**
@@ -6,13 +6,13 @@ interface UseAsyncDataOptions {
    * @default true
    */
   fetchOnMount?: boolean
-  
+
   /**
    * Polling interval in milliseconds
    * @default undefined (no polling)
    */
   pollingInterval?: number
-  
+
   /**
    * Dependencies that trigger a refetch when changed
    * @default []
@@ -29,7 +29,7 @@ interface UseAsyncDataResult<T> {
 
 /**
  * Hook for async data fetching that doesn't block page rendering
- * 
+ *
  * PRINCIPLES:
  * 1. Never blocks initial render
  * 2. Handles loading/error states
@@ -38,37 +38,33 @@ interface UseAsyncDataResult<T> {
  */
 export function useAsyncData<T>(
   fetcher: () => Promise<T>,
-  options: UseAsyncDataOptions = {}
+  options: UseAsyncDataOptions = {},
 ): UseAsyncDataResult<T> {
-  const {
-    fetchOnMount = true,
-    pollingInterval,
-    dependencies = []
-  } = options
-  
+  const { fetchOnMount = true, pollingInterval, dependencies = [] } = options
+
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   const abortControllerRef = useRef<AbortController | null>(null)
   const isMountedRef = useRef(true)
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  
+
   const fetchData = async () => {
     // Cancel any pending request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
     }
-    
+
     // Create new abort controller
     abortControllerRef.current = new AbortController()
-    
+
     setLoading(true)
     setError(null)
-    
+
     try {
       const result = await fetcher()
-      
+
       // Only update if component is still mounted
       if (isMountedRef.current) {
         setData(result)
@@ -79,7 +75,7 @@ export function useAsyncData<T>(
       if (err instanceof Error && err.name === 'AbortError') {
         return
       }
-      
+
       // Handle other errors
       if (isMountedRef.current) {
         setError(err instanceof Error ? err.message : 'An error occurred')
@@ -87,13 +83,13 @@ export function useAsyncData<T>(
       }
     }
   }
-  
+
   // Fetch on mount if enabled
   useEffect(() => {
     if (fetchOnMount) {
       fetchData()
     }
-    
+
     return () => {
       isMountedRef.current = false
       if (abortControllerRef.current) {
@@ -101,14 +97,14 @@ export function useAsyncData<T>(
       }
     }
   }, []) // eslint-disable-line
-  
+
   // Refetch when dependencies change
   useEffect(() => {
     if (dependencies.length > 0 && !loading) {
       fetchData()
     }
   }, dependencies) // eslint-disable-line
-  
+
   // Set up polling if enabled
   useEffect(() => {
     if (pollingInterval && pollingInterval > 0) {
@@ -117,7 +113,7 @@ export function useAsyncData<T>(
           fetchData()
         }
       }, pollingInterval)
-      
+
       return () => {
         if (pollingIntervalRef.current) {
           clearInterval(pollingIntervalRef.current)
@@ -125,12 +121,12 @@ export function useAsyncData<T>(
       }
     }
   }, [pollingInterval]) // eslint-disable-line
-  
+
   return {
     data,
     loading,
     error,
-    refetch: fetchData
+    refetch: fetchData,
   }
 }
 
@@ -138,10 +134,7 @@ export function useAsyncData<T>(
  * Hook for subscribing to the central data store
  * Returns data immediately if available, never blocks
  */
-export function useStoreData<T>(
-  selector: () => T,
-  defaultValue: T
-): T {
+export function useStoreData<T>(selector: () => T, defaultValue: T): T {
   const [data, setData] = useState<T>(() => {
     try {
       return selector() || defaultValue
@@ -149,7 +142,7 @@ export function useStoreData<T>(
       return defaultValue
     }
   })
-  
+
   useEffect(() => {
     // Subscribe to store changes
     const interval = setInterval(() => {
@@ -162,9 +155,9 @@ export function useStoreData<T>(
         // Ignore errors
       }
     }, 100) // Check every 100ms for changes
-    
+
     return () => clearInterval(interval)
   }, []) // eslint-disable-line
-  
+
   return data
 }

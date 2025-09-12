@@ -1,11 +1,10 @@
 'use client'
 
-import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
-import clsx from 'clsx'
-import { usePathname, useRouter } from 'next/navigation'
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
-import { useMobileNavigationStore } from './MobileNavigation'
 import { navigation } from '@/lib/navigation'
+import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useMobileNavigationStore } from './MobileNavigation'
 
 type SearchResult = {
   title: string
@@ -14,12 +13,12 @@ type SearchResult = {
 }
 
 // Generate search results from navigation structure
-const allSearchResults: SearchResult[] = navigation.flatMap(group => 
-  group.links.map(link => ({
+const allSearchResults: SearchResult[] = navigation.flatMap((group) =>
+  group.links.map((link) => ({
     title: `${link.title}`,
     url: link.href,
-    description: `${group.title} > ${link.title}`
-  }))
+    description: `${group.title} > ${link.title}`,
+  })),
 )
 
 export function Search() {
@@ -52,7 +51,7 @@ export function Search() {
       const filtered = allSearchResults.filter(
         (result) =>
           result.title.toLowerCase().includes(query.toLowerCase()) ||
-          result.description?.toLowerCase().includes(query.toLowerCase())
+          result.description?.toLowerCase().includes(query.toLowerCase()),
       )
       setResults(filtered.slice(0, 10)) // Limit to 10 results
     } else {
@@ -66,30 +65,33 @@ export function Search() {
     setResults([])
   }, [])
 
-  const handleSelect = useCallback((url: string) => {
-    router.push(url)
-    handleClose()
-  }, [router, handleClose])
+  const handleSelect = useCallback(
+    (url: string) => {
+      router.push(url)
+      handleClose()
+    },
+    [router, handleClose],
+  )
 
   return (
     <>
       <button
         type="button"
-        className="group flex h-6 w-6 items-center justify-center sm:justify-start md:h-auto md:w-72 md:flex-none md:rounded-lg md:py-2.5 md:pl-4 md:pr-3.5 md:text-sm md:ring-1 md:ring-zinc-200 md:hover:ring-zinc-300 dark:md:bg-zinc-800/75 dark:md:ring-inset dark:md:ring-white/5 dark:md:hover:bg-zinc-700/40 dark:md:hover:ring-zinc-500 lg:w-96"
+        className="group flex h-6 w-6 items-center justify-center sm:justify-start md:h-auto md:w-72 md:flex-none md:rounded-lg md:py-2.5 md:pr-3.5 md:pl-4 md:text-sm md:ring-1 md:ring-zinc-200 md:hover:ring-zinc-300 lg:w-96 dark:md:bg-zinc-800/75 dark:md:ring-white/5 dark:md:ring-inset dark:md:hover:bg-zinc-700/40 dark:md:hover:ring-zinc-500"
         onClick={() => setIsOpen(true)}
       >
         <svg
           viewBox="0 0 20 20"
           fill="none"
           aria-hidden="true"
-          className="h-5 w-5 flex-none fill-zinc-400 group-hover:fill-zinc-500 dark:fill-zinc-500 md:group-hover:fill-zinc-400"
+          className="h-5 w-5 flex-none fill-zinc-400 group-hover:fill-zinc-500 md:group-hover:fill-zinc-400 dark:fill-zinc-500"
         >
           <path d="M12.01 12a4.25 4.25 0 1 0-6.02 0l-3.197 3.197a1.5 1.5 0 0 0-.003 2.118 1.5 1.5 0 0 0 2.121.003L8.01 14.217A4.21 4.21 0 0 0 12.01 12Zm-3.507-1.493a2.25 2.25 0 1 1 0-4.5 2.25 2.25 0 0 1 0 4.5Z" />
         </svg>
-        <span className="sr-only sm:not-sr-only sm:ml-2 sm:text-zinc-500 sm:dark:text-zinc-400 md:hidden lg:inline-block">
+        <span className="sr-only sm:not-sr-only sm:ml-2 sm:text-zinc-500 md:hidden lg:inline-block sm:dark:text-zinc-400">
           Search
         </span>
-        <kbd className="ml-auto hidden font-medium text-zinc-400 dark:text-zinc-500 md:block">
+        <kbd className="ml-auto hidden font-medium text-zinc-400 md:block dark:text-zinc-500">
           <kbd className="font-sans">⌘</kbd>
           <kbd className="font-sans">K</kbd>
         </kbd>
@@ -108,7 +110,7 @@ export function Search() {
                 viewBox="0 0 20 20"
                 fill="none"
                 aria-hidden="true"
-                className="pointer-events-none absolute left-4 top-3.5 h-5 w-5 fill-zinc-400 dark:fill-zinc-500"
+                className="pointer-events-none absolute top-3.5 left-4 h-5 w-5 fill-zinc-400 dark:fill-zinc-500"
               >
                 <path d="M12.01 12a4.25 4.25 0 1 0-6.02 0l-3.197 3.197a1.5 1.5 0 0 0-.003 2.118 1.5 1.5 0 0 0 2.121.003L8.01 14.217A4.21 4.21 0 0 0 12.01 12Zm-3.507-1.493a2.25 2.25 0 1 1 0-4.5 2.25 2.25 0 0 1 0 4.5Z" />
               </svg>
@@ -118,7 +120,7 @@ export function Search() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search..."
-                className="h-12 w-full border-0 bg-transparent pl-11 pr-4 text-zinc-800 placeholder:text-zinc-400 focus:outline-none dark:text-white dark:placeholder:text-zinc-500 sm:text-sm"
+                className="h-12 w-full border-0 bg-transparent pr-4 pl-11 text-zinc-800 placeholder:text-zinc-400 focus:outline-none sm:text-sm dark:text-white dark:placeholder:text-zinc-500"
                 autoFocus
               />
             </div>
@@ -176,7 +178,12 @@ export function MobileSearch() {
         aria-label="Search"
         onClick={() => setIsOpen(true)}
       >
-        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-5 w-5 stroke-zinc-900 dark:stroke-white">
+        <svg
+          viewBox="0 0 20 20"
+          fill="none"
+          aria-hidden="true"
+          className="h-5 w-5 stroke-zinc-900 dark:stroke-white"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -191,7 +198,7 @@ export function MobileSearch() {
           className="fixed inset-0 z-50 lg:hidden"
         >
           <DialogBackdrop className="fixed inset-0 bg-black/20 backdrop-blur-sm dark:bg-zinc-900/80" />
-          <DialogPanel className="fixed inset-0 z-50 overflow-y-auto bg-white px-4 pb-4 pt-20 dark:bg-zinc-900">
+          <DialogPanel className="fixed inset-0 z-50 overflow-y-auto bg-white px-4 pt-20 pb-4 dark:bg-zinc-900">
             <Search />
           </DialogPanel>
         </Dialog>

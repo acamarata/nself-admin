@@ -1,19 +1,18 @@
 'use client'
 
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import clsx from 'clsx'
 import { AnimatePresence, motion, useIsPresent } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useRef, useState, useEffect } from 'react'
-import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
+import { useEffect, useRef, useState } from 'react'
 
-import { Button } from '@/components/Button'
 import { useIsInsideMobileNavigation } from '@/components/MobileNavigation'
 import { useSectionStore } from '@/components/SectionProvider'
 import { Tag } from '@/components/Tag'
+import { navigation, type NavGroup } from '@/lib/navigation'
 import { remToPx } from '@/lib/remToPx'
 import { CloseButton } from '@headlessui/react'
-import { navigation, type NavGroup } from '@/lib/navigation'
 
 function useInitialValue<T>(value: T, condition = true) {
   let initialValue = useRef(value).current
@@ -58,7 +57,7 @@ function NavLink({
       href={href}
       aria-current={active ? 'page' : undefined}
       className={clsx(
-        'flex justify-between gap-2 py-1 pl-7 pr-3 text-sm transition',
+        'flex justify-between gap-2 py-1 pr-3 pl-7 text-sm transition',
         isAnchorLink ? 'pl-7' : 'pl-4',
         active
           ? 'text-zinc-900 dark:text-white'
@@ -101,9 +100,7 @@ function VisibleSectionHighlight({
   let height = isPresent
     ? Math.max(1, visibleSections.length) * itemHeight
     : itemHeight
-  let activePageIndex = group.links.findIndex(
-    (link) => link.href === pathname,
-  )
+  let activePageIndex = group.links.findIndex((link) => link.href === pathname)
   let top =
     activePageIndex !== -1
       ? activePageIndex * itemHeight
@@ -130,9 +127,7 @@ function ActivePageMarker({
 }) {
   let itemHeight = remToPx(2)
   let offset = remToPx(0.25)
-  let activePageIndex = group.links.findIndex(
-    (link) => link.href === pathname,
-  )
+  let activePageIndex = group.links.findIndex((link) => link.href === pathname)
   let top = offset + activePageIndex * itemHeight
 
   return (
@@ -159,13 +154,13 @@ function NavigationGroup({
     [usePathname(), useSectionStore((s) => s.sections)],
     isInsideMobileNavigation,
   )
-  
+
   let isActiveGroup =
     group.links.findIndex((link) => link.href === pathname) !== -1
-  
+
   // Store collapsed state in localStorage
   const [isCollapsed, setIsCollapsed] = useState(false)
-  
+
   useEffect(() => {
     // If this group contains the active page, expand it by default
     if (isActiveGroup) {
@@ -181,7 +176,7 @@ function NavigationGroup({
       }
     }
   }, [group.title, isActiveGroup, pathname])
-  
+
   const toggleCollapsed = () => {
     const newState = !isCollapsed
     setIsCollapsed(newState)
@@ -192,7 +187,7 @@ function NavigationGroup({
     <li className={clsx('relative mt-6', className)}>
       <button
         onClick={toggleCollapsed}
-        className="flex w-full items-center justify-between text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+        className="flex w-full items-center justify-between text-sm font-semibold text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
       >
         <span>{group.title}</span>
         {isCollapsed ? (
@@ -220,7 +215,11 @@ function NavigationGroup({
                 className="border-l border-zinc-200 dark:border-zinc-800"
               >
                 {group.links.map((link) => (
-                  <motion.li key={link.href} layout="position" className="relative">
+                  <motion.li
+                    key={link.href}
+                    layout="position"
+                    className="relative"
+                  >
                     <NavLink href={link.href} active={link.href === pathname}>
                       {link.title}
                     </NavLink>
@@ -262,7 +261,6 @@ function NavigationGroup({
     </li>
   )
 }
-
 
 export function Navigation(props: React.ComponentPropsWithoutRef<'nav'>) {
   return (

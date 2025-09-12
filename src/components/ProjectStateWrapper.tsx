@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { Loader2 } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 interface ProjectStatus {
   success: boolean
@@ -41,10 +41,10 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
       setLoading(false)
       return
     }
-    
+
     // Check if we've previously confirmed the project is set up
     const projectSetupConfirmed = localStorage.getItem(PROJECT_SETUP_KEY)
-    
+
     if (projectSetupConfirmed === 'true' && !pathname.startsWith('/init')) {
       // Skip initial loading spinner, go straight to the app
       // but still check project status silently in the background
@@ -66,30 +66,43 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
   const checkProjectStatus = async () => {
     try {
       const response = await fetch('/api/project/status')
-      
+
       // Skip processing if we get a 401 (not authenticated)
       if (response.status === 401) {
         setLoading(false)
         return
       }
-      
+
       const status = await response.json()
       setProjectStatus(status)
-      
+
       // If project is properly set up, remember this
-      if (status.success && !status.needsSetup && (status.projectState === 'configured' || status.projectState === 'running')) {
+      if (
+        status.success &&
+        !status.needsSetup &&
+        (status.projectState === 'configured' ||
+          status.projectState === 'running')
+      ) {
         localStorage.setItem(PROJECT_SETUP_KEY, 'true')
       }
-      
+
       // Only redirect if we're not already on init page and project needs setup
-      if (status.success && status.needsSetup && !pathname.startsWith('/init')) {
+      if (
+        status.success &&
+        status.needsSetup &&
+        !pathname.startsWith('/init')
+      ) {
         localStorage.removeItem(PROJECT_SETUP_KEY) // Clear cached status
         router.push('/init')
         return
       }
-      
+
       // If project is set up but we're on init page, redirect appropriately
-      if (status.success && !status.needsSetup && pathname.startsWith('/init')) {
+      if (
+        status.success &&
+        !status.needsSetup &&
+        pathname.startsWith('/init')
+      ) {
         // If has docker-compose but no containers, go to /start
         if (status.hasDockerCompose && status.containerCount === 0) {
           router.push('/start')
@@ -98,7 +111,6 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
         }
         return
       }
-      
     } catch (error) {
       localStorage.removeItem(PROJECT_SETUP_KEY) // Clear cached status on error
       // On error, assume setup is needed unless we're already on init page
@@ -113,28 +125,36 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
   const checkProjectStatusSilently = async () => {
     try {
       const response = await fetch('/api/project/status')
-      
+
       // Skip processing if we get a 401 (not authenticated)
       if (response.status === 401) {
         return
       }
-      
+
       const status = await response.json()
       setProjectStatus(status)
-      
+
       // If project is no longer set up, clear cache and redirect appropriately
       // But don't redirect if we're already on an init page
-      if (status.success && status.needsSetup && !pathname.startsWith('/init')) {
+      if (
+        status.success &&
+        status.needsSetup &&
+        !pathname.startsWith('/init')
+      ) {
         localStorage.removeItem(PROJECT_SETUP_KEY)
         router.push('/init')
         return
       }
-      
+
       // Refresh cache if project is still properly set up
-      if (status.success && !status.needsSetup && (status.projectState === 'configured' || status.projectState === 'running')) {
+      if (
+        status.success &&
+        !status.needsSetup &&
+        (status.projectState === 'configured' ||
+          status.projectState === 'running')
+      ) {
         localStorage.setItem(PROJECT_SETUP_KEY, 'true')
       }
-      
     } catch (error) {
       // On silent check failure, clear cache but don't redirect immediately
       localStorage.removeItem(PROJECT_SETUP_KEY)
@@ -146,7 +166,7 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-zinc-950">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
         </div>
       </div>
     )
@@ -163,7 +183,7 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-zinc-950">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
         </div>
       </div>
     )

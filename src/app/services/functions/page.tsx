@@ -3,10 +3,5 @@
 import { PageTemplate } from '@/components/PageTemplate'
 
 export default function Page() {
-  return (
-    <PageTemplate 
-     
-      description="Manage serverless functions"
-    />
-  )
+  return <PageTemplate description="Manage serverless functions" />
 }

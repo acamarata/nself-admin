@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 interface UrlInputProps {
   value: string
@@ -10,7 +10,7 @@ interface UrlInputProps {
   baseDomain: string
   placeholder?: string
   required?: boolean
-  requireSubdomain?: boolean  // For remote schemas that need subdomains in prod
+  requireSubdomain?: boolean // For remote schemas that need subdomains in prod
   className?: string
 }
 
@@ -23,27 +23,27 @@ export function UrlInput({
   placeholder,
   required = false,
   requireSubdomain = false,
-  className = ''
+  className = '',
 }: UrlInputProps) {
   const [error, setError] = useState<string | undefined>()
   const [isFocused, setIsFocused] = useState(false)
 
   const validateUrl = (val: string): string | undefined => {
     if (!val) return required ? 'Required' : undefined
-    
+
     // Check for invalid characters
     const cleanValue = val.replace(/[^a-z0-9.\-]/g, '')
     if (cleanValue !== val) {
       return 'Contains invalid characters'
     }
-    
+
     const isDev = environment === 'development' || environment === 'dev'
-    
+
     if (isDev) {
       // Dev: allow subdomains (can have dots for multi-level like api.test)
       // but NOT full domains with TLDs
       const segments = val.split('.')
-      
+
       // Check each segment
       for (const segment of segments) {
         if (!segment) {
@@ -54,12 +54,31 @@ export function UrlInput({
           return `Invalid segment: ${segment}`
         }
       }
-      
+
       // In dev, we don't want full domains (no .com, .org, etc)
       // Just subdomains that will be under base domain
       const lastSegment = segments[segments.length - 1]
       // Common TLDs that indicate a full domain (not exhaustive, but covers common cases)
-      const commonTlds = ['com', 'org', 'net', 'io', 'app', 'dev', 'co', 'us', 'uk', 'ca', 'au', 'de', 'fr', 'jp', 'cn', 'in', 'br', 'mx']
+      const commonTlds = [
+        'com',
+        'org',
+        'net',
+        'io',
+        'app',
+        'dev',
+        'co',
+        'us',
+        'uk',
+        'ca',
+        'au',
+        'de',
+        'fr',
+        'jp',
+        'cn',
+        'in',
+        'br',
+        'mx',
+      ]
       if (segments.length > 1 && commonTlds.includes(lastSegment)) {
         return 'Use subdomain only (will be under .' + baseDomain + ')'
       }
@@ -71,19 +90,19 @@ export function UrlInput({
           return 'Cannot start with . or -'
         }
         if (val.endsWith('.')) {
-          return undefined  // Allow typing in progress
+          return undefined // Allow typing in progress
         }
-        
+
         const parts = val.split('.')
-        
+
         // Check minimum parts requirement
         const minParts = requireSubdomain ? 3 : 2
         if (parts.length < minParts) {
-          return requireSubdomain 
-            ? 'Must be a subdomain (e.g., api.example.com)' 
+          return requireSubdomain
+            ? 'Must be a subdomain (e.g., api.example.com)'
             : 'Invalid domain format'
         }
-        
+
         // Validate each segment
         for (const part of parts) {
           if (!part) {
@@ -93,7 +112,7 @@ export function UrlInput({
             return `Invalid segment: ${part}`
           }
         }
-        
+
         // Check TLD
         const lastPart = parts[parts.length - 1]
         if (lastPart.length < 2) {
@@ -101,7 +120,10 @@ export function UrlInput({
         }
       } else {
         // Single word - valid
-        if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(val) && !/^[a-z0-9]$/.test(val)) {
+        if (
+          !/^[a-z0-9][a-z0-9-]*[a-z0-9]$/.test(val) &&
+          !/^[a-z0-9]$/.test(val)
+        ) {
           return 'Invalid format'
         }
       }
@@ -122,7 +144,10 @@ export function UrlInput({
   const handleBlur = () => {
     setIsFocused(false)
     // Clean up and validate on blur
-    const cleanValue = value.trim().toLowerCase().replace(/[^a-z0-9.\-]/g, '')
+    const cleanValue = value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9.\-]/g, '')
     const validationError = validateUrl(cleanValue)
     setError(validationError)
     onError?.(validationError)
@@ -143,9 +168,9 @@ export function UrlInput({
     if (error && !isFocused) {
       return 'Invalid'
     }
-    
+
     const isDev = environment === 'development' || environment === 'dev'
-    
+
     if (isDev) {
       // In dev mode, always show base domain suffix
       // since everything becomes a subdomain under it
@@ -155,7 +180,7 @@ export function UrlInput({
       if (value.includes('.')) {
         // Full domain entered
         if (value.endsWith('.')) {
-          return '...'  // Still typing
+          return '...' // Still typing
         }
         return error ? '✗' : '✓'
       }
@@ -188,21 +213,21 @@ export function UrlInput({
           onFocus={handleFocus}
           className={`w-full px-3 py-2 ${
             value && value.includes('.') ? 'pr-10' : value ? 'pr-24' : 'pr-16'
-          } text-sm border rounded-lg bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-opacity-20 transition-all ${
+          } focus:ring-opacity-20 rounded-lg border bg-white text-sm text-zinc-900 transition-all focus:ring-2 focus:outline-none dark:bg-zinc-800 dark:text-white ${
             error && !isFocused
-              ? 'border-red-500 dark:border-red-500 focus:ring-red-500' 
-              : 'border-zinc-300 dark:border-zinc-600 focus:ring-blue-500'
+              ? 'border-red-500 focus:ring-red-500 dark:border-red-500'
+              : 'border-zinc-300 focus:ring-blue-500 dark:border-zinc-600'
           } ${className}`}
           placeholder={placeholder || defaultPlaceholder}
         />
-        <span className={`absolute right-3 top-2.5 text-xs pointer-events-none transition-all duration-200 ${rightLabelColor()}`}>
+        <span
+          className={`pointer-events-none absolute top-2.5 right-3 text-xs transition-all duration-200 ${rightLabelColor()}`}
+        >
           {getRightLabel()}
         </span>
       </div>
       {error && !isFocused && (
-        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-          {error}
-        </p>
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">{error}</p>
       )}
     </div>
   )

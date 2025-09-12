@@ -2,7 +2,6 @@
  * Global error handling utilities
  */
 
-
 /**
  * Suppress AbortError messages in console
  * These are expected when navigating away from pages
@@ -13,15 +12,14 @@ export function suppressAbortErrors() {
 
 /**
  */
-export function restoreConsoleError() {
-}
+export function restoreConsoleError() {}
 
 /**
  * Safe fetch wrapper that handles aborts gracefully
  */
 export async function safeFetch(
   url: string,
-  options?: RequestInit
+  options?: RequestInit,
 ): Promise<Response | null> {
   try {
     const response = await fetch(url, options)
@@ -42,9 +40,9 @@ export async function safeFetch(
 export function createTimeoutController(timeoutMs: number = 5000) {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
-  
+
   return {
     controller,
-    clear: () => clearTimeout(timeoutId)
+    clear: () => clearTimeout(timeoutId),
   }
 }

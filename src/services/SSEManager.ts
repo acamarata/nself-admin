@@ -3,7 +3,6 @@
  * Manages Server-Sent Events connections and broadcasts updates
  */
 
-import { NextResponse } from 'next/server'
 import { orchestrator } from './globalOrchestrator'
 
 export interface SSEClient {
@@ -23,48 +22,47 @@ export class SSEManager {
    */
   async initialize() {
     if (this.isInitialized) return
-    
-    
+
     // Start the orchestrator if not already running
     if (!this.orchestrator.isActive()) {
       await this.orchestrator.start()
     }
-    
+
     // Remove all existing listeners to avoid duplicates
     this.orchestrator.removeAllListeners('stateUpdate')
     this.orchestrator.removeAllListeners('dockerEvent')
     this.orchestrator.removeAllListeners('serviceUpdate')
-    
+
     // Listen for state updates
     this.orchestrator.on('stateUpdate', (state) => {
       this.broadcast({
         type: 'state',
-        ...state  // Spread the state directly instead of nesting it
+        ...state, // Spread the state directly instead of nesting it
       })
     })
-    
+
     // Listen for Docker events
     this.orchestrator.on('dockerEvent', (event) => {
       this.broadcast({
         type: 'dockerEvent',
-        ...event
+        ...event,
       })
     })
-    
+
     // Listen for service updates
     this.orchestrator.on('serviceUpdate', (update) => {
       this.broadcast({
         type: 'serviceUpdate',
-        ...update
+        ...update,
       })
     })
-    
+
     // Start ping interval to keep connections alive
     this.pingInterval = setInterval(() => {
       this.sendPing()
       this.cleanupStaleClients()
     }, 30000) // Every 30 seconds
-    
+
     this.isInitialized = true
   }
 
@@ -72,31 +70,29 @@ export class SSEManager {
    * Create SSE stream for a client
    */
   createStream(clientId: string): ReadableStream {
-    
     const stream = new ReadableStream({
       start: async (controller) => {
         // Register client
         this.clients.set(clientId, {
           id: clientId,
           controller,
-          lastPing: Date.now()
+          lastPing: Date.now(),
         })
-        
+
         // Send initial state
         const initialState = this.orchestrator.getState()
         this.sendToClient(clientId, {
           type: 'initial',
-          ...initialState  // Spread the state directly
+          ...initialState, // Spread the state directly
         })
-        
       },
-      
+
       cancel: () => {
         // Client disconnected
         this.removeClient(clientId)
-      }
+      },
     })
-    
+
     return stream
   }
 
@@ -106,7 +102,7 @@ export class SSEManager {
   private sendToClient(clientId: string, message: any) {
     const client = this.clients.get(clientId)
     if (!client) return
-    
+
     try {
       const data = `data: ${JSON.stringify(message)}\n\n`
       const encoder = new TextEncoder()
@@ -121,7 +117,7 @@ export class SSEManager {
    */
   private broadcast(message: any) {
     const deadClients: string[] = []
-    
+
     for (const [clientId, client] of this.clients) {
       try {
         const data = `data: ${JSON.stringify(message)}\n\n`
@@ -131,9 +127,9 @@ export class SSEManager {
         deadClients.push(clientId)
       }
     }
-    
+
     // Remove dead clients
-    deadClients.forEach(id => this.removeClient(id))
+    deadClients.forEach((id) => this.removeClient(id))
   }
 
   /**
@@ -164,7 +160,7 @@ export class SSEManager {
   private cleanupStaleClients() {
     const now = Date.now()
     const staleTimeout = 60000 // 1 minute
-    
+
     for (const [clientId, client] of this.clients) {
       if (now - client.lastPing > staleTimeout) {
         this.removeClient(clientId)
@@ -190,21 +186,20 @@ export class SSEManager {
    * Shutdown manager
    */
   async shutdown() {
-    
     // Clear ping interval
     if (this.pingInterval) {
       clearInterval(this.pingInterval)
       this.pingInterval = null
     }
-    
+
     // Close all client connections
     for (const clientId of this.clients.keys()) {
       this.removeClient(clientId)
     }
-    
+
     // Stop orchestrator
     await this.orchestrator.stop()
-    
+
     this.isInitialized = false
   }
 }

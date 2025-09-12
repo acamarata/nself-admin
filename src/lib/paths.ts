@@ -8,14 +8,17 @@
  */
 export function getProjectPath(): string {
   // Check both NSELF_PROJECT_PATH and PROJECT_PATH for compatibility
-  let projectPath = process.env.NSELF_PROJECT_PATH || process.env.PROJECT_PATH || '../nself-project'
-  
+  let projectPath =
+    process.env.NSELF_PROJECT_PATH ||
+    process.env.PROJECT_PATH ||
+    '../nself-project'
+
   // Handle tilde expansion for home directory
   if (projectPath.startsWith('~')) {
     const os = require('os')
     projectPath = projectPath.replace(/^~/, os.homedir())
   }
-  
+
   // If it's a relative path, resolve it relative to the app root
   if (!projectPath.startsWith('/')) {
     // In development, resolve relative to the nself-admin directory
@@ -31,7 +34,7 @@ export function getProjectPath(): string {
     // In production, relative paths are relative to the container's working directory
     return `/app/${projectPath}`
   }
-  
+
   // Absolute path - use as-is
   return projectPath
 }
@@ -45,13 +48,13 @@ export function getDockerSocketPath(): string {
   if (process.env.NODE_ENV === 'production') {
     return '/var/run/docker.sock'
   }
-  
+
   // Development fallback paths
   const paths = [
     '/var/run/docker.sock',
     process.env.HOME + '/.docker/run/docker.sock',
-    '/Users/' + process.env.USER + '/.docker/run/docker.sock'
+    '/Users/' + process.env.USER + '/.docker/run/docker.sock',
   ]
-  
+
   return paths[0] // Default to standard path
 }

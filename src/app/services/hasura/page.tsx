@@ -1,16 +1,33 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
-import { 
-  RefreshCw, Settings, Terminal, Download, Upload, Play, Save, 
-  Eye, EyeOff, Edit, Copy, Trash2, Plus, Search, Filter,
-  Database, Layers, Shield, Zap, Activity, Clock, Users,
-  AlertCircle, CheckCircle, ExternalLink, FileText, Grid,
-  List, BarChart3, TrendingUp, Globe, Lock, Key, Hash,
-  GitBranch, Package, Webhook, Code, Server, Gauge
+import {
+  Activity,
+  AlertCircle,
+  BarChart3,
+  CheckCircle,
+  Clock,
+  Code,
+  Database,
+  Download,
+  Edit,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Globe,
+  Layers,
+  Play,
+  Plus,
+  RefreshCw,
+  Save,
+  Search,
+  Shield,
+  TrendingUp,
+  Webhook,
+  Zap,
 } from 'lucide-react'
+import { useState } from 'react'
 
 interface HasuraStats {
   version: string
@@ -139,44 +156,54 @@ interface QueryMetric {
 
 function StatsOverview({ stats }: { stats: HasuraStats }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+    <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Queries/min</p>
-            <p className="text-2xl font-bold">{stats.totalQueries.toLocaleString()}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Queries/min
+            </p>
+            <p className="text-2xl font-bold">
+              {stats.totalQueries.toLocaleString()}
+            </p>
           </div>
-          <BarChart3 className="w-6 h-6 text-blue-500" />
+          <BarChart3 className="h-6 w-6 text-blue-500" />
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Avg Response</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Avg Response
+            </p>
             <p className="text-2xl font-bold">{stats.avgResponseTime}ms</p>
           </div>
-          <Clock className="w-6 h-6 text-green-500" />
+          <Clock className="h-6 w-6 text-green-500" />
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Cache Hit Rate</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Cache Hit Rate
+            </p>
             <p className="text-2xl font-bold">{stats.cacheHitRatio}%</p>
           </div>
-          <TrendingUp className="w-6 h-6 text-purple-500" />
+          <TrendingUp className="h-6 w-6 text-purple-500" />
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">Active Subs</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Active Subs
+            </p>
             <p className="text-2xl font-bold">{stats.subscriptions}</p>
           </div>
-          <Activity className="w-6 h-6 text-orange-500" />
+          <Activity className="h-6 w-6 text-orange-500" />
         </div>
       </div>
     </div>
@@ -197,66 +224,68 @@ query GetUsers {
     }
   }
 }`)
-  
+
   const [variables, setVariables] = useState('{}')
   const [headers, setHeaders] = useState('{}')
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'query' | 'variables' | 'headers'>('query')
+  const [activeTab, setActiveTab] = useState<'query' | 'variables' | 'headers'>(
+    'query',
+  )
 
   const executeQuery = async () => {
     setLoading(true)
     try {
       // Simulate GraphQL execution
-      await new Promise(resolve => setTimeout(resolve, 800))
-      
+      await new Promise((resolve) => setTimeout(resolve, 800))
+
       // Mock result based on query type
       const mockResult = {
         data: {
           users: [
             {
               id: 1,
-              name: "John Doe",
-              email: "john@example.com",
-              created_at: "2024-01-15T10:30:00.000Z",
+              name: 'John Doe',
+              email: 'john@example.com',
+              created_at: '2024-01-15T10:30:00.000Z',
               profile: {
-                avatar_url: "https://avatar.example.com/john.jpg",
-                bio: "Software developer"
-              }
+                avatar_url: 'https://avatar.example.com/john.jpg',
+                bio: 'Software developer',
+              },
             },
             {
               id: 2,
-              name: "Jane Smith", 
-              email: "jane@example.com",
-              created_at: "2024-01-16T14:20:00.000Z",
+              name: 'Jane Smith',
+              email: 'jane@example.com',
+              created_at: '2024-01-16T14:20:00.000Z',
               profile: {
-                avatar_url: "https://avatar.example.com/jane.jpg",
-                bio: "Product manager"
-              }
-            }
-          ]
+                avatar_url: 'https://avatar.example.com/jane.jpg',
+                bio: 'Product manager',
+              },
+            },
+          ],
         },
         extensions: {
           tracing: {
             version: 1,
-            startTime: "2024-01-17T10:30:00.000Z",
-            endTime: "2024-01-17T10:30:00.125Z",
-            duration: 125000000
-          }
-        }
+            startTime: '2024-01-17T10:30:00.000Z',
+            endTime: '2024-01-17T10:30:00.125Z',
+            duration: 125000000,
+          },
+        },
       }
-      
+
       setResult(mockResult)
     } catch (error) {
       setResult({
         errors: [
           {
-            message: "Query execution failed",
+            message: 'Query execution failed',
             extensions: {
-              code: "INTERNAL_ERROR"
-            }
-          }
-        ]
+              code: 'INTERNAL_ERROR',
+            },
+          },
+        ],
       })
     } finally {
       setLoading(false)
@@ -264,42 +293,42 @@ query GetUsers {
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">GraphQL Console</h3>
           <div className="flex items-center gap-2">
             <Button variant="outline" className="text-xs">
-              <Save className="w-3 h-3 mr-1" />
+              <Save className="mr-1 h-3 w-3" />
               Save Query
             </Button>
             <Button variant="outline" className="text-xs">
-              <ExternalLink className="w-3 h-3 mr-1" />
+              <ExternalLink className="mr-1 h-3 w-3" />
               Open in GraphiQL
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
+      <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
         {/* Query Input */}
         <div className="space-y-4">
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-700 rounded-lg p-1">
+          <div className="flex items-center gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-700">
             <button
               onClick={() => setActiveTab('query')}
-              className={`px-3 py-1 text-sm rounded ${activeTab === 'query' ? 'bg-white dark:bg-zinc-600 shadow-sm' : ''}`}
+              className={`rounded px-3 py-1 text-sm ${activeTab === 'query' ? 'bg-white shadow-sm dark:bg-zinc-600' : ''}`}
             >
               Query
             </button>
             <button
               onClick={() => setActiveTab('variables')}
-              className={`px-3 py-1 text-sm rounded ${activeTab === 'variables' ? 'bg-white dark:bg-zinc-600 shadow-sm' : ''}`}
+              className={`rounded px-3 py-1 text-sm ${activeTab === 'variables' ? 'bg-white shadow-sm dark:bg-zinc-600' : ''}`}
             >
               Variables
             </button>
             <button
               onClick={() => setActiveTab('headers')}
-              className={`px-3 py-1 text-sm rounded ${activeTab === 'headers' ? 'bg-white dark:bg-zinc-600 shadow-sm' : ''}`}
+              className={`rounded px-3 py-1 text-sm ${activeTab === 'headers' ? 'bg-white shadow-sm dark:bg-zinc-600' : ''}`}
             >
               Headers
             </button>
@@ -309,7 +338,7 @@ query GetUsers {
             <textarea
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full h-80 p-3 font-mono text-sm rounded-lg border border-zinc-200 dark:border-zinc-700"
+              className="h-80 w-full rounded-lg border border-zinc-200 p-3 font-mono text-sm dark:border-zinc-700"
               placeholder="Enter your GraphQL query..."
             />
           )}
@@ -318,7 +347,7 @@ query GetUsers {
             <textarea
               value={variables}
               onChange={(e) => setVariables(e.target.value)}
-              className="w-full h-80 p-3 font-mono text-sm rounded-lg border border-zinc-200 dark:border-zinc-700"
+              className="h-80 w-full rounded-lg border border-zinc-200 p-3 font-mono text-sm dark:border-zinc-700"
               placeholder="Enter query variables (JSON)..."
             />
           )}
@@ -327,31 +356,27 @@ query GetUsers {
             <textarea
               value={headers}
               onChange={(e) => setHeaders(e.target.value)}
-              className="w-full h-80 p-3 font-mono text-sm rounded-lg border border-zinc-200 dark:border-zinc-700"
+              className="h-80 w-full rounded-lg border border-zinc-200 p-3 font-mono text-sm dark:border-zinc-700"
               placeholder="Enter custom headers (JSON)..."
             />
           )}
 
-          <Button
-            onClick={executeQuery}
-            disabled={loading}
-            className="w-full"
-          >
-            <Play className="w-4 h-4 mr-2" />
+          <Button onClick={executeQuery} disabled={loading} className="w-full">
+            <Play className="mr-2 h-4 w-4" />
             {loading ? 'Executing...' : 'Execute Query'}
           </Button>
         </div>
 
         {/* Query Result */}
         <div>
-          <h4 className="text-sm font-medium mb-2">Result</h4>
-          <div className="h-96 rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-auto">
+          <h4 className="mb-2 text-sm font-medium">Result</h4>
+          <div className="h-96 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
             {result ? (
               <pre className="p-3 text-sm">
                 {JSON.stringify(result, null, 2)}
               </pre>
             ) : (
-              <div className="h-full flex items-center justify-center text-zinc-500">
+              <div className="flex h-full items-center justify-center text-zinc-500">
                 Execute a query to see results
               </div>
             )}
@@ -367,9 +392,12 @@ function SchemaManagement({ schema }: { schema: GraphQLSchema }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filter, setFilter] = useState<'all' | 'tracked' | 'untracked'>('all')
 
-  const filteredTables = schema.tables.filter(table => {
-    const matchesSearch = table.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesFilter = filter === 'all' || 
+  const filteredTables = schema.tables.filter((table) => {
+    const matchesSearch = table.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+    const matchesFilter =
+      filter === 'all' ||
       (filter === 'tracked' && table.isTracked) ||
       (filter === 'untracked' && !table.isTracked)
     return matchesSearch && matchesFilter
@@ -377,40 +405,40 @@ function SchemaManagement({ schema }: { schema: GraphQLSchema }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Database Schema</h3>
             <div className="flex items-center gap-2">
               <Button variant="outline" className="text-xs">
-                <RefreshCw className="w-3 h-3 mr-1" />
+                <RefreshCw className="mr-1 h-3 w-3" />
                 Reload Schema
               </Button>
               <Button variant="outline" className="text-xs">
-                <Download className="w-3 h-3 mr-1" />
+                <Download className="mr-1 h-3 w-3" />
                 Export Metadata
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="space-y-4 p-4">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
               <input
                 type="text"
                 placeholder="Search tables..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                className="w-full rounded-lg border border-zinc-200 py-2 pr-4 pl-10 dark:border-zinc-700"
               />
             </div>
-            
+
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as any)}
-              className="px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700"
+              className="rounded-lg border border-zinc-200 px-3 py-2 dark:border-zinc-700"
             >
               <option value="all">All Tables</option>
               <option value="tracked">Tracked</option>
@@ -422,27 +450,28 @@ function SchemaManagement({ schema }: { schema: GraphQLSchema }) {
             {filteredTables.map((table) => (
               <div
                 key={`${table.schema}.${table.name}`}
-                className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600"
+                className="flex items-center justify-between rounded-lg border border-zinc-200 p-3 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <Database className="w-4 h-4 text-blue-500" />
+                    <Database className="h-4 w-4 text-blue-500" />
                     <div>
-                      <div className="font-medium text-sm">
+                      <div className="text-sm font-medium">
                         {table.schema}.{table.name}
                       </div>
                       <div className="text-xs text-zinc-500">
-                        {table.columns.length} columns • {table.rowCount.toLocaleString()} rows
+                        {table.columns.length} columns •{' '}
+                        {table.rowCount.toLocaleString()} rows
                       </div>
                     </div>
                   </div>
-                  
+
                   {table.isTracked ? (
-                    <span className="px-2 py-1 text-xs rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                    <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-400">
                       Tracked
                     </span>
                   ) : (
-                    <span className="px-2 py-1 text-xs rounded bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400">
+                    <span className="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400">
                       Untracked
                     </span>
                   )}
@@ -454,18 +483,18 @@ function SchemaManagement({ schema }: { schema: GraphQLSchema }) {
                     onClick={() => setSelectedTable(table)}
                     className="text-xs"
                   >
-                    <Eye className="w-3 h-3 mr-1" />
+                    <Eye className="mr-1 h-3 w-3" />
                     View
                   </Button>
-                  
+
                   {table.isTracked ? (
                     <Button variant="outline" className="text-xs">
-                      <EyeOff className="w-3 h-3 mr-1" />
+                      <EyeOff className="mr-1 h-3 w-3" />
                       Untrack
                     </Button>
                   ) : (
                     <Button className="text-xs">
-                      <Plus className="w-3 h-3 mr-1" />
+                      <Plus className="mr-1 h-3 w-3" />
                       Track
                     </Button>
                   )}
@@ -477,8 +506,8 @@ function SchemaManagement({ schema }: { schema: GraphQLSchema }) {
       </div>
 
       {selectedTable && (
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center justify-between">
               <h4 className="text-lg font-semibold">
                 {selectedTable.schema}.{selectedTable.name}
@@ -496,27 +525,30 @@ function SchemaManagement({ schema }: { schema: GraphQLSchema }) {
           <div className="p-4">
             <div className="space-y-4">
               <div>
-                <h5 className="text-sm font-medium mb-2">Columns</h5>
+                <h5 className="mb-2 text-sm font-medium">Columns</h5>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                        <th className="text-left py-2">Name</th>
-                        <th className="text-left py-2">Type</th>
-                        <th className="text-left py-2">Nullable</th>
-                        <th className="text-left py-2">Default</th>
+                        <th className="py-2 text-left">Name</th>
+                        <th className="py-2 text-left">Type</th>
+                        <th className="py-2 text-left">Nullable</th>
+                        <th className="py-2 text-left">Default</th>
                       </tr>
                     </thead>
                     <tbody>
                       {selectedTable.columns.map((column) => (
-                        <tr key={column.name} className="border-b border-zinc-100 dark:border-zinc-800">
+                        <tr
+                          key={column.name}
+                          className="border-b border-zinc-100 dark:border-zinc-800"
+                        >
                           <td className="py-2 font-mono">{column.name}</td>
                           <td className="py-2">{column.type}</td>
                           <td className="py-2">
                             {column.nullable ? (
-                              <CheckCircle className="w-4 h-4 text-green-500" />
+                              <CheckCircle className="h-4 w-4 text-green-500" />
                             ) : (
-                              <AlertCircle className="w-4 h-4 text-red-500" />
+                              <AlertCircle className="h-4 w-4 text-red-500" />
                             )}
                           </td>
                           <td className="py-2 font-mono text-xs">
@@ -530,19 +562,22 @@ function SchemaManagement({ schema }: { schema: GraphQLSchema }) {
               </div>
 
               <div>
-                <h5 className="text-sm font-medium mb-2">Permissions</h5>
+                <h5 className="mb-2 text-sm font-medium">Permissions</h5>
                 <div className="space-y-2">
                   {selectedTable.permissions.map((perm, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded bg-zinc-50 dark:bg-zinc-900">
+                    <div
+                      key={i}
+                      className="flex items-center justify-between rounded bg-zinc-50 p-2 dark:bg-zinc-900"
+                    >
                       <div className="flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-blue-500" />
+                        <Shield className="h-4 w-4 text-blue-500" />
                         <span className="text-sm font-medium">{perm.role}</span>
-                        <span className="text-xs px-2 py-1 rounded bg-zinc-200 dark:bg-zinc-700">
+                        <span className="rounded bg-zinc-200 px-2 py-1 text-xs dark:bg-zinc-700">
                           {perm.permission}
                         </span>
                       </div>
                       <Button variant="outline" className="text-xs">
-                        <Edit className="w-3 h-3" />
+                        <Edit className="h-3 w-3" />
                       </Button>
                     </div>
                   ))}
@@ -558,27 +593,29 @@ function SchemaManagement({ schema }: { schema: GraphQLSchema }) {
 
 function PermissionsMatrix({ tables }: { tables: SchemaTable[] }) {
   const [selectedRole, setSelectedRole] = useState('user')
-  
+
   const roles = ['anonymous', 'user', 'admin', 'manager']
   const permissions = ['select', 'insert', 'update', 'delete'] as const
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Permissions Matrix</h3>
           <div className="flex items-center gap-2">
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="px-3 py-1 text-sm rounded border border-zinc-200 dark:border-zinc-700"
+              className="rounded border border-zinc-200 px-3 py-1 text-sm dark:border-zinc-700"
             >
-              {roles.map(role => (
-                <option key={role} value={role}>{role}</option>
+              {roles.map((role) => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
               ))}
             </select>
             <Button variant="outline" className="text-xs">
-              <Plus className="w-3 h-3 mr-1" />
+              <Plus className="mr-1 h-3 w-3" />
               Add Role
             </Button>
           </div>
@@ -590,44 +627,47 @@ function PermissionsMatrix({ tables }: { tables: SchemaTable[] }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-200 dark:border-zinc-700">
-                <th className="text-left py-3 px-2">Table</th>
-                {permissions.map(perm => (
-                  <th key={perm} className="text-center py-3 px-2 capitalize">
+                <th className="px-2 py-3 text-left">Table</th>
+                {permissions.map((perm) => (
+                  <th key={perm} className="px-2 py-3 text-center capitalize">
                     {perm}
                   </th>
                 ))}
-                <th className="text-center py-3 px-2">Actions</th>
+                <th className="px-2 py-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
               {tables.slice(0, 10).map((table) => (
-                <tr key={`${table.schema}.${table.name}`} className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-3 px-2 font-mono">
+                <tr
+                  key={`${table.schema}.${table.name}`}
+                  className="border-b border-zinc-100 dark:border-zinc-800"
+                >
+                  <td className="px-2 py-3 font-mono">
                     {table.schema}.{table.name}
                   </td>
-                  {permissions.map(perm => {
+                  {permissions.map((perm) => {
                     const hasPermission = table.permissions.some(
-                      p => p.role === selectedRole && p.permission === perm
+                      (p) => p.role === selectedRole && p.permission === perm,
                     )
                     return (
-                      <td key={perm} className="py-3 px-2 text-center">
+                      <td key={perm} className="px-2 py-3 text-center">
                         <button
-                          className={`w-6 h-6 rounded-full border-2 ${
+                          className={`h-6 w-6 rounded-full border-2 ${
                             hasPermission
-                              ? 'bg-green-500 border-green-500'
+                              ? 'border-green-500 bg-green-500'
                               : 'border-zinc-300 dark:border-zinc-600'
                           }`}
                         >
                           {hasPermission && (
-                            <CheckCircle className="w-4 h-4 text-white mx-auto" />
+                            <CheckCircle className="mx-auto h-4 w-4 text-white" />
                           )}
                         </button>
                       </td>
                     )
                   })}
-                  <td className="py-3 px-2 text-center">
+                  <td className="px-2 py-3 text-center">
                     <Button variant="outline" className="text-xs">
-                      <Edit className="w-3 h-3" />
+                      <Edit className="h-3 w-3" />
                     </Button>
                   </td>
                 </tr>
@@ -641,16 +681,18 @@ function PermissionsMatrix({ tables }: { tables: SchemaTable[] }) {
 }
 
 function EventTriggers({ triggers }: { triggers: EventTrigger[] }) {
-  const [selectedTrigger, setSelectedTrigger] = useState<EventTrigger | null>(null)
+  const [selectedTrigger, setSelectedTrigger] = useState<EventTrigger | null>(
+    null,
+  )
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+      <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Event Triggers</h3>
             <Button className="text-xs">
-              <Plus className="w-3 h-3 mr-1" />
+              <Plus className="mr-1 h-3 w-3" />
               Create Trigger
             </Button>
           </div>
@@ -661,13 +703,13 @@ function EventTriggers({ triggers }: { triggers: EventTrigger[] }) {
             {triggers.map((trigger) => (
               <div
                 key={trigger.name}
-                className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                className="flex items-center justify-between rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <Webhook className="w-4 h-4 text-purple-500" />
+                    <Webhook className="h-4 w-4 text-purple-500" />
                     <div>
-                      <div className="font-medium text-sm">{trigger.name}</div>
+                      <div className="text-sm font-medium">{trigger.name}</div>
                       <div className="text-xs text-zinc-500">
                         {trigger.table} • {trigger.events.join(', ')}
                       </div>
@@ -676,21 +718,23 @@ function EventTriggers({ triggers }: { triggers: EventTrigger[] }) {
 
                   <div className="flex items-center gap-2">
                     {trigger.status === 'active' ? (
-                      <span className="px-2 py-1 text-xs rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                      <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-400">
                         Active
                       </span>
                     ) : (
-                      <span className="px-2 py-1 text-xs rounded bg-zinc-100 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-400">
+                      <span className="rounded bg-zinc-100 px-2 py-1 text-xs text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400">
                         Inactive
                       </span>
                     )}
 
                     {trigger.lastInvocation && (
-                      <span className={`px-2 py-1 text-xs rounded ${
-                        trigger.lastInvocation.status === 'success'
-                          ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                          : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                      }`}>
+                      <span
+                        className={`rounded px-2 py-1 text-xs ${
+                          trigger.lastInvocation.status === 'success'
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                        }`}
+                      >
                         Last: {trigger.lastInvocation.status}
                       </span>
                     )}
@@ -703,11 +747,11 @@ function EventTriggers({ triggers }: { triggers: EventTrigger[] }) {
                     onClick={() => setSelectedTrigger(trigger)}
                     className="text-xs"
                   >
-                    <Eye className="w-3 h-3 mr-1" />
+                    <Eye className="mr-1 h-3 w-3" />
                     Details
                   </Button>
                   <Button variant="outline" className="text-xs">
-                    <Edit className="w-3 h-3" />
+                    <Edit className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
@@ -717,8 +761,8 @@ function EventTriggers({ triggers }: { triggers: EventTrigger[] }) {
       </div>
 
       {selectedTrigger && (
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center justify-between">
               <h4 className="text-lg font-semibold">{selectedTrigger.name}</h4>
               <Button
@@ -731,19 +775,22 @@ function EventTriggers({ triggers }: { triggers: EventTrigger[] }) {
             </div>
           </div>
 
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4 p-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <label className="text-sm font-medium">Webhook URL</label>
-                <div className="font-mono text-sm bg-zinc-50 dark:bg-zinc-900 rounded p-2 mt-1">
+                <div className="mt-1 rounded bg-zinc-50 p-2 font-mono text-sm dark:bg-zinc-900">
                   {selectedTrigger.webhook}
                 </div>
               </div>
               <div>
                 <label className="text-sm font-medium">Events</label>
-                <div className="flex gap-1 mt-1">
-                  {selectedTrigger.events.map(event => (
-                    <span key={event} className="px-2 py-1 text-xs rounded bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400">
+                <div className="mt-1 flex gap-1">
+                  {selectedTrigger.events.map((event) => (
+                    <span
+                      key={event}
+                      className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                    >
                       {event}
                     </span>
                   ))}
@@ -753,15 +800,18 @@ function EventTriggers({ triggers }: { triggers: EventTrigger[] }) {
 
             <div>
               <label className="text-sm font-medium">Retry Configuration</label>
-              <div className="grid grid-cols-3 gap-4 mt-2 text-sm">
+              <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <span className="text-zinc-500">Retries:</span> {selectedTrigger.retryConfig.numRetries}
+                  <span className="text-zinc-500">Retries:</span>{' '}
+                  {selectedTrigger.retryConfig.numRetries}
                 </div>
                 <div>
-                  <span className="text-zinc-500">Timeout:</span> {selectedTrigger.retryConfig.timeoutSeconds}s
+                  <span className="text-zinc-500">Timeout:</span>{' '}
+                  {selectedTrigger.retryConfig.timeoutSeconds}s
                 </div>
                 <div>
-                  <span className="text-zinc-500">Interval:</span> {selectedTrigger.retryConfig.intervalSeconds}s
+                  <span className="text-zinc-500">Interval:</span>{' '}
+                  {selectedTrigger.retryConfig.intervalSeconds}s
                 </div>
               </div>
             </div>
@@ -770,12 +820,19 @@ function EventTriggers({ triggers }: { triggers: EventTrigger[] }) {
               <div>
                 <label className="text-sm font-medium">Headers</label>
                 <div className="mt-2 space-y-1">
-                  {Object.entries(selectedTrigger.headers).map(([key, value]) => (
-                    <div key={key} className="flex items-center gap-2 text-sm">
-                      <span className="font-mono text-zinc-600 dark:text-zinc-400">{key}:</span>
-                      <span className="font-mono">{value}</span>
-                    </div>
-                  ))}
+                  {Object.entries(selectedTrigger.headers).map(
+                    ([key, value]) => (
+                      <div
+                        key={key}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <span className="font-mono text-zinc-600 dark:text-zinc-400">
+                          {key}:
+                        </span>
+                        <span className="font-mono">{value}</span>
+                      </div>
+                    ),
+                  )}
                 </div>
               </div>
             )}
@@ -786,46 +843,51 @@ function EventTriggers({ triggers }: { triggers: EventTrigger[] }) {
   )
 }
 
-function ActionsAndRemoteSchemas({ actions, remoteSchemas }: { 
+function ActionsAndRemoteSchemas({
+  actions,
+  remoteSchemas,
+}: {
   actions: Action[]
-  remoteSchemas: RemoteSchema[] 
+  remoteSchemas: RemoteSchema[]
 }) {
-  const [activeSection, setActiveSection] = useState<'actions' | 'remote'>('actions')
+  const [activeSection, setActiveSection] = useState<'actions' | 'remote'>(
+    'actions',
+  )
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700">
+      <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
         <button
           onClick={() => setActiveSection('actions')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             activeSection === 'actions'
               ? 'bg-blue-500 text-white'
-              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
           }`}
         >
-          <Zap className="w-4 h-4" />
+          <Zap className="h-4 w-4" />
           Actions ({actions.length})
         </button>
         <button
           onClick={() => setActiveSection('remote')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             activeSection === 'remote'
               ? 'bg-blue-500 text-white'
-              : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+              : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'
           }`}
         >
-          <Globe className="w-4 h-4" />
+          <Globe className="h-4 w-4" />
           Remote Schemas ({remoteSchemas.length})
         </button>
       </div>
 
       {activeSection === 'actions' && (
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Actions</h3>
               <Button className="text-xs">
-                <Plus className="w-3 h-3 mr-1" />
+                <Plus className="mr-1 h-3 w-3" />
                 Create Action
               </Button>
             </div>
@@ -836,17 +898,17 @@ function ActionsAndRemoteSchemas({ actions, remoteSchemas }: {
               {actions.map((action) => (
                 <div
                   key={action.name}
-                  className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                  className="flex items-center justify-between rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
                 >
                   <div className="flex items-center gap-3">
-                    <Zap className="w-4 h-4 text-yellow-500" />
+                    <Zap className="h-4 w-4 text-yellow-500" />
                     <div>
-                      <div className="font-medium text-sm">{action.name}</div>
+                      <div className="text-sm font-medium">{action.name}</div>
                       <div className="text-xs text-zinc-500">
                         {action.definition.type} • {action.definition.handler}
                       </div>
                     </div>
-                    <span className="px-2 py-1 text-xs rounded bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400">
+                    <span className="rounded bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
                       {action.definition.type}
                     </span>
                   </div>
@@ -856,7 +918,7 @@ function ActionsAndRemoteSchemas({ actions, remoteSchemas }: {
                       {action.permissions.length} roles
                     </span>
                     <Button variant="outline" className="text-xs">
-                      <Edit className="w-3 h-3" />
+                      <Edit className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
@@ -867,12 +929,12 @@ function ActionsAndRemoteSchemas({ actions, remoteSchemas }: {
       )}
 
       {activeSection === 'remote' && (
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+          <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Remote Schemas</h3>
               <Button className="text-xs">
-                <Plus className="w-3 h-3 mr-1" />
+                <Plus className="mr-1 h-3 w-3" />
                 Add Remote Schema
               </Button>
             </div>
@@ -883,29 +945,29 @@ function ActionsAndRemoteSchemas({ actions, remoteSchemas }: {
               {remoteSchemas.map((schema) => (
                 <div
                   key={schema.name}
-                  className="flex items-center justify-between p-3 rounded-lg border border-zinc-200 dark:border-zinc-700"
+                  className="flex items-center justify-between rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
                 >
                   <div className="flex items-center gap-3">
-                    <Globe className="w-4 h-4 text-green-500" />
+                    <Globe className="h-4 w-4 text-green-500" />
                     <div>
-                      <div className="font-medium text-sm">{schema.name}</div>
-                      <div className="text-xs text-zinc-500 font-mono">
+                      <div className="text-sm font-medium">{schema.name}</div>
+                      <div className="font-mono text-xs text-zinc-500">
                         {schema.url}
                       </div>
                     </div>
-                    
+
                     {schema.status === 'connected' && (
-                      <span className="px-2 py-1 text-xs rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                      <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/20 dark:text-green-400">
                         Connected
                       </span>
                     )}
                     {schema.status === 'error' && (
-                      <span className="px-2 py-1 text-xs rounded bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400">
+                      <span className="rounded bg-red-100 px-2 py-1 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-400">
                         Error
                       </span>
                     )}
                     {schema.status === 'loading' && (
-                      <span className="px-2 py-1 text-xs rounded bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
+                      <span className="rounded bg-yellow-100 px-2 py-1 text-xs text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
                         Loading
                       </span>
                     )}
@@ -916,10 +978,10 @@ function ActionsAndRemoteSchemas({ actions, remoteSchemas }: {
                       Sync: {schema.lastSync}
                     </span>
                     <Button variant="outline" className="text-xs">
-                      <RefreshCw className="w-3 h-3" />
+                      <RefreshCw className="h-3 w-3" />
                     </Button>
                     <Button variant="outline" className="text-xs">
-                      <Edit className="w-3 h-3" />
+                      <Edit className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
@@ -933,34 +995,40 @@ function ActionsAndRemoteSchemas({ actions, remoteSchemas }: {
 }
 
 function QueryMetrics({ metrics }: { metrics: QueryMetric[] }) {
-  const [sortBy, setSortBy] = useState<'executions' | 'time' | 'errors'>('executions')
+  const [sortBy, setSortBy] = useState<'executions' | 'time' | 'errors'>(
+    'executions',
+  )
 
   const sortedMetrics = [...metrics].sort((a, b) => {
     switch (sortBy) {
-      case 'executions': return b.totalExecutions - a.totalExecutions
-      case 'time': return b.avgExecutionTime - a.avgExecutionTime  
-      case 'errors': return b.errorRate - a.errorRate
-      default: return 0
+      case 'executions':
+        return b.totalExecutions - a.totalExecutions
+      case 'time':
+        return b.avgExecutionTime - a.avgExecutionTime
+      case 'errors':
+        return b.errorRate - a.errorRate
+      default:
+        return 0
     }
   })
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-      <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
+    <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <div className="border-b border-zinc-200 p-4 dark:border-zinc-700">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Query Performance Metrics</h3>
           <div className="flex items-center gap-2">
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-3 py-1 text-sm rounded border border-zinc-200 dark:border-zinc-700"
+              className="rounded border border-zinc-200 px-3 py-1 text-sm dark:border-zinc-700"
             >
               <option value="executions">Sort by Executions</option>
               <option value="time">Sort by Response Time</option>
               <option value="errors">Sort by Error Rate</option>
             </select>
             <Button variant="outline" className="text-xs">
-              <Download className="w-3 h-3 mr-1" />
+              <Download className="mr-1 h-3 w-3" />
               Export
             </Button>
           </div>
@@ -970,43 +1038,56 @@ function QueryMetrics({ metrics }: { metrics: QueryMetric[] }) {
       <div className="p-4">
         <div className="space-y-3">
           {sortedMetrics.map((metric, i) => (
-            <div key={i} className="p-3 rounded-lg border border-zinc-200 dark:border-zinc-700">
-              <div className="flex items-start justify-between mb-2">
+            <div
+              key={i}
+              className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
+            >
+              <div className="mb-2 flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  <span className={`px-2 py-1 text-xs rounded ${
-                    metric.operationType === 'query' 
-                      ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
-                      : metric.operationType === 'mutation'
-                      ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                      : 'bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
-                  }`}>
+                  <span
+                    className={`rounded px-2 py-1 text-xs ${
+                      metric.operationType === 'query'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                        : metric.operationType === 'mutation'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                          : 'bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400'
+                    }`}
+                  >
                     {metric.operationType}
                   </span>
                   <span className="text-xs text-zinc-500">
                     Last executed: {metric.lastExecuted}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center gap-4 text-sm">
                   <div className="text-right">
-                    <div className="text-zinc-500 text-xs">Executions</div>
-                    <div className="font-medium">{metric.totalExecutions.toLocaleString()}</div>
+                    <div className="text-xs text-zinc-500">Executions</div>
+                    <div className="font-medium">
+                      {metric.totalExecutions.toLocaleString()}
+                    </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-zinc-500 text-xs">Avg Time</div>
-                    <div className="font-medium">{metric.avgExecutionTime}ms</div>
+                    <div className="text-xs text-zinc-500">Avg Time</div>
+                    <div className="font-medium">
+                      {metric.avgExecutionTime}ms
+                    </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-zinc-500 text-xs">Error Rate</div>
-                    <div className={`font-medium ${metric.errorRate > 5 ? 'text-red-600' : 'text-green-600'}`}>
+                    <div className="text-xs text-zinc-500">Error Rate</div>
+                    <div
+                      className={`font-medium ${metric.errorRate > 5 ? 'text-red-600' : 'text-green-600'}`}
+                    >
                       {metric.errorRate}%
                     </div>
                   </div>
                 </div>
               </div>
-              
-              <pre className="text-xs font-mono bg-zinc-50 dark:bg-zinc-900 rounded p-2 overflow-x-auto">
-{metric.query.length > 200 ? metric.query.substring(0, 200) + '...' : metric.query}
+
+              <pre className="overflow-x-auto rounded bg-zinc-50 p-2 font-mono text-xs dark:bg-zinc-900">
+                {metric.query.length > 200
+                  ? metric.query.substring(0, 200) + '...'
+                  : metric.query}
               </pre>
             </div>
           ))}
@@ -1028,7 +1109,7 @@ export default function HasuraPage() {
     cacheHitRatio: 85.3,
     activeConnections: 24,
     errorsLast24h: 12,
-    subscriptions: 56
+    subscriptions: 56,
   })
 
   const [schema] = useState<GraphQLSchema>({
@@ -1040,19 +1121,29 @@ export default function HasuraPage() {
           { name: 'id', type: 'integer', nullable: false, isGenerated: true },
           { name: 'email', type: 'text', nullable: false, isGenerated: false },
           { name: 'name', type: 'text', nullable: true, isGenerated: false },
-          { name: 'created_at', type: 'timestamptz', nullable: false, default: 'now()', isGenerated: false }
+          {
+            name: 'created_at',
+            type: 'timestamptz',
+            nullable: false,
+            default: 'now()',
+            isGenerated: false,
+          },
         ],
         primaryKey: ['id'],
         foreignKeys: [],
         permissions: [
-          { role: 'user', permission: 'select', columns: ['id', 'name', 'email'] },
+          {
+            role: 'user',
+            permission: 'select',
+            columns: ['id', 'name', 'email'],
+          },
           { role: 'admin', permission: 'select' },
           { role: 'admin', permission: 'insert' },
           { role: 'admin', permission: 'update' },
-          { role: 'admin', permission: 'delete' }
+          { role: 'admin', permission: 'delete' },
         ],
         isTracked: true,
-        rowCount: 15234
+        rowCount: 15234,
       },
       {
         name: 'posts',
@@ -1061,42 +1152,72 @@ export default function HasuraPage() {
           { name: 'id', type: 'integer', nullable: false, isGenerated: true },
           { name: 'title', type: 'text', nullable: false, isGenerated: false },
           { name: 'content', type: 'text', nullable: true, isGenerated: false },
-          { name: 'user_id', type: 'integer', nullable: false, isGenerated: false },
-          { name: 'published', type: 'boolean', nullable: false, default: 'false', isGenerated: false }
+          {
+            name: 'user_id',
+            type: 'integer',
+            nullable: false,
+            isGenerated: false,
+          },
+          {
+            name: 'published',
+            type: 'boolean',
+            nullable: false,
+            default: 'false',
+            isGenerated: false,
+          },
         ],
         primaryKey: ['id'],
         foreignKeys: [
-          { column: 'user_id', references: { table: 'users', column: 'id' } }
+          { column: 'user_id', references: { table: 'users', column: 'id' } },
         ],
         permissions: [
-          { role: 'user', permission: 'select', filter: { user_id: { _eq: 'X-Hasura-User-Id' } } },
-          { role: 'admin', permission: 'select' }
+          {
+            role: 'user',
+            permission: 'select',
+            filter: { user_id: { _eq: 'X-Hasura-User-Id' } },
+          },
+          { role: 'admin', permission: 'select' },
         ],
         isTracked: true,
-        rowCount: 8923
+        rowCount: 8923,
       },
       {
         name: 'comments',
         schema: 'public',
         columns: [
           { name: 'id', type: 'integer', nullable: false, isGenerated: true },
-          { name: 'content', type: 'text', nullable: false, isGenerated: false },
-          { name: 'post_id', type: 'integer', nullable: false, isGenerated: false },
-          { name: 'user_id', type: 'integer', nullable: false, isGenerated: false }
+          {
+            name: 'content',
+            type: 'text',
+            nullable: false,
+            isGenerated: false,
+          },
+          {
+            name: 'post_id',
+            type: 'integer',
+            nullable: false,
+            isGenerated: false,
+          },
+          {
+            name: 'user_id',
+            type: 'integer',
+            nullable: false,
+            isGenerated: false,
+          },
         ],
         primaryKey: ['id'],
         foreignKeys: [
           { column: 'post_id', references: { table: 'posts', column: 'id' } },
-          { column: 'user_id', references: { table: 'users', column: 'id' } }
+          { column: 'user_id', references: { table: 'users', column: 'id' } },
         ],
         permissions: [],
         isTracked: false,
-        rowCount: 0
-      }
+        rowCount: 0,
+      },
     ],
     views: [],
     functions: [],
-    relationships: []
+    relationships: [],
   })
 
   const [eventTriggers] = useState<EventTrigger[]>([
@@ -1109,17 +1230,17 @@ export default function HasuraPage() {
       retryConfig: {
         numRetries: 3,
         timeoutSeconds: 60,
-        intervalSeconds: 10
+        intervalSeconds: 10,
       },
       headers: {
-        'Authorization': 'Bearer ***',
-        'Content-Type': 'application/json'
+        Authorization: 'Bearer ***',
+        'Content-Type': 'application/json',
       },
       lastInvocation: {
         status: 'success',
         timestamp: '2024-01-17 10:25:30',
-        response: 200
-      }
+        response: 200,
+      },
     },
     {
       name: 'post_updated_sync',
@@ -1130,10 +1251,10 @@ export default function HasuraPage() {
       retryConfig: {
         numRetries: 5,
         timeoutSeconds: 30,
-        intervalSeconds: 5
+        intervalSeconds: 5,
       },
-      headers: {}
-    }
+      headers: {},
+    },
   ])
 
   const [actions] = useState<Action[]>([
@@ -1145,11 +1266,11 @@ export default function HasuraPage() {
         arguments: {
           email: 'String!',
           subject: 'String!',
-          body: 'String!'
+          body: 'String!',
         },
-        outputType: 'EmailResponse'
+        outputType: 'EmailResponse',
       },
-      permissions: ['user', 'admin']
+      permissions: ['user', 'admin'],
     },
     {
       name: 'getRecommendations',
@@ -1158,12 +1279,12 @@ export default function HasuraPage() {
         type: 'query',
         arguments: {
           userId: 'Int!',
-          limit: 'Int'
+          limit: 'Int',
         },
-        outputType: '[Recommendation]'
+        outputType: '[Recommendation]',
       },
-      permissions: ['user']
-    }
+      permissions: ['user'],
+    },
   ])
 
   const [remoteSchemas] = useState<RemoteSchema[]>([
@@ -1171,11 +1292,11 @@ export default function HasuraPage() {
       name: 'auth_service',
       url: 'https://auth.example.com/graphql',
       headers: {
-        'Authorization': 'Bearer ***'
+        Authorization: 'Bearer ***',
       },
       timeoutSeconds: 60,
       status: 'connected',
-      lastSync: '2 min ago'
+      lastSync: '2 min ago',
     },
     {
       name: 'payment_service',
@@ -1183,8 +1304,8 @@ export default function HasuraPage() {
       headers: {},
       timeoutSeconds: 30,
       status: 'error',
-      lastSync: '1 hour ago'
-    }
+      lastSync: '1 hour ago',
+    },
   ])
 
   const [queryMetrics] = useState<QueryMetric[]>([
@@ -1194,24 +1315,26 @@ export default function HasuraPage() {
       avgExecutionTime: 45,
       totalExecutions: 8234,
       errorRate: 0.2,
-      lastExecuted: '2 min ago'
+      lastExecuted: '2 min ago',
     },
     {
-      query: 'mutation CreatePost($title: String!, $content: String!) { insert_posts_one(object: {title: $title, content: $content}) { id } }',
+      query:
+        'mutation CreatePost($title: String!, $content: String!) { insert_posts_one(object: {title: $title, content: $content}) { id } }',
       operationType: 'mutation',
       avgExecutionTime: 180,
       totalExecutions: 1523,
       errorRate: 2.1,
-      lastExecuted: '5 min ago'
+      lastExecuted: '5 min ago',
     },
     {
-      query: 'subscription OnlineUsers { users(where: {last_seen: {_gte: "now() - interval \'5 minutes\'"}}) { id name } }',
+      query:
+        'subscription OnlineUsers { users(where: {last_seen: {_gte: "now() - interval \'5 minutes\'"}}) { id name } }',
       operationType: 'subscription',
       avgExecutionTime: 12,
       totalExecutions: 456,
       errorRate: 0.0,
-      lastExecuted: '1 min ago'
-    }
+      lastExecuted: '1 min ago',
+    },
   ])
 
   const tabs = [
@@ -1220,35 +1343,36 @@ export default function HasuraPage() {
     { id: 'permissions', label: 'Permissions', icon: Shield },
     { id: 'events', label: 'Event Triggers', icon: Webhook },
     { id: 'actions', label: 'Actions & Remote', icon: Zap },
-    { id: 'metrics', label: 'Metrics', icon: BarChart3 }
+    { id: 'metrics', label: 'Metrics', icon: BarChart3 },
   ]
 
   return (
     <>
       <HeroPattern />
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-zinc-900 dark:text-white flex items-center gap-3">
-                <Layers className="w-8 h-8 text-purple-500" />
+              <h1 className="flex items-center gap-3 text-3xl font-bold text-zinc-900 dark:text-white">
+                <Layers className="h-8 w-8 text-purple-500" />
                 Hasura GraphQL
               </h1>
-              <p className="text-zinc-600 dark:text-zinc-400 mt-1">
-                GraphQL API management, schema design, and performance monitoring
+              <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+                GraphQL API management, schema design, and performance
+                monitoring
               </p>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline">
-                <ExternalLink className="w-4 h-4 mr-2" />
+                <ExternalLink className="mr-2 h-4 w-4" />
                 Hasura Console
               </Button>
               <Button variant="outline">
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="mr-2 h-4 w-4" />
                 Export Metadata
               </Button>
               <Button variant="outline">
-                <RefreshCw className="w-4 h-4 mr-2" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Refresh
               </Button>
             </div>
@@ -1258,18 +1382,18 @@ export default function HasuraPage() {
           <StatsOverview stats={stats} />
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-1 bg-white dark:bg-zinc-800 rounded-lg p-1 border border-zinc-200 dark:border-zinc-700 mb-6">
+          <div className="mb-6 flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === tab.id
                     ? 'bg-blue-500 text-white'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-700'
+                    : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100'
                 }`}
               >
-                <tab.icon className="w-4 h-4" />
+                <tab.icon className="h-4 w-4" />
                 {tab.label}
               </button>
             ))}
@@ -1279,10 +1403,15 @@ export default function HasuraPage() {
         {/* Tab Content */}
         {activeTab === 'console' && <GraphQLConsole />}
         {activeTab === 'schema' && <SchemaManagement schema={schema} />}
-        {activeTab === 'permissions' && <PermissionsMatrix tables={schema.tables} />}
+        {activeTab === 'permissions' && (
+          <PermissionsMatrix tables={schema.tables} />
+        )}
         {activeTab === 'events' && <EventTriggers triggers={eventTriggers} />}
         {activeTab === 'actions' && (
-          <ActionsAndRemoteSchemas actions={actions} remoteSchemas={remoteSchemas} />
+          <ActionsAndRemoteSchemas
+            actions={actions}
+            remoteSchemas={remoteSchemas}
+          />
         )}
         {activeTab === 'metrics' && <QueryMetrics metrics={queryMetrics} />}
       </div>

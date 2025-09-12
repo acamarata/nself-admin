@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
 import { useWizardStore } from '@/stores/wizardStore'
+import { useEffect } from 'react'
 
 export function WizardProvider({ children }: { children: React.ReactNode }) {
   const { syncWithEnv, isInitialized, setInitialized } = useWizardStore()
-  
+
   useEffect(() => {
     // Load state from env on initial mount
     if (!isInitialized) {
@@ -14,6 +14,6 @@ export function WizardProvider({ children }: { children: React.ReactNode }) {
       })
     }
   }, [isInitialized, syncWithEnv, setInitialized])
-  
+
   return <>{children}</>
 }
