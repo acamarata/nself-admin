@@ -6,6 +6,40 @@ interface EnvConfig {
   [key: string]: string
 }
 
+// Helper function to properly quote environment variable values
+// Values with spaces, special characters, or starting with quotes need to be quoted
+function quoteEnvValue(value: string): string {
+  // If empty, return empty string
+  if (!value) return ''
+  
+  // Check if value needs quoting:
+  // 1. Contains spaces
+  // 2. Contains special shell characters
+  // 3. Contains asterisks (for cron expressions)
+  // 4. Already quoted (preserve existing quotes)
+  const needsQuoting = /[\s*#$&|;<>()\\`]/.test(value) || value.includes('"') || value.includes("'")
+  
+  // If already properly quoted with double quotes, return as-is
+  if (value.startsWith('"') && value.endsWith('"')) {
+    return value
+  }
+  
+  // If already properly quoted with single quotes, return as-is
+  if (value.startsWith("'") && value.endsWith("'")) {
+    return value
+  }
+  
+  // If needs quoting, wrap in double quotes and escape any internal double quotes
+  if (needsQuoting) {
+    // Escape any internal double quotes
+    const escaped = value.replace(/"/g, '\\"')
+    return `"${escaped}"`
+  }
+  
+  // Otherwise return as-is
+  return value
+}
+
 // Read env files in priority order and merge them
 export async function readEnvFile(): Promise<EnvConfig | null> {
   try {
@@ -23,9 +57,27 @@ export async function readEnvFile(): Promise<EnvConfig | null> {
         const index = trimmed.indexOf('=')
         if (index > 0) {
           const key = trimmed.substring(0, index).trim()
-          const value = trimmed.substring(index + 1).trim()
-          // Remove quotes if present
-          result[key] = value.replace(/^["']|["']$/g, '')
+          let value = trimmed.substring(index + 1)
+          
+          // Handle quoted values properly
+          // If value starts and ends with matching quotes, remove them
+          if ((value.startsWith('"') && value.endsWith('"')) ||
+              (value.startsWith("'") && value.endsWith("'"))) {
+            // Remove the outer quotes
+            value = value.slice(1, -1)
+            // Unescape any escaped quotes within the value
+            if (value.includes('\\"')) {
+              value = value.replace(/\\"/g, '"')
+            }
+            if (value.includes("\\'")) {
+              value = value.replace(/\\'/g, "'")
+            }
+          } else {
+            // For unquoted values, just trim whitespace
+            value = value.trim()
+          }
+          
+          result[key] = value
         }
       }
       return result
@@ -132,7 +184,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
   const coreValues = coreSettings.filter(key => config[key] !== undefined && config[key] !== '')
   if (coreValues.length > 0) {
     for (const key of coreValues) {
-      lines.push(`${key}=${config[key]}`)
+      lines.push(`${key}=${quoteEnvValue(config[key])}`)
     }
     lines.push('')
   }
@@ -143,7 +195,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
   if (dbValues.length > 0) {
     lines.push('# Database')
     for (const key of dbValues) {
-      lines.push(`${key}=${config[key]}`)
+      lines.push(`${key}=${quoteEnvValue(config[key])}`)
     }
     lines.push('')
   }
@@ -154,16 +206,13 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
   if (hasuraValues.length > 0) {
     lines.push('# Hasura GraphQL')
     for (const key of hasuraValues) {
-      lines.push(`${key}=${config[key]}`)
+      lines.push(`${key}=${quoteEnvValue(config[key])}`)
     }
     lines.push('')
   }
   
-  // Custom Services - Dynamic based on actual services
+  // Custom Services - Dynamic based on actual services (CS_N format only)
   const serviceKeys = Object.keys(config).filter(key => key.startsWith('CS_') || key === 'SERVICES_ENABLED')
-  // Also filter out old USER_SERVICE_* keys if we have CS_* keys
-  const hasNewFormat = serviceKeys.some(key => key.startsWith('CS_'))
-  const oldServiceKeys = Object.keys(config).filter(key => key.startsWith('USER_SERVICE'))
   
   if (serviceKeys.length > 0) {
     lines.push('# Custom Services')
@@ -176,14 +225,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
       return numA - numB
     })
     for (const key of sortedServices) {
-      lines.push(`${key}=${config[key]}`)
-    }
-    lines.push('')
-  } else if (!hasNewFormat && oldServiceKeys.length > 0) {
-    // Keep old format if no new format exists (backwards compatibility)
-    lines.push('# Custom Services (Legacy Format)')
-    for (const key of oldServiceKeys.sort()) {
-      lines.push(`${key}=${config[key]}`)
+      lines.push(`${key}=${quoteEnvValue(config[key])}`)
     }
     lines.push('')
   }
@@ -210,7 +252,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
       return a.localeCompare(b)
     })
     for (const key of sortedFrontend) {
-      lines.push(`${key}=${config[key]}`)
+      lines.push(`${key}=${quoteEnvValue(config[key])}`)
     }
     lines.push('')
   }
@@ -259,7 +301,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
   if (credentialsToWrite.length > 0) {
     lines.push('# Service Credentials')
     for (const key of credentialsToWrite) {
-      lines.push(`${key}=${config[key]}`)
+      lines.push(`${key}=${quoteEnvValue(config[key])}`)
     }
     lines.push('')
   }
@@ -270,7 +312,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
     const backupKeys = ['BACKUP_ENABLED', 'BACKUP_SCHEDULE', 'BACKUP_RETENTION_DAYS', 'BACKUP_DIR', 'BACKUP_COMPRESSION', 'BACKUP_ENCRYPTION']
     for (const key of backupKeys) {
       if (config[key] !== undefined) {
-        lines.push(`${key}=${config[key]}`)
+        lines.push(`${key}=${quoteEnvValue(config[key])}`)
       }
     }
     lines.push('')
@@ -293,7 +335,7 @@ export async function writeEnvFile(config: EnvConfig): Promise<void> {
   if (remainingKeys.length > 0) {
     lines.push('# Additional Settings')
     for (const key of remainingKeys.sort()) {
-      lines.push(`${key}=${config[key]}`)
+      lines.push(`${key}=${quoteEnvValue(config[key])}`)
     }
     lines.push('')
   }
@@ -684,32 +726,11 @@ export function envToWizardConfig(env: EnvConfig): any {
     frontendApps: []
   }
   
-  // Parse custom services - support both formats for backwards compatibility
-  // 1. Try nself CLI format (CS_N)
+  // Parse custom services - CS_N format only (legacy formats no longer supported)
   for (let i = 1; i <= 99; i++) {  // Check up to 99 services (nself supports CS_1 through CS_99)
     const serviceDef = env[`CS_${i}`]
     if (serviceDef) {
       const [name, framework, port, route] = serviceDef.split(':')
-      if (name) {
-        config.customServices.push({
-          name,
-          framework: framework || 'custom',
-          port: port ? parseInt(port) : (4000 + i - 1),
-          route: route || undefined
-        })
-      }
-    }
-  }
-  
-  // 2. If no CS_N format found, try old USER_SERVICE_N format for backwards compatibility
-  if (config.customServices.length === 0) {
-    const serviceCount = parseInt(env.USER_SERVICE_COUNT || '0')
-    for (let i = 1; i <= serviceCount; i++) {
-      const name = env[`USER_SERVICE_${i}_NAME`]
-      const framework = env[`USER_SERVICE_${i}_FRAMEWORK`]
-      const port = env[`USER_SERVICE_${i}_PORT`]
-      const route = env[`USER_SERVICE_${i}_ROUTE`]
-      
       if (name) {
         config.customServices.push({
           name,

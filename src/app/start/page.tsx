@@ -426,6 +426,7 @@ export default function StartPage() {
     message: string
     percentage?: number
     type?: 'status' | 'progress' | 'download' | 'container' | 'error' | 'complete'
+    instructions?: string[]
   }>({ message: '' })
   
   const checkProjectStatus = useProjectStore(state => state.checkProjectStatus)
@@ -568,11 +569,19 @@ export default function StartPage() {
                   break
                   
                 case 'error':
-                  setStartProgress({
+                  // Store full error details including instructions
+                  const errorProgress: any = {
                     message: data.message || 'An error occurred',
                     type: 'error'
-                  })
-                  console.error('Start error:', data.message, data.errorOutput)
+                  }
+                  
+                  // Store instructions if provided
+                  if (data.instructions) {
+                    errorProgress.instructions = data.instructions
+                  }
+                  
+                  setStartProgress(errorProgress)
+                  console.error('Start error:', data.message, data.errorOutput, data.instructions)
                   setStarting(false) // Reset starting state on error
                   break
                   
@@ -1019,6 +1028,19 @@ export default function StartPage() {
                     }`}>
                       {startProgress.message}
                     </p>
+                    
+                    {/* Show instructions if present (for errors) */}
+                    {startProgress.instructions && startProgress.instructions.length > 0 && (
+                      <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                        <div className="text-left space-y-1">
+                          {startProgress.instructions.map((instruction, index) => (
+                            <div key={index} className="text-xs text-red-700 dark:text-red-300">
+                              {instruction}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Progress Bar */}
                     {startProgress.percentage !== undefined && startProgress.percentage > 0 && startProgress.type !== 'error' && (

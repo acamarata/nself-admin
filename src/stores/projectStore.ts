@@ -219,14 +219,20 @@ export const useProjectStore = create<ProjectState>()(
             projectStatus = 'initialized'
           }
           
+          // Only update containersRunning if we have a reliable count
+          // Don't overwrite with 0 if we know services are running
+          const currentState = get()
+          const reliableContainerCount = containerCount > 0 ? containerCount : 
+            (currentState.containerStats.length > 0 ? currentState.containerStats.length : containerCount)
+          
           set({
             projectStatus,
             projectSetup: projectStatus !== 'not_initialized',
             hasEnvFile: statusData.hasEnvFile,
             hasDockerCompose: statusData.summary?.built || false,
-            containersRunning: containerCount,
-            totalContainers: containerCount,
-            servicesRunning: statusData.servicesRunning,
+            containersRunning: reliableContainerCount,
+            totalContainers: reliableContainerCount,
+            servicesRunning: statusData.servicesRunning || reliableContainerCount > 0,
             lastChecked: new Date(),
             isChecking: false
           })
@@ -306,21 +312,28 @@ export const useProjectStore = create<ProjectState>()(
           if (response && response.ok) {
             const data = await response.json()
             if (data.success && Array.isArray(data.data)) {
-              // Group containers by category
-              const byCategory: Record<string, ContainerStats[]> = {}
-              data.data.forEach((container: ContainerStats) => {
-                const category = container.category || 'services'
-                if (!byCategory[category]) {
-                  byCategory[category] = []
-                }
-                byCategory[category].push(container)
-              })
-              
-              set({ 
-                containerStats: data.data,
-                containersByCategory: byCategory,
-                isLoadingContainers: false
-              })
+              // Only update if we actually got container data
+              // Never replace existing data with empty array unless we're sure there are no containers
+              if (data.data.length > 0 || (data.data.length === 0 && state.projectStatus !== 'running')) {
+                // Group containers by category
+                const byCategory: Record<string, ContainerStats[]> = {}
+                data.data.forEach((container: ContainerStats) => {
+                  const category = container.category || 'services'
+                  if (!byCategory[category]) {
+                    byCategory[category] = []
+                  }
+                  byCategory[category].push(container)
+                })
+                
+                set({ 
+                  containerStats: data.data,
+                  containersByCategory: byCategory,
+                  isLoadingContainers: false
+                })
+              } else {
+                // Got empty array but project is running - keep existing data
+                set({ isLoadingContainers: false })
+              }
             } else {
               // API returned unsuccessful response, keep existing data
               set({ isLoadingContainers: false })

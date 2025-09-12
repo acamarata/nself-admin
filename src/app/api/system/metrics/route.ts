@@ -6,6 +6,15 @@ import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
+// Store previous network stats for calculating delta
+interface NetworkSnapshot {
+  timestamp: number
+  rx: number  // bytes
+  tx: number  // bytes
+}
+
+let lastNetworkSnapshot: NetworkSnapshot | null = null
+
 export async function GET() {
   try {
     // Get data from our orchestrator
@@ -86,6 +95,70 @@ export async function GET() {
 
     const [systemCpu, systemMemory, systemDisk, maxSpeed] = await getSystemMetrics()
 
+    // Get current network bytes from docker stats
+    let currentNetworkRx = 0
+    let currentNetworkTx = 0
+    
+    try {
+      // Get network stats from all running containers
+      const { stdout } = await execAsync(`docker stats --no-stream --format "table {{.NetIO}}" | tail -n +2 | awk -F'/' '{print $1 " " $2}'`)
+      const lines = stdout.trim().split('\n').filter(l => l)
+      
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/)
+        if (parts.length >= 2) {
+          // Parse network I/O (e.g., "1.2MB", "500kB")
+          const rxStr = parts[0]
+          const txStr = parts[1]
+          
+          // Convert to bytes
+          const parseBytes = (str: string): number => {
+            const num = parseFloat(str)
+            if (str.includes('GB')) return num * 1024 * 1024 * 1024
+            if (str.includes('MB')) return num * 1024 * 1024
+            if (str.includes('kB')) return num * 1024
+            return num
+          }
+          
+          currentNetworkRx += parseBytes(rxStr)
+          currentNetworkTx += parseBytes(txStr)
+        }
+      }
+    } catch {
+      // Fallback to orchestrator data if docker stats fails
+      currentNetworkRx = state.metrics.totalNetwork.rx * 1024 * 1024 // Convert MB to bytes
+      currentNetworkTx = state.metrics.totalNetwork.tx * 1024 * 1024
+    }
+    
+    // Calculate network rate (Mbps) based on delta
+    let networkRxRate = 0
+    let networkTxRate = 0
+    
+    const now = Date.now()
+    if (lastNetworkSnapshot) {
+      const timeDeltaSeconds = (now - lastNetworkSnapshot.timestamp) / 1000
+      if (timeDeltaSeconds > 0) {
+        // Calculate bytes per second, then convert to Mbps
+        const rxBytesPerSecond = (currentNetworkRx - lastNetworkSnapshot.rx) / timeDeltaSeconds
+        const txBytesPerSecond = (currentNetworkTx - lastNetworkSnapshot.tx) / timeDeltaSeconds
+        
+        // Convert to Mbps (megabits per second)
+        networkRxRate = Math.max(0, (rxBytesPerSecond * 8) / (1024 * 1024))
+        networkTxRate = Math.max(0, (txBytesPerSecond * 8) / (1024 * 1024))
+        
+        // Round to 2 decimal places
+        networkRxRate = Math.round(networkRxRate * 100) / 100
+        networkTxRate = Math.round(networkTxRate * 100) / 100
+      }
+    }
+    
+    // Update snapshot for next calculation
+    lastNetworkSnapshot = {
+      timestamp: now,
+      rx: currentNetworkRx,
+      tx: currentNetworkTx
+    }
+    
     // Calculate Docker metrics from orchestrator data
     const dockerMetrics = {
       cpu: state.metrics.totalCpu,
@@ -95,8 +168,8 @@ export async function GET() {
         percentage: state.metrics.totalMemory.percentage
       },
       network: {
-        rx: state.metrics.totalNetwork.rx,
-        tx: state.metrics.totalNetwork.tx
+        rx: networkRxRate,  // Mbps rate
+        tx: networkTxRate   // Mbps rate
       },
       storage: {
         used: state.docker.containers.reduce((sum, c) => {
@@ -108,13 +181,74 @@ export async function GET() {
       containers: state.docker.containers.length
     }
 
-    // Get Docker storage if possible
+    // Get Docker storage for THIS PROJECT only (volumes + containers, not images)
     try {
-      const { stdout } = await execAsync("docker system df --format 'table {{.Type}}\t{{.Size}}' | grep -E '(Images|Containers|Local Volumes)' | awk '{print $2}' | sed 's/[A-Za-z]*//g'")
-      const sizes = stdout.trim().split('\n').map(s => parseFloat(s) || 0)
-      dockerMetrics.storage.used = sizes.reduce((sum, size) => sum + size, 0)
-    } catch {
-      // Keep estimate
+      const { stdout } = await execAsync("docker system df --format json")
+      // Parse newline-delimited JSON
+      const lines = stdout.trim().split('\n').filter(l => l)
+      let totalUsed = 0
+      
+      for (const line of lines) {
+        try {
+          const item = JSON.parse(line)
+          
+          // Only count Containers and Volumes (project-specific data)
+          // Skip Images as they're shared across all projects
+          if (item.Type === 'Images' || item.Type === 'Build Cache') {
+            continue
+          }
+          
+          // Parse size string (e.g., "416.7MB", "167.9kB")
+          const sizeStr = item.Size || '0B'
+          let sizeInGB = 0
+          
+          if (sizeStr.includes('GB')) {
+            sizeInGB = parseFloat(sizeStr.replace('GB', ''))
+          } else if (sizeStr.includes('MB')) {
+            sizeInGB = parseFloat(sizeStr.replace('MB', '')) / 1024
+          } else if (sizeStr.includes('kB')) {
+            sizeInGB = parseFloat(sizeStr.replace('kB', '')) / (1024 * 1024)
+          } else if (sizeStr.includes('B')) {
+            sizeInGB = parseFloat(sizeStr.replace('B', '')) / (1024 * 1024 * 1024)
+          }
+          
+          totalUsed += sizeInGB
+        } catch {
+          // Skip invalid lines
+        }
+      }
+      
+      // Round to 3 decimal places for better precision with small values
+      dockerMetrics.storage.used = Math.round(totalUsed * 1000) / 1000
+      
+      // Set a reasonable total for project data storage (10GB for volumes/containers)
+      // This is more realistic for project-specific data
+      dockerMetrics.storage.total = 10
+    } catch (error) {
+      // Fallback: use simpler parsing (only Containers and Volumes)
+      try {
+        const { stdout } = await execAsync("docker system df | grep -E 'Containers|Volumes' | awk '{print $4}'")
+        const lines = stdout.trim().split('\n')
+        let totalUsed = 0
+        
+        for (const line of lines) {
+          const size = line.trim()
+          if (size.includes('GB')) {
+            totalUsed += parseFloat(size.replace('GB', ''))
+          } else if (size.includes('MB')) {
+            totalUsed += parseFloat(size.replace('MB', '')) / 1024
+          } else if (size.includes('kB')) {
+            totalUsed += parseFloat(size.replace('kB', '')) / (1024 * 1024)
+          }
+        }
+        
+        dockerMetrics.storage.used = Math.round(totalUsed * 1000) / 1000
+        dockerMetrics.storage.total = 10 // 10GB for project data
+      } catch {
+        // Keep a minimal estimate based on container count
+        dockerMetrics.storage.used = state.docker.containers.length * 0.05 // ~50MB per container
+        dockerMetrics.storage.total = 10
+      }
     }
 
     return NextResponse.json({
@@ -125,8 +259,8 @@ export async function GET() {
           memory: systemMemory,
           disk: systemDisk,
           network: {
-            rx: 0, // System network not tracked currently
-            tx: 0,
+            rx: networkRxRate,  // Use the same rate for system
+            tx: networkTxRate,  // Use the same rate for system
             maxSpeed
           }
         },

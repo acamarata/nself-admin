@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     async start(controller) {
       try {
         // Find nself CLI - use absolute path
-        let nselfPath: string
+        let nselfPath: string | null = null
         
         // Check known locations in order of preference
         const possiblePaths = [
@@ -44,21 +44,62 @@ export async function POST(request: NextRequest) {
           process.env.HOME + '/.local/bin/nself'
         ]
         
-        // Find the first existing path
-        nselfPath = possiblePaths.find(path => require('fs').existsSync(path)) || 'nself'
-        
-        // If we found a path, verify it's executable
-        if (nselfPath !== 'nself') {
-          console.log('Found nself at:', nselfPath)
-          // Make sure it's executable
+        // Find the first existing and executable path
+        for (const path of possiblePaths) {
           try {
-            require('fs').accessSync(nselfPath, require('fs').constants.X_OK)
-            console.log('nself is executable')
-          } catch {
-            console.error('nself is not executable at:', nselfPath)
+            if (fs.existsSync(path)) {
+              // Check if it's executable
+              try {
+                fs.accessSync(path, fs.constants.X_OK)
+                nselfPath = path
+                console.log('Found executable nself at:', nselfPath)
+                break
+              } catch {
+                console.log('Found nself but not executable at:', path)
+              }
+            }
+          } catch (err) {
+            console.log('Error checking path:', path, err)
           }
-        } else {
-          console.log('Using nself from PATH (fallback)')
+        }
+        
+        // If not found in known locations, try to find in PATH
+        if (!nselfPath) {
+          console.log('Checking PATH for nself...')
+          const whichProcess = spawn('which', ['nself'])
+          const result = await new Promise<string>((resolve) => {
+            let output = ''
+            whichProcess.stdout.on('data', (data) => {
+              output += data.toString()
+            })
+            whichProcess.on('close', (code) => {
+              resolve(code === 0 ? output.trim() : '')
+            })
+          })
+          
+          if (result) {
+            nselfPath = result
+            console.log('Found nself in PATH at:', nselfPath)
+          }
+        }
+        
+        // If no nself found, return error with installation instructions
+        if (!nselfPath) {
+          console.error('nself CLI not found in any expected location')
+          controller.enqueue(encoder.encode(JSON.stringify({
+            type: 'error',
+            message: 'nself CLI not found. Please install or reinstall nself.',
+            error: 'The nself command-line tool is required but was not found on your system.',
+            instructions: [
+              'To install nself:',
+              '1. Visit https://github.com/acamarata/nself',
+              '2. Follow the installation instructions for your operating system',
+              '3. Ensure nself is in your PATH or installed in /usr/local/bin',
+              '4. Try running "nself version" in your terminal to verify installation'
+            ]
+          }) + '\n'))
+          controller.close()
+          return
         }
         
         console.log('Using nself command:', nselfPath)
@@ -120,7 +161,7 @@ export async function POST(request: NextRequest) {
           cwd: projectPath
         })
         
-        const composeProcess = spawn(nselfPath, ['start'], {
+        const composeProcess = spawn(nselfPath!, ['start'], {
           cwd: projectPath,
           env: {
             ...process.env,
@@ -251,16 +292,55 @@ export async function POST(request: NextRequest) {
         })
         
         // Wait for process to complete
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve) => {
           let hasErrors = false
           
-          composeProcess.on('error', (error) => {
+          composeProcess.on('error', (error: any) => {
             hasErrors = true
             console.error('Process spawn error:', error)
+            
+            // More helpful error messages based on error code
+            let errorMessage = 'Failed to start services'
+            let instructions: string[] = []
+            
+            if (error.code === 'ENOENT') {
+              errorMessage = 'nself CLI executable not found'
+              instructions = [
+                'The nself command could not be executed.',
+                'Please ensure nself is properly installed:',
+                '1. Run "nself version" in your terminal to check if it\'s installed',
+                '2. If not installed, visit https://github.com/acamarata/nself',
+                '3. Follow the installation instructions for your OS',
+                '4. Restart this application after installation'
+              ]
+            } else if (error.code === 'EACCES') {
+              errorMessage = 'Permission denied when executing nself'
+              instructions = [
+                'The nself command exists but is not executable.',
+                'To fix this:',
+                `1. Run: chmod +x ${nselfPath}`,
+                '2. Try again'
+              ]
+            } else if (error.code === 127) {
+              errorMessage = 'Command not found'
+              instructions = [
+                'The shell could not find the nself command.',
+                'This usually means nself is not in your PATH.',
+                'To fix this:',
+                '1. Ensure nself is installed',
+                '2. Add nself to your PATH or install it in /usr/local/bin',
+                '3. Restart your terminal and this application'
+              ]
+            } else {
+              errorMessage = `Process error: ${error.message}`
+            }
+            
             controller.enqueue(encoder.encode(JSON.stringify({
               type: 'error',
-              message: `Process error: ${error.message}`,
-              details: error.toString()
+              message: errorMessage,
+              details: error.toString(),
+              code: error.code,
+              instructions
             }) + '\n'))
           })
           

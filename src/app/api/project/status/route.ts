@@ -77,36 +77,53 @@ export async function GET() {
     
     // Check Docker containers related to this nself project
     let dockerContainers: any[] = []
-    let projectPrefix = 'nproj' // Default fallback
+    let projectPrefix = 'nchat' // For nchat project
     
     try {
-      // Try to get the project name from docker-compose.yml
-      if (isBuilt) {
-        const dockerComposeContent = await fs.readFile(dockerComposePath, 'utf8')
-        const projectMatch = dockerComposeContent.match(/# Project: ([^\s\n]+)/)
-        if (projectMatch) {
-          projectPrefix = projectMatch[1].trim()
+      // Try to get the project name from env file first (more reliable)
+      if (hasEnvFile && envContent) {
+        const projectNameMatch = envContent.match(/PROJECT_NAME=(.+)/)
+        if (projectNameMatch) {
+          projectPrefix = projectNameMatch[1].trim().replace(/["']/g, '')
         }
       }
       
-      // Get all containers
-      const { stdout } = await execAsync('docker ps --format "{{.Names}}\t{{.Status}}\t{{.Ports}}"')
+      // Then try docker-compose.yml as fallback
+      if (isBuilt && projectPrefix === 'nchat') {
+        try {
+          const dockerComposeContent = await fs.readFile(dockerComposePath, 'utf8')
+          const projectMatch = dockerComposeContent.match(/# Project: ([^\s\n]+)/)
+          if (projectMatch) {
+            projectPrefix = projectMatch[1].trim()
+          }
+        } catch {
+          // docker-compose read failed, keep default
+        }
+      }
+      
+      // Get all containers with timeout to prevent hanging
+      const { stdout } = await execAsync('docker ps --format "{{.Names}}\t{{.Status}}\t{{.Ports}}"', {
+        timeout: 5000
+      })
       const lines = stdout.split('\n').filter(line => line.trim())
       
       // Filter for containers from this project (more flexible matching)
       const projectContainers = lines.filter(line => {
         const containerName = line.split('\t')[0].toLowerCase()
+        const prefixLower = projectPrefix.toLowerCase()
         return (
-          containerName.startsWith(projectPrefix.toLowerCase() + '_') ||
-          containerName.startsWith(projectPrefix.toLowerCase() + '-') ||
+          containerName.startsWith(prefixLower + '_') ||
+          containerName.startsWith(prefixLower + '-') ||
           containerName.startsWith('nself_') ||
           containerName.startsWith('nself-') ||
-          // Also check if container name contains common nself service names
-          (isBuilt && (
+          // For nchat project specifically
+          (projectPrefix === 'nchat' && (
+            containerName.includes('nchat') ||
             containerName.includes('postgres') ||
             containerName.includes('hasura') ||
-            containerName.includes('grafana') ||
-            containerName.includes('prometheus')
+            containerName.includes('auth') ||
+            containerName.includes('storage') ||
+            containerName.includes('redis')
           ))
         )
       })

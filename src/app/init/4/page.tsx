@@ -469,6 +469,7 @@ export default function InitStep4() {
           </h2>
           <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
             Add custom backend services with your preferred languages and frameworks. Each service runs in its own container.
+            Services without routes are internal-only (workers, queues, etc).
           </p>
         </div>
         
@@ -629,17 +630,20 @@ export default function InitStep4() {
               {/* Route */}
               <div>
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">
-                  Route (optional)
+                  Route <span className="text-xs text-zinc-500">(leave empty for internal-only service)</span>
                 </label>
-                <UrlInput
+                <input
+                  type="text"
                   value={service.route || ''}
-                  onChange={(value) => updateService(index, 'route', value)}
-                  onError={(error) => updateService(index, 'routeError', error)}
-                  placeholder="api"
-                  baseDomain={baseDomain}
-                  environment={environment}
-                  className="w-full"
+                  onChange={(e) => updateService(index, 'route', e.target.value)}
+                  placeholder="api, webhook.external.com, or leave empty"
+                  className="w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-600 rounded-lg text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                 />
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  • No route = internal-only service (no external access)<br/>
+                  • Single word (e.g., "api") = api.{baseDomain}<br/>
+                  • Full domain = used as-is (auto-detected, no :: needed)
+                </p>
               </div>
             </div>
             

@@ -958,34 +958,12 @@ export default function DashboardPage() {
         return // Don't load data if we're redirecting
       }
       
-      // First update the project status
-      await checkProjectStatus()
+      // Immediately fetch data since we're on the dashboard
+      // This ensures we get container data quickly to prevent flickering
+      fetchAllData()
       
-      // Force fetch data regardless of current projectStatus since we're on dashboard
-      // This fixes the issue where projectStatus might not be updated yet
-      const forceFetchData = async () => {
-        try {
-          // Direct API calls since we know we should be able to see dashboard data
-          const [systemRes, dockerRes] = await Promise.all([
-            fetch('/api/system/metrics').catch(() => null),
-            fetch('/api/docker/containers?detailed=true&stats=true').catch(() => null)
-          ])
-          
-          // Update the store with the project status so future calls work
-          const store = useProjectStore.getState()
-          store.setProjectStatus('running')
-          
-          // Now call fetchAllData which should work
-          fetchAllData()
-          
-        } catch (error) {
-          console.error('Dashboard data fetch error:', error)
-          // Fallback to regular fetch
-          fetchAllData()
-        }
-      }
-      
-      forceFetchData()
+      // Then update project status in parallel (don't wait for it)
+      checkProjectStatus()
       
       // Check if services were recently started (within last 30 seconds)
       const recentlyStarted = localStorage.getItem('services_recently_started')
@@ -1333,7 +1311,9 @@ export default function DashboardPage() {
 
   // Show content immediately with loading states
   const showLoadingState = isInitialLoad || (!systemMetrics && !containerStats.length)
-  const showServices = containersRunning > 0
+  // Fix flickering: Use multiple signals to determine if services should be shown
+  // Check containerStats directly (most reliable), then containersRunning, then projectStatus
+  const showServices = containerStats.length > 0 || containersRunning > 0 || projectStatus === 'running'
 
   return (
     <>

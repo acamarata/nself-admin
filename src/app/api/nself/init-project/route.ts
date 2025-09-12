@@ -87,18 +87,24 @@ export async function POST(request: NextRequest) {
       envMap.set('ENABLE_ELASTICSEARCH', optionalServices.includes('elasticsearch') ? 'true' : 'false')
     }
     
-    // Handle user services
+    // Handle user services - use CS_N format (nself no longer supports legacy format)
     if (config.services?.user && config.services.user.length > 0) {
-      // User services are passed as an array of objects with name and framework
+      // Convert to CS_N format: name:framework:port:route
       const userServices = config.services.user
+      envMap.set('SERVICES_ENABLED', 'true')
       for (let i = 0; i < userServices.length; i++) {
         const service = userServices[i]
         const serviceNum = i + 1
-        envMap.set(`USER_SERVICE_${serviceNum}_NAME`, service.name)
-        envMap.set(`USER_SERVICE_${serviceNum}_FRAMEWORK`, service.framework)
-        envMap.set(`USER_SERVICE_${serviceNum}_PORT`, String(4000 + i))
+        const port = 4000 + i
+        // Format: name:framework:port:route (route is optional)
+        const parts = [
+          service.name || `service_${serviceNum}`,
+          service.framework || 'custom',
+          String(port),
+          service.route || ''  // Empty route means internal-only
+        ]
+        envMap.set(`CS_${serviceNum}`, parts.join(':'))
       }
-      envMap.set('USER_SERVICE_COUNT', String(userServices.length))
     }
     
     // Handle frontend apps
