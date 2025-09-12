@@ -641,7 +641,7 @@ export default function InitStep4() {
                 />
                 <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                   • No route = internal-only service (no external access)<br/>
-                  • Single word (e.g., "api") = api.{baseDomain}<br/>
+                  • Single word (e.g., &quot;api&quot;) = api.{baseDomain}<br/>
                   • Full domain = used as-is (auto-detected, no :: needed)
                 </p>
               </div>
