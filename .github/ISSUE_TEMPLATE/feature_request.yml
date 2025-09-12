@@ -1,0 +1,195 @@
+name: 💡 Feature Request
+description: Suggest an idea or enhancement for nself Admin
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! 💡
+        
+        We appreciate ideas that help make nself Admin better for everyone.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: Please confirm you have done the following
+      options:
+        - label: I have searched existing issues and feature requests
+          required: true
+        - label: I have read the documentation and roadmap
+          required: true
+        - label: This is not a bug report (use the bug report template for bugs)
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What's the current limitation?
+      placeholder: |
+        e.g., "I'm frustrated when I have to..."
+        "Currently, there's no way to..."
+        "It's difficult to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see
+      placeholder: |
+        A clear and concise description of what you want to happen.
+        How should this feature work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions you've considered
+      placeholder: |
+        What other approaches did you think about?
+        Why didn't they work as well?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      description: Which area does this feature relate to?
+      options:
+        - User Interface (Dashboard, Forms, etc.)
+        - Authentication & Security
+        - Service Management
+        - Database Tools
+        - Monitoring & Metrics
+        - API & Integrations
+        - Documentation
+        - Performance
+        - Developer Experience
+        - Other (please specify)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority Level
+      description: How important is this feature to you?
+      options:
+        - Low - Nice to have
+        - Medium - Would improve workflow
+        - High - Blocking or significantly impacts usage
+        - Critical - Required for adoption
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: User Type
+      description: Which type of user would benefit from this feature?
+      options:
+        - End Users (using the dashboard)
+        - Developers (contributing to the project)
+        - System Administrators (deploying/managing)
+        - All Users
+        - Other (please specify)
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Provide specific examples of how this feature would be used
+      placeholder: |
+        Example scenarios:
+        1. As a developer, I want to... so that...
+        2. When managing multiple projects, I need to...
+        3. During deployment, it would help if...
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Mockups/Examples
+      description: Add any mockups, screenshots, or examples that help illustrate the feature
+      placeholder: |
+        You can drag and drop images here.
+        Link to similar features in other tools.
+        ASCII art diagrams are welcome too!
+
+  - type: textarea
+    id: technical-details
+    attributes:
+      label: Technical Considerations
+      description: Any technical details, constraints, or implementation ideas?
+      placeholder: |
+        - API changes needed?
+        - Database schema changes?
+        - Security implications?
+        - Performance considerations?
+        - Backwards compatibility?
+
+  - type: textarea
+    id: success-criteria
+    attributes:
+      label: Success Criteria
+      description: How would we know this feature is successful?
+      placeholder: |
+        What would make this feature "done"?
+        How should we measure its success?
+        What edge cases should be considered?
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Implementation Scope
+      description: What level of implementation are you expecting?
+      options:
+        - label: UI/UX changes only
+          required: false
+        - label: Backend API changes needed
+          required: false
+        - label: Database schema changes required
+          required: false
+        - label: Configuration changes needed
+          required: false
+        - label: Documentation updates required
+          required: false
+        - label: Breaking changes acceptable
+          required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, links, or information about the feature request
+      placeholder: |
+        - Links to related issues or discussions
+        - Examples from other tools
+        - Community feedback
+        - Business justification
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Are you interested in contributing to this feature?
+      options:
+        - label: I would like to help implement this feature
+          required: false
+        - label: I can provide design/UX input
+          required: false
+        - label: I can help with testing
+          required: false
+        - label: I can help with documentation
+          required: false

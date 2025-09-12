@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🤔 Questions & Discussions
+    url: https://github.com/acamarata/nself-admin/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 📚 Documentation
+    url: https://github.com/acamarata/nself-admin/wiki
+    about: Check our comprehensive documentation and guides
+  - name: 🔒 Security Issues
+    url: https://github.com/acamarata/nself-admin/security/advisories/new
+    about: Report security vulnerabilities (private)
+  - name: 💬 Community Chat
+    url: https://discord.gg/nself
+    about: Join our Discord community for real-time discussions
