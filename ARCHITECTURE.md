@@ -278,6 +278,7 @@ docker run -d \
 ```
 
 **Volume Mounts:**
+
 - `/workspace`: User's project (read-write)
 - `/var/run/docker.sock`: Docker control
 - `/app/data`: Persistent database
@@ -293,17 +294,17 @@ spec:
   template:
     spec:
       containers:
-      - name: nself-admin
-        image: acamarata/nself-admin:latest
-        ports:
-        - containerPort: 3021
-        volumeMounts:
-        - name: project
-          mountPath: /workspace
-        - name: docker-sock
-          mountPath: /var/run/docker.sock
-        - name: data
-          mountPath: /app/data
+        - name: nself-admin
+          image: acamarata/nself-admin:latest
+          ports:
+            - containerPort: 3021
+          volumeMounts:
+            - name: project
+              mountPath: /workspace
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+            - name: data
+              mountPath: /app/data
 ```
 
 ## Performance Considerations
@@ -435,7 +436,7 @@ GET /api/health
 logger.info('Build started', {
   project: projectPath,
   environment: 'dev',
-  timestamp: new Date().toISOString()
+  timestamp: new Date().toISOString(),
 })
 ```
 

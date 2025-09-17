@@ -9,11 +9,13 @@ nself Admin provides a RESTful API for managing your development stack. All API 
 The API uses JWT-based authentication with sessions stored in the database.
 
 ### Login
+
 ```http
 POST /api/auth/login
 ```
 
 **Request Body:**
+
 ```json
 {
   "password": "your-admin-password"
@@ -21,6 +23,7 @@ POST /api/auth/login
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -29,14 +32,17 @@ POST /api/auth/login
 ```
 
 **Cookies Set:**
+
 - `admin-token`: JWT session token (httpOnly, secure in production)
 
 ### Logout
+
 ```http
 POST /api/auth/logout
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -45,11 +51,13 @@ POST /api/auth/logout
 ```
 
 ### Session Check
+
 ```http
 GET /api/auth/session
 ```
 
 **Response:**
+
 ```json
 {
   "authenticated": true,
@@ -60,11 +68,13 @@ GET /api/auth/session
 ## Setup & Configuration
 
 ### Check Setup Status
+
 ```http
 GET /api/setup/check
 ```
 
 **Response:**
+
 ```json
 {
   "passwordSet": true,
@@ -77,11 +87,13 @@ GET /api/setup/check
 ```
 
 ### Generate Environment Configuration
+
 ```http
 POST /api/setup/generate-env
 ```
 
 **Request Body:**
+
 ```json
 {
   "projectName": "my-project",
@@ -107,6 +119,7 @@ POST /api/setup/generate-env
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -118,11 +131,13 @@ POST /api/setup/generate-env
 ## Wizard API
 
 ### Load Environment Configuration
+
 ```http
 GET /api/wizard/load-env
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -148,11 +163,13 @@ GET /api/wizard/load-env
 ```
 
 ### Update Environment Variable
+
 ```http
 POST /api/wizard/update-env-var
 ```
 
 **Request Body:**
+
 ```json
 {
   "key": "REDIS_ENABLED",
@@ -163,6 +180,7 @@ POST /api/wizard/update-env-var
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -173,11 +191,13 @@ POST /api/wizard/update-env-var
 ```
 
 ### Batch Update Environment Variables
+
 ```http
 PUT /api/wizard/update-env-var
 ```
 
 **Request Body:**
+
 ```json
 {
   "variables": [
@@ -189,6 +209,7 @@ PUT /api/wizard/update-env-var
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -198,11 +219,13 @@ PUT /api/wizard/update-env-var
 ```
 
 ### Reset Project
+
 ```http
 POST /api/wizard/reset
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -217,11 +240,13 @@ POST /api/wizard/reset
 ## nself CLI Operations
 
 ### Execute nself Command
+
 ```http
 POST /api/nself
 ```
 
 **Request Body:**
+
 ```json
 {
   "command": "build",
@@ -231,6 +256,7 @@ POST /api/nself
 ```
 
 **Response (Streaming):**
+
 ```
 data: {"type":"stdout","data":"Building project...\n"}
 data: {"type":"stdout","data":"✓ Docker compose generated\n"}
@@ -238,6 +264,7 @@ data: {"type":"exit","code":0}
 ```
 
 **Supported Commands:**
+
 - `init`: Initialize project
 - `build`: Build Docker compose configuration
 - `start`: Start all services
@@ -250,11 +277,13 @@ data: {"type":"exit","code":0}
 ## Docker Operations
 
 ### Get Docker Statistics
+
 ```http
 GET /api/docker/stats
 ```
 
 **Response:**
+
 ```json
 {
   "containers": [
@@ -274,16 +303,19 @@ GET /api/docker/stats
 ```
 
 ### Get Container Logs
+
 ```http
 GET /api/docker/logs/:containerId
 ```
 
 **Query Parameters:**
+
 - `tail`: Number of lines to return (default: 100)
 - `since`: Show logs since timestamp
 - `follow`: Stream logs (boolean)
 
 **Response:**
+
 ```json
 {
   "logs": [
@@ -294,11 +326,13 @@ GET /api/docker/logs/:containerId
 ```
 
 ### Execute Command in Container
+
 ```http
 POST /api/docker/exec
 ```
 
 **Request Body:**
+
 ```json
 {
   "containerId": "abc123",
@@ -307,6 +341,7 @@ POST /api/docker/exec
 ```
 
 **Response:**
+
 ```json
 {
   "output": "PostgreSQL 16.0 on x86_64-pc-linux-gnu",
@@ -317,11 +352,13 @@ POST /api/docker/exec
 ## Monitoring
 
 ### Get Service Health
+
 ```http
 GET /api/monitoring
 ```
 
 **Response:**
+
 ```json
 {
   "healthy": true,
@@ -339,11 +376,13 @@ GET /api/monitoring
 ```
 
 ### Get Metrics
+
 ```http
 GET /api/monitoring/metrics
 ```
 
 **Response:**
+
 ```json
 {
   "cpu": {
@@ -370,11 +409,13 @@ GET /api/monitoring/metrics
 ## Database Operations
 
 ### Run SQL Query
+
 ```http
 POST /api/database/query
 ```
 
 **Request Body:**
+
 ```json
 {
   "query": "SELECT * FROM users LIMIT 10",
@@ -383,23 +424,24 @@ POST /api/database/query
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
-  "rows": [
-    { "id": 1, "name": "John Doe", "email": "john@example.com" }
-  ],
+  "rows": [{ "id": 1, "name": "John Doe", "email": "john@example.com" }],
   "rowCount": 1,
   "fields": ["id", "name", "email"]
 }
 ```
 
 ### Get Database Schema
+
 ```http
 GET /api/database/schema
 ```
 
 **Response:**
+
 ```json
 {
   "tables": [
@@ -416,11 +458,13 @@ GET /api/database/schema
 ```
 
 ### Backup Database
+
 ```http
 POST /api/database/backup
 ```
 
 **Request Body:**
+
 ```json
 {
   "database": "nself",
@@ -429,6 +473,7 @@ POST /api/database/backup
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -440,11 +485,13 @@ POST /api/database/backup
 ## Service Management
 
 ### Get Service Templates
+
 ```http
 GET /api/services/templates
 ```
 
 **Response:**
+
 ```json
 {
   "templates": [
@@ -465,11 +512,13 @@ GET /api/services/templates
 ```
 
 ### Create Custom Service
+
 ```http
 POST /api/services/create
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "my-api",
@@ -483,6 +532,7 @@ POST /api/services/create
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -508,6 +558,7 @@ All API endpoints follow a consistent error response format:
 ```
 
 **Common Error Codes:**
+
 - `AUTH_REQUIRED`: Authentication required
 - `INVALID_PASSWORD`: Invalid password
 - `NOT_FOUND`: Resource not found
@@ -519,6 +570,7 @@ All API endpoints follow a consistent error response format:
 ## Rate Limiting
 
 API endpoints are rate-limited to prevent abuse:
+
 - Authentication endpoints: 5 requests per minute
 - Query endpoints: 100 requests per minute
 - Command execution: 10 requests per minute
@@ -528,15 +580,16 @@ API endpoints are rate-limited to prevent abuse:
 For real-time updates, connect to the WebSocket endpoint:
 
 ```javascript
-const ws = new WebSocket('ws://localhost:3021/api/ws');
+const ws = new WebSocket('ws://localhost:3021/api/ws')
 
 ws.on('message', (data) => {
-  const event = JSON.parse(data);
-  console.log('Event:', event.type, event.data);
-});
+  const event = JSON.parse(data)
+  console.log('Event:', event.type, event.data)
+})
 ```
 
 **Event Types:**
+
 - `service.started`: Service started
 - `service.stopped`: Service stopped
 - `service.health`: Health status changed
@@ -546,25 +599,27 @@ ws.on('message', (data) => {
 ## SDK Examples
 
 ### JavaScript/TypeScript
+
 ```typescript
-import { NselfAdmin } from '@nself/admin-sdk';
+import { NselfAdmin } from '@nself/admin-sdk'
 
 const admin = new NselfAdmin({
   url: 'http://localhost:3021',
-  password: 'your-password'
-});
+  password: 'your-password',
+})
 
 // Build project
-await admin.build();
+await admin.build()
 
 // Start services
-await admin.start();
+await admin.start()
 
 // Query database
-const users = await admin.database.query('SELECT * FROM users');
+const users = await admin.database.query('SELECT * FROM users')
 ```
 
 ### Python
+
 ```python
 from nself_admin import NselfAdmin
 
@@ -581,6 +636,7 @@ users = admin.database.query("SELECT * FROM users")
 ```
 
 ### cURL Examples
+
 ```bash
 # Login
 curl -X POST http://localhost:3021/api/auth/login \
@@ -602,12 +658,14 @@ curl http://localhost:3021/api/monitoring \
 ## API Versioning
 
 The API currently uses v1 (implicit). Future versions will be explicitly versioned:
+
 - Current: `/api/endpoint`
 - Future: `/api/v2/endpoint`
 
 ## Support
 
 For API support and questions:
+
 - GitHub Issues: https://github.com/acamarata/nself-admin/issues
 - Documentation: https://github.com/acamarata/nself-admin/wiki
 - Discord: https://discord.gg/nself

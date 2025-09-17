@@ -205,7 +205,7 @@ export async function GET() {
         envContent.includes('FRONTEND_APP_')
 
       // Check if this looks like a minimal/template env file
-      isMinimalSetup = projectName && baseDomain && !hasServiceConfig
+      isMinimalSetup = !!projectName && !!baseDomain && !hasServiceConfig
 
       if (servicesRunning) {
         projectState = 'running'
