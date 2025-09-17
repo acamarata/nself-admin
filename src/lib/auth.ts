@@ -127,11 +127,11 @@ export function isTokenExpired(expiresAt: Date): boolean {
 export function generateSecurePassword(length: number = 16): string {
   const charset =
     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?'
-  const bytes = crypto.randomBytes(length)
   let password = ''
 
+  // Use crypto.randomInt to avoid modulo bias
   for (let i = 0; i < length; i++) {
-    password += charset[bytes[i] % charset.length]
+    password += charset[crypto.randomInt(0, charset.length)]
   }
 
   // Ensure password meets complexity requirements

@@ -3,6 +3,7 @@ import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
 import { getProjectPath } from '@/lib/paths'
+import bcrypt from 'bcryptjs'
 
 interface SetupData {
   adminPassword?: string
@@ -137,10 +138,9 @@ async function generateEnvContent(data: SetupData): Promise<string> {
 }
 
 async function hashPassword(password: string): Promise<string> {
-  // Simple hash for demo - in production use bcrypt
-  const hash = crypto.createHash('sha256')
-  hash.update(password + 'nself-admin-salt')
-  return hash.digest('hex')
+  // Use bcrypt for secure password hashing
+  const salt = await bcrypt.genSalt(10)
+  return bcrypt.hash(password, salt)
 }
 
 export async function POST(request: NextRequest) {

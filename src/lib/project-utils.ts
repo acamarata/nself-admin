@@ -98,7 +98,7 @@ export async function getProjectServices(): Promise<{
 
   try {
     const { stdout } = await execAsync(
-      `docker-compose -f ${dockerComposePath} config --services`,
+      `docker-compose -f "${dockerComposePath}" config --services`,
     )
     const services = stdout.split('\n').filter((s) => s.trim())
 

@@ -46,22 +46,24 @@ function generateSecurePassword(length = 16) {
     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?'
   let password = ''
 
-  // Ensure at least one of each required character type
-  password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]
-  password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]
-  password += '0123456789'[Math.floor(Math.random() * 10)]
-  password += '!@#$%^&*()'[Math.floor(Math.random() * 10)]
+  // Ensure at least one of each required character type using crypto.randomInt
+  password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[crypto.randomInt(0, 26)]
+  password += 'abcdefghijklmnopqrstuvwxyz'[crypto.randomInt(0, 26)]
+  password += '0123456789'[crypto.randomInt(0, 10)]
+  password += '!@#$%^&*()'[crypto.randomInt(0, 10)]
 
-  // Fill the rest randomly
+  // Fill the rest randomly with cryptographically secure randomness
   for (let i = 4; i < length; i++) {
-    password += charset[Math.floor(Math.random() * charset.length)]
+    password += charset[crypto.randomInt(0, charset.length)]
   }
 
-  // Shuffle the password
-  return password
-    .split('')
-    .sort(() => Math.random() - 0.5)
-    .join('')
+  // Shuffle the password using Fisher-Yates with crypto.randomInt
+  const arr = password.split('')
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1)
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr.join('')
 }
 
 // Validate password strength
