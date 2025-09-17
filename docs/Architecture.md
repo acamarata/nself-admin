@@ -1,769 +1,503 @@
-# Architecture Overview
+# nself Admin Architecture
 
-Comprehensive guide to nself Admin's architecture, design principles, and technical implementation.
+## Overview
 
-## Table of Contents
+nself Admin (nAdmin) is a web-based UI wrapper for the nself CLI tool. It provides a visual interface for managing development stacks without reimplementing the core logic - all operations delegate to the nself CLI.
 
-- [System Overview](#system-overview)
-- [Component Architecture](#component-architecture)
-- [Data Flow](#data-flow)
-- [Security Model](#security-model)
-- [Storage Systems](#storage-systems)
-- [API Design](#api-design)
-- [Frontend Architecture](#frontend-architecture)
-- [Docker Integration](#docker-integration)
-- [Scalability Considerations](#scalability-considerations)
-- [Performance Optimizations](#performance-optimizations)
+## Core Principles
 
-## System Overview
+1. **UI Wrapper Philosophy**: nAdmin is NOT a standalone implementation. It delegates all operations to the nself CLI (`~/Sites/nself`)
+2. **Zero Footprint**: Never pollutes the user's project directory
+3. **Self-Contained**: All state in database, no external dependencies
+4. **Docker-First**: Designed to run in container, local dev is secondary
+5. **Progressive Disclosure**: Guide users through setup → build → start → manage
 
-nself Admin is designed as a **UI wrapper** that provides a web interface for the nself CLI. It follows a container-first architecture with zero footprint on user projects.
-
-### Key Design Principles
-
-1. **Zero Footprint**: Never pollutes user's project directory
-2. **Self-Contained**: All state in embedded database
-3. **Docker-First**: Designed to run in containers
-4. **Progressive Disclosure**: Guides users through setup → build → start → manage
-5. **CLI Delegation**: All operations delegate to nself CLI
-
-### High-Level Architecture
+## System Architecture
 
 ```mermaid
 graph TB
-    subgraph "User Environment"
-        User[👤 User]
-        Browser[🌐 Browser]
-        Project[📁 User Project]
+    subgraph "User's Machine"
+        Browser[Web Browser]
+        Docker[Docker Engine]
+        Project[User's Project Directory]
     end
 
-    subgraph "nself Admin Container"
-        UI[⚛️ Next.js UI]
-        API[🔌 API Routes]
-        DB[💾 LokiJS DB]
-        CLI[🛠️ nself CLI]
+    subgraph "nAdmin Container"
+        UI[Next.js UI<br/>Port 3021]
+        API[API Routes]
+        DB[(LokiJS Database<br/>nadmin.db)]
+        CLI[nself CLI Executor]
     end
 
-    subgraph "Docker Host"
-        Engine[🐳 Docker Engine]
-        Services[⚙️ User Services]
-        Volumes[💿 Docker Volumes]
-    end
-
-    User --> Browser
-    Browser --> UI
+    Browser -->|HTTP/WebSocket| UI
     UI --> API
     API --> DB
     API --> CLI
-    CLI --> Engine
-    Engine --> Services
-    Services --> Volumes
-
-    Project -.-> CLI
-    Engine -.-> Project
+    CLI -->|Execute Commands| Docker
+    CLI -->|Read/Write| Project
 ```
 
 ## Component Architecture
 
-### Frontend Layer (Next.js)
+### Frontend (Next.js 15)
 
 ```
 src/app/
-├── (auth)/                 # Authentication pages
-│   ├── login/             # Login & password setup
-│   └── layout.tsx         # Auth layout
-├── (dashboard)/           # Main application
-│   ├── page.tsx          # Dashboard home
-│   ├── services/         # Service management
-│   ├── database/         # Database tools
-│   ├── config/           # Configuration
-│   ├── monitor/          # Monitoring
-│   └── layout.tsx        # Dashboard layout
-├── (wizard)/             # Setup wizard
-│   ├── build/            # Project build
-│   ├── start/            # Service startup
-│   └── init/             # 6-step wizard
-├── api/                  # API routes
-│   ├── auth/            # Authentication
-│   ├── project/         # Project operations
-│   ├── services/        # Service management
-│   ├── docker/          # Docker operations
-│   └── system/          # System info
-└── components/           # Shared components
-    ├── ui/              # Base UI components
-    ├── forms/           # Form components
-    └── charts/          # Visualization
+├── (auth)/
+│   └── login/          # Authentication & password setup
+├── (setup)/
+│   ├── build/          # Project setup wizard
+│   └── start/          # Service startup
+├── (dashboard)/
+│   ├── page.tsx        # Main dashboard
+│   ├── services/       # Service management
+│   ├── database/       # Database tools
+│   └── config/         # Configuration
+└── api/                # API routes
 ```
 
-### Backend Layer (API Routes)
+### Backend (API Routes)
 
-```typescript
-// API Route Structure
-interface APIRoute {
-  GET?:    (req: Request) => Response    // Read operations
-  POST?:   (req: Request) => Response    // Create operations
-  PUT?:    (req: Request) => Response    // Update operations
-  DELETE?: (req: Request) => Response    // Delete operations
-}
-
-// Middleware Stack
-Request → Auth Check → Rate Limit → Handler → Response
+```
+src/app/api/
+├── auth/               # Authentication endpoints
+├── setup/              # Setup & configuration
+├── wizard/             # Wizard operations
+├── nself/              # CLI command execution
+├── docker/             # Docker operations
+└── monitoring/         # Health & metrics
 ```
 
-### Database Layer (LokiJS)
+### Core Libraries
 
-```javascript
-// Database Schema
-const schema = {
-  config: [
-    { key: 'admin_password_hash', value: '$2b$...' },
-    { key: 'setup_completed', value: true }
-  ],
-  sessions: [
-    { token: '...', userId: 'admin', expiresAt: '...', ip: '...' }
-  ],
-  project_cache: [
-    { key: 'services', value: [...], cachedAt: '...' }
-  ],
-  audit_log: [
-    { action: 'login_attempt', timestamp: '...', success: true }
-  ]
-}
+```
+src/lib/
+├── database.ts         # LokiJS interface
+├── auth-db.ts          # Authentication logic
+├── project-utils.ts    # Project detection
+├── nself-cli.ts        # CLI executor
+├── paths.ts            # Centralized path resolution
+└── env-validation.ts   # Environment validation
 ```
 
 ## Data Flow
 
-### Authentication Flow
+### 1. Authentication Flow
 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant B as Browser
-    participant A as API
-    participant D as Database
+    participant UI as UI
+    participant API as API
+    participant DB as Database
 
-    U->>B: Enter password
-    B->>A: POST /api/auth/login
-    A->>D: Verify hash
-    D-->>A: Hash match
-    A->>D: Create session
-    A-->>B: JWT token
-    B->>B: Store cookie
-    B-->>U: Redirect to dashboard
-```
+    U->>UI: Access nAdmin
+    UI->>API: Check session
+    API->>DB: Validate token
 
-### Project Operations Flow
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant A as API
-    participant C as CLI
-    participant D as Docker
-    participant P as Project
-
-    U->>A: Build project
-    A->>C: Execute: nself build
-    C->>P: Generate docker-compose.yml
-    C->>P: Create service configs
-    C-->>A: Build complete
-    A->>D: Start containers
-    D-->>A: Services running
-    A-->>U: Success response
-```
-
-### Real-time Updates Flow
-
-```mermaid
-sequenceDiagram
-    participant B as Browser
-    participant W as WebSocket
-    participant A as API
-    participant D as Docker
-
-    B->>W: Connect WebSocket
-    W->>A: Subscribe to metrics
-    loop Every 5 seconds
-        A->>D: Get container stats
-        D-->>A: Stats data
-        A->>W: Emit metrics
-        W-->>B: Update UI
+    alt No Password Set
+        DB-->>API: No password
+        API-->>UI: Redirect to setup
+        UI-->>U: Show password setup
+        U->>UI: Set password
+        UI->>API: Save password
+        API->>DB: Store hash
+    else Password Set
+        DB-->>API: Token invalid
+        API-->>UI: Redirect to login
+        UI-->>U: Show login
+        U->>UI: Enter password
+        UI->>API: Authenticate
+        API->>DB: Create session
+        DB-->>API: Session token
+        API-->>UI: Set cookie
     end
 ```
 
-## Security Model
+### 2. Project Setup Flow
 
-### Authentication & Authorization
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as Wizard UI
+    participant API as API
+    participant CLI as nself CLI
+    participant FS as File System
 
-```typescript
-// Security Layers
-interface SecurityLayer {
-  authentication: 'JWT-based sessions'
-  authorization: 'Admin-only access'
-  sessionManagement: '24-hour TTL'
-  passwordHashing: 'bcrypt with salt'
-  csrfProtection: 'Token validation'
-  auditLogging: '30-day retention'
-}
+    U->>W: Start wizard
+
+    loop Each Wizard Step
+        W-->>U: Show configuration
+        U->>W: Enter settings
+        W->>API: Save settings
+        API->>FS: Write to .env.{environment}
+    end
+
+    U->>W: Click Build
+    W->>API: Execute build
+    API->>CLI: nself build
+    CLI->>FS: Generate docker-compose.yml
+    CLI-->>API: Build output
+    API-->>W: Stream progress
+    W-->>U: Show results
 ```
 
-### Security Implementation
+### 3. Service Management Flow
 
-```typescript
-// Password Requirements
-interface PasswordPolicy {
-  development: {
-    minLength: 3
-    requirements: 'Any characters'
-  }
-  production: {
-    minLength: 12
-    requirements: 'Uppercase, lowercase, number, special'
-    complexity: true
-  }
-}
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant D as Dashboard
+    participant API as API
+    participant CLI as nself CLI
+    participant Docker as Docker
 
-// Session Security
-interface SessionSecurity {
-  storage: 'httpOnly cookies'
-  expiry: '24 hours'
-  renewal: 'Sliding window'
-  invalidation: 'Logout/timeout'
-}
+    U->>D: Click Start Services
+    D->>API: Start request
+    API->>CLI: nself start
+    CLI->>Docker: docker-compose up
+    Docker-->>CLI: Container status
+    CLI-->>API: Output stream
+    API-->>D: WebSocket updates
+    D-->>U: Real-time status
 ```
 
-### Security Boundaries
+## Database Schema
 
-```
-┌─────────────────────────────────────┐
-│              Internet               │
-└────────────┬────────────────────────┘
-             │ HTTPS (Port 3021)
-┌────────────▼────────────────────────┐
-│        Nginx Proxy (Future)        │
-└────────────┬────────────────────────┘
-             │
-┌────────────▼────────────────────────┐
-│       nAdmin Container              │
-│  ┌──────────────────────────────┐   │
-│  │    Authentication Layer      │   │
-│  ├──────────────────────────────┤   │
-│  │     Application Layer        │   │
-│  ├──────────────────────────────┤   │
-│  │     Database Layer           │   │
-│  └──────────────────────────────┘   │
-└─────────────┬───────────────────────┘
-              │ Docker Socket
-┌─────────────▼───────────────────────┐
-│         Docker Engine               │
-└─────────────────────────────────────┘
-```
-
-## Storage Systems
-
-### Application Database (LokiJS)
+### LokiJS Collections
 
 ```javascript
-// Database Configuration
-const dbConfig = {
-  filename: '/app/data/nadmin.db',
-  autoload: true,
-  autosave: true,
-  autosaveInterval: 30000, // 30 seconds
-  adapter: new LokiFSAdapter(),
-  verbose: false,
+// config collection
+{
+  key: string,          // e.g., "admin_password_hash"
+  value: any,           // Configuration value
+  updatedAt: Date
+}
 
-  // TTL Configuration
-  ttl: {
-    sessions: 24 * 60 * 60 * 1000, // 24 hours
-    cache: 5 * 60 * 1000, // 5 minutes
-    audit: 30 * 24 * 60 * 60 * 1000, // 30 days
-  },
+// sessions collection
+{
+  token: string,        // Session token
+  userId: string,       // Always "admin" for now
+  expiresAt: Date,      // TTL timestamp
+  ip: string,           // Client IP
+  userAgent: string     // Browser info
+}
+
+// project_cache collection
+{
+  key: string,          // Cache key
+  value: any,           // Cached data
+  cachedAt: Date        // Cache timestamp
+}
+
+// audit_log collection
+{
+  action: string,       // e.g., "login_attempt"
+  timestamp: Date,
+  success: boolean,
+  details: object,
+  ip: string
 }
 ```
 
-### File System Structure
+## Path Resolution
 
-```
-/app/                     # Container filesystem
-├── data/                # Persistent data
-│   └── nadmin.db       # LokiJS database
-├── src/                 # Application code
-└── public/             # Static assets
-
-/workspace/              # Mounted user project
-├── docker-compose.yml  # Generated by nself CLI
-├── .env.development    # Environment config
-├── services/           # Custom services
-└── data/              # Service data
-```
-
-### Volume Management
-
-```yaml
-# Docker volume strategy
-volumes:
-  # Application data (persistent)
-  nself-admin-data:
-    driver: local
-
-  # User project (bind mount)
-  user-project:
-    type: bind
-    source: /path/to/project
-    target: /workspace
-
-  # Docker socket (system)
-  docker-socket:
-    type: bind
-    source: /var/run/docker.sock
-    target: /var/run/docker.sock
-```
-
-## API Design
-
-### RESTful Conventions
+All path resolution is centralized in `src/lib/paths.ts`:
 
 ```typescript
-// API Structure
-interface APIEndpoint {
-  path: string
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE'
-  auth: boolean
-  rateLimit: number
-  description: string
-}
+export function getProjectPath(): string {
+  // Priority order:
+  // 1. NSELF_PROJECT_PATH env var
+  // 2. PROJECT_PATH env var (legacy)
+  // 3. Default: ../nself-project (dev) or /workspace (prod)
 
-const endpoints: APIEndpoint[] = [
-  {
-    path: '/api/auth/login',
-    method: 'POST',
-    auth: false,
-    rateLimit: 5, // per minute
-    description: 'Authenticate user',
-  },
-  {
-    path: '/api/services',
-    method: 'GET',
-    auth: true,
-    rateLimit: 60,
-    description: 'List services',
-  },
-]
-```
+  let projectPath =
+    process.env.NSELF_PROJECT_PATH ||
+    process.env.PROJECT_PATH ||
+    '../nself-project'
 
-### Response Format
-
-```typescript
-// Standardized API Response
-interface APIResponse<T> {
-  success: boolean
-  data?: T
-  error?: {
-    code: string
-    message: string
-    details?: any
+  // Handle tilde expansion
+  if (projectPath.startsWith('~')) {
+    projectPath = projectPath.replace(/^~/, os.homedir())
   }
-  meta?: {
-    timestamp: string
-    version: string
-    requestId: string
+
+  // Resolve relative paths
+  if (!projectPath.startsWith('/')) {
+    if (process.env.NODE_ENV === 'development') {
+      return path.resolve(process.cwd(), projectPath)
+    }
+    return `/app/${projectPath}`
   }
+
+  return projectPath
 }
 ```
 
-### Error Handling
+## Security Architecture
 
-```typescript
-// Error Classification
-interface ErrorTypes {
-  validation: 'Input validation failed'
-  authentication: 'Invalid credentials'
-  authorization: 'Access denied'
-  notFound: 'Resource not found'
-  conflict: 'Resource already exists'
-  rateLimit: 'Too many requests'
-  internal: 'Internal server error'
-}
-```
+### Password Management
 
-## Frontend Architecture
+- Passwords hashed with bcrypt (10 rounds)
+- Stored in database, not environment variables
+- Minimum requirements vary by environment:
+  - Development: 3 characters
+  - Production: 12 chars, uppercase, lowercase, number, special
 
-### Component Hierarchy
+### Session Management
 
-```
-App (Layout)
-├── AuthProvider
-├── ThemeProvider
-└── Router
-    ├── LoginPage
-    ├── WizardFlow
-    │   ├── InitStep1-6
-    │   ├── BuildPage
-    │   └── StartPage
-    └── Dashboard
-        ├── Sidebar
-        ├── TopBar
-        └── MainContent
-            ├── ServicesPage
-            ├── DatabasePage
-            ├── ConfigPage
-            └── MonitorPage
-```
+- JWT tokens with 24-hour TTL
+- Stored in httpOnly cookies
+- Sessions validated against database
+- Automatic cleanup of expired sessions
 
-### State Management
+### Container Isolation
 
-```typescript
-// Global State Structure
-interface AppState {
-  auth: {
-    isAuthenticated: boolean
-    user: string | null
-    token: string | null
-  }
-  project: {
-    info: ProjectInfo | null
-    services: Service[]
-    status: 'idle' | 'loading' | 'error'
-  }
-  ui: {
-    theme: 'light' | 'dark'
-    sidebar: boolean
-    loading: boolean
-  }
-}
-```
+```dockerfile
+# Run as non-root user
+USER node
 
-### Data Fetching Strategy
+# Read-only root filesystem
+# Only /app/data is writable (database)
 
-```typescript
-// SWR Configuration
-const swrConfig = {
-  fetcher: (url: string) => fetch(url).then((r) => r.json()),
-  refreshInterval: 5000, // 5 seconds for real-time data
-  revalidateOnFocus: true,
-  revalidateOnReconnect: true,
-  errorRetryCount: 3,
-  dedupingInterval: 2000,
-}
-```
-
-## Docker Integration
-
-### Container Communication
-
-```mermaid
-graph LR
-    subgraph "nAdmin Container"
-        App[Next.js App]
-        Socket[Docker Socket]
-    end
-
-    subgraph "Docker Host"
-        Engine[Docker Engine]
-        Services[User Services]
-    end
-
-    App --> Socket
-    Socket --> Engine
-    Engine --> Services
-    Services -.-> App
-```
-
-### Docker API Usage
-
-```typescript
-// Docker Operations
-interface DockerOperations {
-  containers: {
-    list: () => Container[]
-    start: (id: string) => void
-    stop: (id: string) => void
-    restart: (id: string) => void
-    logs: (id: string) => Stream
-    stats: (id: string) => Stats
-  }
-  images: {
-    list: () => Image[]
-    pull: (name: string) => void
-    remove: (id: string) => void
-  }
-  networks: {
-    list: () => Network[]
-    create: (config: NetworkConfig) => void
-  }
-}
-```
-
-### Resource Monitoring
-
-```typescript
-// Real-time Metrics Collection
-interface MetricsCollector {
-  interval: 5000 // 5 seconds
-  sources: ['docker stats', 'docker ps', 'system metrics']
-  aggregation: {
-    cpu: 'percentage'
-    memory: 'bytes + percentage'
-    network: 'bytes/second'
-    disk: 'bytes + iops'
-  }
-}
-```
-
-## Scalability Considerations
-
-### Current Limitations
-
-- **Single Instance**: One nAdmin per project
-- **Local Docker**: Only manages local containers
-- **No Clustering**: No multi-node support
-- **Memory Bound**: LokiJS keeps data in memory
-
-### Future Scalability
-
-```typescript
-// Planned Improvements
-interface ScalabilityRoadmap {
-  multiTenant: {
-    userIsolation: 'Database namespaces'
-    resourceLimits: 'Per-user quotas'
-    projectSeparation: 'Isolated environments'
-  }
-  clustering: {
-    loadBalancing: 'Multiple nAdmin instances'
-    sharedState: 'External database'
-    sessionReplication: 'Distributed sessions'
-  }
-  remoteDocker: {
-    dockerContexts: 'Multiple Docker hosts'
-    kubernetes: 'K8s API integration'
-    cloudProviders: 'AWS/GCP/Azure'
-  }
-}
-```
-
-### Performance Targets
-
-```yaml
-Performance Goals:
-  Response Time:
-    API: < 200ms (95th percentile)
-    UI: < 100ms (First Contentful Paint)
-    Dashboard: < 2s (Full Load)
-
-  Throughput:
-    Concurrent Users: 10
-    API Requests: 1000/minute
-    WebSocket Connections: 50
-
-  Resources:
-    Memory: < 512MB
-    CPU: < 25% (idle), < 80% (active)
-    Disk: < 1GB total
-```
-
-## Performance Optimizations
-
-### Frontend Optimizations
-
-```typescript
-// React Optimizations
-interface FrontendOptimizations {
-  codesplitting: 'Route-based lazy loading'
-  memoization: 'React.memo, useMemo, useCallback'
-  virtualization: 'Virtual scrolling for large lists'
-  bundleOptimization: 'Tree shaking, minification'
-  caching: 'Service worker, browser cache'
-}
-```
-
-### API Optimizations
-
-```typescript
-// Backend Optimizations
-interface BackendOptimizations {
-  caching: {
-    docker_stats: '5 seconds'
-    project_info: '30 seconds'
-    service_list: '10 seconds'
-  }
-  compression: 'gzip for API responses'
-  pagination: 'Limit large datasets'
-  pooling: 'Connection pooling'
-}
-```
-
-### Database Optimizations
-
-```typescript
-// LokiJS Optimizations
-interface DatabaseOptimizations {
-  indexes: 'Create indexes on frequently queried fields'
-  ttl: 'Auto-cleanup expired data'
-  compaction: 'Periodic database compaction'
-  batching: 'Batch multiple operations'
-}
-```
-
-## Development Patterns
-
-### Code Organization
-
-```typescript
-// Layered Architecture
-interface LayerStructure {
-  presentation: 'React components, pages'
-  application: 'API routes, business logic'
-  domain: 'Types, interfaces, utilities'
-  infrastructure: 'Database, Docker, filesystem'
-}
-```
-
-### Error Boundaries
-
-```typescript
-// Error Handling Strategy
-interface ErrorStrategy {
-  frontend: {
-    componentErrors: 'React Error Boundaries'
-    asyncErrors: 'Try-catch with user feedback'
-    networkErrors: 'Retry mechanisms'
-  }
-  backend: {
-    validation: 'Input validation with detailed errors'
-    exceptions: 'Graceful error responses'
-    logging: 'Structured error logging'
-  }
-}
-```
-
-### Testing Strategy
-
-```typescript
-// Testing Pyramid
-interface TestingStrategy {
-  unit: {
-    components: 'React Testing Library'
-    utilities: 'Jest unit tests'
-    coverage: '> 80%'
-  }
-  integration: {
-    api: 'API route testing'
-    database: 'LokiJS operations'
-    docker: 'Container interactions'
-  }
-  e2e: {
-    flows: 'Playwright/Cypress'
-    criticalPaths: 'Login, wizard, service management'
-  }
-}
+# Capabilities dropped
+# Only required: network, file I/O
 ```
 
 ## Deployment Architecture
 
-### Container Strategy
+### Docker Deployment
 
-```dockerfile
-# Multi-stage build
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-FROM node:18-alpine AS runtime
-WORKDIR /app
-COPY --from=builder /app/node_modules ./node_modules
-COPY . .
-EXPOSE 3021
-CMD ["npm", "start"]
+```bash
+docker run -d \
+  --name nself-admin \
+  -p 3021:3021 \
+  -v /user/project:/workspace:rw \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v nself-admin-data:/app/data \
+  acamarata/nself-admin:latest
 ```
 
-### Production Considerations
+**Volume Mounts:**
+
+- `/workspace`: User's project (read-write)
+- `/var/run/docker.sock`: Docker control
+- `/app/data`: Persistent database
+
+### Kubernetes Deployment
 
 ```yaml
-Production Setup:
-  Security:
-    - Run as non-root user
-    - Read-only filesystem
-    - Security scanning
-    - Secret management
-
-  Monitoring:
-    - Health checks
-    - Metrics collection
-    - Log aggregation
-    - Alerting
-
-  Backup:
-    - Database backups
-    - Configuration backups
-    - Disaster recovery
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nself-admin
+spec:
+  template:
+    spec:
+      containers:
+        - name: nself-admin
+          image: acamarata/nself-admin:latest
+          ports:
+            - containerPort: 3021
+          volumeMounts:
+            - name: project
+              mountPath: /workspace
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+            - name: data
+              mountPath: /app/data
 ```
 
-## Future Architecture Evolution
+## Performance Considerations
 
-### Planned Improvements
+### Caching Strategy
 
-```mermaid
-gantt
-    title nself Admin Architecture Roadmap
-    dateFormat  YYYY-MM-DD
-    section Phase 1
-    WebSocket Integration    :2024-01-01, 30d
-    Mobile Responsive        :2024-01-15, 45d
-    section Phase 2
-    Multi-user Support       :2024-03-01, 60d
-    External Database        :2024-03-15, 45d
-    section Phase 3
-    Kubernetes Support       :2024-05-01, 90d
-    Microservices Split      :2024-06-01, 120d
-```
+- Project info cached for 5 minutes
+- Docker stats cached for 10 seconds
+- Template list cached indefinitely
+- Environment configs cached until modified
 
-### Technology Evolution
+### Resource Usage
+
+- **Memory**: ~256MB runtime
+- **CPU**: Minimal (<1% idle, spikes during builds)
+- **Disk**: ~10MB database, logs rotated
+- **Network**: WebSocket for real-time updates
+
+### Optimization Techniques
+
+1. **Lazy Loading**: Components loaded on demand
+2. **Streaming**: CLI output streamed, not buffered
+3. **Debouncing**: API calls debounced (300ms)
+4. **Compression**: Brotli for static assets
+5. **Connection Pooling**: Reuse Docker connections
+
+## Error Handling
+
+### Error Categories
+
+1. **User Errors**: Invalid input, missing config
+2. **System Errors**: Docker unavailable, disk full
+3. **Network Errors**: Connection timeouts
+4. **CLI Errors**: nself command failures
+
+### Error Recovery
 
 ```typescript
-// Future Technology Adoption
-interface TechnologyRoadmap {
-  current: {
-    frontend: 'Next.js 15, React 18'
-    backend: 'Next.js API Routes'
-    database: 'LokiJS (embedded)'
-    containerization: 'Docker'
-  }
-  planned: {
-    frontend: 'Potential migration to Solid.js/Svelte'
-    backend: 'Fastify/Express for better performance'
-    database: 'SQLite → PostgreSQL for multi-user'
-    orchestration: 'Kubernetes support'
+// Retry logic for transient failures
+async function executeWithRetry(fn, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn()
+    } catch (error) {
+      if (i === retries - 1) throw error
+      await sleep(1000 * Math.pow(2, i)) // Exponential backoff
+    }
   }
 }
 ```
 
-## Conclusion
+## Testing Architecture
 
-nself Admin's architecture is designed for simplicity, security, and scalability. The current implementation focuses on single-user, single-project scenarios while maintaining extensibility for future multi-user and multi-project capabilities.
+### Unit Tests
 
-### Key Strengths
+```typescript
+// Example: Path resolution test
+describe('getProjectPath', () => {
+  it('handles tilde expansion', () => {
+    process.env.NSELF_PROJECT_PATH = '~/project'
+    expect(getProjectPath()).toBe('/Users/admin/project')
+  })
+})
+```
 
-- **Zero Footprint**: Clean separation from user projects
-- **Container Native**: Built for Docker-first workflows
-- **Progressive Enhancement**: Guided user experience
-- **Security Focused**: Multiple layers of protection
-- **Developer Friendly**: Clear patterns and conventions
+### Integration Tests
 
-### Next Steps
+```typescript
+// Example: API endpoint test
+describe('POST /api/auth/login', () => {
+  it('creates session on valid password', async () => {
+    const response = await request(app)
+      .post('/api/auth/login')
+      .send({ password: 'valid-password' })
 
-- [**Deployment Guide**](Deployment-Guide) - Production deployment
-- [**Security Guide**](Security-Guide) - Security best practices
-- [**API Reference**](api/Reference) - Complete API documentation
-- [**Contributing Guide**](Contributing) - Development guidelines
+    expect(response.status).toBe(200)
+    expect(response.headers['set-cookie']).toBeDefined()
+  })
+})
+```
 
----
+### E2E Tests
 
-**Related Documentation**:
+```typescript
+// Example: Full wizard flow
+describe('Project Setup', () => {
+  it('completes wizard and builds project', async () => {
+    await page.goto('http://localhost:3021')
+    await page.fill('#password', 'test-password')
+    await page.click('#setup-button')
+    // ... continue through wizard
+    await expect(page).toHaveURL('/dashboard')
+  })
+})
+```
 
-- [System Requirements](System-Requirements)
-- [Environment Management](Environment-Management)
-- [Performance Tuning](Performance-Tuning)
-- [Troubleshooting](Troubleshooting)
+## Monitoring & Observability
+
+### Health Checks
+
+```typescript
+// Health endpoint
+GET /api/health
+
+{
+  "status": "healthy",
+  "checks": {
+    "database": "ok",
+    "docker": "ok",
+    "filesystem": "ok"
+  },
+  "uptime": 3600,
+  "version": "0.0.4"
+}
+```
+
+### Metrics Collection
+
+- Request latency (p50, p95, p99)
+- Error rates by endpoint
+- Active sessions count
+- Build success/failure rate
+- Container resource usage
+
+### Logging
+
+```typescript
+// Structured logging
+logger.info('Build started', {
+  project: projectPath,
+  environment: 'dev',
+  timestamp: new Date().toISOString(),
+})
+```
+
+## Future Architecture Considerations
+
+### Planned Enhancements
+
+1. **Multi-User Support**
+   - User management service
+   - Role-based access control
+   - Team workspaces
+
+2. **Distributed Architecture**
+   - Separate API server
+   - Multiple UI instances
+   - Shared database (PostgreSQL)
+
+3. **Plugin System**
+   - Custom service templates
+   - UI extensions
+   - Webhook integrations
+
+4. **Cloud Native**
+   - Kubernetes operators
+   - Helm charts
+   - Cloud provider integrations
+
+### Scalability Path
+
+```mermaid
+graph LR
+    subgraph "Phase 1: Current"
+        Single[Single Container]
+    end
+
+    subgraph "Phase 2: Separated"
+        UI2[UI Container]
+        API2[API Container]
+        DB2[Database Container]
+    end
+
+    subgraph "Phase 3: Distributed"
+        LB[Load Balancer]
+        UI3a[UI Instance 1]
+        UI3b[UI Instance N]
+        API3a[API Instance 1]
+        API3b[API Instance N]
+        PG[PostgreSQL Cluster]
+        Redis[Redis Cache]
+    end
+
+    Single --> UI2
+    UI2 --> LB
+    API2 --> API3a
+    DB2 --> PG
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.

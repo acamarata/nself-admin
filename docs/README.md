@@ -1,66 +1,100 @@
-# nself-admin Documentation
+# nself Admin Documentation
 
-## Overview
+Welcome to the nself Admin documentation! This comprehensive guide will help you understand, deploy, and use nself Admin effectively.
 
-Welcome to the comprehensive documentation for nself-admin (nAdmin) - the web-based administration interface for nself backend projects.
+## 🚀 Quick Start
 
-nself-admin provides a powerful, user-friendly interface for configuring, building, and managing your nself backend stack through a guided wizard and real-time monitoring tools.
+- **[Installation & Setup](Quick-Start.md)** - Get nself Admin running in 5 minutes
+- **[First Project](guides/First-Time-Setup.md)** - Create your first project with the wizard
+- **[Docker Deployment](deployment/Docker.md)** - Deploy with Docker
 
-## Quick Start
+## 📖 Core Guides
 
-1. **Install and Start**
+### Getting Started
 
-   ```bash
-   # Clone the repository
-   git clone https://github.com/nself/admin.git
-   cd nself-admin
+- **[Quick Start](Quick-Start.md)** - 5-minute setup guide
+- **[Installation](setup/Installation.md)** - Detailed installation instructions
+- **[Init Wizard Guide](Init-Wizard-Guide.md)** - Complete wizard walkthrough
+- **[First Time Setup](guides/First-Time-Setup.md)** - Step-by-step first project
 
-   # Install dependencies
-   npm install
+### User Guides
 
-   # Start development server
-   PORT=3100 npm run dev
-   ```
+- **[Dashboard Overview](Dashboard-Overview.md)** - Understanding the dashboard
+- **[Service Configuration](Service-Configuration.md)** - Managing services
+- **[Database Management](Database-Management.md)** - Working with databases
+- **[Environment Variables](ENVIRONMENT_VARIABLES.md)** - Configuration reference
 
-2. **Access the Interface**
-   - Open http://localhost:3100
-   - Set your admin password on first run
-   - Follow the 6-step setup wizard
+### Advanced Usage
 
-3. **Build Your Stack**
-   - Complete the wizard configuration
-   - Click "Build Project" on Step 6
-   - Start your services
+- **[Production Deployment](Production-Deployment.md)** - Deploy to production
+- **[CLI Integration](CLI_INTEGRATION.md)** - nself CLI integration
+- **[Build Process](Build-Process.md)** - Understanding builds
+- **[Monitoring](Monitoring.md)** - Health monitoring and metrics
 
-## Documentation Structure
+## 🏗️ Architecture & Development
 
-### Core Documentation
+### Architecture
 
-| Document                                                   | Description                                      |
-| ---------------------------------------------------------- | ------------------------------------------------ |
-| **[ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md)** | Complete reference for all environment variables |
-| **[WIZARD_GUIDE.md](./WIZARD_GUIDE.md)**                   | Detailed guide for the 6-step setup wizard       |
-| **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)**             | Solutions for common issues and debugging        |
-| **[CLI_INTEGRATION.md](./CLI_INTEGRATION.md)**             | Integration with nself CLI commands              |
-| **[PROJECT_PATH.md](./PROJECT_PATH.md)**                   | Project path configuration and management        |
+- **[System Architecture](ARCHITECTURE.md)** - Complete architecture overview
+- **[Database Design](architecture/Database.md)** - Database schema and design
+- **[Security Model](SECURITY.md)** - Authentication and security
 
-### Architecture & Development
+### API Reference
 
-| Directory                            | Contents                                 |
-| ------------------------------------ | ---------------------------------------- |
-| **[architecture/](./architecture/)** | System architecture and design decisions |
-| **[developer/](./developer/)**       | Developer guides and API documentation   |
-| **[deployment/](./deployment/)**     | Production deployment guides             |
-| **[api/](./api/)**                   | API endpoint documentation               |
-| **[contributing/](./contributing/)** | Contribution guidelines                  |
+- **[API Documentation](API.md)** - Complete REST API reference
+- **[Authentication](api/Authentication.md)** - API authentication guide
+- **[WebSocket Events](api/WebSocket.md)** - Real-time events
 
-### Additional Resources
+### Development
 
-| Document                           | Description                       |
-| ---------------------------------- | --------------------------------- |
-| **[CHANGELOG.md](./CHANGELOG.md)** | Version history and release notes |
-| **[SECURITY.md](./SECURITY.md)**   | Security policies and reporting   |
-| **[LICENSE.md](./LICENSE.md)**     | License information               |
+- **[Development Setup](development/Setup.md)** - Local development guide
+- **[Contributing](contributing/CONTRIBUTING.md)** - How to contribute
+- **[CI/CD Setup](CI_SETUP.md)** - Continuous integration
+
+## 🔧 Operations
+
+### Deployment
+
+- **[Docker Deployment](deployment/Docker.md)** - Deploy with Docker
+- **[Kubernetes](deployment/Kubernetes.md)** - Deploy to Kubernetes
+- **[Environment Setup](deployment/Environment.md)** - Environment configuration
+
+### Maintenance
+
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[FAQ](FAQ.md)** - Frequently asked questions
+- **[Updates](Updates.md)** - Updating nself Admin
+
+## 📋 Reference
+
+- **[Changelog](CHANGELOG.md)** - Version history and changes
+- **[Security Policy](SECURITY.md)** - Security reporting and policy
+- **[License](LICENSE.md)** - License information
+
+## 🆘 Support
+
+- **[GitHub Issues](https://github.com/acamarata/nself-admin/issues)** - Report bugs or request features
+- **[Discussions](https://github.com/acamarata/nself-admin/discussions)** - Community support
+- **[Discord](https://discord.gg/nself)** - Real-time chat support
+
+---
+
+## Quick Navigation
+
+| Topic                  | Description                | Link                                  |
+| ---------------------- | -------------------------- | ------------------------------------- |
+| 🚀 **Quick Start**     | Get running in 5 minutes   | [Quick Start](Quick-Start.md)         |
+| 🎯 **Setup Wizard**    | Complete wizard guide      | [Init Wizard](Init-Wizard-Guide.md)   |
+| 📊 **Dashboard**       | Using the dashboard        | [Dashboard](Dashboard-Overview.md)    |
+| 🔧 **Services**        | Managing services          | [Services](Service-Configuration.md)  |
+| 🗄️ **Database**        | Database operations        | [Database](Database-Management.md)    |
+| 🏗️ **Architecture**    | System design              | [Architecture](ARCHITECTURE.md)       |
+| 📡 **API**             | REST API reference         | [API Docs](API.md)                    |
+| 🐳 **Docker**          | Docker deployment          | [Docker](deployment/Docker.md)        |
+| 🚨 **Troubleshooting** | Common issues              | [Troubleshooting](TROUBLESHOOTING.md) |
+| ❓ **FAQ**             | Frequently asked questions | [FAQ](FAQ.md)                         |
+
+---
 
 ## Key Features
 
@@ -135,103 +169,7 @@ FRONTEND_APP_1_PORT=3001  # Required!
 FRONTEND_APP_1_ROUTE=app
 ```
 
-See [ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md) for complete reference.
-
-## Wizard Steps
-
-The setup wizard guides you through 6 configuration steps:
-
-### Step 1: Basic Settings
-
-- Project name and description
-- Environment selection (dev/staging/prod)
-- Domain configuration
-- Database setup
-- Automated backup configuration
-
-### Step 2: Core Services
-
-- View required services
-- Configure advanced settings
-- PostgreSQL, Hasura, Auth, Nginx
-
-### Step 3: Optional Services
-
-- Storage (MinIO)
-- Redis Cache
-- Search Services (6 engines)
-- Email Service (Mailpit)
-- Monitoring Bundle
-- nself Admin UI
-
-### Step 4: Custom Services
-
-- Add backend services
-- Select framework/language
-- Configure ports and routes
-- Set resource limits
-
-### Step 5: Frontend Applications
-
-- Configure external apps
-- Set unique ports (required!)
-- Define table prefixes
-- Setup Hasura remote schemas
-
-### Step 6: Review & Build
-
-- Review complete configuration
-- View service summary
-- Initiate build process
-- Monitor progress
-
-See [WIZARD_GUIDE.md](./WIZARD_GUIDE.md) for detailed information.
-
-## Troubleshooting
-
-### Common Issues
-
-| Issue                 | Solution                                         |
-| --------------------- | ------------------------------------------------ |
-| Port conflicts        | Use different ports or stop conflicting services |
-| Build failures        | Check Docker daemon and required variables       |
-| Service won't start   | Verify credentials and check logs                |
-| Auto-save stuck       | Check file permissions and API endpoints         |
-| Variables not loading | Verify file location and syntax                  |
-
-See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for comprehensive solutions.
-
-## Architecture
-
-### Technology Stack
-
-- **Frontend**: Next.js 15.5, React 19, TypeScript
-- **Styling**: Tailwind CSS with dark mode
-- **Backend**: Node.js API routes
-- **Database**: LokiJS (embedded) for admin data
-- **Integration**: Docker Compose, nself CLI
-
-### Design Principles
-
-1. **Zero Footprint**: Never pollutes user's project
-2. **Self-Contained**: All state in embedded database
-3. **Docker-First**: Designed for containerization
-4. **Progressive Disclosure**: Guides users step-by-step
-5. **Stateless Operations**: Can be destroyed and recreated
-
-### File Structure
-
-```
-nself-admin/
-├── src/
-│   ├── app/           # Next.js app router pages
-│   ├── components/    # React components
-│   ├── lib/          # Utilities and helpers
-│   └── hooks/        # Custom React hooks
-├── docs/             # Documentation
-├── public/           # Static assets
-└── data/            # LokiJS database (gitignored)
-```
+See [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md) for complete reference.
 
 ## Development
 
@@ -251,9 +189,9 @@ npm install
 export NSELF_PROJECT_PATH=../my-project
 
 # Start development server
-PORT=3100 npm run dev
+PORT=3021 npm run dev
 
-# Access at http://localhost:3100
+# Access at http://localhost:3021
 ```
 
 ### Build for Production
@@ -266,7 +204,7 @@ npm run build
 docker build -t nself-admin .
 
 # Run container
-docker run -p 3100:3100 \
+docker run -p 3021:3021 \
   -v /path/to/project:/workspace \
   nself-admin
 ```
@@ -284,33 +222,9 @@ npm run type-check
 npm run lint
 ```
 
-## API Endpoints
-
-Key API routes for wizard and management:
-
-### Wizard APIs
-
-- `GET /api/wizard/init` - Load configuration
-- `POST /api/wizard/update-env` - Save configuration
-- `GET /api/wizard/load-env` - Read environment files
-- `POST /api/wizard/reset` - Reset configuration
-
-### Project APIs
-
-- `GET /api/project/status` - Project status
-- `POST /api/nself/build` - Build project
-- `POST /api/nself/start` - Start services
-- `GET /api/docker/status` - Service status
-
-### Auth APIs
-
-- `POST /api/auth/login` - Admin login
-- `POST /api/auth/logout` - Admin logout
-- `GET /api/auth/session` - Check session
-
 ## Contributing
 
-We welcome contributions! Please see [contributing/](./contributing/) for:
+We welcome contributions! Please see [contributing/CONTRIBUTING.md](contributing/CONTRIBUTING.md) for:
 
 - Code of Conduct
 - Development setup
@@ -322,9 +236,7 @@ We welcome contributions! Please see [contributing/](./contributing/) for:
 
 ### Reporting Issues
 
-Please report security vulnerabilities to security@nself.com. Do not create public issues for security problems.
-
-See [SECURITY.md](./SECURITY.md) for our security policy.
+Please report security vulnerabilities to our [security policy](SECURITY.md). Do not create public issues for security problems.
 
 ### Best Practices
 
@@ -339,57 +251,22 @@ See [SECURITY.md](./SECURITY.md) for our security policy.
 ### Getting Help
 
 1. **Documentation**: Start with this comprehensive documentation
-2. **GitHub Issues**: https://github.com/nself/admin/issues
-3. **Community**: Join our Discord/Slack
-4. **Commercial Support**: Available at support@nself.com
+2. **GitHub Issues**: https://github.com/acamarata/nself-admin/issues
+3. **Community**: Join our Discord
+4. **Commercial Support**: Available for enterprise users
 
 ### Useful Links
 
-- [nself CLI Repository](https://github.com/nself/cli)
-- [nself Documentation](https://docs.nself.com)
+- [nself CLI Repository](https://github.com/acamarata/nself)
 - [Docker Documentation](https://docs.docker.com)
 - [Hasura Documentation](https://hasura.io/docs)
 
 ## License
 
-nself-admin is licensed under the MIT License. See [LICENSE.md](./LICENSE.md) for details.
-
-## Changelog
-
-See [CHANGELOG.md](./CHANGELOG.md) for version history and release notes.
+nself-admin is licensed under the MIT License. See [LICENSE.md](LICENSE.md) for details.
 
 ---
 
-## Quick Command Reference
+**Need help?** Check our [FAQ](FAQ.md) or [open an issue](https://github.com/acamarata/nself-admin/issues).
 
-```bash
-# Development
-npm run dev              # Start dev server
-npm run build           # Build for production
-npm run lint            # Run linter
-npm run type-check      # Type checking
-
-# Docker
-docker build -t nself-admin .
-docker run -p 3100:3100 nself-admin
-
-# nself CLI Integration
-nself init              # Initialize project
-nself build             # Build services
-nself start             # Start services
-nself status            # Check status
-nself logs              # View logs
-nself reset --force     # Reset everything
-
-# Debugging
-docker-compose ps       # Service status
-docker-compose logs     # View logs
-docker stats           # Resource usage
-lsof -i :3100         # Check port usage
-```
-
----
-
-_Documentation Version: 1.0.0_
-_Last Updated: 2025-01-05_
-_Specification: nself Environment Variable Specification v1.0_
+**Want to contribute?** See our [Contributing Guide](contributing/CONTRIBUTING.md).
