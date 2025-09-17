@@ -5,6 +5,7 @@
 
 import { exec, spawn } from 'child_process'
 import { promisify } from 'util'
+import { getProjectPath } from './paths'
 
 const execAsync = promisify(exec)
 
@@ -67,7 +68,7 @@ export async function executeNselfCommand(
   options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
 ): Promise<{ stdout: string; stderr: string; code: number }> {
   const nselfPath = await getNselfPath()
-  const cwd = options.cwd || process.env.PROJECT_PATH || '/project'
+  const cwd = options.cwd || getProjectPath()
 
   return new Promise((resolve, reject) => {
     const fullCommand = `${nselfPath} ${command} ${args.join(' ')}`
@@ -108,7 +109,7 @@ export function streamNselfCommand(
   return new Promise(async (resolve, reject) => {
     try {
       const nselfPath = await getNselfPath()
-      const cwd = options.cwd || process.env.PROJECT_PATH || '/project'
+      const cwd = options.cwd || getProjectPath()
 
       const child = spawn(nselfPath, [command, ...args], {
         cwd,

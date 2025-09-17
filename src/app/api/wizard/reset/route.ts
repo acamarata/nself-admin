@@ -1,27 +1,13 @@
 import { promises as fs } from 'fs'
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
+import { getProjectPath } from '@/lib/paths'
 
 export async function POST(req: NextRequest) {
   try {
-    // Get project path
-    const projectPath =
-      process.env.NSELF_PROJECT_PATH ||
-      process.env.PROJECT_PATH ||
-      '../nself-project'
-
-    let absoluteProjectPath: string
-    if (path.isAbsolute(projectPath)) {
-      absoluteProjectPath = projectPath
-    } else {
-      // Handle relative path properly - expand ~ to home directory
-      if (projectPath.startsWith('~/')) {
-        const homedir = process.env.HOME || process.env.USERPROFILE || ''
-        absoluteProjectPath = path.join(homedir, projectPath.slice(2))
-      } else {
-        absoluteProjectPath = path.resolve(process.cwd(), projectPath)
-      }
-    }
+    // Get project path using centralized resolution
+    // getProjectPath() already handles tilde expansion and relative paths
+    const absoluteProjectPath = getProjectPath()
 
     console.log('Resetting project files...')
 

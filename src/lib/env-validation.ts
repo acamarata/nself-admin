@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod'
+import { getProjectPath } from './paths'
 
 // Custom password validator
 const passwordValidator = z.string().refine(
@@ -127,7 +128,7 @@ export function checkRuntimeEnvironment() {
   // Check project directory
   try {
     const fs = require('fs')
-    const projectPath = process.env.PROJECT_PATH || '/project'
+    const projectPath = getProjectPath()
     fs.accessSync(projectPath, fs.constants.R_OK | fs.constants.W_OK)
     checks.projectDir = true
   } catch {

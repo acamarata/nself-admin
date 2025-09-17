@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     const projectPath = getProjectPath()
     console.log('Starting nself services in:', projectPath)
-    console.log('PROJECT_PATH env:', process.env.PROJECT_PATH)
+    console.log('Project path:', projectPath)
     console.log('NODE_ENV:', process.env.NODE_ENV)
 
     // Execute nself start in the project directory safely

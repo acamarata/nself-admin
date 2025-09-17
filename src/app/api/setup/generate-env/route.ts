@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
+import { getProjectPath } from '@/lib/paths'
 
 interface SetupData {
   adminPassword?: string
@@ -146,8 +147,8 @@ export async function POST(request: NextRequest) {
   try {
     const setupData: SetupData = await request.json()
 
-    // Get project path from environment or default
-    const projectPath = process.env.NSELF_PROJECT_PATH || '/workspace'
+    // Get project path using centralized resolution
+    const projectPath = getProjectPath()
     const envFilePath = path.join(projectPath, '.env.local')
 
     // Generate .env.local content

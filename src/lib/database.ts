@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import fs from 'fs'
 import Loki from 'lokijs'
 import path from 'path'
+import { getProjectPath } from './paths'
 
 // Database configuration
 const isDevelopment = process.env.NODE_ENV === 'development'
@@ -351,14 +352,14 @@ export async function isDevelopmentMode(): Promise<boolean> {
   return devMode !== false // Default to true if not set
 }
 
-export async function getProjectPath(): Promise<string> {
-  // In development, use sibling directory
+export async function getNselfInstallPath(): Promise<string> {
+  // In development, use sibling directory for nself CLI installation
   if (isDevelopment) {
     return path.join(process.cwd(), '..', 'nself')
   }
 
-  // In production, use mounted volume or environment variable
-  return process.env.NSELF_PROJECT_PATH || '/workspace'
+  // In production, use the centralized project path resolution
+  return getProjectPath()
 }
 
 // Export the database instance for advanced operations

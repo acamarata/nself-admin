@@ -1,13 +1,12 @@
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
+import { getProjectPath } from '@/lib/paths'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get the project path
-    const projectPath =
-      process.env.NSELF_PROJECT_PATH ||
-      path.join(process.cwd(), '..', 'nself-project')
+    // Get the project path using centralized resolution
+    const projectPath = getProjectPath()
 
     // Try to read from multiple env files in priority order to get current config
     let envContent = ''

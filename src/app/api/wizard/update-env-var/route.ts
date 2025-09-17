@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
+import { getProjectPath } from '@/lib/paths'
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,14 +14,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Get project path
-    const projectPath =
-      process.env.NSELF_PROJECT_PATH ||
-      process.env.PROJECT_PATH ||
-      '../nself-project'
-    const absoluteProjectPath = path.isAbsolute(projectPath)
-      ? projectPath
-      : path.join(process.cwd(), projectPath)
+    // Get project path using centralized resolution
+    const absoluteProjectPath = getProjectPath()
 
     // Determine which env file to write to based on environment
     // For initial setup, write to .env.{environment} (team settings)
@@ -105,14 +100,8 @@ export async function PUT(req: NextRequest) {
       )
     }
 
-    // Get project path
-    const projectPath =
-      process.env.NSELF_PROJECT_PATH ||
-      process.env.PROJECT_PATH ||
-      '../nself-project'
-    const absoluteProjectPath = path.isAbsolute(projectPath)
-      ? projectPath
-      : path.join(process.cwd(), projectPath)
+    // Get project path using centralized resolution
+    const absoluteProjectPath = getProjectPath()
 
     // Determine which env file to write to based on environment
     const envFileName = environment ? `.env.${environment}` : '.env.local'

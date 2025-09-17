@@ -3,22 +3,12 @@ import fs from 'fs'
 import path from 'path'
 import { promisify } from 'util'
 import { getCachedProjectInfo, setCachedProjectInfo } from './database'
+import { getProjectPath as getProjectPathFromPaths } from './paths'
 
 const execAsync = promisify(exec)
 
-// Get the project path based on environment
-export function getProjectPath(): string {
-  // In development, use sibling directory
-  if (process.env.NODE_ENV === 'development') {
-    return (
-      process.env.NSELF_PROJECT_PATH ||
-      path.join(process.cwd(), '..', 'nself-project')
-    )
-  }
-
-  // In production (container), use mounted volume
-  return process.env.NSELF_PROJECT_PATH || '/workspace'
-}
+// Re-export the centralized project path function for backward compatibility
+export const getProjectPath = getProjectPathFromPaths
 
 // Check if project exists and is valid
 export async function checkProjectStatus(): Promise<{

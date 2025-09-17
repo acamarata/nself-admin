@@ -2,6 +2,7 @@ import { exec } from 'child_process'
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
+import { getProjectPath } from '@/lib/paths'
 
 const execAsync = promisify(exec)
 
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
 
       case 'Project directory writable':
         try {
-          const projectPath = process.env.PROJECT_PATH || '/project'
+          const projectPath = getProjectPath()
           await fs.access(projectPath, fs.constants.W_OK)
           result = { success: true, message: 'Project directory is writable' }
         } catch (error: any) {

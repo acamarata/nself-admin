@@ -1,6 +1,7 @@
 import { exec } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
+import { getProjectPath } from '@/lib/paths'
 
 const execAsync = promisify(exec)
 
@@ -42,8 +43,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Execute nself command in the project directory
-    const projectPath = process.env.PROJECT_PATH || '/project'
+    // Execute nself command in the project directory using centralized resolution
+    const projectPath = getProjectPath()
     const fullCommand = `nself ${command} ${args.join(' ')}`
 
     const { stdout, stderr } = await execAsync(fullCommand, {
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
   const action = searchParams.get('action') || 'status'
 
   try {
-    const projectPath = process.env.PROJECT_PATH || '/project'
+    const projectPath = getProjectPath()
 
     let command = ''
     switch (action) {

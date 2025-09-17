@@ -1,6 +1,7 @@
 import { exec } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
+import { getProjectPath } from '@/lib/paths'
 
 const execAsync = promisify(exec)
 
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
 
 async function getMonitoringDashboard() {
   try {
-    const projectPath = process.env.PROJECT_PATH || '/project'
+    const projectPath = getProjectPath()
 
     // Get comprehensive system overview
     const [systemMetrics, dockerStats, serviceHealth, resourceUsage] =
@@ -158,7 +159,7 @@ async function getDetailedMetrics(timeRange: string) {
 
 async function getAllLogs(searchParams: URLSearchParams) {
   try {
-    const projectPath = process.env.PROJECT_PATH || '/project'
+    const projectPath = getProjectPath()
     const tail = searchParams.get('tail') || '1000'
     const since = searchParams.get('since') || '1h'
     const level = searchParams.get('level') || 'all'
@@ -194,7 +195,7 @@ async function getAllLogs(searchParams: URLSearchParams) {
 
 async function getServiceLogs(service: string, searchParams: URLSearchParams) {
   try {
-    const projectPath = process.env.PROJECT_PATH || '/project'
+    const projectPath = getProjectPath()
     const tail = searchParams.get('tail') || '500'
     const since = searchParams.get('since') || '1h'
     const follow = searchParams.get('follow') === 'true'
@@ -302,7 +303,7 @@ async function getActiveAlerts() {
 
 async function getSystemHealth() {
   try {
-    const projectPath = process.env.PROJECT_PATH || '/project'
+    const projectPath = getProjectPath()
 
     // Run comprehensive health checks
     const healthChecks = await Promise.all([
@@ -431,7 +432,7 @@ async function getDockerStatsData() {
 }
 
 async function getServiceHealthData() {
-  const projectPath = process.env.PROJECT_PATH || '/project'
+  const projectPath = getProjectPath()
 
   try {
     const { stdout } = await execAsync(
@@ -545,7 +546,7 @@ async function getServiceHealthAlerts() {
 }
 
 async function checkDatabaseHealth() {
-  const projectPath = process.env.PROJECT_PATH || '/project'
+  const projectPath = getProjectPath()
 
   try {
     const { stdout } = await execAsync(
