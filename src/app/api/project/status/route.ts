@@ -184,6 +184,7 @@ export async function GET() {
     let needsSetup = true
     let projectName = null
     let baseDomain = null
+    let isMinimalSetup = false
 
     if (hasEnvFile && envContent) {
       // Parse basic config from .env.local
@@ -193,23 +194,35 @@ export async function GET() {
       projectName = projectNameMatch ? projectNameMatch[1].trim() : null
       baseDomain = baseDomainMatch ? baseDomainMatch[1].trim() : null
 
+      // Check if this is a minimal setup (only basic env vars, no service configuration)
+      // A minimal setup has PROJECT_NAME and BASE_DOMAIN but lacks service-specific configuration
+      const hasServiceConfig =
+        envContent.includes('POSTGRES_DB') ||
+        envContent.includes('POSTGRES_USER') ||
+        envContent.includes('HASURA_GRAPHQL_ADMIN_SECRET') ||
+        envContent.includes('AUTH_HOST') ||
+        envContent.includes('SERVICES_ENABLED') ||
+        envContent.includes('FRONTEND_APP_')
+
+      // Check if this looks like a minimal/template env file
+      isMinimalSetup = projectName && baseDomain && !hasServiceConfig
+
       if (servicesRunning) {
         projectState = 'running'
         needsSetup = false
       } else if (isBuilt) {
         projectState = 'configured'
         needsSetup = false
-      } else if (
-        envContent.includes('POSTGRES_') ||
-        envContent.includes('HASURA_')
-      ) {
+      } else if (isMinimalSetup) {
+        // This is a minimal setup - needs wizard
+        projectState = 'empty'
+        needsSetup = true
+      } else if (hasServiceConfig) {
+        // Has service configuration but not built yet
         projectState = 'configured'
         needsSetup = false
-      } else if (projectName && baseDomain) {
-        // Has basic configuration but no docker-compose yet - still in setup wizard
-        projectState = 'partial'
-        needsSetup = true
       } else {
+        // Has env file but incomplete
         projectState = 'partial'
         needsSetup = true
       }

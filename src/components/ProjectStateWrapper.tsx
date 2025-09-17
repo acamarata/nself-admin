@@ -93,7 +93,7 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
         !pathname.startsWith('/init')
       ) {
         localStorage.removeItem(PROJECT_SETUP_KEY) // Clear cached status
-        router.push('/init')
+        router.push('/init/1') // Start at step 1 of the wizard
         return
       }
 
@@ -115,7 +115,7 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
       localStorage.removeItem(PROJECT_SETUP_KEY) // Clear cached status on error
       // On error, assume setup is needed unless we're already on init page
       if (!pathname.startsWith('/init')) {
-        router.push('/init')
+        router.push('/init/1') // Start at step 1 of the wizard
       }
     } finally {
       setLoading(false)
@@ -142,7 +142,7 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
         !pathname.startsWith('/init')
       ) {
         localStorage.removeItem(PROJECT_SETUP_KEY)
-        router.push('/init')
+        router.push('/init/1') // Start at step 1 of the wizard
         return
       }
 
