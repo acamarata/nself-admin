@@ -1,0 +1,66 @@
+# Dependabot configuration for nself-admin
+# Keeps dependencies up-to-date automatically
+
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 10
+    # Group updates to reduce PR noise
+    groups:
+      production-dependencies:
+        patterns:
+          - "*"
+        dependency-type: "production"
+      development-dependencies:
+        patterns:
+          - "*"
+        dependency-type: "development"
+    # Automatically approve and merge patch updates
+    labels:
+      - "dependencies"
+      - "npm"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore(dev)"
+      include: "scope"
+    # Ignore specific dependencies if needed
+    ignore:
+      # Example: Keep Next.js on v15 for now
+      # - dependency-name: "next"
+      #   versions: ["16.x"]
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Enable version updates for Docker base images
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "build"
+      include: "scope"
