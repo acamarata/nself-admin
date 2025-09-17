@@ -1,9 +1,9 @@
+import { getProjectPath } from '@/lib/paths'
+import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
-import { getProjectPath } from '@/lib/paths'
-import bcrypt from 'bcryptjs'
 
 interface SetupData {
   adminPassword?: string

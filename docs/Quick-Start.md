@@ -29,6 +29,7 @@ docker run -d \
 ```
 
 ### What This Does:
+
 - Creates a container running nself Admin
 - Mounts your project directory
 - Connects to Docker for container management
@@ -47,6 +48,7 @@ You'll see the nself Admin login screen.
 ## 3. Set Admin Password (20 seconds)
 
 On first launch:
+
 1. Enter a password (minimum 3 characters for development)
 2. Click "Set Password"
 3. You'll be redirected to the Init Wizard
@@ -56,6 +58,7 @@ On first launch:
 The wizard will guide you through 6 simple steps:
 
 ### Step 1: Project Setup
+
 ```yaml
 Project Name: my_app
 Environment: Development
@@ -64,20 +67,26 @@ Admin Email: admin@localhost
 Database Name: myapp
 Database Password: [keep default for dev]
 ```
+
 Click **Next** →
 
 ### Step 2: Required Services
+
 These are pre-configured. Just click **Next** →
 
 ### Step 3: Optional Services
+
 For a quick start, enable:
+
 - ✅ **Redis** (for caching)
 - ✅ **Storage** (for file uploads)
 
 Click **Next** →
 
 ### Step 4: Custom Services
+
 Add your first API service:
+
 1. Click **"Add Service"**
 2. Enter:
    - Name: `api`
@@ -87,7 +96,9 @@ Add your first API service:
 3. Click **Next** →
 
 ### Step 5: Frontend Apps
+
 Add your frontend:
+
 1. Click **"Add Your First App"**
 2. Enter:
    - Name: `Web App`
@@ -96,11 +107,13 @@ Add your frontend:
 3. Click **Next** →
 
 ### Step 6: Review & Build
+
 Review your configuration and click **Build Project** 🔨
 
 ## 5. Build Your Stack (1 minute)
 
 Watch as nAdmin:
+
 - Generates your docker-compose.yml
 - Creates service configurations
 - Sets up the database
@@ -113,6 +126,7 @@ When complete, you'll be redirected to the Start page.
 Click the **Start All Services** button.
 
 nAdmin will launch:
+
 - PostgreSQL database
 - Hasura GraphQL engine
 - Authentication service
@@ -125,17 +139,18 @@ nAdmin will launch:
 
 Once running, you can access:
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **nAdmin Dashboard** | http://localhost:3021 | Your password |
-| **Hasura Console** | http://localhost:8080 | Admin secret in .env |
-| **API Service** | http://api.localhost | No auth required |
-| **MinIO Console** | http://localhost:9001 | minioadmin/minioadmin |
-| **Frontend App** | http://app.localhost:3001 | Your app |
+| Service              | URL                       | Credentials           |
+| -------------------- | ------------------------- | --------------------- |
+| **nAdmin Dashboard** | http://localhost:3021     | Your password         |
+| **Hasura Console**   | http://localhost:8080     | Admin secret in .env  |
+| **API Service**      | http://api.localhost      | No auth required      |
+| **MinIO Console**    | http://localhost:9001     | minioadmin/minioadmin |
+| **Frontend App**     | http://app.localhost:3001 | Your app              |
 
 ## 🎉 Congratulations!
 
 You now have a complete development stack running with:
+
 - ✅ PostgreSQL database
 - ✅ GraphQL API (Hasura)
 - ✅ Authentication service
@@ -148,13 +163,16 @@ You now have a complete development stack running with:
 ## What's Next?
 
 ### Explore the Dashboard
+
 Navigate to the Dashboard to see:
+
 - Service health status
 - Resource usage metrics
 - Real-time logs
 - Quick actions
 
 ### Test Your API
+
 ```bash
 # Health check
 curl http://api.localhost/health
@@ -166,23 +184,26 @@ curl http://localhost:8080/v1/graphql \
 ```
 
 ### Add More Services
+
 1. Go to **Services** → **Add Service**
 2. Choose from 40+ framework templates
 3. Configure and deploy instantly
 
 ### Connect Your Frontend
+
 ```javascript
 // Example: Connect to Hasura
 const client = new GraphQLClient('http://localhost:8080/v1/graphql', {
   headers: {
-    'x-hasura-admin-secret': 'your-secret'
-  }
+    'x-hasura-admin-secret': 'your-secret',
+  },
 })
 ```
 
 ## Common Commands
 
 ### View Logs
+
 ```bash
 # All services
 docker-compose logs -f
@@ -192,6 +213,7 @@ docker-compose logs -f postgres
 ```
 
 ### Stop Services
+
 ```bash
 # Via UI
 Navigate to Dashboard → Stop All
@@ -201,6 +223,7 @@ docker-compose down
 ```
 
 ### Reset Everything
+
 ```bash
 # Stop and remove everything
 docker-compose down -v
@@ -213,6 +236,7 @@ rm -rf .env.* docker-compose.yml
 ## Troubleshooting Quick Fixes
 
 ### Port Already in Use
+
 ```bash
 # Find what's using port 3021
 lsof -i :3021
@@ -227,6 +251,7 @@ docker run -d \
 ```
 
 ### Docker Not Running
+
 ```bash
 # Check Docker status
 docker ps
@@ -238,6 +263,7 @@ systemctl start docker  # Linux
 ```
 
 ### Permission Denied
+
 ```bash
 # Add sudo (Linux)
 sudo docker run ...
@@ -268,38 +294,42 @@ sudo usermod -aG docker $USER
 ## Example Projects
 
 ### E-Commerce API
+
 ```yaml
 Services:
-- PostgreSQL + Hasura (GraphQL)
-- Redis (cart sessions)
-- MinIO (product images)
-- Node.js API (business logic)
-- Stripe webhook handler
+  - PostgreSQL + Hasura (GraphQL)
+  - Redis (cart sessions)
+  - MinIO (product images)
+  - Node.js API (business logic)
+  - Stripe webhook handler
 ```
 
 ### SaaS Platform
+
 ```yaml
 Services:
-- PostgreSQL (multi-tenant)
-- Auth with OAuth providers
-- Redis (caching + queues)
-- Multiple microservices
-- Monitoring stack
+  - PostgreSQL (multi-tenant)
+  - Auth with OAuth providers
+  - Redis (caching + queues)
+  - Multiple microservices
+  - Monitoring stack
 ```
 
 ### ML Application
+
 ```yaml
 Services:
-- PostgreSQL (metadata)
-- MinIO (model storage)
-- MLflow (experiment tracking)
-- Python FastAPI (inference)
-- Redis (result caching)
+  - PostgreSQL (metadata)
+  - MinIO (model storage)
+  - MLflow (experiment tracking)
+  - Python FastAPI (inference)
+  - Redis (result caching)
 ```
 
 ---
 
 **Ready for more?** Check out:
+
 - [Init Wizard Detailed Guide](Init-Wizard-Guide)
 - [Service Configuration](Service-Configuration)
 - [Production Deployment](Production-Deployment)

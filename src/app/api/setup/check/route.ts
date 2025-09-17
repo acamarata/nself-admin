@@ -1,8 +1,8 @@
+import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
-import { getProjectPath } from '@/lib/paths'
 
 const execAsync = promisify(exec)
 

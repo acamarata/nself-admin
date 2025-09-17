@@ -5,12 +5,14 @@ The nself Admin Dashboard is your central command center for monitoring and mana
 ## Dashboard Layout
 
 ### Top Navigation Bar
+
 - **Logo/Home**: Returns to dashboard
 - **Environment Indicator**: Shows current environment (Dev/Staging/Prod)
 - **Quick Actions**: Stop All, Restart All, View Logs
 - **User Menu**: Settings, Logout
 
 ### Sidebar Navigation
+
 ```
 📊 Dashboard          # Main overview
 🚀 Services          # Service management
@@ -27,6 +29,7 @@ The nself Admin Dashboard is your central command center for monitoring and mana
 ### Service Health Overview
 
 **Real-Time Status Grid**:
+
 ```
 ┌─────────────────────────────────────────┐
 │ PostgreSQL     ✅ Running  CPU: 12%     │
@@ -40,6 +43,7 @@ The nself Admin Dashboard is your central command center for monitoring and mana
 ```
 
 **Status Indicators**:
+
 - 🟢 **Running**: Service healthy and responding
 - 🟡 **Starting**: Service initializing
 - 🔴 **Stopped**: Service not running
@@ -49,6 +53,7 @@ The nself Admin Dashboard is your central command center for monitoring and mana
 ### Resource Metrics
 
 **System Overview**:
+
 ```
 CPU Usage:        [████████░░░░░░░] 42%
 Memory Usage:     [██████░░░░░░░░░] 38%
@@ -57,6 +62,7 @@ Network I/O:      ↓ 2.4 MB/s  ↑ 1.1 MB/s
 ```
 
 **Per-Service Metrics**:
+
 - CPU percentage
 - Memory usage (MB/GB)
 - Network I/O rates
@@ -66,12 +72,14 @@ Network I/O:      ↓ 2.4 MB/s  ↑ 1.1 MB/s
 ### Quick Actions Panel
 
 **Service Controls**:
+
 ```
 [Start All] [Stop All] [Restart All]
 [View Logs] [Shell Access] [Backup Now]
 ```
 
 **Individual Service Actions**:
+
 - Start/Stop/Restart
 - View Logs
 - Shell Access
@@ -83,6 +91,7 @@ Network I/O:      ↓ 2.4 MB/s  ↑ 1.1 MB/s
 ### Service Cards
 
 Each service displays:
+
 ```
 ┌──────────────────────────┐
 │ 🐘 PostgreSQL           │
@@ -99,6 +108,7 @@ Each service displays:
 Click any service for detailed information:
 
 **Overview Tab**:
+
 - Container ID
 - Image version
 - Created timestamp
@@ -107,6 +117,7 @@ Click any service for detailed information:
 - Restart count
 
 **Configuration Tab**:
+
 - Environment variables
 - Volume mounts
 - Network settings
@@ -114,6 +125,7 @@ Click any service for detailed information:
 - Labels
 
 **Logs Tab**:
+
 - Real-time log streaming
 - Log level filtering
 - Search functionality
@@ -121,6 +133,7 @@ Click any service for detailed information:
 - Clear logs
 
 **Metrics Tab**:
+
 - CPU usage graph (24h)
 - Memory usage graph (24h)
 - Network I/O graph (24h)
@@ -129,6 +142,7 @@ Click any service for detailed information:
 ## Database Management
 
 ### Quick Stats
+
 ```
 Database: myapp
 Size: 124 MB
@@ -140,6 +154,7 @@ Queries/sec: 142
 ### Database Tools
 
 **SQL Query Console**:
+
 ```sql
 -- Execute queries directly
 SELECT * FROM users LIMIT 10;
@@ -152,6 +167,7 @@ SELECT * FROM users LIMIT 10;
 ```
 
 **Migration Management**:
+
 ```
 Applied Migrations:
 ✅ 001_initial_schema.sql
@@ -163,6 +179,7 @@ Pending:
 ```
 
 **Backup & Restore**:
+
 ```
 Recent Backups:
 📦 2024-01-12 14:30 (124 MB) [Download] [Restore]
@@ -177,6 +194,7 @@ Recent Backups:
 ### Real-Time Metrics
 
 **Live Graphs** (updates every 5 seconds):
+
 - CPU usage per service
 - Memory consumption
 - Network throughput
@@ -187,6 +205,7 @@ Recent Backups:
 ### Log Aggregation
 
 **Unified Log Viewer**:
+
 ```
 Filter: [All Services ▼] [All Levels ▼] [Search...]
 
@@ -197,6 +216,7 @@ Filter: [All Services ▼] [All Levels ▼] [Search...]
 ```
 
 **Log Filters**:
+
 - Service selector
 - Log level (DEBUG, INFO, WARN, ERROR)
 - Time range
@@ -206,6 +226,7 @@ Filter: [All Services ▼] [All Levels ▼] [Search...]
 ### Alert Configuration
 
 **Alert Rules**:
+
 ```yaml
 CPU Alert:
   Threshold: > 80%
@@ -228,6 +249,7 @@ Service Down:
 ### Environment Variables
 
 **View and Edit**:
+
 ```
 DATABASE_URL=postgres://user:pass@postgres:5432/db
 HASURA_ADMIN_SECRET=****************
@@ -240,6 +262,7 @@ REDIS_URL=redis://redis:6379
 ### Service Configuration
 
 **Modify Service Settings**:
+
 - Resource limits (CPU/Memory)
 - Restart policies
 - Health check parameters
@@ -251,6 +274,7 @@ REDIS_URL=redis://redis:6379
 ### API Testing
 
 **Built-in API Client**:
+
 ```
 Method: [GET ▼]
 URL: http://api.localhost/users
@@ -270,6 +294,7 @@ Body:
 ### GraphQL Playground
 
 **Integrated Hasura Console**:
+
 - GraphQL query builder
 - Schema explorer
 - Real-time subscriptions
@@ -278,6 +303,7 @@ Body:
 ### Terminal Access
 
 **Web-based Shell**:
+
 ```bash
 # Access any container
 $ docker exec -it postgres psql -U postgres
@@ -290,6 +316,7 @@ $ docker exec -it nginx sh
 ### Backup Management
 
 **Backup Dashboard**:
+
 ```
 Scheduled Backups: ✅ Enabled
 Schedule: Daily at 2:00 AM
@@ -303,6 +330,7 @@ Manual Actions:
 ### Deployment Tools
 
 **Deploy to Production**:
+
 ```
 Current: v1.2.3 (Development)
 Target: Production
@@ -319,6 +347,7 @@ Pre-deployment Checks:
 ## System Information
 
 ### Docker Status
+
 ```
 Docker Version: 24.0.7
 Containers: 12 (12 running)
@@ -329,6 +358,7 @@ Storage: 4.2 GB / 50 GB
 ```
 
 ### Resource Usage
+
 ```
 Total CPU Cores: 8
 Total Memory: 16 GB
@@ -346,12 +376,14 @@ Custom Services: 1 CPU, 512 MB RAM each
 ### Layout Options
 
 **Widget Management**:
+
 - Drag and drop to rearrange
 - Resize widgets
 - Add/remove widgets
 - Save custom layouts
 
 **Available Widgets**:
+
 - Service status grid
 - Resource meters
 - Log viewer
@@ -362,6 +394,7 @@ Custom Services: 1 CPU, 512 MB RAM each
 ### Theme Settings
 
 **Appearance**:
+
 - Light/Dark mode
 - Accent colors
 - Font size
@@ -369,20 +402,20 @@ Custom Services: 1 CPU, 512 MB RAM each
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+K` | Quick search |
-| `Ctrl+L` | View logs |
-| `Ctrl+S` | Stop all services |
+| Shortcut | Action               |
+| -------- | -------------------- |
+| `Ctrl+K` | Quick search         |
+| `Ctrl+L` | View logs            |
+| `Ctrl+S` | Stop all services    |
 | `Ctrl+R` | Restart all services |
-| `Ctrl+/` | Show shortcuts |
-| `Esc` | Close modal |
+| `Ctrl+/` | Show shortcuts       |
+| `Esc`    | Close modal          |
 
 ## Performance Tips
 
 ### Dashboard Optimization
 
-1. **Reduce Update Frequency**: 
+1. **Reduce Update Frequency**:
    - Settings → Performance → Update Interval
    - Default: 5s, Can set to 10s or 30s
 
@@ -397,11 +430,13 @@ Custom Services: 1 CPU, 512 MB RAM each
 ### Browser Recommendations
 
 **Best Performance**:
+
 - Chrome/Edge (Chromium-based)
 - Firefox (latest)
 - Safari 15+
 
 **Enable Hardware Acceleration**:
+
 - Chrome: Settings → Advanced → System
 - Improves graph rendering
 
@@ -445,12 +480,14 @@ docker exec nself-admin whoami
 The dashboard is responsive and works on mobile devices:
 
 **Mobile Features**:
+
 - Touch-optimized controls
 - Swipe navigation
 - Condensed view
 - Essential metrics only
 
 **Access from Mobile**:
+
 1. Find your computer's IP: `ifconfig` or `ipconfig`
 2. Navigate to: `http://[YOUR-IP]:3021`
 3. Use same credentials
@@ -483,6 +520,7 @@ curl http://localhost:3021/api/docker/logs?service=postgres \
 ---
 
 **Related Documentation**:
+
 - [Quick Start](Quick-Start)
 - [Troubleshooting](Troubleshooting)
 - [Keyboard Shortcuts](Keyboard-Shortcuts)

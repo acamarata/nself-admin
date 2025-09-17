@@ -36,20 +36,20 @@ graph TB
         Browser[🌐 Browser]
         Project[📁 User Project]
     end
-    
+
     subgraph "nself Admin Container"
         UI[⚛️ Next.js UI]
         API[🔌 API Routes]
         DB[💾 LokiJS DB]
         CLI[🛠️ nself CLI]
     end
-    
+
     subgraph "Docker Host"
         Engine[🐳 Docker Engine]
         Services[⚙️ User Services]
         Volumes[💿 Docker Volumes]
     end
-    
+
     User --> Browser
     Browser --> UI
     UI --> API
@@ -58,7 +58,7 @@ graph TB
     CLI --> Engine
     Engine --> Services
     Services --> Volumes
-    
+
     Project -.-> CLI
     Engine -.-> Project
 ```
@@ -141,7 +141,7 @@ sequenceDiagram
     participant B as Browser
     participant A as API
     participant D as Database
-    
+
     U->>B: Enter password
     B->>A: POST /api/auth/login
     A->>D: Verify hash
@@ -161,7 +161,7 @@ sequenceDiagram
     participant C as CLI
     participant D as Docker
     participant P as Project
-    
+
     U->>A: Build project
     A->>C: Execute: nself build
     C->>P: Generate docker-compose.yml
@@ -180,7 +180,7 @@ sequenceDiagram
     participant W as WebSocket
     participant A as API
     participant D as Docker
-    
+
     B->>W: Connect WebSocket
     W->>A: Subscribe to metrics
     loop Every 5 seconds
@@ -269,16 +269,16 @@ const dbConfig = {
   filename: '/app/data/nadmin.db',
   autoload: true,
   autosave: true,
-  autosaveInterval: 30000,  // 30 seconds
+  autosaveInterval: 30000, // 30 seconds
   adapter: new LokiFSAdapter(),
   verbose: false,
-  
+
   // TTL Configuration
   ttl: {
-    sessions: 24 * 60 * 60 * 1000,    // 24 hours
-    cache: 5 * 60 * 1000,             // 5 minutes
-    audit: 30 * 24 * 60 * 60 * 1000   // 30 days
-  }
+    sessions: 24 * 60 * 60 * 1000, // 24 hours
+    cache: 5 * 60 * 1000, // 5 minutes
+    audit: 30 * 24 * 60 * 60 * 1000, // 30 days
+  },
 }
 ```
 
@@ -306,13 +306,13 @@ volumes:
   # Application data (persistent)
   nself-admin-data:
     driver: local
-    
+
   # User project (bind mount)
   user-project:
     type: bind
     source: /path/to/project
     target: /workspace
-    
+
   # Docker socket (system)
   docker-socket:
     type: bind
@@ -340,15 +340,15 @@ const endpoints: APIEndpoint[] = [
     method: 'POST',
     auth: false,
     rateLimit: 5, // per minute
-    description: 'Authenticate user'
+    description: 'Authenticate user',
   },
   {
     path: '/api/services',
     method: 'GET',
     auth: true,
     rateLimit: 60,
-    description: 'List services'
-  }
+    description: 'List services',
+  },
 ]
 ```
 
@@ -439,12 +439,12 @@ interface AppState {
 ```typescript
 // SWR Configuration
 const swrConfig = {
-  fetcher: (url: string) => fetch(url).then(r => r.json()),
-  refreshInterval: 5000,  // 5 seconds for real-time data
+  fetcher: (url: string) => fetch(url).then((r) => r.json()),
+  refreshInterval: 5000, // 5 seconds for real-time data
   revalidateOnFocus: true,
   revalidateOnReconnect: true,
   errorRetryCount: 3,
-  dedupingInterval: 2000
+  dedupingInterval: 2000,
 }
 ```
 
@@ -458,12 +458,12 @@ graph LR
         App[Next.js App]
         Socket[Docker Socket]
     end
-    
+
     subgraph "Docker Host"
         Engine[Docker Engine]
         Services[User Services]
     end
-    
+
     App --> Socket
     Socket --> Engine
     Engine --> Services
@@ -500,12 +500,8 @@ interface DockerOperations {
 ```typescript
 // Real-time Metrics Collection
 interface MetricsCollector {
-  interval: 5000  // 5 seconds
-  sources: [
-    'docker stats',
-    'docker ps',
-    'system metrics'
-  ]
+  interval: 5000 // 5 seconds
+  sources: ['docker stats', 'docker ps', 'system metrics']
   aggregation: {
     cpu: 'percentage'
     memory: 'bytes + percentage'
@@ -555,12 +551,12 @@ Performance Goals:
     API: < 200ms (95th percentile)
     UI: < 100ms (First Contentful Paint)
     Dashboard: < 2s (Full Load)
-  
+
   Throughput:
     Concurrent Users: 10
     API Requests: 1000/minute
     WebSocket Connections: 50
-  
+
   Resources:
     Memory: < 512MB
     CPU: < 25% (idle), < 80% (active)
@@ -692,13 +688,13 @@ Production Setup:
     - Read-only filesystem
     - Security scanning
     - Secret management
-  
+
   Monitoring:
     - Health checks
     - Metrics collection
     - Log aggregation
     - Alerting
-  
+
   Backup:
     - Database backups
     - Configuration backups
@@ -766,6 +762,7 @@ nself Admin's architecture is designed for simplicity, security, and scalability
 ---
 
 **Related Documentation**:
+
 - [System Requirements](System-Requirements)
 - [Environment Management](Environment-Management)
 - [Performance Tuning](Performance-Tuning)

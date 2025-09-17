@@ -84,7 +84,9 @@ nself-admin/
 ## 💡 Key Features
 
 ### Intelligent Project Wizard
+
 The 6-step wizard guides you through:
+
 1. **Project Setup** - Name, environment, and database configuration
 2. **Required Services** - Configure core infrastructure
 3. **Optional Services** - Add caching, storage, monitoring
@@ -93,12 +95,14 @@ The 6-step wizard guides you through:
 6. **Review & Build** - Validate and build your stack
 
 ### Real-Time Monitoring
+
 - **Service Health** - Live status for all containers
 - **Resource Metrics** - CPU, memory, disk, and network usage
 - **Log Streaming** - Real-time logs from all services
 - **Alert Management** - Configurable alerts and notifications
 
 ### Database Management
+
 - **Automatic Migrations** - Version-controlled schema changes
 - **Visual Query Builder** - Execute SQL with syntax highlighting
 - **Backup & Restore** - Scheduled and on-demand backups

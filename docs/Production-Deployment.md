@@ -27,33 +27,33 @@ graph TB
     subgraph "Internet"
         Users[👥 Users]
     end
-    
+
     subgraph "Load Balancer/CDN"
         LB[🔄 Load Balancer]
         CDN[📡 CDN]
     end
-    
+
     subgraph "Reverse Proxy"
         Nginx[🌐 Nginx]
         SSL[🔒 SSL Termination]
     end
-    
+
     subgraph "Application Layer"
         nAdmin1[📊 nself Admin]
         nAdmin2[📊 nself Admin]
     end
-    
+
     subgraph "Storage"
         DB[💾 Database]
         Logs[📝 Log Storage]
         Backups[💿 Backups]
     end
-    
+
     subgraph "Monitoring"
         Metrics[📈 Metrics]
         Alerts[🚨 Alerts]
     end
-    
+
     Users --> LB
     LB --> CDN
     CDN --> Nginx
@@ -75,6 +75,7 @@ graph TB
 ### System Requirements
 
 **Minimum Production Server:**
+
 - **CPU**: 4 cores
 - **RAM**: 8GB
 - **Disk**: 50GB SSD
@@ -82,6 +83,7 @@ graph TB
 - **OS**: Ubuntu 22.04 LTS / CentOS 8+ / RHEL 8+
 
 **Recommended Production Server:**
+
 - **CPU**: 8 cores
 - **RAM**: 16GB
 - **Disk**: 100GB SSD
@@ -103,14 +105,14 @@ certbot --version        # >= 1.0 (for Let's Encrypt)
 ```yaml
 Ports:
   inbound:
-    - 80/tcp    # HTTP (redirect to HTTPS)
-    - 443/tcp   # HTTPS
-    - 22/tcp    # SSH (admin access)
-  
+    - 80/tcp # HTTP (redirect to HTTPS)
+    - 443/tcp # HTTPS
+    - 22/tcp # SSH (admin access)
+
   outbound:
-    - 80/tcp    # Package updates
-    - 443/tcp   # HTTPS to external services
-    - 53/tcp    # DNS
+    - 80/tcp # Package updates
+    - 443/tcp # HTTPS to external services
+    - 53/tcp # DNS
 ```
 
 ## Deployment Methods
@@ -127,41 +129,41 @@ services:
     image: acamarata/nself-admin:latest
     container_name: nself-admin-prod
     restart: unless-stopped
-    
+
     environment:
       NODE_ENV: production
       PORT: 3021
       NSELF_PROJECT_PATH: /workspace
-      
+
       # Security
       ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET}
       ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
-      
+
       # Database
       DATABASE_URL: postgresql://nself:${DB_PASSWORD}@postgres:5432/nself_admin
-      
+
       # Redis (optional)
       REDIS_URL: redis://redis:6379
-      
+
       # Monitoring
       ENABLE_METRICS: true
       METRICS_PORT: 9090
-      
+
     volumes:
       - ./workspace:/workspace:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - nself-admin-data:/app/data
-      
+
     networks:
       - nself-network
-      
+
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3021/api/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3021/api/health']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-      
+
     deploy:
       resources:
         limits:
@@ -170,45 +172,45 @@ services:
         reservations:
           memory: 512M
           cpus: '1.0'
-    
+
     security_opt:
       - no-new-privileges:true
-    
-    user: "1000:1000"
-    
+
+    user: '1000:1000'
+
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: '10m'
+        max-file: '3'
 
   postgres:
     image: postgres:15-alpine
     container_name: nself-postgres
     restart: unless-stopped
-    
+
     environment:
       POSTGRES_DB: nself_admin
       POSTGRES_USER: nself
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
-      
+      POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=en_US.UTF-8'
+
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./backups:/backups
-      
+
     networks:
       - nself-network
-      
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U nself"]
+      test: ['CMD-SHELL', 'pg_isready -U nself']
       interval: 10s
       timeout: 5s
       retries: 5
-      
+
     security_opt:
       - no-new-privileges:true
-      
+
     command: >
       postgres
       -c max_connections=200
@@ -225,21 +227,21 @@ services:
     image: redis:7-alpine
     container_name: nself-redis
     restart: unless-stopped
-    
+
     command: redis-server --requirepass ${REDIS_PASSWORD}
-    
+
     volumes:
       - redis-data:/data
-      
+
     networks:
       - nself-network
-      
+
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
       interval: 10s
       timeout: 3s
       retries: 5
-      
+
     security_opt:
       - no-new-privileges:true
 
@@ -247,25 +249,25 @@ services:
     image: nginx:alpine
     container_name: nself-nginx
     restart: unless-stopped
-    
+
     ports:
-      - "80:80"
-      - "443:443"
-      
+      - '80:80'
+      - '443:443'
+
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./ssl:/etc/nginx/ssl:ro
       - ./logs/nginx:/var/log/nginx
-      
+
     networks:
       - nself-network
-      
+
     depends_on:
       - nself-admin
-      
+
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:80/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -344,10 +346,10 @@ metadata:
   namespace: nself-admin
 type: Opaque
 stringData:
-  ADMIN_SESSION_SECRET: "your-session-secret"
-  ADMIN_JWT_SECRET: "your-jwt-secret"
-  DB_PASSWORD: "your-db-password"
-  REDIS_PASSWORD: "your-redis-password"
+  ADMIN_SESSION_SECRET: 'your-session-secret'
+  ADMIN_JWT_SECRET: 'your-jwt-secret'
+  DB_PASSWORD: 'your-db-password'
+  REDIS_PASSWORD: 'your-redis-password'
 
 ---
 # configmap.yaml
@@ -357,10 +359,10 @@ metadata:
   name: nself-admin-config
   namespace: nself-admin
 data:
-  NODE_ENV: "production"
-  DOMAIN: "admin.yourdomain.com"
-  ENABLE_METRICS: "true"
-  LOG_LEVEL: "info"
+  NODE_ENV: 'production'
+  DOMAIN: 'admin.yourdomain.com'
+  ENABLE_METRICS: 'true'
+  LOG_LEVEL: 'info'
 
 ---
 # deployment.yaml
@@ -386,44 +388,44 @@ spec:
         runAsUser: 1000
         fsGroup: 1000
       containers:
-      - name: nself-admin
-        image: acamarata/nself-admin:latest
-        ports:
-        - containerPort: 3021
-        env:
-        - name: PORT
-          value: "3021"
-        envFrom:
-        - configMapRef:
-            name: nself-admin-config
-        - secretRef:
-            name: nself-admin-secrets
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "500m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
-        livenessProbe:
-          httpGet:
-            path: /api/health
-            port: 3021
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 3021
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        volumeMounts:
-        - name: data
-          mountPath: /app/data
+        - name: nself-admin
+          image: acamarata/nself-admin:latest
+          ports:
+            - containerPort: 3021
+          env:
+            - name: PORT
+              value: '3021'
+          envFrom:
+            - configMapRef:
+                name: nself-admin-config
+            - secretRef:
+                name: nself-admin-secrets
+          resources:
+            requests:
+              memory: '512Mi'
+              cpu: '500m'
+            limits:
+              memory: '1Gi'
+              cpu: '1000m'
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3021
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3021
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
       volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: nself-admin-pvc
+        - name: data
+          persistentVolumeClaim:
+            claimName: nself-admin-pvc
 
 ---
 # service.yaml
@@ -436,9 +438,9 @@ spec:
   selector:
     app: nself-admin
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 3021
+    - protocol: TCP
+      port: 80
+      targetPort: 3021
   type: ClusterIP
 
 ---
@@ -451,24 +453,24 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
 spec:
   tls:
-  - hosts:
-    - admin.yourdomain.com
-    secretName: nself-admin-tls
+    - hosts:
+        - admin.yourdomain.com
+      secretName: nself-admin-tls
   rules:
-  - host: admin.yourdomain.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: nself-admin-service
-            port:
-              number: 80
+    - host: admin.yourdomain.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nself-admin-service
+                port:
+                  number: 80
 
 ---
 # pvc.yaml
@@ -483,7 +485,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: gp2  # AWS EBS
+  storageClassName: gp2 # AWS EBS
 ```
 
 ### Method 3: Cloud Provider Deployment
@@ -510,12 +512,18 @@ spec:
         }
       ],
       "environment": [
-        {"name": "NODE_ENV", "value": "production"},
-        {"name": "PORT", "value": "3021"}
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "3021" }
       ],
       "secrets": [
-        {"name": "ADMIN_SESSION_SECRET", "valueFrom": "arn:aws:secretsmanager:region:account:secret:nself-admin/session-secret"},
-        {"name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:region:account:secret:nself-admin/db-password"}
+        {
+          "name": "ADMIN_SESSION_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:region:account:secret:nself-admin/session-secret"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:region:account:secret:nself-admin/db-password"
+        }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -555,38 +563,38 @@ spec:
   template:
     metadata:
       annotations:
-        run.googleapis.com/cpu-throttling: "false"
-        run.googleapis.com/memory: "2Gi"
-        run.googleapis.com/cpu: "2"
-        run.googleapis.com/max-scale: "10"
-        run.googleapis.com/min-scale: "1"
+        run.googleapis.com/cpu-throttling: 'false'
+        run.googleapis.com/memory: '2Gi'
+        run.googleapis.com/cpu: '2'
+        run.googleapis.com/max-scale: '10'
+        run.googleapis.com/min-scale: '1'
     spec:
       containers:
-      - image: gcr.io/project-id/nself-admin:latest
-        ports:
-        - containerPort: 3021
-        env:
-        - name: NODE_ENV
-          value: production
-        - name: PORT
-          value: "3021"
-        - name: ADMIN_SESSION_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: nself-admin-secrets
-              key: session-secret
-        resources:
-          limits:
-            memory: 2Gi
-            cpu: 2000m
-        startupProbe:
-          httpGet:
-            path: /api/health
-            port: 3021
-          initialDelaySeconds: 10
-          timeoutSeconds: 5
-          periodSeconds: 10
-          failureThreshold: 3
+        - image: gcr.io/project-id/nself-admin:latest
+          ports:
+            - containerPort: 3021
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: '3021'
+            - name: ADMIN_SESSION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nself-admin-secrets
+                  key: session-secret
+          resources:
+            limits:
+              memory: 2Gi
+              cpu: 2000m
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3021
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
 ```
 
 ## Security Configuration
@@ -642,13 +650,13 @@ services:
       - no-new-privileges:true
       - apparmor:docker-default
       - seccomp:default
-    
+
     # Read-only filesystem
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
       - /app/tmp:noexec,nosuid,size=100m
-    
+
     # Resource limits
     deploy:
       resources:
@@ -656,10 +664,10 @@ services:
           memory: 1G
           cpus: '2.0'
           pids: 100
-    
+
     # User specification
-    user: "1001:1001"
-    
+    user: '1001:1001'
+
     # Capabilities
     cap_drop:
       - ALL
@@ -758,24 +766,24 @@ server {
     # SSL Configuration
     ssl_certificate /etc/nginx/ssl/cert.pem;
     ssl_certificate_key /etc/nginx/ssl/private.key;
-    
+
     # SSL Security
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384;
     ssl_prefer_server_ciphers off;
     ssl_session_cache shared:SSL:10m;
     ssl_session_timeout 10m;
-    
+
     # HSTS
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-    
+
     # Security headers
     add_header X-Frame-Options DENY;
     add_header X-Content-Type-Options nosniff;
     add_header X-XSS-Protection "1; mode=block";
     add_header Referrer-Policy "strict-origin-when-cross-origin";
     add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:";
-    
+
     # Proxy to nself-admin
     location / {
         proxy_pass http://localhost:3021;
@@ -787,13 +795,13 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
-        
+
         # Timeouts
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
     }
-    
+
     # WebSocket support
     location /ws {
         proxy_pass http://localhost:3021;
@@ -805,7 +813,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
-    
+
     # Health check endpoint
     location /health {
         access_log off;
@@ -835,16 +843,16 @@ events {
 http {
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
-    
+
     # Logging
     log_format main '$remote_addr - $remote_user [$time_local] "$request" '
                    '$status $body_bytes_sent "$http_referer" '
                    '"$http_user_agent" "$http_x_forwarded_for" '
                    'rt=$request_time uct="$upstream_connect_time" '
                    'uht="$upstream_header_time" urt="$upstream_response_time"';
-    
+
     access_log /var/log/nginx/access.log main;
-    
+
     # Performance
     sendfile on;
     tcp_nopush on;
@@ -852,7 +860,7 @@ http {
     keepalive_timeout 65;
     types_hash_max_size 2048;
     client_max_body_size 100M;
-    
+
     # Compression
     gzip on;
     gzip_vary on;
@@ -875,14 +883,14 @@ http {
         text/css
         text/plain
         text/x-component;
-    
+
     # Rate limiting
     limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
     limit_req_zone $binary_remote_addr zone=api:10m rate=100r/m;
-    
+
     # Security
     server_tokens off;
-    
+
     include /etc/nginx/conf.d/*.conf;
 }
 ```
@@ -901,7 +909,7 @@ upstream nself_admin {
 server {
     listen 443 ssl http2;
     server_name admin.yourdomain.com;
-    
+
     location / {
         proxy_pass http://nself_admin;
         proxy_http_version 1.1;
@@ -910,17 +918,17 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # Health check
         proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
     }
-    
+
     # Rate limiting for login
     location /api/auth/login {
         limit_req zone=login burst=3 nodelay;
         proxy_pass http://nself_admin;
     }
-    
+
     # Rate limiting for API
     location /api/ {
         limit_req zone=api burst=20 nodelay;
@@ -1072,27 +1080,27 @@ scrape_configs:
       - targets: ['nself-admin:9090']
     scrape_interval: 10s
     metrics_path: '/metrics'
-    
+
   - job_name: 'node-exporter'
     static_configs:
       - targets: ['node-exporter:9100']
-      
+
   - job_name: 'postgres-exporter'
     static_configs:
       - targets: ['postgres-exporter:9187']
-      
+
   - job_name: 'nginx-exporter'
     static_configs:
       - targets: ['nginx-exporter:9113']
 
 rule_files:
-  - "/etc/prometheus/alerts/*.yml"
+  - '/etc/prometheus/alerts/*.yml'
 
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
-          - alertmanager:9093
+            - alertmanager:9093
 ```
 
 ### Alert Rules
@@ -1100,43 +1108,43 @@ alerting:
 ```yaml
 # alerts/nself-admin.yml
 groups:
-- name: nself-admin
-  rules:
-  - alert: NselfAdminDown
-    expr: up{job="nself-admin"} == 0
-    for: 1m
-    labels:
-      severity: critical
-    annotations:
-      summary: "nself Admin is down"
-      description: "nself Admin has been down for more than 1 minute"
-      
-  - alert: HighMemoryUsage
-    expr: (container_memory_usage_bytes{name="nself-admin"} / container_spec_memory_limit_bytes{name="nself-admin"}) > 0.8
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "High memory usage"
-      description: "nself Admin memory usage is above 80%"
-      
-  - alert: HighCPUUsage
-    expr: rate(container_cpu_usage_seconds_total{name="nself-admin"}[5m]) > 0.8
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "High CPU usage"
-      description: "nself Admin CPU usage is above 80%"
-      
-  - alert: DatabaseConnectionFailure
-    expr: pg_up{job="postgres-exporter"} == 0
-    for: 30s
-    labels:
-      severity: critical
-    annotations:
-      summary: "Database connection failure"
-      description: "Cannot connect to PostgreSQL database"
+  - name: nself-admin
+    rules:
+      - alert: NselfAdminDown
+        expr: up{job="nself-admin"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'nself Admin is down'
+          description: 'nself Admin has been down for more than 1 minute'
+
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes{name="nself-admin"} / container_spec_memory_limit_bytes{name="nself-admin"}) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'High memory usage'
+          description: 'nself Admin memory usage is above 80%'
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name="nself-admin"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'High CPU usage'
+          description: 'nself Admin CPU usage is above 80%'
+
+      - alert: DatabaseConnectionFailure
+        expr: pg_up{job="postgres-exporter"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Database connection failure'
+          description: 'Cannot connect to PostgreSQL database'
 ```
 
 ### Logging Configuration
@@ -1146,14 +1154,14 @@ groups:
 services:
   nself-admin:
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "100m"
-        max-file: "5"
-        labels: "service,environment"
+        max-size: '100m'
+        max-file: '5'
+        labels: 'service,environment'
     labels:
-      - "service=nself-admin"
-      - "environment=production"
+      - 'service=nself-admin'
+      - 'environment=production'
 ```
 
 ### Log Aggregation with ELK Stack
@@ -1167,32 +1175,32 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     environment:
       - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - 'ES_JAVA_OPTS=-Xms1g -Xmx1g'
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     ports:
-      - "9200:9200"
-      
+      - '9200:9200'
+
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.0
     ports:
-      - "5601:5601"
+      - '5601:5601'
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     depends_on:
       - elasticsearch
-      
+
   logstash:
     image: docker.elastic.co/logstash/logstash:8.11.0
     volumes:
       - ./logstash/config:/usr/share/logstash/pipeline
     ports:
-      - "5044:5044"
+      - '5044:5044'
     environment:
-      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+      - 'LS_JAVA_OPTS=-Xmx256m -Xms256m'
     depends_on:
       - elasticsearch
-      
+
   filebeat:
     image: docker.elastic.co/beats/filebeat:8.11.0
     user: root
@@ -1256,7 +1264,7 @@ fi
 if [[ -n "$AWS_ACCESS_KEY_ID" && -n "$S3_BUCKET" ]]; then
     echo "☁️ Uploading to S3..."
     aws s3 sync "$BACKUP_DIR/$DATE" "s3://$S3_BUCKET/$DATE/" --delete
-    
+
     # Clean up old S3 backups
     aws s3api list-objects-v2 \
       --bucket "$S3_BUCKET" \
@@ -1372,37 +1380,36 @@ Recovery Point Objectives (RPO):
 
 Recovery Procedures:
   1. Assess Damage:
-     - Identify failed components
-     - Check backup integrity
-     - Estimate recovery time
-  
+    - Identify failed components
+    - Check backup integrity
+    - Estimate recovery time
+
   2. Infrastructure Recovery:
-     - Provision new server if needed
-     - Install Docker and dependencies
-     - Configure networking and security
-  
+    - Provision new server if needed
+    - Install Docker and dependencies
+    - Configure networking and security
+
   3. Data Recovery:
-     - Restore latest database backup
-     - Restore application data
-     - Restore configuration files
-  
+    - Restore latest database backup
+    - Restore application data
+    - Restore configuration files
+
   4. Service Recovery:
-     - Start all containers
-     - Verify health checks
-     - Test critical functionality
-  
+    - Start all containers
+    - Verify health checks
+    - Test critical functionality
+
   5. Post-Recovery:
-     - Update DNS if needed
-     - Notify stakeholders
-     - Document lessons learned
+    - Update DNS if needed
+    - Notify stakeholders
+    - Document lessons learned
 
 Emergency Contacts:
   - Technical Lead: +1-xxx-xxx-xxxx
   - System Administrator: +1-xxx-xxx-xxxx
   - Management: +1-xxx-xxx-xxxx
 
-Recovery Checklist:
-  □ New server provisioned
+Recovery Checklist: □ New server provisioned
   □ Docker installed and configured
   □ Backup files downloaded
   □ Database restored
@@ -1425,13 +1432,13 @@ Recovery Checklist:
 module.exports = {
   // Enable compression
   compress: true,
-  
+
   // Optimize images
   images: {
     optimization: true,
-    formats: ['image/webp', 'image/avif']
+    formats: ['image/webp', 'image/avif'],
   },
-  
+
   // Bundle analyzer
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     if (!dev && !isServer) {
@@ -1445,20 +1452,17 @@ module.exports = {
             chunks: 'all',
           },
         },
-      };
+      }
     }
-    return config;
+    return config
   },
-  
+
   // Enable static optimization
   experimental: {
     optimizeCss: true,
-    optimizePackageImports: [
-      '@headlessui/react',
-      '@heroicons/react'
-    ]
-  }
-};
+    optimizePackageImports: ['@headlessui/react', '@heroicons/react'],
+  },
+}
 ```
 
 ### Database Performance
@@ -1499,16 +1503,16 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G      # Increased for production
-          cpus: '2.0'     # 2 CPU cores
+          memory: 2G # Increased for production
+          cpus: '2.0' # 2 CPU cores
         reservations:
-          memory: 1G      # Guaranteed memory
-          cpus: '1.0'     # 1 CPU core minimum
-    
+          memory: 1G # Guaranteed memory
+          cpus: '1.0' # 1 CPU core minimum
+
     # JVM tuning for better memory management
     environment:
-      NODE_OPTIONS: "--max-old-space-size=1536 --gc-interval=100"
-      
+      NODE_OPTIONS: '--max-old-space-size=1536 --gc-interval=100'
+
   postgres:
     deploy:
       resources:
@@ -1518,7 +1522,7 @@ services:
         reservations:
           memory: 2G
           cpus: '2.0'
-          
+
   redis:
     deploy:
       resources:
@@ -1560,9 +1564,9 @@ docker exec nself-postgres psql -U nself -c "SELECT count(*) FROM pg_stat_activi
 
 # Check slow queries
 docker exec nself-postgres psql -U nself -c "
-SELECT query, mean_time, calls 
-FROM pg_stat_statements 
-ORDER BY mean_time DESC 
+SELECT query, mean_time, calls
+FROM pg_stat_statements
+ORDER BY mean_time DESC
 LIMIT 10;"
 ```
 
@@ -1688,6 +1692,7 @@ fi
 ---
 
 **Related Documentation**:
+
 - [Architecture Overview](Architecture)
 - [Environment Management](Environment-Management)
 - [Performance Tuning](Performance-Tuning)

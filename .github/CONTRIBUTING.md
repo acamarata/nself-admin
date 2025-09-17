@@ -33,6 +33,7 @@ This project and everyone participating in it is governed by our [Code of Conduc
 ### First Time Contributing?
 
 Look for issues labeled:
+
 - `good first issue` - Perfect for newcomers
 - `help wanted` - Extra attention needed
 - `documentation` - Great for non-code contributions
@@ -42,7 +43,7 @@ Look for issues labeled:
 ### Prerequisites
 
 - **Node.js**: 18.x or higher
-- **npm**: 8.x or higher  
+- **npm**: 8.x or higher
 - **Docker**: 24.x or higher
 - **Git**: Latest version
 
@@ -108,7 +109,7 @@ Use descriptive branch names:
 feature/add-user-management
 feature/improve-dashboard-ui
 
-# Bug fix branches  
+# Bug fix branches
 fix/login-redirect-issue
 fix/memory-leak-in-metrics
 
@@ -138,6 +139,7 @@ chore(deps): update dependencies
 ### Development Workflow
 
 1. **Create a new branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -149,21 +151,23 @@ chore(deps): update dependencies
    - Update documentation as needed
 
 3. **Test your changes**
+
    ```bash
    # Run tests
    npm test
-   
+
    # Run linting
    npm run lint
-   
+
    # Type checking
    npm run type-check
-   
+
    # Build check
    npm run build
    ```
 
 4. **Commit your changes**
+
    ```bash
    git add .
    git commit -m "feat(scope): your descriptive message"
@@ -283,7 +287,7 @@ npm run format
 ### Test Types
 
 - **Unit Tests**: Individual components/functions
-- **Integration Tests**: API endpoints and workflows  
+- **Integration Tests**: API endpoints and workflows
 - **E2E Tests**: Full user journeys
 
 ### Running Tests

@@ -24,6 +24,7 @@ Comprehensive answers to common questions about nself Admin.
 ### How is nself Admin different from Docker Compose?
 
 **Answer**: While Docker Compose requires manual configuration file editing, nself Admin provides:
+
 - Visual wizard for configuration
 - Pre-configured templates for 40+ frameworks
 - Real-time monitoring dashboard
@@ -37,7 +38,8 @@ Comprehensive answers to common questions about nself Admin.
 
 ### What are the system requirements?
 
-**Answer**: 
+**Answer**:
+
 - Docker Desktop (or Docker Engine on Linux)
 - 4GB RAM minimum (8GB recommended)
 - 10GB free disk space
@@ -53,6 +55,7 @@ Comprehensive answers to common questions about nself Admin.
 ### How do I install nself Admin?
 
 **Answer**: Run this single command:
+
 ```bash
 docker run -d \
   --name nself-admin \
@@ -65,6 +68,7 @@ docker run -d \
 ### Can I change the default port (3021)?
 
 **Answer**: Yes! Map to a different port:
+
 ```bash
 # Use port 8080 instead
 docker run -d \
@@ -74,11 +78,13 @@ docker run -d \
   -v /var/run/docker.sock:/var/run/docker.sock \
   acamarata/nself-admin:latest
 ```
+
 Then access at `http://localhost:8080`
 
 ### How do I update nself Admin?
 
-**Answer**: 
+**Answer**:
+
 ```bash
 # Stop and remove old container
 docker stop nself-admin
@@ -99,6 +105,7 @@ docker run -d \
 ### Can I run multiple nself Admin instances?
 
 **Answer**: Yes! Use different names and ports:
+
 ```bash
 # Instance 1
 docker run -d --name nself-admin-1 -p 3021:3021 ...
@@ -112,6 +119,7 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 ### Where are configuration files stored?
 
 **Answer**: Configuration files are stored in your project directory:
+
 - `.env.development` - Development environment variables
 - `.env.staging` - Staging environment variables
 - `.env.production` - Production environment variables
@@ -121,6 +129,7 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 ### Can I edit configuration files manually?
 
 **Answer**: Yes! You can edit `.env` files and `docker-compose.yml` directly. After editing:
+
 1. Stop services: `docker-compose down`
 2. Restart services: `docker-compose up -d`
 3. Refresh nAdmin dashboard
@@ -128,6 +137,7 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 ### How do I add environment variables?
 
 **Answer**: Three methods:
+
 1. **Via UI**: Config → Environment Variables → Add
 2. **Edit .env file**: Add `MY_VAR=value`
 3. **Docker Compose**: Add to service environment section
@@ -135,6 +145,7 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 ### Can I use existing docker-compose.yml?
 
 **Answer**: Yes! nAdmin can work with existing projects:
+
 1. Navigate to your project directory
 2. Launch nAdmin
 3. It will detect existing configuration
@@ -142,9 +153,10 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 
 ### How do I change database passwords?
 
-**Answer**: 
+**Answer**:
+
 1. **Development**: Edit `.env.development`
-2. **Production**: 
+2. **Production**:
    - Stop services
    - Update password in `.env.production`
    - Update in PostgreSQL: `ALTER USER postgres PASSWORD 'new-password';`
@@ -154,14 +166,16 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 
 ### What services are included?
 
-**Answer**: 
+**Answer**:
 **Core Services** (Always enabled):
+
 - PostgreSQL - Database
 - Hasura - GraphQL API
 - Auth - Authentication
 - Nginx - Reverse proxy
 
 **Optional Services**:
+
 - Redis - Caching
 - MinIO - Object storage
 - Mailpit - Email testing
@@ -172,6 +186,7 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 ### Can I add custom services?
 
 **Answer**: Yes! The wizard supports:
+
 - 40+ pre-configured templates
 - Custom Docker containers
 - Any programming language
@@ -179,7 +194,8 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 
 ### How do I add a Python/FastAPI service?
 
-**Answer**: 
+**Answer**:
+
 1. In wizard Step 4, click "Add Service"
 2. Select "FastAPI" from framework dropdown
 3. Set port (e.g., 4001)
@@ -189,6 +205,7 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 ### Can I use my own Docker images?
 
 **Answer**: Yes! Select "Custom Docker" and specify:
+
 - Your Docker image name
 - Required environment variables
 - Port mappings
@@ -197,6 +214,7 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 ### How do I access service logs?
 
 **Answer**: Multiple methods:
+
 1. **Dashboard**: Click service → View Logs
 2. **CLI**: `docker-compose logs -f service-name`
 3. **API**: `GET /api/docker/logs?service=postgres`
@@ -205,13 +223,15 @@ docker run -d --name nself-admin-2 -p 3022:3021 ...
 
 ### How do I connect to PostgreSQL?
 
-**Answer**: 
+**Answer**:
 **From host machine**:
+
 ```bash
 psql -h localhost -p 5432 -U postgres -d myapp
 ```
 
 **From application**:
+
 ```
 postgres://postgres:password@postgres:5432/myapp
 ```
@@ -221,26 +241,30 @@ Automatically configured via `DATABASE_URL`
 
 ### How do I run migrations?
 
-**Answer**: 
+**Answer**:
+
 1. **Via Hasura Console**: Data → Migrations
 2. **Via CLI**: `hasura migrate apply`
 3. **Via nAdmin**: Database → Migrations → Apply
 
 ### How do I backup the database?
 
-**Answer**: 
+**Answer**:
 **Manual Backup**:
+
 ```bash
 docker exec postgres pg_dump -U postgres myapp > backup.sql
 ```
 
 **Via nAdmin**:
+
 1. Database → Backup → Create Backup
 2. Or enable automated backups in wizard
 
 ### How do I restore from backup?
 
-**Answer**: 
+**Answer**:
+
 ```bash
 # Restore from file
 docker exec -i postgres psql -U postgres myapp < backup.sql
@@ -252,6 +276,7 @@ Database → Backup → Select file → Restore
 ### Can I use an external database?
 
 **Answer**: Yes! In the wizard:
+
 1. Disable the PostgreSQL service
 2. Set `DATABASE_URL` to your external database
 3. Ensure network connectivity
@@ -260,7 +285,8 @@ Database → Backup → Select file → Restore
 
 ### How much RAM does nself Admin need?
 
-**Answer**: 
+**Answer**:
+
 - nAdmin itself: 256MB
 - Minimum total: 4GB
 - Recommended: 8GB+
@@ -268,12 +294,14 @@ Database → Backup → Select file → Restore
 
 ### How can I improve performance?
 
-**Answer**: 
+**Answer**:
+
 1. **Allocate more Docker resources**:
    - Docker Desktop → Settings → Resources
    - Increase CPU and Memory
 
 2. **Optimize services**:
+
    ```yaml
    services:
      postgres:
@@ -288,19 +316,22 @@ Database → Backup → Select file → Restore
 ### Why are my services slow to start?
 
 **Answer**: Common causes:
+
 - First run downloads images (normal)
 - Insufficient RAM allocated to Docker
 - Many services starting simultaneously
 - Database initialization on first run
 
 Solutions:
+
 - Increase Docker memory
 - Start services sequentially
 - Use faster storage (SSD)
 
 ### How do I monitor resource usage?
 
-**Answer**: 
+**Answer**:
+
 1. **Dashboard**: Real-time metrics displayed
 2. **CLI**: `docker stats`
 3. **Grafana**: If monitoring stack enabled
@@ -311,6 +342,7 @@ Solutions:
 ### Is nself Admin secure for production?
 
 **Answer**: nAdmin includes security features but requires proper configuration:
+
 - Change all default passwords
 - Use SSL/TLS in production
 - Enable firewall rules
@@ -319,14 +351,16 @@ Solutions:
 
 ### How do I enable SSL/HTTPS?
 
-**Answer**: 
+**Answer**:
 **Let's Encrypt (Production)**:
+
 1. Set domain in wizard
 2. Enable SSL in Nginx config
 3. Provide valid email
 4. Auto-renewal configured
 
 **Custom Certificate**:
+
 ```bash
 # Place certificates in nginx/ssl/
 nginx/ssl/cert.pem
@@ -335,7 +369,8 @@ nginx/ssl/key.pem
 
 ### How do I secure the database?
 
-**Answer**: 
+**Answer**:
+
 1. Change default password
 2. Limit connections: `max_connections=100`
 3. Enable SSL: `ssl=on`
@@ -346,6 +381,7 @@ nginx/ssl/key.pem
 ### Can I use OAuth providers?
 
 **Answer**: Yes! Configure in Auth service:
+
 - Google OAuth
 - GitHub OAuth
 - Facebook Login
@@ -354,6 +390,7 @@ nginx/ssl/key.pem
 ### How do I manage secrets?
 
 **Answer**: Best practices:
+
 1. Never commit `.env` files
 2. Use Docker secrets in production
 3. Rotate credentials regularly
@@ -364,6 +401,7 @@ nginx/ssl/key.pem
 ### nAdmin won't start
 
 **Answer**: Check:
+
 ```bash
 # Is Docker running?
 docker ps
@@ -380,7 +418,8 @@ sudo docker run ...
 
 ### "Cannot connect to Docker daemon"
 
-**Answer**: 
+**Answer**:
+
 1. Ensure Docker Desktop is running
 2. Check socket permissions:
    ```bash
@@ -395,6 +434,7 @@ sudo docker run ...
 ### Services won't start
 
 **Answer**: Common fixes:
+
 ```bash
 # Check logs
 docker-compose logs service-name
@@ -409,7 +449,8 @@ docker-compose down -v
 
 ### Port already in use
 
-**Answer**: 
+**Answer**:
+
 ```bash
 # Find process using port
 lsof -i :5432
@@ -423,7 +464,8 @@ POSTGRES_PORT=5433
 
 ### Build fails
 
-**Answer**: 
+**Answer**:
+
 1. Check Docker space: `docker system df`
 2. Clean up: `docker system prune -a`
 3. Increase memory allocation
@@ -435,6 +477,7 @@ POSTGRES_PORT=5433
 ### How do I enable hot reload?
 
 **Answer**: Hot reload is enabled by default for custom services in development. Ensure:
+
 - `NODE_ENV=development`
 - Volume mounted correctly
 - Using nodemon/webpack-dev-server
@@ -442,6 +485,7 @@ POSTGRES_PORT=5433
 ### Can I use TypeScript?
 
 **Answer**: Yes! Select TypeScript variants:
+
 - Express (TS)
 - Fastify (TS)
 - NestJS (TS)
@@ -449,7 +493,8 @@ POSTGRES_PORT=5433
 
 ### How do I debug services?
 
-**Answer**: 
+**Answer**:
+
 1. **Enable debug logs**: `DEBUG=*`
 2. **Attach debugger**:
    ```json
@@ -465,6 +510,7 @@ POSTGRES_PORT=5433
 ### Can I use custom domains locally?
 
 **Answer**: Yes! Edit `/etc/hosts`:
+
 ```
 127.0.0.1 api.myapp.local
 127.0.0.1 app.myapp.local
@@ -474,7 +520,8 @@ POSTGRES_PORT=5433
 
 ### How do I deploy to production?
 
-**Answer**: 
+**Answer**:
+
 1. **Build production config**: Set environment to "Production"
 2. **Generate files**: Complete wizard
 3. **Copy to server**: Transfer files
@@ -487,6 +534,7 @@ POSTGRES_PORT=5433
 ### Can I use Kubernetes?
 
 **Answer**: Yes! Export configurations:
+
 1. Generate docker-compose.yml
 2. Use Kompose to convert:
    ```bash
@@ -496,7 +544,8 @@ POSTGRES_PORT=5433
 
 ### How do I scale services?
 
-**Answer**: 
+**Answer**:
+
 ```bash
 # Scale horizontally
 docker-compose up -d --scale api=3
@@ -511,6 +560,7 @@ services:
 ### What about CI/CD?
 
 **Answer**: nAdmin generated files work with:
+
 - GitHub Actions
 - GitLab CI
 - Jenkins
@@ -520,6 +570,7 @@ services:
 ### How do I monitor production?
 
 **Answer**: Enable monitoring stack for:
+
 - Prometheus metrics
 - Grafana dashboards
 - Loki log aggregation
@@ -537,6 +588,7 @@ services:
 ### How can I contribute?
 
 We welcome contributions!
+
 - Read [Contributing Guide](Contributing)
 - Check [open issues](https://github.com/acamarata/nself-admin/issues)
 - Submit pull requests

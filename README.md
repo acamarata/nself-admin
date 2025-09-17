@@ -2,7 +2,7 @@
 
 **The Complete Development Stack Management Platform**
 
-[![Version](https://img.shields.io/badge/version-0.0.4--alpha-blue.svg)](https://github.com/acamarata/nself-admin/releases)
+[![Version](https://img.shields.io/badge/version-0.0.4-blue.svg)](https://github.com/acamarata/nself-admin/releases)
 [![Docker](https://img.shields.io/docker/v/acamarata/nself-admin?label=docker&color=blue)](https://hub.docker.com/r/acamarata/nself-admin)
 [![Docker Pulls](https://img.shields.io/docker/pulls/acamarata/nself-admin)](https://hub.docker.com/r/acamarata/nself-admin)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -24,10 +24,15 @@
 **Get your complete stack running in under 5 minutes!**
 
 ```bash
+# Install nself CLI (if not already installed)
+curl -sSL https://get.nself.org | bash
+
 # Create a new project directory
 mkdir my-awesome-app && cd my-awesome-app
 
 # Launch nself Admin
+nself admin
+# Or use Docker directly:
 docker run -d \
   --name nself-admin \
   -p 3021:3021 \
@@ -48,31 +53,35 @@ docker run -d \
 ✅ S3-Compatible Storage (optional)  
 ✅ 40+ Framework Templates  
 ✅ Real-time Monitoring  
-✅ One-Click Deployment  
+✅ One-Click Deployment
 
 [📚 View Complete Documentation](https://github.com/acamarata/nself-admin/wiki) | [🎥 Watch Demo](https://youtube.com/watch?v=demo)
 
 ## ✨ Key Features
 
 ### 🎯 Visual Stack Configuration
+
 - **6-Step Initialization Wizard** - Guided setup with intelligent defaults
 - **40+ Framework Templates** - Pre-configured for Node.js, Python, Go, Ruby, PHP, Java, Rust, and more
 - **Service Orchestration** - Automatic Docker Compose generation
 - **Smart Routing** - Nginx configuration with subdomain support
 
 ### 📊 Real-Time Monitoring
+
 - **Service Health Dashboard** - Live status for all containers
 - **Resource Metrics** - CPU, memory, disk, and network usage
 - **Log Aggregation** - Unified log viewer with filtering
 - **Alert System** - Configurable thresholds and notifications
 
 ### 🛠️ Developer Tools
+
 - **Database Management** - SQL console, migrations, backups
 - **GraphQL Playground** - Integrated Hasura console
 - **API Testing** - Built-in REST client
 - **Terminal Access** - Web-based shell for containers
 
 ### 🔒 Enterprise Ready
+
 - **Secure Authentication** - JWT-based with session management
 - **SSL/TLS Support** - Let's Encrypt integration
 - **Backup & Restore** - Automated and manual options
@@ -81,12 +90,14 @@ docker run -d \
 ## 📋 System Requirements
 
 ### Minimum
+
 - **Docker**: 20.10 or higher
 - **RAM**: 4GB available for Docker
 - **Disk**: 10GB free space
 - **Port**: 3021 (configurable)
 
 ### Recommended
+
 - **Docker Desktop**: Latest version
 - **RAM**: 8GB+ for smooth operation
 - **CPU**: 4+ cores
@@ -95,24 +106,28 @@ docker run -d \
 ## 🏗️ What Can You Build?
 
 ### 🛒 E-Commerce Platform
+
 ```yaml
 Stack: PostgreSQL + Hasura + Redis + MinIO + Node.js API
 Features: Product catalog, cart sessions, image storage, payment processing
 ```
 
 ### 🚀 SaaS Application
+
 ```yaml
 Stack: Multi-tenant PostgreSQL + Auth + Redis + Multiple microservices
 Features: User management, billing, analytics, real-time updates
 ```
 
 ### 🤖 AI/ML Platform
+
 ```yaml
 Stack: PostgreSQL + MLflow + MinIO + Python FastAPI
 Features: Model training, experiment tracking, inference API, data storage
 ```
 
 ### 📱 Mobile Backend
+
 ```yaml
 Stack: PostgreSQL + Hasura + Auth + WebSocket + Push notifications
 Features: Real-time sync, offline support, user auth, file uploads
@@ -150,6 +165,7 @@ Features: Real-time sync, offline support, user auth, file uploads
 ## 🚦 Getting Started
 
 ### Step 1: Launch nAdmin
+
 ```bash
 docker run -d --name nself-admin \
   -p 3021:3021 \
@@ -159,13 +175,17 @@ docker run -d --name nself-admin \
 ```
 
 ### Step 2: Open Browser
+
 Navigate to http://localhost:3021
 
 ### Step 3: Set Password
+
 Create your admin password (minimum 3 characters for development)
 
 ### Step 4: Run Wizard
+
 Follow the 6-step wizard to configure your stack:
+
 1. **Project Setup** - Name, environment, domain
 2. **Core Services** - PostgreSQL, Hasura, Auth, Nginx
 3. **Optional Services** - Redis, MinIO, Mailpit, etc.
@@ -174,6 +194,7 @@ Follow the 6-step wizard to configure your stack:
 6. **Review & Build** - Generate configuration
 
 ### Step 5: Start Services
+
 Click "Start All Services" and watch your stack come to life!
 
 [📖 Detailed Setup Guide](https://github.com/acamarata/nself-admin/wiki/Quick-Start)
@@ -181,26 +202,31 @@ Click "Start All Services" and watch your stack come to life!
 ## 📚 Documentation
 
 ### 🎯 Getting Started
+
 - [**Quick Start Guide**](https://github.com/acamarata/nself-admin/wiki/Quick-Start) - Get running in 5 minutes
 - [**Init Wizard Guide**](https://github.com/acamarata/nself-admin/wiki/Init-Wizard-Guide) - Detailed wizard walkthrough
 - [**First Project**](https://github.com/acamarata/nself-admin/wiki/First-Project) - Build your first application
 
 ### 🛠️ Core Guides
+
 - [**Service Configuration**](https://github.com/acamarata/nself-admin/wiki/Service-Configuration) - Configure all service types
 - [**Dashboard Overview**](https://github.com/acamarata/nself-admin/wiki/Dashboard-Overview) - Master the dashboard
 - [**Database Management**](https://github.com/acamarata/nself-admin/wiki/Database-Management) - PostgreSQL operations
 
 ### 📖 Reference
+
 - [**API Documentation**](https://github.com/acamarata/nself-admin/wiki/API-Reference) - Complete API reference
 - [**Framework Templates**](https://github.com/acamarata/nself-admin/wiki/Framework-Templates) - All 40+ templates
 - [**Environment Variables**](https://github.com/acamarata/nself-admin/wiki/Environment-Variables) - Configuration options
 
 ### 🚀 Advanced
+
 - [**Production Deployment**](https://github.com/acamarata/nself-admin/wiki/Production-Deployment) - Deploy to production
 - [**Monitoring & Metrics**](https://github.com/acamarata/nself-admin/wiki/Monitoring-Metrics) - Set up monitoring
 - [**Security Best Practices**](https://github.com/acamarata/nself-admin/wiki/Security) - Secure your stack
 
 ### ❓ Help
+
 - [**FAQ**](https://github.com/acamarata/nself-admin/wiki/FAQ) - Frequently asked questions
 - [**Troubleshooting**](https://github.com/acamarata/nself-admin/wiki/Troubleshooting) - Common issues and solutions
 - [**Community**](https://github.com/acamarata/nself-admin/discussions) - Get help from the community
@@ -208,6 +234,7 @@ Click "Start All Services" and watch your stack come to life!
 ## 🧑‍💻 Development
 
 ### Local Development
+
 ```bash
 # Clone the repository
 git clone https://github.com/acamarata/nself-admin.git
@@ -227,6 +254,7 @@ npm run build
 ```
 
 ### Docker Development
+
 ```bash
 # Build local image
 docker build -t nself-admin:local .
@@ -245,30 +273,34 @@ docker run -d \
 ## 🐳 Docker Images
 
 ### Official Images
+
 ```bash
 # Latest stable
 docker pull acamarata/nself-admin:latest
 
 # Specific version
-docker pull acamarata/nself-admin:0.0.4-alpha
+docker pull acamarata/nself-admin:0.0.4
 
 # Development builds
 docker pull acamarata/nself-admin:dev
 ```
 
 ### Multi-Architecture Support
+
 ✅ `linux/amd64` - Intel/AMD processors  
 ✅ `linux/arm64` - Apple Silicon, AWS Graviton  
 ✅ `linux/arm/v7` - Raspberry Pi and ARM devices
 
 ### Image Sizes
+
 - **Compressed**: ~150MB
 - **Extracted**: ~400MB
 - **Runtime Memory**: ~256MB
 
 ## 🗺️ Roadmap
 
-### ✅ Completed (v0.0.4-alpha)
+### ✅ Completed (v0.0.4)
+
 - 6-step initialization wizard
 - 40+ framework templates
 - Real-time monitoring dashboard
@@ -279,6 +311,7 @@ docker pull acamarata/nself-admin:dev
 - Environment management
 
 ### 🚧 In Progress (v0.0.5)
+
 - [ ] WebSocket real-time updates
 - [ ] Mobile responsive design
 - [ ] Backup/restore automation
@@ -286,6 +319,7 @@ docker pull acamarata/nself-admin:dev
 - [ ] Custom service templates
 
 ### 📋 Planned (v0.1.0-beta)
+
 - [ ] Multi-user support
 - [ ] Role-based access control
 - [ ] Kubernetes support
@@ -293,6 +327,7 @@ docker pull acamarata/nself-admin:dev
 - [ ] Template marketplace
 
 ### 🎯 Future (v1.0.0)
+
 - [ ] Enterprise SSO
 - [ ] Multi-cluster management
 - [ ] Advanced monitoring
@@ -303,7 +338,14 @@ docker pull acamarata/nself-admin:dev
 
 ## 🆕 What's New
 
-### v0.0.4-alpha (Latest)
+### v0.0.4 (Latest)
+
+- 🔒 **Security Enhancements**: Implemented bcrypt password hashing, secure random generation
+- 🏗️ **CI/CD Improvements**: Fixed pipeline issues, added Dependabot configuration
+- 📦 **Code Quality**: Resolved 43 security alerts, improved TypeScript declarations
+- 🔧 **Path Resolution**: Centralized project path handling across all modules
+- 📝 **Documentation**: Enhanced README, added community health files
+
 - 🎯 **6-Step Wizard**: Complete project configuration
 - 🚀 **40+ Templates**: Pre-configured frameworks
 - 📊 **Live Monitoring**: Real-time metrics
@@ -311,6 +353,7 @@ docker pull acamarata/nself-admin:dev
 - 📚 **Complete Docs**: Wiki with guides
 
 ### v0.0.3
+
 - 🗄️ LokiJS database integration
 - 🔐 Secure authentication
 - 🎨 UI improvements
@@ -322,6 +365,7 @@ docker pull acamarata/nself-admin:dev
 We love contributions! Here's how to get involved:
 
 ### Quick Contribution Guide
+
 ```bash
 # Fork and clone
 git clone https://github.com/YOUR_USERNAME/nself-admin.git
@@ -340,6 +384,7 @@ git push origin feature/amazing-feature
 ```
 
 ### Ways to Contribute
+
 - 🐛 **Report Bugs**: [Create an issue](https://github.com/acamarata/nself-admin/issues)
 - 💡 **Suggest Features**: [Start a discussion](https://github.com/acamarata/nself-admin/discussions)
 - 📚 **Improve Docs**: Edit wiki pages
@@ -357,6 +402,7 @@ nself Admin is free and open-source software. You can use it for personal, educa
 ## 🙏 Acknowledgments
 
 ### Built With
+
 - [Next.js 15](https://nextjs.org/) - React framework
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
 - [LokiJS](https://github.com/techfort/LokiJS) - Embedded database
@@ -364,6 +410,7 @@ nself Admin is free and open-source software. You can use it for personal, educa
 - [TypeScript](https://www.typescriptlang.org/) - Type safety
 
 ### Special Thanks
+
 - All our [contributors](https://github.com/acamarata/nself-admin/graphs/contributors)
 - The open-source community
 - Early adopters and testers
@@ -371,6 +418,7 @@ nself Admin is free and open-source software. You can use it for personal, educa
 ## 💬 Community & Support
 
 ### Get Help
+
 - 📚 **[Documentation Wiki](https://github.com/acamarata/nself-admin/wiki)** - Comprehensive guides
 - 💭 **[GitHub Discussions](https://github.com/acamarata/nself-admin/discussions)** - Community forum
 - 🐛 **[Issue Tracker](https://github.com/acamarata/nself-admin/issues)** - Bug reports
@@ -378,12 +426,14 @@ nself Admin is free and open-source software. You can use it for personal, educa
 - 📧 **[Email Support](mailto:support@nself.org)** - Direct assistance
 
 ### Stay Updated
+
 - ⭐ **[Star on GitHub](https://github.com/acamarata/nself-admin)** - Get notifications
 - 🐦 **[Follow on Twitter](https://twitter.com/nselforg)** - Latest news
 - 📺 **[YouTube Channel](https://youtube.com/@nselforg)** - Video tutorials
 - 📨 **[Newsletter](https://nself.org/newsletter)** - Monthly updates
 
 ### Project Stats
+
 ![GitHub stars](https://img.shields.io/github/stars/acamarata/nself-admin?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/acamarata/nself-admin?style=social)
 ![GitHub watchers](https://img.shields.io/github/watchers/acamarata/nself-admin?style=social)

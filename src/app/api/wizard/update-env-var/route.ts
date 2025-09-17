@@ -1,7 +1,7 @@
+import { getProjectPath } from '@/lib/paths'
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
-import { getProjectPath } from '@/lib/paths'
 
 export async function POST(req: NextRequest) {
   try {

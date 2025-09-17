@@ -4,11 +4,11 @@
 
 We actively support security updates for the following versions:
 
-| Version | Supported          |
-| ------- | ------------------ |
+| Version     | Supported          |
+| ----------- | ------------------ |
 | 0.0.4-alpha | :white_check_mark: |
-| 0.0.3   | :white_check_mark: |
-| < 0.0.3 | :x:                |
+| 0.0.3       | :white_check_mark: |
+| < 0.0.3     | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -23,6 +23,7 @@ Please do not report security vulnerabilities through public GitHub issues, disc
 Instead, please send an email to: **security@nself.org**
 
 Include the following information:
+
 - Type of issue (e.g. buffer overflow, SQL injection, cross-site scripting, etc.)
 - Full paths of source file(s) related to the manifestation of the issue
 - The location of the affected source code (tag/branch/commit or direct URL)
@@ -34,6 +35,7 @@ Include the following information:
 ### 3. Response Timeline
 
 We aim to respond to security reports within:
+
 - **24 hours**: Initial acknowledgment
 - **72 hours**: Initial assessment and severity classification
 - **7 days**: Detailed response with planned fix timeline
@@ -86,6 +88,7 @@ We aim to respond to security reports within:
 ## Security Advisories
 
 Security advisories will be published on:
+
 - [GitHub Security Advisories](https://github.com/acamarata/nself-admin/security/advisories)
 - [Release Notes](https://github.com/acamarata/nself-admin/releases)
 - [Security Mailing List](https://nself.org/security-updates) (optional subscription)
@@ -93,12 +96,14 @@ Security advisories will be published on:
 ## Contact
 
 For security-related questions or concerns:
+
 - **Email**: security@nself.org
 - **GPG Key**: Available on request
 
 ## Attribution
 
 We appreciate security researchers and users who help keep nself Admin secure. Contributors to security improvements may be recognized in:
+
 - Release notes
 - Security advisories
 - Hall of Fame (with permission)

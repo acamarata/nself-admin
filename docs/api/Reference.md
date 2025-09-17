@@ -46,6 +46,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -117,20 +118,20 @@ Docker: http://nself-admin:3021/api
 
 ### HTTP Status Codes
 
-| Code | Description | Usage |
-|------|-------------|-------|
-| 200 | OK | Successful GET/PUT |
-| 201 | Created | Successful POST |
-| 204 | No Content | Successful DELETE |
-| 400 | Bad Request | Invalid parameters |
-| 401 | Unauthorized | Missing/invalid token |
-| 403 | Forbidden | Insufficient permissions |
-| 404 | Not Found | Resource not found |
-| 409 | Conflict | Resource already exists |
-| 422 | Unprocessable | Validation failed |
-| 429 | Too Many Requests | Rate limit exceeded |
-| 500 | Server Error | Internal error |
-| 503 | Unavailable | Service down |
+| Code | Description       | Usage                    |
+| ---- | ----------------- | ------------------------ |
+| 200  | OK                | Successful GET/PUT       |
+| 201  | Created           | Successful POST          |
+| 204  | No Content        | Successful DELETE        |
+| 400  | Bad Request       | Invalid parameters       |
+| 401  | Unauthorized      | Missing/invalid token    |
+| 403  | Forbidden         | Insufficient permissions |
+| 404  | Not Found         | Resource not found       |
+| 409  | Conflict          | Resource already exists  |
+| 422  | Unprocessable     | Validation failed        |
+| 429  | Too Many Requests | Rate limit exceeded      |
+| 500  | Server Error      | Internal error           |
+| 503  | Unavailable       | Service down             |
 
 ### Error Codes
 
@@ -140,24 +141,24 @@ const ErrorCodes = {
   AUTH_FAILED: 'Authentication failed',
   TOKEN_EXPIRED: 'Token has expired',
   TOKEN_INVALID: 'Invalid token',
-  
+
   // Validation
   VALIDATION_ERROR: 'Validation failed',
   MISSING_FIELD: 'Required field missing',
   INVALID_FORMAT: 'Invalid format',
-  
+
   // Resources
   NOT_FOUND: 'Resource not found',
   ALREADY_EXISTS: 'Resource already exists',
-  
+
   // Operations
   OPERATION_FAILED: 'Operation failed',
   DEPENDENCY_ERROR: 'Dependency not met',
-  
+
   // System
   INTERNAL_ERROR: 'Internal server error',
-  SERVICE_UNAVAILABLE: 'Service unavailable'
-};
+  SERVICE_UNAVAILABLE: 'Service unavailable',
+}
 ```
 
 ## Rate Limiting
@@ -170,6 +171,7 @@ X-RateLimit-Reset: 1642847400
 ```
 
 **Default Limits:**
+
 - 100 requests per minute for authenticated users
 - 20 requests per minute for unauthenticated users
 - WebSocket connections: 10 per IP
@@ -190,6 +192,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -216,6 +219,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "authenticated": true,
@@ -247,6 +251,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -257,14 +262,7 @@ Authorization: Bearer <token>
     "built": true,
     "running": true,
     "path": "/workspace",
-    "services": [
-      "postgres",
-      "hasura",
-      "auth",
-      "nginx",
-      "redis",
-      "api"
-    ]
+    "services": ["postgres", "hasura", "auth", "nginx", "redis", "api"]
   }
 }
 ```
@@ -294,6 +292,7 @@ Authorization: Bearer <token>
 ```
 
 **Response (Streaming):**
+
 ```
 data: {"type":"log","message":"Starting build process..."}
 data: {"type":"log","message":"Generating docker-compose.yml..."}
@@ -338,6 +337,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -374,6 +374,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -446,6 +447,7 @@ Query Parameters:
 ```
 
 **Response (Streaming if follow=true):**
+
 ```
 data: 2024-01-12T10:30:00Z postgres: LOG: database system is ready
 data: 2024-01-12T10:30:01Z postgres: LOG: connection received
@@ -473,6 +475,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -515,6 +518,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -584,6 +588,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -621,6 +626,7 @@ GET /api/system/health
 ```
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -643,6 +649,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -665,6 +672,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -690,6 +698,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -724,6 +733,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -737,9 +747,9 @@ Content-Type: application/json
     ],
     "rowCount": 10,
     "fields": [
-      {"name": "id", "type": "integer"},
-      {"name": "email", "type": "varchar"},
-      {"name": "name", "type": "varchar"}
+      { "name": "id", "type": "integer" },
+      { "name": "email", "type": "varchar" },
+      { "name": "name", "type": "varchar" }
     ]
   }
 }
@@ -760,6 +770,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -793,17 +804,13 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
   "data": {
-    "applied": [
-      "001_initial_schema.sql",
-      "002_add_users_table.sql"
-    ],
-    "skipped": [
-      "003_already_applied.sql"
-    ]
+    "applied": ["001_initial_schema.sql", "002_add_users_table.sql"],
+    "skipped": ["003_already_applied.sql"]
   }
 }
 ```
@@ -822,6 +829,7 @@ Query Parameters:
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -854,6 +862,7 @@ Query Parameters:
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -914,6 +923,7 @@ Query Parameters:
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -949,6 +959,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -997,61 +1008,69 @@ Content-Type: application/json
 ### Connection
 
 ```javascript
-const ws = new WebSocket('ws://localhost:3021/ws');
+const ws = new WebSocket('ws://localhost:3021/ws')
 
 ws.onopen = () => {
   // Authenticate
-  ws.send(JSON.stringify({
-    type: 'auth',
-    token: 'your-jwt-token'
-  }));
-};
+  ws.send(
+    JSON.stringify({
+      type: 'auth',
+      token: 'your-jwt-token',
+    }),
+  )
+}
 ```
 
 ### Subscribe to Events
 
 ```javascript
 // Subscribe to service logs
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  channel: 'logs',
-  service: 'postgres'
-}));
+ws.send(
+  JSON.stringify({
+    type: 'subscribe',
+    channel: 'logs',
+    service: 'postgres',
+  }),
+)
 
 // Subscribe to metrics
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  channel: 'metrics',
-  services: ['postgres', 'api']
-}));
+ws.send(
+  JSON.stringify({
+    type: 'subscribe',
+    channel: 'metrics',
+    services: ['postgres', 'api'],
+  }),
+)
 
 // Subscribe to alerts
-ws.send(JSON.stringify({
-  type: 'subscribe',
-  channel: 'alerts'
-}));
+ws.send(
+  JSON.stringify({
+    type: 'subscribe',
+    channel: 'alerts',
+  }),
+)
 ```
 
 ### Receive Events
 
 ```javascript
 ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  
-  switch(data.type) {
+  const data = JSON.parse(event.data)
+
+  switch (data.type) {
     case 'log':
-      console.log(`[${data.service}] ${data.message}`);
-      break;
-      
+      console.log(`[${data.service}] ${data.message}`)
+      break
+
     case 'metric':
-      console.log(`${data.service}: ${data.metric}=${data.value}`);
-      break;
-      
+      console.log(`${data.service}: ${data.metric}=${data.value}`)
+      break
+
     case 'alert':
-      console.log(`Alert: ${data.message}`);
-      break;
+      console.log(`Alert: ${data.message}`)
+      break
   }
-};
+}
 ```
 
 ## Client Libraries
@@ -1059,23 +1078,21 @@ ws.onmessage = (event) => {
 ### JavaScript/TypeScript
 
 ```javascript
-import { NselfAdminClient } from '@nself/admin-client';
+import { NselfAdminClient } from '@nself/admin-client'
 
 const client = new NselfAdminClient({
   baseUrl: 'http://localhost:3021',
-  token: 'your-jwt-token'
-});
+  token: 'your-jwt-token',
+})
 
 // Get services
-const services = await client.services.list();
+const services = await client.services.list()
 
 // Start a service
-await client.services.start('postgres');
+await client.services.start('postgres')
 
 // Execute query
-const result = await client.database.query(
-  'SELECT * FROM users LIMIT 10'
-);
+const result = await client.database.query('SELECT * FROM users LIMIT 10')
 ```
 
 ### Python
@@ -1131,6 +1148,7 @@ Authorization: Bearer <token>
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -1180,6 +1198,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -1201,6 +1220,7 @@ X-API-Version: 1.0.0
 ```
 
 Future versions will use URL versioning:
+
 ```
 /api/v2/services
 ```
@@ -1215,10 +1235,10 @@ const corsOptions = {
   origin: [
     'http://localhost:3000',
     'http://localhost:3001',
-    'https://your-domain.com'
+    'https://your-domain.com',
   ],
-  credentials: true
-};
+  credentials: true,
+}
 ```
 
 ### Rate Limiting
@@ -1229,8 +1249,8 @@ const rateLimits = {
   '/api/auth/login': '5 per minute',
   '/api/database/query': '30 per minute',
   '/api/services/*/exec': '10 per minute',
-  'default': '100 per minute'
-};
+  default: '100 per minute',
+}
 ```
 
 ### Input Validation
@@ -1272,27 +1292,27 @@ All inputs are validated using JSON schemas:
 ```javascript
 // Jest example
 describe('API Tests', () => {
-  let token;
-  
+  let token
+
   beforeAll(async () => {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
-      body: JSON.stringify({password: 'test-password'})
-    });
-    const data = await response.json();
-    token = data.token;
-  });
-  
+      body: JSON.stringify({ password: 'test-password' }),
+    })
+    const data = await response.json()
+    token = data.token
+  })
+
   test('Get services', async () => {
     const response = await fetch('/api/services', {
-      headers: {Authorization: `Bearer ${token}`}
-    });
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    expect(data.success).toBe(true);
-    expect(Array.isArray(data.data)).toBe(true);
-  });
-});
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    expect(response.status).toBe(200)
+    const data = await response.json()
+    expect(data.success).toBe(true)
+    expect(Array.isArray(data.data)).toBe(true)
+  })
+})
 ```
 
 ## Next Steps
@@ -1305,6 +1325,7 @@ describe('API Tests', () => {
 ---
 
 **Related Documentation**:
+
 - [Quick Start](Quick-Start)
 - [Service Configuration](Service-Configuration)
 - [Dashboard Overview](Dashboard-Overview)

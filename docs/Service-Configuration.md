@@ -45,7 +45,7 @@ postgres:
     POSTGRES_DB: ${POSTGRES_DB:-myapp}
     POSTGRES_USER: ${POSTGRES_USER:-postgres}
     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=en_US.UTF-8'
 ```
 
 #### Advanced Settings
@@ -108,18 +108,18 @@ hasura:
   environment:
     # Database
     HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:password@postgres:5432/myapp
-    
+
     # Admin
     HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_ADMIN_SECRET}
     HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
-    
+
     # Dev Mode
     HASURA_GRAPHQL_DEV_MODE: "true"
     HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
-    
+
     # CORS
     HASURA_GRAPHQL_CORS_DOMAIN: "*"
-    
+
     # JWT
     HASURA_GRAPHQL_JWT_SECRET: '{
       "type": "HS256",
@@ -175,18 +175,18 @@ auth:
   environment:
     # JWT Configuration
     JWT_SECRET: ${JWT_SECRET}
-    JWT_EXPIRY: "7d"
-    REFRESH_TOKEN_EXPIRY: "30d"
-    
+    JWT_EXPIRY: '7d'
+    REFRESH_TOKEN_EXPIRY: '30d'
+
     # Database
     DATABASE_URL: postgres://postgres:password@postgres:5432/myapp
-    
+
     # OAuth Providers (optional)
     GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
     GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
     GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
-    
+
     # Email (optional)
     SMTP_HOST: ${SMTP_HOST}
     SMTP_PORT: ${SMTP_PORT}
@@ -313,7 +313,7 @@ redis:
   volumes:
     - redis_data:/data
   healthcheck:
-    test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+    test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
 ```
 
 #### Connection Examples
@@ -341,19 +341,19 @@ r = redis.Redis(
 # Session Store
 sessions:
   store: redis
-  prefix: "sess:"
+  prefix: 'sess:'
   ttl: 86400
 
 # Cache
 cache:
   driver: redis
-  prefix: "cache:"
+  prefix: 'cache:'
   ttl: 3600
 
 # Queue
 queue:
   driver: redis
-  prefix: "queue:"
+  prefix: 'queue:'
   retries: 3
 ```
 
@@ -374,8 +374,8 @@ minio:
   volumes:
     - minio_data:/data
   ports:
-    - "9000:9000"  # API
-    - "9001:9001"  # Console
+    - '9000:9000' # API
+    - '9001:9001' # Console
 ```
 
 #### Bucket Configuration
@@ -394,18 +394,18 @@ docker exec minio mc anonymous set public local/uploads
 
 ```javascript
 // Node.js
-const Minio = require('minio');
+const Minio = require('minio')
 
 const minioClient = new Minio.Client({
   endPoint: 'minio',
   port: 9000,
   useSSL: false,
   accessKey: 'minioadmin',
-  secretKey: 'minioadmin'
-});
+  secretKey: 'minioadmin',
+})
 
 // Upload file
-minioClient.fPutObject('uploads', 'photo.jpg', '/tmp/photo.jpg');
+minioClient.fPutObject('uploads', 'photo.jpg', '/tmp/photo.jpg')
 ```
 
 ### Mailpit
@@ -421,8 +421,8 @@ mailpit:
     MP_SMTP_AUTH_ACCEPT_ANY: 1
     MP_SMTP_AUTH_ALLOW_INSECURE: 1
   ports:
-    - "1025:1025"  # SMTP
-    - "8025:8025"  # Web UI
+    - '1025:1025' # SMTP
+    - '8025:8025' # Web UI
 ```
 
 #### SMTP Configuration
@@ -433,8 +433,8 @@ const transporter = nodemailer.createTransport({
   host: 'mailpit',
   port: 1025,
   secure: false,
-  auth: null
-});
+  auth: null,
+})
 ```
 
 ### MeiliSearch
@@ -454,31 +454,31 @@ meilisearch:
   volumes:
     - meilisearch_data:/meili_data
   ports:
-    - "7700:7700"
+    - '7700:7700'
 ```
 
 #### Index Creation
 
 ```javascript
 // JavaScript SDK
-const { MeiliSearch } = require('meilisearch');
+const { MeiliSearch } = require('meilisearch')
 
 const client = new MeiliSearch({
   host: 'http://meilisearch:7700',
   apiKey: 'masterKey',
-});
+})
 
 // Create index
-await client.createIndex('products', { primaryKey: 'id' });
+await client.createIndex('products', { primaryKey: 'id' })
 
 // Add documents
 await client.index('products').addDocuments([
   { id: 1, name: 'iPhone', price: 999 },
-  { id: 2, name: 'iPad', price: 799 }
-]);
+  { id: 2, name: 'iPad', price: 799 },
+])
 
 // Search
-const results = await client.index('products').search('iphone');
+const results = await client.index('products').search('iphone')
 ```
 
 ### MLflow
@@ -501,7 +501,7 @@ mlflow:
     AWS_ACCESS_KEY_ID: minioadmin
     AWS_SECRET_ACCESS_KEY: minioadmin
   ports:
-    - "5000:5000"
+    - '5000:5000'
 ```
 
 ## Custom Services
@@ -512,47 +512,47 @@ nself Admin provides 40+ pre-configured templates:
 
 #### Node.js Templates
 
-| Framework | Port | Description | Best For |
-|-----------|------|-------------|----------|
-| Express | 4001 | Minimal, flexible | REST APIs |
-| Express (TS) | 4001 | TypeScript version | Type-safe APIs |
-| Fastify | 4001 | High performance | Microservices |
-| Fastify (TS) | 4001 | TypeScript version | Fast microservices |
-| NestJS | 4001 | Enterprise-grade | Large applications |
-| Koa | 4001 | Lightweight | Modern middleware |
-| Hapi | 4001 | Configuration-centric | Complex routing |
-| Hono | 4001 | Ultra-fast | Edge computing |
-| Socket.io | 4001 | Real-time | WebSocket apps |
-| tRPC | 4001 | Type-safe RPC | Full-stack TypeScript |
+| Framework    | Port | Description           | Best For              |
+| ------------ | ---- | --------------------- | --------------------- |
+| Express      | 4001 | Minimal, flexible     | REST APIs             |
+| Express (TS) | 4001 | TypeScript version    | Type-safe APIs        |
+| Fastify      | 4001 | High performance      | Microservices         |
+| Fastify (TS) | 4001 | TypeScript version    | Fast microservices    |
+| NestJS       | 4001 | Enterprise-grade      | Large applications    |
+| Koa          | 4001 | Lightweight           | Modern middleware     |
+| Hapi         | 4001 | Configuration-centric | Complex routing       |
+| Hono         | 4001 | Ultra-fast            | Edge computing        |
+| Socket.io    | 4001 | Real-time             | WebSocket apps        |
+| tRPC         | 4001 | Type-safe RPC         | Full-stack TypeScript |
 
 #### Python Templates
 
-| Framework | Port | Description | Best For |
-|-----------|------|-------------|----------|
-| FastAPI | 4002 | Modern, fast | REST + GraphQL |
-| Django | 4002 | Batteries included | Full applications |
-| Flask | 4002 | Minimal | Simple APIs |
-| Tornado | 4002 | Non-blocking | Real-time apps |
-| Pyramid | 4002 | Flexible | Scalable apps |
+| Framework | Port | Description        | Best For          |
+| --------- | ---- | ------------------ | ----------------- |
+| FastAPI   | 4002 | Modern, fast       | REST + GraphQL    |
+| Django    | 4002 | Batteries included | Full applications |
+| Flask     | 4002 | Minimal            | Simple APIs       |
+| Tornado   | 4002 | Non-blocking       | Real-time apps    |
+| Pyramid   | 4002 | Flexible           | Scalable apps     |
 
 #### Other Languages
 
-| Language | Framework | Port | Description |
-|----------|-----------|------|-------------|
-| Go | Gin | 4003 | Fast HTTP framework |
-| Go | Fiber | 4003 | Express-inspired |
-| Go | Echo | 4003 | High performance |
-| Ruby | Sinatra | 4004 | Minimal DSL |
-| Ruby | Rails | 4004 | Full framework |
-| PHP | Laravel | 4005 | Modern PHP |
-| PHP | Slim | 4005 | Micro framework |
-| Java | Spring Boot | 4006 | Enterprise Java |
-| Rust | Actix | 4007 | Blazing fast |
-| Rust | Rocket | 4007 | Type-safe |
-| C# | ASP.NET | 4008 | Microsoft stack |
-| Kotlin | Ktor | 4009 | Coroutine-based |
-| Scala | Play | 4010 | Reactive |
-| Elixir | Phoenix | 4011 | Real-time |
+| Language | Framework   | Port | Description         |
+| -------- | ----------- | ---- | ------------------- |
+| Go       | Gin         | 4003 | Fast HTTP framework |
+| Go       | Fiber       | 4003 | Express-inspired    |
+| Go       | Echo        | 4003 | High performance    |
+| Ruby     | Sinatra     | 4004 | Minimal DSL         |
+| Ruby     | Rails       | 4004 | Full framework      |
+| PHP      | Laravel     | 4005 | Modern PHP          |
+| PHP      | Slim        | 4005 | Micro framework     |
+| Java     | Spring Boot | 4006 | Enterprise Java     |
+| Rust     | Actix       | 4007 | Blazing fast        |
+| Rust     | Rocket      | 4007 | Type-safe           |
+| C#       | ASP.NET     | 4008 | Microsoft stack     |
+| Kotlin   | Ktor        | 4009 | Coroutine-based     |
+| Scala    | Play        | 4010 | Reactive            |
+| Elixir   | Phoenix     | 4011 | Real-time           |
 
 ### Configuration Options
 
@@ -572,7 +572,7 @@ services:
       - ./services/api:/app
       - /app/node_modules
     ports:
-      - "4001:4001"
+      - '4001:4001'
     depends_on:
       - postgres
       - redis
@@ -595,26 +595,26 @@ services:
         reservations:
           cpus: '0.5'
           memory: 256M
-    
+
     # Health check
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4001/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:4001/health']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    
+
     # Logging
     logging:
-      driver: "json-file"
+      driver: 'json-file'
       options:
-        max-size: "10m"
-        max-file: "3"
-    
+        max-size: '10m'
+        max-file: '3'
+
     # Labels
     labels:
-      com.example.service: "api"
-      com.example.description: "Main API service"
+      com.example.service: 'api'
+      com.example.description: 'Main API service'
 ```
 
 ### Environment Variables
@@ -678,7 +678,7 @@ prometheus:
     - '--config.file=/etc/prometheus/prometheus.yml'
     - '--storage.tsdb.path=/prometheus'
   ports:
-    - "9090:9090"
+    - '9090:9090'
 
 # Grafana
 grafana:
@@ -690,7 +690,7 @@ grafana:
     - grafana_data:/var/lib/grafana
     - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
   ports:
-    - "3030:3000"
+    - '3030:3000'
 
 # Loki
 loki:
@@ -699,7 +699,7 @@ loki:
     - ./loki/loki-config.yml:/etc/loki/local-config.yaml
     - loki_data:/loki
   ports:
-    - "3100:3100"
+    - '3100:3100'
 
 # Promtail
 promtail:
@@ -714,7 +714,7 @@ promtail:
 node-exporter:
   image: prom/node-exporter:latest
   ports:
-    - "9100:9100"
+    - '9100:9100'
 
 # cAdvisor
 cadvisor:
@@ -725,7 +725,7 @@ cadvisor:
     - /sys:/sys:ro
     - /var/lib/docker/:/var/lib/docker:ro
   ports:
-    - "8090:8080"
+    - '8090:8080'
 
 # Alertmanager
 alertmanager:
@@ -733,7 +733,7 @@ alertmanager:
   volumes:
     - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
   ports:
-    - "9093:9093"
+    - '9093:9093'
 ```
 
 ### Prometheus Configuration
@@ -780,12 +780,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      
+
   hasura:
     depends_on:
       postgres:
         condition: service_healthy
-      
+
   auth:
     depends_on:
       postgres:
@@ -813,16 +813,16 @@ graph LR
 
 ### Resource Allocation Guidelines
 
-| Service | Min CPU | Rec CPU | Min RAM | Rec RAM |
-|---------|---------|---------|---------|----------|
-| PostgreSQL | 0.5 | 2.0 | 512MB | 2GB |
-| Hasura | 0.25 | 1.0 | 256MB | 512MB |
-| Redis | 0.25 | 0.5 | 128MB | 256MB |
-| Nginx | 0.1 | 0.25 | 64MB | 128MB |
-| API Service | 0.25 | 1.0 | 256MB | 512MB |
-| Worker | 0.25 | 1.0 | 256MB | 512MB |
-| MinIO | 0.25 | 1.0 | 512MB | 1GB |
-| Monitoring | 0.5 | 2.0 | 1GB | 2GB |
+| Service     | Min CPU | Rec CPU | Min RAM | Rec RAM |
+| ----------- | ------- | ------- | ------- | ------- |
+| PostgreSQL  | 0.5     | 2.0     | 512MB   | 2GB     |
+| Hasura      | 0.25    | 1.0     | 256MB   | 512MB   |
+| Redis       | 0.25    | 0.5     | 128MB   | 256MB   |
+| Nginx       | 0.1     | 0.25    | 64MB    | 128MB   |
+| API Service | 0.25    | 1.0     | 256MB   | 512MB   |
+| Worker      | 0.25    | 1.0     | 256MB   | 512MB   |
+| MinIO       | 0.25    | 1.0     | 512MB   | 1GB     |
+| Monitoring  | 0.5     | 2.0     | 1GB     | 2GB     |
 
 ### Docker Resource Configuration
 
@@ -900,7 +900,7 @@ networks:
 
   frontend_network:
     driver: bridge
-    
+
   backend_network:
     driver: bridge
     internal: true
@@ -914,11 +914,11 @@ services:
     networks:
       - frontend_network
       - backend_network
-      
+
   api:
     networks:
       - backend_network
-      
+
   postgres:
     networks:
       - backend_network
@@ -937,7 +937,7 @@ volumes:
     driver: local
   minio_data:
     driver: local
-    
+
   # Bind mounts
   api_code:
     driver: local
@@ -979,19 +979,19 @@ services:
     tmpfs:
       - /tmp
       - /app/tmp
-    
+
     # Drop capabilities
     cap_drop:
       - ALL
     cap_add:
       - NET_BIND_SERVICE
-    
+
     # Security options
     security_opt:
       - no-new-privileges:true
-    
+
     # User
-    user: "1000:1000"
+    user: '1000:1000'
 ```
 
 ### Secret Management
@@ -1003,7 +1003,7 @@ secrets:
     file: ./secrets/postgres_password.txt
   jwt_secret:
     file: ./secrets/jwt_secret.txt
-    
+
 services:
   postgres:
     secrets:
@@ -1018,13 +1018,13 @@ services:
 # Firewall rules
 services:
   postgres:
-    ports: []  # No external access
+    ports: [] # No external access
     networks:
       - backend_network
-    
+
   api:
     expose:
-      - "4001"  # Internal only
+      - '4001' # Internal only
     networks:
       - backend_network
 ```
@@ -1056,7 +1056,7 @@ service_name:
     - nself_network
   restart: unless-stopped
   healthcheck:
-    test: ["CMD", "curl", "-f", "http://localhost:${SERVICE_PORT}/health"]
+    test: ['CMD', 'curl', '-f', 'http://localhost:${SERVICE_PORT}/health']
     interval: 30s
     timeout: 10s
     retries: 3
@@ -1116,7 +1116,7 @@ services:
   api:
     deploy:
       replicas: 3
-      
+
   nginx:
     depends_on:
       - api
@@ -1163,6 +1163,7 @@ ALTER SYSTEM SET shared_buffers = '256MB';
 ### Common Issues
 
 #### Service Won't Start
+
 ```bash
 # Check logs
 docker-compose logs service_name
@@ -1175,6 +1176,7 @@ docker-compose run --rm service_name env
 ```
 
 #### Connection Refused
+
 ```bash
 # Check network
 docker network ls
@@ -1186,6 +1188,7 @@ docker exec api nc -zv postgres 5432
 ```
 
 #### Performance Issues
+
 ```bash
 # Check resources
 docker stats
@@ -1207,6 +1210,7 @@ docker-compose exec service_name cat /proc/meminfo
 ---
 
 **Related Documentation**:
+
 - [Init Wizard Guide](Init-Wizard-Guide)
 - [Environment Management](Environment-Management)
 - [Docker Compose Reference](Docker-Compose-Reference)

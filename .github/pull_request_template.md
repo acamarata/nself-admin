@@ -30,8 +30,8 @@
 <!-- If your changes affect the UI, please provide screenshots or videos -->
 <!-- You can drag and drop images here -->
 
-| Before | After |
-|--------|-------|
+| Before       | After        |
+| ------------ | ------------ |
 | (screenshot) | (screenshot) |
 
 ## 🧪 Testing
@@ -149,7 +149,7 @@ NEW_ENV_VAR=default_value
 <!-- What should reviewers pay special attention to? -->
 
 - [ ] Logic correctness
-- [ ] Performance implications  
+- [ ] Performance implications
 - [ ] Security considerations
 - [ ] User experience
 - [ ] Code organization
