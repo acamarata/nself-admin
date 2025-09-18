@@ -37,6 +37,7 @@ interface ConfigSummary {
   mailpitEnabled: boolean
   searchEnabled: boolean
   searchEngine?: string
+  functionsEnabled: boolean
   nadminEnabled: boolean
   customServices: Array<{
     name: string
@@ -161,6 +162,9 @@ export default function InitStep6() {
               data.config.searchEngine ||
               data.config.SEARCH_ENGINE ||
               'meilisearch',
+            functionsEnabled:
+              data.config.functionsEnabled ||
+              data.config.FUNCTIONS_ENABLED === 'true',
             monitoringEnabled:
               data.config.monitoringEnabled ||
               data.config.MONITORING_ENABLED === 'true',
@@ -628,10 +632,11 @@ export default function InitStep6() {
     'nself Admin UI', // Always show as enabled since user is viewing this interface
     config.redisEnabled && 'Redis Cache',
     config.minioEnabled && 'Storage (MinIO)',
-    config.mlflowEnabled && 'MLflow Platform',
+    config.functionsEnabled && 'Functions (Serverless)',
     config.mailpitEnabled && 'Email Service (Mailpit)',
     config.searchEnabled &&
       `Search Service (${(config.searchEngine || 'meilisearch').charAt(0).toUpperCase() + (config.searchEngine || 'meilisearch').slice(1)})`,
+    config.mlflowEnabled && 'MLflow Platform',
     getMonitoringBundleDescription(),
   ].filter(Boolean)
 
@@ -650,6 +655,7 @@ export default function InitStep6() {
     (config.mlflowEnabled ? 1 : 0) +
     (config.mailpitEnabled ? 1 : 0) +
     (config.searchEnabled ? 1 : 0) +
+    (config.functionsEnabled ? 1 : 0) +
     monitoringServicesCount // Count actual enabled monitoring services
 
   // Calculate total services (don't use API value as it may be incorrect before build)

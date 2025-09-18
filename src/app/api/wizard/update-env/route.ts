@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
                 ? 'true'
                 : 'false',
             SEARCH_ENABLED: config.optionalServices.search ? 'true' : 'false',
+            FUNCTIONS_ENABLED: config.optionalServices.functions ? 'true' : 'false',
           }
 
           // Add service credentials when services are enabled
@@ -162,6 +163,7 @@ export async function POST(request: NextRequest) {
             MLFLOW_ENABLED: config.mlflowEnabled ? 'true' : 'false',
             MAILPIT_ENABLED: config.mailpitEnabled ? 'true' : 'false',
             SEARCH_ENABLED: config.searchEnabled ? 'true' : 'false',
+            FUNCTIONS_ENABLED: config.functionsEnabled ? 'true' : 'false',
           }
           // Monitoring bundle - includes all monitoring services
           if (config.monitoringEnabled) {

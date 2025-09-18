@@ -47,6 +47,7 @@ interface WizardState {
     mailpit?: boolean
     search?: boolean
     monitoring?: boolean
+    functions?: boolean
   }
   minioRootUser?: string
   minioRootPassword?: string
@@ -106,6 +107,7 @@ const initialState = {
     mailpit: false,
     search: false,
     monitoring: false,
+    functions: false,
   },
 
   // Step 4
@@ -219,6 +221,7 @@ export const useWizardStore = create<WizardState>()((set, get) => ({
       mailpit: envData.MAILPIT_ENABLED === 'true',
       search: envData.SEARCH_ENABLED === 'true',
       monitoring: envData.MONITORING_ENABLED === 'true',
+      functions: envData.FUNCTIONS_ENABLED === 'true',
     }
 
     if (envData.MINIO_ROOT_USER) state.minioRootUser = envData.MINIO_ROOT_USER

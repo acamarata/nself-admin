@@ -12,6 +12,7 @@ import {
   Package,
   Search,
   Wrench,
+  Zap,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -39,6 +40,7 @@ export default function InitStep3() {
     mlflow: {},
     mailpit: {},
     elasticsearch: {},
+    functions: {},
   })
 
   // Always sync with env when component mounts to get latest values
@@ -114,6 +116,7 @@ export default function InitStep3() {
       searchEnabled: 'search',
       monitoringEnabled: 'monitoring',
       nadminEnabled: 'nadmin',
+      functionsEnabled: 'functions',
     }
 
     const storeKey = keyMap[serviceKey] as keyof typeof optionalServices
@@ -176,6 +179,7 @@ export default function InitStep3() {
       mailpit: newState,
       search: newState,
       monitoring: newState,
+      functions: newState,
       // nadmin stays as is
     }
 
@@ -246,14 +250,14 @@ export default function InitStep3() {
       enabled: optionalServices.minio || false,
     },
     {
-      key: 'mlflowEnabled',
-      configKey: 'mlflow',
-      name: 'MLflow',
-      icon: Package,
-      description: 'Machine Learning lifecycle management platform',
+      key: 'functionsEnabled',
+      configKey: 'functions',
+      name: 'Functions',
+      icon: Zap,
+      description: 'Serverless functions for custom backend logic',
       details:
-        'Complete ML platform for experiment tracking, model registry, model deployment, and collaborative ML workflows. Integrates with popular ML frameworks and provides a unified interface for the entire ML lifecycle.',
-      enabled: optionalServices.mlflow || false,
+        'Based on Nhost serverless functions. Execute custom TypeScript/JavaScript code in response to events, webhooks, or API calls. Perfect for business logic, data processing, integrations, and custom endpoints without managing servers.',
+      enabled: optionalServices.functions || false,
     },
     {
       key: 'mailpitEnabled',
@@ -274,6 +278,16 @@ export default function InitStep3() {
       details:
         'Choose from Meilisearch (default), Typesense, Zinc, Elasticsearch, OpenSearch, or Sonic. Each offers different trade-offs between features, performance, and resource usage.',
       enabled: optionalServices.search || false,
+    },
+    {
+      key: 'mlflowEnabled',
+      configKey: 'mlflow',
+      name: 'MLflow',
+      icon: Package,
+      description: 'Machine Learning lifecycle management platform',
+      details:
+        'Complete ML platform for experiment tracking, model registry, model deployment, and collaborative ML workflows. Integrates with popular ML frameworks and provides a unified interface for the entire ML lifecycle.',
+      enabled: optionalServices.mlflow || false,
     },
     {
       key: 'monitoringEnabled',

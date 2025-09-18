@@ -32,43 +32,28 @@ export default function BuildPage() {
   const [errorMessage, setErrorMessage] = useState('')
   const [serviceCount, setServiceCount] = useState(0)
 
+  const debugLog = (message: string, data?: any) => {
+    // Fire-and-forget debug logging
+    fetch('/api/debug/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, data })
+    }).catch(e => console.error('Debug log failed:', e))
+  }
+
   useEffect(() => {
-    const checkAndBuild = async () => {
-      // First check if project folder is properly configured
-      try {
-        const statusRes = await fetch('/api/project/status')
-        if (statusRes.ok) {
-          const statusData = await statusRes.json()
+    debugLog('Build page: useEffect triggered', { fromWizard })
 
-          // Check for blank folder (no docker-compose.yml and no .env.local)
-          if (!statusData.hasDockerCompose && !statusData.hasEnvFile) {
-            // Blank folder - redirect to /init
-            router.push('/init')
-            return
-          }
-
-          // Check if no env file to build with
-          if (!statusData.hasEnvFile) {
-            // No configuration - redirect to /init
-            router.push('/init')
-            return
-          }
-        }
-      } catch (error) {
-        console.error('Error checking project status:', error)
-      }
-
-      // If not from wizard, redirect to init
-      if (!fromWizard) {
-        router.push('/init/1')
-        return
-      }
-
-      // Start the build process
-      startBuild()
+    // If not from wizard, redirect to init immediately
+    if (!fromWizard) {
+      debugLog('Build page: Not from wizard, redirecting to /init/1')
+      router.push('/init/1')
+      return
     }
 
-    checkAndBuild()
+    // If coming from wizard, start build immediately
+    debugLog('Build page: Coming from wizard, starting build immediately')
+    startBuild()
   }, [fromWizard, router])
 
   const updateStep = (
@@ -84,18 +69,24 @@ export default function BuildPage() {
   }
 
   const startBuild = async () => {
+    debugLog('Build page: startBuild function called!')
     try {
       // Step 1: Initialize
+      debugLog('Build page: Setting step 0 to running')
       updateStep(0, 'running')
       setCurrentStep(0)
 
       // Get CSRF token from cookies
+      debugLog('Build page: Getting CSRF token from cookies...')
       const csrfToken = document.cookie
         .split('; ')
         .find((row) => row.startsWith('nself-csrf='))
         ?.split('=')[1]
 
+      debugLog('Build page: CSRF token', { found: !!csrfToken, token: csrfToken ? 'present' : 'missing' })
+
       // Actually call the build API - try nself build first, fall back to simple if it fails
+      debugLog('Build page: About to call /api/nself/build with POST...')
       let response = await fetch('/api/nself/build', {
         method: 'POST',
         headers: {
@@ -103,6 +94,7 @@ export default function BuildPage() {
           'X-CSRF-Token': csrfToken || '',
         },
       })
+      debugLog('Build page: Build API response', { status: response.status, ok: response.ok })
 
       // If nself build fails (likely due to timeout), try the simple build
       if (!response.ok) {

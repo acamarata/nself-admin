@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
             FORCE_COLOR: '0', // Disable colored output that might cause issues
           },
           maxBuffer: 10 * 1024 * 1024, // 10MB buffer for output
-          timeout: 5000, // 5 second timeout - if it hangs, we'll generate manually
+          timeout: 30000, // 30 second timeout - if it hangs, we'll generate manually
           shell: '/bin/bash',
         },
       )
