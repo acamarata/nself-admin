@@ -248,6 +248,17 @@ function getServiceInfo(name: string): {
       ],
     }
   }
+  if (lowerName === 'functions') {
+    return {
+      description: 'Functions (Serverless)',
+      details: [
+        'Container: functions',
+        'Image: nhost/functions:latest',
+        'Port: 3000',
+        'Serverless TypeScript/JavaScript functions',
+      ],
+    }
+  }
   if (lowerName === 'mlflow') {
     return {
       description: 'MLflow Platform',
@@ -407,6 +418,9 @@ function getServiceDisplayName(name: string): string {
 
   // Cache
   if (lowerName === 'redis') return 'Redis Cache'
+
+  // Functions
+  if (lowerName === 'functions') return 'Functions'
 
   // ML
   if (lowerName === 'mlflow') return 'MLflow'

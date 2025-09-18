@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
         const mailpitEnabled = envContent.match(/MAILPIT_ENABLED=true/)
         const searchEnabled = envContent.match(/SEARCH_ENABLED=true/)
         const storageEnabled = envContent.match(/STORAGE_ENABLED=true/)
+        const functionsEnabled = envContent.match(/FUNCTIONS_ENABLED=true/)
         const nselfAdminEnabled = envContent.match(/NSELF_ADMIN_ENABLED=true/)
 
         // Count custom services
@@ -106,6 +107,7 @@ export async function GET(request: NextRequest) {
         // Add optional services
         if (storageEnabled) totalServices++ // MinIO/Storage
         if (redisEnabled) totalServices++
+        if (functionsEnabled) totalServices++ // Functions service
         if (mlflowEnabled) totalServices++
         if (mailpitEnabled) totalServices++
         if (searchEnabled) totalServices++ // Meilisearch
@@ -133,6 +135,7 @@ export async function GET(request: NextRequest) {
           core: 4,
           storage: storageEnabled ? 1 : 0,
           redis: redisEnabled ? 1 : 0,
+          functions: functionsEnabled ? 1 : 0,
           mlflow: mlflowEnabled ? 1 : 0,
           mailpit: mailpitEnabled ? 1 : 0,
           search: searchEnabled ? 1 : 0,
@@ -267,6 +270,7 @@ export async function GET(request: NextRequest) {
         lowerName === 'redis' ||
         lowerName === 'minio' ||
         lowerName === 'storage' ||
+        lowerName === 'functions' ||
         lowerName === 'mailpit' ||
         lowerName === 'meilisearch' ||
         lowerName === 'mlflow' ||
@@ -305,12 +309,13 @@ export async function GET(request: NextRequest) {
     // Sort optional services in the specific order requested
     const optionalOrder = [
       'nself-admin',
+      'redis',
       'minio',
       'storage',
-      'redis',
-      'mlflow',
-      'meilisearch',
+      'functions',
       'mailpit',
+      'meilisearch',
+      'mlflow',
       'prometheus',
       'grafana',
       'loki',
@@ -373,6 +378,7 @@ export async function GET(request: NextRequest) {
               lowerName === 'redis' ||
               lowerName === 'minio' ||
               lowerName === 'storage' ||
+              lowerName === 'functions' ||
               lowerName === 'mailpit' ||
               lowerName === 'meilisearch' ||
               lowerName === 'mlflow' ||
@@ -412,12 +418,13 @@ export async function GET(request: NextRequest) {
           // Apply the same sorting to optional services
           const optionalOrder = [
             'nself-admin',
+            'redis',
             'minio',
             'storage',
-            'redis',
-            'mlflow',
-            'meilisearch',
+            'functions',
             'mailpit',
+            'meilisearch',
+            'mlflow',
             'prometheus',
             'grafana',
             'loki',

@@ -42,18 +42,49 @@ export default function BuildPage() {
   }
 
   useEffect(() => {
-    debugLog('Build page: useEffect triggered', { fromWizard })
+    const checkAndBuild = async () => {
+      debugLog('Build page: useEffect triggered', { fromWizard })
 
-    // If not from wizard, redirect to init immediately
-    if (!fromWizard) {
-      debugLog('Build page: Not from wizard, redirecting to /init/1')
-      router.push('/init/1')
-      return
+      // Check if project needs building regardless of fromWizard parameter
+      try {
+        debugLog('Build page: Checking project status...')
+        const statusRes = await fetch('/api/project/status')
+
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          debugLog('Build page: Status data received', statusData)
+
+          // If no env file exists, redirect to init
+          if (!statusData.hasEnvFile) {
+            debugLog('Build page: No env file detected, redirecting to /init')
+            router.push('/init')
+            return
+          }
+
+          // If project has env but no docker-compose, it needs building
+          if (statusData.hasEnvFile && !statusData.hasDockerCompose) {
+            debugLog('Build page: Project needs building, starting build process')
+            startBuild()
+            return
+          }
+
+          // If project is already built, redirect to start
+          if (statusData.hasDockerCompose) {
+            debugLog('Build page: Project already built, redirecting to /start')
+            router.push('/start')
+            return
+          }
+        }
+      } catch (error) {
+        debugLog('Build page: Error checking project status', { error: error.message })
+      }
+
+      // Fallback: if coming from wizard or can't determine status, start build
+      debugLog('Build page: Fallback - starting build process')
+      startBuild()
     }
 
-    // If coming from wizard, start build immediately
-    debugLog('Build page: Coming from wizard, starting build immediately')
-    startBuild()
+    checkAndBuild()
   }, [fromWizard, router])
 
   const updateStep = (
