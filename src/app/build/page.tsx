@@ -37,8 +37,8 @@ export default function BuildPage() {
     fetch('/api/debug/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, data })
-    }).catch(e => console.error('Debug log failed:', e))
+      body: JSON.stringify({ message, data }),
+    }).catch((e) => console.error('Debug log failed:', e))
   }
 
   useEffect(() => {
@@ -83,7 +83,10 @@ export default function BuildPage() {
         .find((row) => row.startsWith('nself-csrf='))
         ?.split('=')[1]
 
-      debugLog('Build page: CSRF token', { found: !!csrfToken, token: csrfToken ? 'present' : 'missing' })
+      debugLog('Build page: CSRF token', {
+        found: !!csrfToken,
+        token: csrfToken ? 'present' : 'missing',
+      })
 
       // Actually call the build API - try nself build first, fall back to simple if it fails
       debugLog('Build page: About to call /api/nself/build with POST...')
@@ -94,7 +97,10 @@ export default function BuildPage() {
           'X-CSRF-Token': csrfToken || '',
         },
       })
-      debugLog('Build page: Build API response', { status: response.status, ok: response.ok })
+      debugLog('Build page: Build API response', {
+        status: response.status,
+        ok: response.ok,
+      })
 
       // If nself build fails (likely due to timeout), try the simple build
       if (!response.ok) {

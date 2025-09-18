@@ -125,7 +125,9 @@ export async function POST(request: NextRequest) {
                 ? 'true'
                 : 'false',
             SEARCH_ENABLED: config.optionalServices.search ? 'true' : 'false',
-            FUNCTIONS_ENABLED: config.optionalServices.functions ? 'true' : 'false',
+            FUNCTIONS_ENABLED: config.optionalServices.functions
+              ? 'true'
+              : 'false',
           }
 
           // Add service credentials when services are enabled
