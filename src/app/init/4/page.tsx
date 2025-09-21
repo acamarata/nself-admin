@@ -29,6 +29,8 @@ export default function InitStep4() {
   const [showFrameworkInfo, setShowFrameworkInfo] = useState(false)
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState<number | null>(null)
+  const [autoSaving, setAutoSaving] = useState(false)
+  const [showInfoBox, setShowInfoBox] = useState(false)
 
   const [localServices, setLocalServices] = useState<CustomService[]>([])
   const [dataLoaded, setDataLoaded] = useState(false)
@@ -698,38 +700,69 @@ export default function InitStep4() {
 
   return (
     <StepWrapper>
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
-            Custom Services
-          </h2>
-          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            Add custom backend services with your preferred languages and
-            frameworks. Each service runs in its own container. Services without
-            routes are internal-only (workers, queues, etc).
-          </p>
-        </div>
-
-        {/* Framework info toggle */}
+      {/* Info Box - Collapsible */}
+      <div className="mb-6">
         <button
-          onClick={() => setShowFrameworkInfo(!showFrameworkInfo)}
-          className="flex items-center gap-2 text-sm text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          onClick={() => setShowInfoBox(!showInfoBox)}
+          className="flex w-full items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-left transition-colors hover:bg-blue-100/70 dark:border-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30"
         >
-          <Info className="h-4 w-4" />
-          <span>Available frameworks and templates</span>
-          {showFrameworkInfo ? (
-            <ChevronUp className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-medium text-blue-900 dark:text-blue-200">
+              Custom Services Configuration
+            </span>
+            {autoSaving && (
+              <span className="text-xs text-blue-600 dark:text-blue-400">
+                (Auto-saving...)
+              </span>
+            )}
+          </div>
+          {showInfoBox ? (
+            <ChevronUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           ) : (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           )}
         </button>
 
-        {showFrameworkInfo && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm dark:border-blue-800 dark:bg-blue-900/20">
-            <p className="mb-3 text-blue-900 dark:text-blue-200">
-              Each framework provides a production-ready backend
-              API/microservice template with best practices:
-            </p>
+        {showInfoBox && (
+          <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+            <div className="space-y-3 text-xs text-blue-700 dark:text-blue-400">
+              <p>
+                Add custom backend services with your preferred languages and
+                frameworks. Each service runs in its own container with automatic
+                health checks, logging, and orchestration.
+              </p>
+
+              <div>
+                <p className="mb-1 font-medium text-blue-900 dark:text-blue-200">
+                  Route Configuration:
+                </p>
+                <ul className="ml-4 space-y-0.5">
+                  <li>• <strong>No route:</strong> Internal-only service (workers, queues, background jobs)</li>
+                  <li>• <strong>Single word (e.g., "api"):</strong> Creates subdomain: api.{baseDomain}</li>
+                  <li>• <strong>Full domain:</strong> Used as-is for external webhooks or custom domains</li>
+                </ul>
+              </div>
+
+              {/* Framework info toggle */}
+              <button
+                onClick={() => setShowFrameworkInfo(!showFrameworkInfo)}
+                className="flex items-center gap-1 font-medium text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-500 dark:hover:text-blue-400"
+              >
+                {showFrameworkInfo ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+                <span>View available frameworks and templates</span>
+              </button>
+
+              {showFrameworkInfo && (
+                <div className="rounded-lg bg-blue-100/50 p-3 dark:bg-blue-900/30">
+                  <p className="mb-2 font-medium text-blue-900 dark:text-blue-200">
+                    Each framework provides a production-ready backend
+                    API/microservice template with best practices:
+                  </p>
             {Object.entries(frameworksForDropdown).map(
               ([category, frameworks]) => (
                 <div key={category} className="mb-3">
@@ -801,9 +834,14 @@ export default function InitStep4() {
                 </div>
               ),
             )}
+                </div>
+              )}
+            </div>
           </div>
         )}
+      </div>
 
+      <div className="space-y-4">
         {/* Service list */}
         {localServices.map((service, index) => (
           <div
@@ -842,16 +880,18 @@ export default function InitStep4() {
               </div>
               <button
                 onClick={() => removeService(index)}
-                className="rounded-lg p-2 text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-900/20"
+                className="text-zinc-400 hover:text-red-500 dark:text-zinc-600 dark:hover:text-red-400"
+                title="Remove service"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-5 w-5" />
               </button>
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {/* Framework */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  <Code className="mr-1 inline h-3 w-3" />
                   Framework
                 </label>
                 <select
@@ -889,7 +929,7 @@ export default function InitStep4() {
               </div>
               {/* Port */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                   Port
                 </label>
                 <input
@@ -909,10 +949,10 @@ export default function InitStep4() {
               </div>
               {/* Route */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                   Route{' '}
-                  <span className="text-xs text-zinc-500">
-                    (leave empty for internal-only service)
+                  <span className="font-normal text-zinc-500 dark:text-zinc-600">
+                    (optional)
                   </span>
                 </label>
                 <input
@@ -921,14 +961,9 @@ export default function InitStep4() {
                   onChange={(e) =>
                     updateService(index, 'route', e.target.value)
                   }
-                  placeholder="api, webhook.external.com, or leave empty"
+                  placeholder="api, webhook.site, or leave empty"
                   className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-zinc-600 dark:bg-zinc-900 dark:text-white dark:placeholder-zinc-500 dark:focus:ring-blue-400"
                 />
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  • No route = internal-only service (no external access)
-                  <br />• Single word (e.g., &quot;api&quot;) = api.{baseDomain}
-                  <br />• Full domain = used as-is (auto-detected, no :: needed)
-                </p>
               </div>
             </div>
 
@@ -943,7 +978,7 @@ export default function InitStep4() {
 
         {/* Empty state */}
         {localServices.length === 0 && (
-          <div className="rounded-lg border-2 border-dashed border-zinc-300 px-4 py-8 text-center dark:border-zinc-600">
+          <div className="rounded-lg border-2 border-dashed border-zinc-300 py-8 text-center dark:border-zinc-700">
             <Code className="mx-auto mb-3 h-12 w-12 text-zinc-400 dark:text-zinc-500" />
             <p className="mb-1 text-zinc-600 dark:text-zinc-400">
               No custom services added yet
@@ -953,7 +988,7 @@ export default function InitStep4() {
             </p>
             <button
               onClick={addService}
-              className="inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-full bg-blue-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-blue-400/20 dark:ring-inset dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300"
+              className="inline-flex items-center justify-center gap-0.5 overflow-hidden rounded-full bg-blue-600 px-3 py-1 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-1 dark:ring-blue-400/20 dark:ring-inset dark:hover:bg-blue-400/10 dark:hover:text-blue-300 dark:hover:ring-blue-300"
             >
               <Plus className="h-4 w-4" />
               <span>Add Your First Service</span>
@@ -965,9 +1000,9 @@ export default function InitStep4() {
         {localServices.length > 0 && (
           <button
             onClick={addService}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-zinc-300 px-4 py-3 text-zinc-600 transition-colors hover:border-blue-500 hover:text-blue-600 dark:border-zinc-600 dark:text-zinc-400 dark:hover:border-blue-400 dark:hover:text-blue-400"
+            className="inline-flex items-center justify-center gap-0.5 overflow-hidden rounded-full bg-zinc-900 px-3 py-1 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-500/10 dark:text-zinc-400 dark:ring-1 dark:ring-zinc-400/20 dark:ring-inset dark:hover:bg-zinc-400/10 dark:hover:text-zinc-300 dark:hover:ring-zinc-300"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-4 w-4" />
             <span>Add Service</span>
           </button>
         )}
@@ -987,7 +1022,7 @@ export default function InitStep4() {
       <div className="mt-8 flex justify-between">
         <button
           onClick={handleBack}
-          className="inline-flex items-center justify-center gap-0.5 overflow-hidden rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-900 transition hover:bg-zinc-200 dark:bg-zinc-800/40 dark:text-zinc-400 dark:ring-1 dark:ring-zinc-800 dark:ring-inset dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+          className="inline-flex items-center justify-center gap-0.5 overflow-hidden rounded-full bg-zinc-900 px-3 py-1 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-500/10 dark:text-zinc-400 dark:ring-1 dark:ring-zinc-400/20 dark:ring-inset dark:hover:bg-zinc-400/10 dark:hover:text-zinc-300 dark:hover:ring-zinc-300"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back</span>

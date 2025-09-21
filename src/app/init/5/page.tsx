@@ -4,6 +4,8 @@ import { UrlInput } from '@/components/UrlInput'
 import {
   ArrowLeft,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
   Database,
   ExternalLink,
   Globe,
@@ -37,6 +39,7 @@ export default function InitStep5() {
   const [baseDomain, setBaseDomain] = useState('localhost')
   const [autoSaving, setAutoSaving] = useState(false)
   const [editingTitle, setEditingTitle] = useState<number | null>(null)
+  const [showInfoBox, setShowInfoBox] = useState(false)
 
   // Load configuration from .env.local on mount and when page gains focus
   useEffect(() => {
@@ -287,27 +290,57 @@ export default function InitStep5() {
 
   return (
     <StepWrapper>
-      {/* Info Box */}
-      <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-        <div className="flex items-start gap-2">
-          <Info className="mt-0.5 h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <div className="flex-1 text-sm text-blue-900 dark:text-blue-200">
-            <div className="mb-1 flex items-center justify-between">
-              <p className="font-medium">Frontend Apps Configuration</p>
-              {autoSaving && (
-                <span className="text-xs text-blue-600 dark:text-blue-400">
-                  Auto-saving...
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-blue-700 dark:text-blue-400">
-              Configure external frontend applications that will consume your
-              nself backend. Each app gets its own table namespace, nginx
-              routing, and optional Hasura remote schema. Changes are saved
-              automatically.
-            </p>
+      {/* Info Box - Collapsible */}
+      <div className="mb-6">
+        <button
+          onClick={() => setShowInfoBox(!showInfoBox)}
+          className="flex w-full items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-left transition-colors hover:bg-blue-100/70 dark:border-blue-800 dark:bg-blue-900/20 dark:hover:bg-blue-900/30"
+        >
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-medium text-blue-900 dark:text-blue-200">
+              Frontend Apps Configuration
+            </span>
+            {autoSaving && (
+              <span className="text-xs text-blue-600 dark:text-blue-400">
+                (Auto-saving...)
+              </span>
+            )}
           </div>
-        </div>
+          {showInfoBox ? (
+            <ChevronUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          )}
+        </button>
+
+        {showInfoBox && (
+          <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+            <div className="space-y-3 text-xs text-blue-700 dark:text-blue-400">
+              <p>
+                Configure external frontend applications that will consume your
+                nself backend. Each app gets its own table namespace, nginx
+                routing, and optional Hasura remote schema.
+              </p>
+
+              <div>
+                <p className="mb-1 font-medium text-blue-900 dark:text-blue-200">
+                  Features per Frontend App:
+                </p>
+                <ul className="ml-4 space-y-0.5">
+                  <li>• <strong>Table Namespace:</strong> Isolated database tables with prefix</li>
+                  <li>• <strong>Nginx Routing:</strong> Automatic subdomain configuration</li>
+                  <li>• <strong>Local Port:</strong> Development server port assignment</li>
+                  <li>• <strong>Remote Schema:</strong> Optional GraphQL endpoint for Hasura integration</li>
+                </ul>
+              </div>
+
+              <p className="text-xs italic">
+                Changes are saved automatically as you type.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">
