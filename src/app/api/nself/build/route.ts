@@ -90,9 +90,7 @@ export async function POST(request: NextRequest) {
           env: {
             ...process.env,
             PATH: `${process.env.PATH}:/Users/admin/bin:/usr/local/bin:/opt/homebrew/bin`,
-            TERM: 'dumb', // Disable interactive features
-            CI: 'true', // Many tools respect CI env var to disable interaction
-            FORCE_COLOR: '0', // Disable colored output that might cause issues
+            // Keep the terminal environment clean to preserve nself's native output
           },
           maxBuffer: 10 * 1024 * 1024, // 10MB buffer for output
           timeout: 30000, // 30 second timeout - if it hangs, we'll generate manually

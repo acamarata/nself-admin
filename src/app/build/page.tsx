@@ -31,6 +31,7 @@ export default function BuildPage() {
   >('building')
   const [errorMessage, setErrorMessage] = useState('')
   const [serviceCount, setServiceCount] = useState(0)
+  const [buildStarted, setBuildStarted] = useState(false)
 
   const debugLog = (message: string, data?: any) => {
     // Fire-and-forget debug logging
@@ -42,10 +43,17 @@ export default function BuildPage() {
   }
 
   useEffect(() => {
+    // If coming from wizard, immediately start the build without any checks
+    if (fromWizard) {
+      debugLog('Build page: Coming from wizard, starting build immediately')
+      startBuild()
+      return
+    }
+
+    // Otherwise, check project status
     const checkAndBuild = async () => {
       debugLog('Build page: useEffect triggered', { fromWizard })
 
-      // Check if project needs building regardless of fromWizard parameter
       try {
         debugLog('Build page: Checking project status...')
         const statusRes = await fetch('/api/project/status')
@@ -77,15 +85,13 @@ export default function BuildPage() {
         }
       } catch (error) {
         debugLog('Build page: Error checking project status', { error: error.message })
+        // On error, if no docker-compose exists, start build
+        startBuild()
       }
-
-      // Fallback: if coming from wizard or can't determine status, start build
-      debugLog('Build page: Fallback - starting build process')
-      startBuild()
     }
 
     checkAndBuild()
-  }, [fromWizard, router])
+  }, [fromWizard])
 
   const updateStep = (
     index: number,
@@ -100,6 +106,13 @@ export default function BuildPage() {
   }
 
   const startBuild = async () => {
+    // Prevent multiple builds
+    if (buildStarted) {
+      debugLog('Build page: Build already started, skipping')
+      return
+    }
+
+    setBuildStarted(true)
     debugLog('Build page: startBuild function called!')
     try {
       // Step 1: Initialize
