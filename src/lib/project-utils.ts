@@ -175,6 +175,51 @@ export async function initializeProject(config: any): Promise<{
   }
 }
 
+// Get Docker status and containers
+export async function getDockerStatus(): Promise<{
+  running: boolean
+  containers: Array<{
+    id: string
+    name: string
+    state: string
+    status: string
+  }>
+  error: string | null
+}> {
+  try {
+    const { stdout } = await execAsync(
+      'docker ps --format "table {{.ID}}\t{{.Names}}\t{{.State}}\t{{.Status}}"',
+    )
+    const lines = stdout
+      .split('\n')
+      .slice(1)
+      .filter((line) => line.trim()) // Skip header and empty lines
+
+    const containers = lines.map((line) => {
+      const parts = line.split('\t')
+      return {
+        id: parts[0] || '',
+        name: parts[1] || '',
+        state: parts[2] || 'unknown',
+        status: parts[3] || 'unknown',
+      }
+    })
+
+    return {
+      running: containers.length > 0,
+      containers,
+      error: null,
+    }
+  } catch (error) {
+    console.error('Error getting Docker status:', error)
+    return {
+      running: false,
+      containers: [],
+      error: error instanceof Error ? error.message : 'Unknown Docker error',
+    }
+  }
+}
+
 // Build project (placeholder for nself build)
 export async function buildProject(): Promise<{
   success: boolean

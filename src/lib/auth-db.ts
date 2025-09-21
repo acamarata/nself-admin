@@ -168,3 +168,20 @@ export async function isDevMode(): Promise<boolean> {
 
   return isDevHostname || isDevEnv
 }
+
+// Legacy auth object for backwards compatibility with tests
+export const auth = {
+  hasPassword: checkPasswordExists,
+  setPassword: async (password: string) => {
+    const result = await setupAdminPassword(password, await isDevMode())
+    if (!result.success) throw new Error(result.error)
+    return true
+  },
+  validatePassword: verifyAdminLogin,
+  createSession: createLoginSession,
+  validateSession: async (token: string) => {
+    const isValid = await validateSessionToken(token)
+    return isValid ? { userId: 'admin', token } : null
+  },
+  deleteSession: logout,
+}

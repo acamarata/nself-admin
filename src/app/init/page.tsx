@@ -3,7 +3,7 @@
 import { safeNavigate } from '@/lib/routing'
 import { CheckCircle, Folder, Hammer } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export default function InitPage() {
   const router = useRouter()
@@ -13,15 +13,7 @@ export default function InitPage() {
   const [message, setMessage] = useState('Checking project status...')
   const hasChecked = useRef(false)
 
-  useEffect(() => {
-    // Prevent multiple checks
-    if (!hasChecked.current) {
-      hasChecked.current = true
-      checkAndInitializeProject()
-    }
-  }, [])
-
-  const checkAndInitializeProject = async () => {
+  const checkAndInitializeProject = useCallback(async () => {
     try {
       // Check if project has been initialized (has .env.local)
       const response = await fetch('/api/project/status')
@@ -86,7 +78,15 @@ export default function InitPage() {
       // On error, redirect to step 1
       safeNavigate(router, '/init/1')
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    // Prevent multiple checks
+    if (!hasChecked.current) {
+      hasChecked.current = true
+      checkAndInitializeProject()
+    }
+  }, [checkAndInitializeProject])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-black dark:to-zinc-950">

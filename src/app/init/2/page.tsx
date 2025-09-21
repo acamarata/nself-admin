@@ -11,7 +11,7 @@ import {
   Wrench,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { StepWrapper } from '../StepWrapper'
 
 export default function InitStep2() {
@@ -27,12 +27,7 @@ export default function InitStep2() {
     nginx: {},
   })
 
-  // Load configuration from .env.local on mount
-  useEffect(() => {
-    checkAndLoadConfiguration()
-  }, [])
-
-  const checkAndLoadConfiguration = async () => {
+  const checkAndLoadConfiguration = useCallback(async () => {
     // First check if env file exists
     try {
       const statusRes = await fetch('/api/project/status')
@@ -50,7 +45,12 @@ export default function InitStep2() {
 
     // Load configuration if env file exists
     loadConfiguration()
-  }
+  }, [router])
+
+  // Load configuration from .env.local on mount
+  useEffect(() => {
+    checkAndLoadConfiguration()
+  }, [checkAndLoadConfiguration])
 
   const loadConfiguration = async () => {
     try {

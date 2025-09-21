@@ -14,7 +14,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { StepWrapper } from '../StepWrapper'
 
 interface FrontendApp {
@@ -41,6 +41,26 @@ export default function InitStep5() {
   const [editingTitle, setEditingTitle] = useState<number | null>(null)
   const [showInfoBox, setShowInfoBox] = useState(false)
 
+  const checkAndLoadConfiguration = useCallback(async () => {
+    // First check if env file exists
+    try {
+      const statusRes = await fetch('/api/project/status')
+      if (statusRes.ok) {
+        const statusData = await statusRes.json()
+        if (!statusData.hasEnvFile) {
+          // No env file - redirect to /init to create it
+          router.push('/init')
+          return
+        }
+      }
+    } catch (error) {
+      console.error('Error checking project status:', error)
+    }
+
+    // Load configuration if env file exists
+    loadConfiguration()
+  }, [router])
+
   // Load configuration from .env.local on mount and when page gains focus
   useEffect(() => {
     checkAndLoadConfiguration()
@@ -60,27 +80,7 @@ export default function InitStep5() {
     return () => {
       window.removeEventListener('focus', handleFocus)
     }
-  }, [])
-
-  const checkAndLoadConfiguration = async () => {
-    // First check if env file exists
-    try {
-      const statusRes = await fetch('/api/project/status')
-      if (statusRes.ok) {
-        const statusData = await statusRes.json()
-        if (!statusData.hasEnvFile) {
-          // No env file - redirect to /init to create it
-          router.push('/init')
-          return
-        }
-      }
-    } catch (error) {
-      console.error('Error checking project status:', error)
-    }
-
-    // Load configuration if env file exists
-    loadConfiguration()
-  }
+  }, [checkAndLoadConfiguration])
 
   const loadConfiguration = async () => {
     try {
@@ -328,10 +328,22 @@ export default function InitStep5() {
                   Features per Frontend App:
                 </p>
                 <ul className="ml-4 space-y-0.5">
-                  <li>• <strong>Table Namespace:</strong> Isolated database tables with prefix</li>
-                  <li>• <strong>Nginx Routing:</strong> Automatic subdomain configuration</li>
-                  <li>• <strong>Local Port:</strong> Development server port assignment</li>
-                  <li>• <strong>Remote Schema:</strong> Optional GraphQL endpoint for Hasura integration</li>
+                  <li>
+                    • <strong>Table Namespace:</strong> Isolated database tables
+                    with prefix
+                  </li>
+                  <li>
+                    • <strong>Nginx Routing:</strong> Automatic subdomain
+                    configuration
+                  </li>
+                  <li>
+                    • <strong>Local Port:</strong> Development server port
+                    assignment
+                  </li>
+                  <li>
+                    • <strong>Remote Schema:</strong> Optional GraphQL endpoint
+                    for Hasura integration
+                  </li>
                 </ul>
               </div>
 

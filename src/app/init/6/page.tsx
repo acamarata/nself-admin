@@ -10,7 +10,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { StepWrapper } from '../StepWrapper'
 
 interface ConfigSummary {
@@ -89,12 +89,393 @@ export default function InitStep6() {
   const [fixedIssuesCount, setFixedIssuesCount] = useState(0)
   const [appliedFixes, setAppliedFixes] = useState<string[]>([])
 
-  // Load configuration from .env.local on mount
-  useEffect(() => {
-    checkAndLoadConfiguration()
-  }, [])
+  const validateConfiguration = useCallback(
+    async (summary: ConfigSummary, rawConfig: any) => {
+      setValidating(true)
+      setAutoFixing(true)
+      const issues: ValidationIssue[] = []
+      let fixCount = 0
+      let portFixCount = 0
 
-  const checkAndLoadConfiguration = async () => {
+      // Auto-fix configuration issues
+      const fixes: Record<string, string> = {}
+      const portFixes: Record<string, string> = {}
+      const fixDescriptions: string[] = []
+
+      try {
+        // Call validation API endpoint
+        const response = await fetch('/api/wizard/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ config: rawConfig }),
+        })
+
+        if (response.ok) {
+          const result = await response.json()
+          if (result.issues) {
+            // Auto-fix known issues ONLY if the values don't already exist
+            for (const issue of result.issues) {
+              if (
+                issue.field === 'HASURA_METADATA_DATABASE_URL' &&
+                !rawConfig.HASURA_METADATA_DATABASE_URL
+              ) {
+                // Auto-construct database URL
+                const dbUser =
+                  rawConfig.POSTGRES_USER ||
+                  rawConfig.postgresUser ||
+                  'postgres'
+                const dbPass =
+                  rawConfig.POSTGRES_PASSWORD ||
+                  rawConfig.databasePassword ||
+                  'nself-dev-password'
+                const dbName =
+                  rawConfig.POSTGRES_DB || rawConfig.databaseName || 'nself'
+                fixes.HASURA_METADATA_DATABASE_URL = `postgres://${dbUser}:${dbPass}@postgres:5432/${dbName}`
+                fixDescriptions.push(
+                  'Added HASURA_METADATA_DATABASE_URL for database connection',
+                )
+                fixCount++
+              } else if (
+                issue.field === 'minio' &&
+                !rawConfig.MINIO_ROOT_USER
+              ) {
+                fixes.MINIO_ROOT_USER = 'minioadmin'
+                fixes.MINIO_ROOT_PASSWORD = 'minioadmin-password'
+                fixDescriptions.push(
+                  'Added MinIO credentials for storage service',
+                )
+                fixCount++
+              } else if (
+                issue.field === 'search' &&
+                !rawConfig.MEILI_MASTER_KEY
+              ) {
+                fixes.MEILI_MASTER_KEY = 'meilisearch-master-key-32-chars'
+                fixDescriptions.push(
+                  'Added MeiliSearch master key for search service',
+                )
+                fixCount++
+              } else if (
+                issue.field === 'grafana' &&
+                !rawConfig.GRAFANA_ADMIN_PASSWORD
+              ) {
+                fixes.GRAFANA_ADMIN_PASSWORD = 'grafana-admin-password'
+                fixDescriptions.push(
+                  'Added Grafana admin password for monitoring',
+                )
+                fixCount++
+              } else if (
+                issue.field === 'monitoring' &&
+                issue.message.includes('TEMPO_ENABLED') &&
+                rawConfig.TEMPO_ENABLED !== 'true'
+              ) {
+                fixes.TEMPO_ENABLED = 'true'
+                if (rawConfig.ALERTMANAGER_ENABLED !== 'true') {
+                  fixes.ALERTMANAGER_ENABLED = 'true'
+                }
+                fixDescriptions.push(
+                  'Enabled missing monitoring services (Tempo, Alertmanager)',
+                )
+                fixCount++
+              } else {
+                // Can't auto-fix this issue
+                issues.push(issue)
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Validation error:', error)
+      }
+
+      // Combine all fixes (config fixes + port fixes)
+      const allFixes = { ...fixes, ...portFixes }
+      const totalFixCount = fixCount + portFixCount
+
+      // Combine fix descriptions
+      if (portFixCount > 0) {
+        fixDescriptions.push(
+          `Fixed ${portFixCount} port conflict${portFixCount > 1 ? 's' : ''} for frontend apps`,
+        )
+      }
+
+      // Apply fixes if any
+      if (Object.keys(allFixes).length > 0) {
+        try {
+          await fetch('/api/wizard/update-env', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              config: allFixes,
+              step: 'auto-fix',
+            }),
+          })
+          // Show the count and descriptions of fixes that were just applied
+          setFixedIssuesCount(totalFixCount)
+          setAppliedFixes(fixDescriptions)
+
+          // After applying fixes, reload configuration without re-validating
+          // The fixes have been saved, so next time the page loads, no issues will be found
+          setTimeout(() => {
+            // Reload configuration without validation after fixes
+            window.location.reload()
+          }, 500)
+        } catch (error) {
+          console.error('Error applying fixes:', error)
+        }
+      } else {
+        // No fixes were needed
+        setFixedIssuesCount(0)
+        setAppliedFixes([])
+      }
+
+      // Client-side validation for remaining issues
+      const isDev =
+        summary.environment === 'dev' || summary.environment === 'development'
+
+      // Only warn about default project name if not in dev
+      if (
+        !isDev &&
+        (!summary.projectName || summary.projectName === 'my_project')
+      ) {
+        issues.push({
+          field: 'projectName',
+          message: 'Project name is using default value',
+          severity: 'warning',
+        })
+      }
+
+      // Only warn about default password in production/staging
+      if (
+        !isDev &&
+        (!summary.databasePassword ||
+          summary.databasePassword === 'nself-dev-password')
+      ) {
+        issues.push({
+          field: 'databasePassword',
+          message:
+            'Database password is using default (insecure for production)',
+          severity: 'warning',
+        })
+      }
+
+      // Check for port conflicts (errors that can't be auto-fixed)
+      const usedPorts = new Map<number, string>()
+
+      // Add default service ports
+      usedPorts.set(5432, 'PostgreSQL')
+      usedPorts.set(8080, 'Hasura')
+      usedPorts.set(4000, 'Auth')
+      usedPorts.set(80, 'Nginx HTTP')
+      usedPorts.set(443, 'Nginx HTTPS')
+
+      // Add optional service ports if enabled
+      if (summary.redisEnabled) usedPorts.set(6379, 'Redis')
+      if (summary.minioEnabled) {
+        usedPorts.set(9000, 'MinIO API')
+        usedPorts.set(9001, 'MinIO Console')
+      }
+      if (summary.mlflowEnabled) usedPorts.set(5000, 'MLflow')
+      if (summary.mailpitEnabled) {
+        usedPorts.set(1025, 'Mailpit SMTP')
+        usedPorts.set(8025, 'Mailpit Web')
+      }
+      if (summary.searchEnabled) usedPorts.set(7700, 'MeiliSearch')
+      if (summary.monitoringEnabled) {
+        usedPorts.set(9090, 'Prometheus')
+        usedPorts.set(3000, 'Grafana')
+        usedPorts.set(3100, 'Loki')
+        usedPorts.set(3200, 'Tempo')
+        usedPorts.set(9093, 'Alertmanager')
+      }
+      if (summary.nadminEnabled) usedPorts.set(3021, 'nself Admin')
+
+      // Auto-fix port conflicts for custom services
+
+      if (summary.customServices.length > 0) {
+        const fixedCustomServices: any[] = []
+
+        summary.customServices.forEach((service, index) => {
+          if (usedPorts.has(service.port)) {
+            // Find next available port starting from 4001
+            let newPort = 4001
+            while (usedPorts.has(newPort)) {
+              newPort++
+            }
+
+            // Create fixed service
+            const fixedService = { ...service, port: newPort }
+            fixedCustomServices.push(fixedService)
+            usedPorts.set(newPort, service.name)
+
+            // Add to fixes
+            portFixes[`CS_${index + 1}`] =
+              `${service.name}:${service.framework}:${newPort}:${service.route || ''}`
+            portFixCount++
+          } else {
+            fixedCustomServices.push(service)
+            usedPorts.set(service.port, service.name)
+          }
+        })
+
+        // If we fixed any ports, update the store
+        if (
+          fixedCustomServices.some(
+            (service, index) =>
+              service.port !== summary.customServices[index]?.port,
+          )
+        ) {
+          try {
+            const { setCustomServices } = useWizardStore.getState()
+            setCustomServices(fixedCustomServices)
+          } catch (error) {
+            console.error('Error updating custom services store:', error)
+          }
+        }
+      }
+
+      // Auto-fix port conflicts for frontend apps
+      if (summary.frontendApps.length > 0) {
+        const fixedFrontendApps: any[] = []
+
+        summary.frontendApps.forEach((app, index) => {
+          if (app.localPort && usedPorts.has(app.localPort)) {
+            // Find next available port starting from 3001
+            let newPort = 3001
+            while (usedPorts.has(newPort)) {
+              newPort++
+            }
+
+            // Create fixed app
+            const fixedApp = { ...app, localPort: newPort }
+            fixedFrontendApps.push(fixedApp)
+            usedPorts.set(newPort, app.displayName || 'Frontend App')
+
+            // Add to fixes
+            portFixes[`FRONTEND_APP_${index + 1}_PORT`] = newPort.toString()
+            portFixCount++
+          } else {
+            fixedFrontendApps.push(app)
+            if (app.localPort) {
+              usedPorts.set(app.localPort, app.displayName || 'Frontend App')
+            }
+          }
+        })
+
+        // If we fixed any ports, update the store
+        if (
+          fixedFrontendApps.some(
+            (app, index) =>
+              app.localPort !== summary.frontendApps[index]?.localPort,
+          )
+        ) {
+          try {
+            const { setFrontendApps } = useWizardStore.getState()
+            setFrontendApps(fixedFrontendApps)
+          } catch (error) {
+            console.error('Error updating frontend apps store:', error)
+          }
+        }
+      }
+
+      setValidationIssues(issues)
+      setValidating(false)
+      setAutoFixing(false)
+    },
+    [],
+  )
+
+  const loadConfiguration = useCallback(
+    async (skipValidation = false) => {
+      try {
+        const response = await fetch('/api/wizard/init')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.config) {
+            // Merge all config data including raw env vars
+            const fullConfig: ConfigSummary = {
+              projectName:
+                data.config.projectName ||
+                data.config.PROJECT_NAME ||
+                'my_project',
+              environment:
+                data.config.environment || data.config.ENV || 'development',
+              domain:
+                data.config.domain || data.config.BASE_DOMAIN || 'localhost',
+              databaseName:
+                data.config.databaseName || data.config.POSTGRES_DB || 'nself',
+              databasePassword:
+                data.config.databasePassword ||
+                data.config.POSTGRES_PASSWORD ||
+                '',
+              hasuraEnabled: data.config.hasuraEnabled !== false, // Always true for required service
+              authEnabled: data.config.authEnabled !== false, // Always true for required service
+              nadminEnabled:
+                data.config.nadminEnabled ||
+                data.config.NSELF_ADMIN_ENABLED === 'true' ||
+                data.config.adminEnabled ||
+                false,
+              redisEnabled:
+                data.config.redisEnabled ||
+                data.config.REDIS_ENABLED === 'true',
+              minioEnabled:
+                data.config.minioEnabled ||
+                data.config.STORAGE_ENABLED === 'true' ||
+                data.config.MINIO_ENABLED === 'true',
+              mlflowEnabled:
+                data.config.mlflowEnabled ||
+                data.config.MLFLOW_ENABLED === 'true',
+              mailpitEnabled:
+                data.config.mailpitEnabled ||
+                data.config.MAILPIT_ENABLED === 'true',
+              searchEnabled:
+                data.config.searchEnabled ||
+                data.config.SEARCH_ENABLED === 'true',
+              searchEngine:
+                data.config.searchEngine ||
+                data.config.SEARCH_ENGINE ||
+                'meilisearch',
+              functionsEnabled:
+                data.config.functionsEnabled ||
+                data.config.FUNCTIONS_ENABLED === 'true',
+              monitoringEnabled:
+                data.config.monitoringEnabled ||
+                data.config.MONITORING_ENABLED === 'true',
+              // Load individual monitoring service flags
+              prometheusEnabled: data.config.PROMETHEUS_ENABLED === 'true',
+              grafanaEnabled: data.config.GRAFANA_ENABLED === 'true',
+              lokiEnabled: data.config.LOKI_ENABLED === 'true',
+              tempoEnabled: data.config.TEMPO_ENABLED === 'true',
+              alertmanagerEnabled: data.config.ALERTMANAGER_ENABLED === 'true',
+              nodeExporterEnabled: data.config.NODE_EXPORTER_ENABLED === 'true',
+              postgresExporterEnabled:
+                data.config.POSTGRES_EXPORTER_ENABLED === 'true',
+              cadvisorEnabled: data.config.CADVISOR_ENABLED === 'true',
+              customServices:
+                data.config.customServices || data.config.userServices || [],
+              frontendApps: data.config.frontendApps || [],
+              backupEnabled:
+                data.config.backupEnabled ||
+                data.config.BACKUP_ENABLED === 'true' ||
+                data.config.DB_BACKUP_ENABLED === 'true',
+              ...data.config, // Include all raw data
+            }
+            setConfig(fullConfig)
+            // Run sanity check after loading (unless we're reloading after fixes)
+            if (!skipValidation) {
+              validateConfiguration(fullConfig, data.config)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load configuration:', error)
+      } finally {
+        setDataLoaded(true)
+      }
+    },
+    [validateConfiguration],
+  )
+
+  const checkAndLoadConfiguration = useCallback(async () => {
     // First check if env file exists
     try {
       const statusRes = await fetch('/api/project/status')
@@ -112,382 +493,12 @@ export default function InitStep6() {
 
     // Load configuration if env file exists
     loadConfiguration()
-  }
+  }, [router, loadConfiguration])
 
-  const loadConfiguration = async (skipValidation = false) => {
-    try {
-      const response = await fetch('/api/wizard/init')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.config) {
-          // Merge all config data including raw env vars
-          const fullConfig: ConfigSummary = {
-            projectName:
-              data.config.projectName ||
-              data.config.PROJECT_NAME ||
-              'my_project',
-            environment:
-              data.config.environment || data.config.ENV || 'development',
-            domain:
-              data.config.domain || data.config.BASE_DOMAIN || 'localhost',
-            databaseName:
-              data.config.databaseName || data.config.POSTGRES_DB || 'nself',
-            databasePassword:
-              data.config.databasePassword ||
-              data.config.POSTGRES_PASSWORD ||
-              '',
-            hasuraEnabled: data.config.hasuraEnabled !== false, // Always true for required service
-            authEnabled: data.config.authEnabled !== false, // Always true for required service
-            nadminEnabled:
-              data.config.nadminEnabled ||
-              data.config.NSELF_ADMIN_ENABLED === 'true' ||
-              data.config.adminEnabled ||
-              false,
-            redisEnabled:
-              data.config.redisEnabled || data.config.REDIS_ENABLED === 'true',
-            minioEnabled:
-              data.config.minioEnabled ||
-              data.config.STORAGE_ENABLED === 'true' ||
-              data.config.MINIO_ENABLED === 'true',
-            mlflowEnabled:
-              data.config.mlflowEnabled ||
-              data.config.MLFLOW_ENABLED === 'true',
-            mailpitEnabled:
-              data.config.mailpitEnabled ||
-              data.config.MAILPIT_ENABLED === 'true',
-            searchEnabled:
-              data.config.searchEnabled ||
-              data.config.SEARCH_ENABLED === 'true',
-            searchEngine:
-              data.config.searchEngine ||
-              data.config.SEARCH_ENGINE ||
-              'meilisearch',
-            functionsEnabled:
-              data.config.functionsEnabled ||
-              data.config.FUNCTIONS_ENABLED === 'true',
-            monitoringEnabled:
-              data.config.monitoringEnabled ||
-              data.config.MONITORING_ENABLED === 'true',
-            // Load individual monitoring service flags
-            prometheusEnabled: data.config.PROMETHEUS_ENABLED === 'true',
-            grafanaEnabled: data.config.GRAFANA_ENABLED === 'true',
-            lokiEnabled: data.config.LOKI_ENABLED === 'true',
-            tempoEnabled: data.config.TEMPO_ENABLED === 'true',
-            alertmanagerEnabled: data.config.ALERTMANAGER_ENABLED === 'true',
-            nodeExporterEnabled: data.config.NODE_EXPORTER_ENABLED === 'true',
-            postgresExporterEnabled:
-              data.config.POSTGRES_EXPORTER_ENABLED === 'true',
-            cadvisorEnabled: data.config.CADVISOR_ENABLED === 'true',
-            customServices:
-              data.config.customServices || data.config.userServices || [],
-            frontendApps: data.config.frontendApps || [],
-            backupEnabled:
-              data.config.backupEnabled ||
-              data.config.BACKUP_ENABLED === 'true' ||
-              data.config.DB_BACKUP_ENABLED === 'true',
-            ...data.config, // Include all raw data
-          }
-          setConfig(fullConfig)
-          // Run sanity check after loading (unless we're reloading after fixes)
-          if (!skipValidation) {
-            await validateConfiguration(fullConfig, data.config)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load configuration:', error)
-    } finally {
-      setDataLoaded(true)
-    }
-  }
-
-  const validateConfiguration = async (
-    summary: ConfigSummary,
-    rawConfig: any,
-  ) => {
-    setValidating(true)
-    setAutoFixing(true)
-    const issues: ValidationIssue[] = []
-    let fixCount = 0
-    let portFixCount = 0
-
-    // Auto-fix configuration issues
-    const fixes: Record<string, string> = {}
-    const portFixes: Record<string, string> = {}
-    const fixDescriptions: string[] = []
-
-    try {
-      // Call validation API endpoint
-      const response = await fetch('/api/wizard/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ config: rawConfig }),
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        if (result.issues) {
-          // Auto-fix known issues ONLY if the values don't already exist
-          for (const issue of result.issues) {
-            if (
-              issue.field === 'HASURA_METADATA_DATABASE_URL' &&
-              !rawConfig.HASURA_METADATA_DATABASE_URL
-            ) {
-              // Auto-construct database URL
-              const dbUser =
-                rawConfig.POSTGRES_USER || rawConfig.postgresUser || 'postgres'
-              const dbPass =
-                rawConfig.POSTGRES_PASSWORD ||
-                rawConfig.databasePassword ||
-                'nself-dev-password'
-              const dbName =
-                rawConfig.POSTGRES_DB || rawConfig.databaseName || 'nself'
-              fixes.HASURA_METADATA_DATABASE_URL = `postgres://${dbUser}:${dbPass}@postgres:5432/${dbName}`
-              fixDescriptions.push(
-                'Added HASURA_METADATA_DATABASE_URL for database connection',
-              )
-              fixCount++
-            } else if (issue.field === 'minio' && !rawConfig.MINIO_ROOT_USER) {
-              fixes.MINIO_ROOT_USER = 'minioadmin'
-              fixes.MINIO_ROOT_PASSWORD = 'minioadmin-password'
-              fixDescriptions.push(
-                'Added MinIO credentials for storage service',
-              )
-              fixCount++
-            } else if (
-              issue.field === 'search' &&
-              !rawConfig.MEILI_MASTER_KEY
-            ) {
-              fixes.MEILI_MASTER_KEY = 'meilisearch-master-key-32-chars'
-              fixDescriptions.push(
-                'Added MeiliSearch master key for search service',
-              )
-              fixCount++
-            } else if (
-              issue.field === 'grafana' &&
-              !rawConfig.GRAFANA_ADMIN_PASSWORD
-            ) {
-              fixes.GRAFANA_ADMIN_PASSWORD = 'grafana-admin-password'
-              fixDescriptions.push(
-                'Added Grafana admin password for monitoring',
-              )
-              fixCount++
-            } else if (
-              issue.field === 'monitoring' &&
-              issue.message.includes('TEMPO_ENABLED') &&
-              rawConfig.TEMPO_ENABLED !== 'true'
-            ) {
-              fixes.TEMPO_ENABLED = 'true'
-              if (rawConfig.ALERTMANAGER_ENABLED !== 'true') {
-                fixes.ALERTMANAGER_ENABLED = 'true'
-              }
-              fixDescriptions.push(
-                'Enabled missing monitoring services (Tempo, Alertmanager)',
-              )
-              fixCount++
-            } else {
-              // Can't auto-fix this issue
-              issues.push(issue)
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Validation error:', error)
-    }
-
-    // Combine all fixes (config fixes + port fixes)
-    const allFixes = { ...fixes, ...portFixes }
-    const totalFixCount = fixCount + portFixCount
-
-    // Combine fix descriptions
-    if (portFixCount > 0) {
-      fixDescriptions.push(
-        `Fixed ${portFixCount} port conflict${portFixCount > 1 ? 's' : ''} for frontend apps`,
-      )
-    }
-
-    // Apply fixes if any
-    if (Object.keys(allFixes).length > 0) {
-      try {
-        await fetch('/api/wizard/update-env', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            config: allFixes,
-            step: 'auto-fix',
-          }),
-        })
-        // Show the count and descriptions of fixes that were just applied
-        setFixedIssuesCount(totalFixCount)
-        setAppliedFixes(fixDescriptions)
-
-        // After applying fixes, reload configuration without re-validating
-        // The fixes have been saved, so next time the page loads, no issues will be found
-        setTimeout(() => {
-          loadConfiguration(true) // Skip validation on reload after fixes
-        }, 500)
-      } catch (error) {
-        console.error('Error applying fixes:', error)
-      }
-    } else {
-      // No fixes were needed
-      setFixedIssuesCount(0)
-      setAppliedFixes([])
-    }
-
-    // Client-side validation for remaining issues
-    const isDev =
-      summary.environment === 'dev' || summary.environment === 'development'
-
-    // Only warn about default project name if not in dev
-    if (
-      !isDev &&
-      (!summary.projectName || summary.projectName === 'my_project')
-    ) {
-      issues.push({
-        field: 'projectName',
-        message: 'Project name is using default value',
-        severity: 'warning',
-      })
-    }
-
-    // Only warn about default password in production/staging
-    if (
-      !isDev &&
-      (!summary.databasePassword ||
-        summary.databasePassword === 'nself-dev-password')
-    ) {
-      issues.push({
-        field: 'databasePassword',
-        message: 'Database password is using default (insecure for production)',
-        severity: 'warning',
-      })
-    }
-
-    // Check for port conflicts (errors that can't be auto-fixed)
-    const usedPorts = new Map<number, string>()
-
-    // Add default service ports
-    usedPorts.set(5432, 'PostgreSQL')
-    usedPorts.set(8080, 'Hasura')
-    usedPorts.set(4000, 'Auth')
-    usedPorts.set(80, 'Nginx HTTP')
-    usedPorts.set(443, 'Nginx HTTPS')
-
-    // Add optional service ports if enabled
-    if (summary.redisEnabled) usedPorts.set(6379, 'Redis')
-    if (summary.minioEnabled) {
-      usedPorts.set(9000, 'MinIO API')
-      usedPorts.set(9001, 'MinIO Console')
-    }
-    if (summary.mlflowEnabled) usedPorts.set(5000, 'MLflow')
-    if (summary.mailpitEnabled) {
-      usedPorts.set(1025, 'Mailpit SMTP')
-      usedPorts.set(8025, 'Mailpit Web')
-    }
-    if (summary.searchEnabled) usedPorts.set(7700, 'MeiliSearch')
-    if (summary.monitoringEnabled) {
-      usedPorts.set(9090, 'Prometheus')
-      usedPorts.set(3000, 'Grafana')
-      usedPorts.set(3100, 'Loki')
-      usedPorts.set(3200, 'Tempo')
-      usedPorts.set(9093, 'Alertmanager')
-    }
-    if (summary.nadminEnabled) usedPorts.set(3021, 'nself Admin')
-
-    // Auto-fix port conflicts for custom services
-
-    if (summary.customServices.length > 0) {
-      const fixedCustomServices: any[] = []
-
-      summary.customServices.forEach((service, index) => {
-        if (usedPorts.has(service.port)) {
-          // Find next available port starting from 4001
-          let newPort = 4001
-          while (usedPorts.has(newPort)) {
-            newPort++
-          }
-
-          // Create fixed service
-          const fixedService = { ...service, port: newPort }
-          fixedCustomServices.push(fixedService)
-          usedPorts.set(newPort, service.name)
-
-          // Add to fixes
-          portFixes[`CS_${index + 1}`] =
-            `${service.name}:${service.framework}:${newPort}:${service.route || ''}`
-          portFixCount++
-        } else {
-          fixedCustomServices.push(service)
-          usedPorts.set(service.port, service.name)
-        }
-      })
-
-      // If we fixed any ports, update the store
-      if (
-        fixedCustomServices.some(
-          (service, index) =>
-            service.port !== summary.customServices[index]?.port,
-        )
-      ) {
-        try {
-          const { setCustomServices } = useWizardStore.getState()
-          setCustomServices(fixedCustomServices)
-        } catch (error) {
-          console.error('Error updating custom services store:', error)
-        }
-      }
-    }
-
-    // Auto-fix port conflicts for frontend apps
-    if (summary.frontendApps.length > 0) {
-      const fixedFrontendApps: any[] = []
-
-      summary.frontendApps.forEach((app, index) => {
-        if (app.localPort && usedPorts.has(app.localPort)) {
-          // Find next available port starting from 3001
-          let newPort = 3001
-          while (usedPorts.has(newPort)) {
-            newPort++
-          }
-
-          // Create fixed app
-          const fixedApp = { ...app, localPort: newPort }
-          fixedFrontendApps.push(fixedApp)
-          usedPorts.set(newPort, app.displayName || 'Frontend App')
-
-          // Add to fixes
-          portFixes[`FRONTEND_APP_${index + 1}_PORT`] = newPort.toString()
-          portFixCount++
-        } else {
-          fixedFrontendApps.push(app)
-          if (app.localPort) {
-            usedPorts.set(app.localPort, app.displayName || 'Frontend App')
-          }
-        }
-      })
-
-      // If we fixed any ports, update the store
-      if (
-        fixedFrontendApps.some(
-          (app, index) =>
-            app.localPort !== summary.frontendApps[index]?.localPort,
-        )
-      ) {
-        try {
-          const { setFrontendApps } = useWizardStore.getState()
-          setFrontendApps(fixedFrontendApps)
-        } catch (error) {
-          console.error('Error updating frontend apps store:', error)
-        }
-      }
-    }
-
-    setValidationIssues(issues)
-    setValidating(false)
-    setAutoFixing(false)
-  }
+  // Load configuration from .env.local on mount
+  useEffect(() => {
+    checkAndLoadConfiguration()
+  }, [checkAndLoadConfiguration])
 
   const handleBack = () => {
     router.push('/init/5')

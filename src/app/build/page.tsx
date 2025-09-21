@@ -2,7 +2,7 @@
 
 import { AlertCircle, CheckCircle, Hammer } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 interface BuildStep {
   name: string
@@ -42,57 +42,6 @@ export default function BuildPage() {
     }).catch((e) => console.error('Debug log failed:', e))
   }
 
-  useEffect(() => {
-    // If coming from wizard, immediately start the build without any checks
-    if (fromWizard) {
-      debugLog('Build page: Coming from wizard, starting build immediately')
-      startBuild()
-      return
-    }
-
-    // Otherwise, check project status
-    const checkAndBuild = async () => {
-      debugLog('Build page: useEffect triggered', { fromWizard })
-
-      try {
-        debugLog('Build page: Checking project status...')
-        const statusRes = await fetch('/api/project/status')
-
-        if (statusRes.ok) {
-          const statusData = await statusRes.json()
-          debugLog('Build page: Status data received', statusData)
-
-          // If no env file exists, redirect to init
-          if (!statusData.hasEnvFile) {
-            debugLog('Build page: No env file detected, redirecting to /init')
-            router.push('/init')
-            return
-          }
-
-          // If project has env but no docker-compose, it needs building
-          if (statusData.hasEnvFile && !statusData.hasDockerCompose) {
-            debugLog('Build page: Project needs building, starting build process')
-            startBuild()
-            return
-          }
-
-          // If project is already built, redirect to start
-          if (statusData.hasDockerCompose) {
-            debugLog('Build page: Project already built, redirecting to /start')
-            router.push('/start')
-            return
-          }
-        }
-      } catch (error) {
-        debugLog('Build page: Error checking project status', { error: error.message })
-        // On error, if no docker-compose exists, start build
-        startBuild()
-      }
-    }
-
-    checkAndBuild()
-  }, [fromWizard])
-
   const updateStep = (
     index: number,
     status: BuildStep['status'],
@@ -105,7 +54,7 @@ export default function BuildPage() {
     })
   }
 
-  const startBuild = async () => {
+  const startBuild = useCallback(async () => {
     // Prevent multiple builds
     if (buildStarted) {
       debugLog('Build page: Build already started, skipping')
@@ -239,10 +188,65 @@ export default function BuildPage() {
         router.push('/init/1')
       }, 3000)
     }
-  }
+  }, [buildStarted, currentStep, router])
 
   const simulateDelay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms))
+
+  useEffect(() => {
+    // If coming from wizard, immediately start the build without any checks
+    if (fromWizard) {
+      debugLog('Build page: Coming from wizard, starting build immediately')
+      startBuild()
+      return
+    }
+
+    // Otherwise, check project status
+    const checkAndBuild = async () => {
+      debugLog('Build page: useEffect triggered', { fromWizard })
+
+      try {
+        debugLog('Build page: Checking project status...')
+        const statusRes = await fetch('/api/project/status')
+
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          debugLog('Build page: Status data received', statusData)
+
+          // If no env file exists, redirect to init
+          if (!statusData.hasEnvFile) {
+            debugLog('Build page: No env file detected, redirecting to /init')
+            router.push('/init')
+            return
+          }
+
+          // If project has env but no docker-compose, it needs building
+          if (statusData.hasEnvFile && !statusData.hasDockerCompose) {
+            debugLog(
+              'Build page: Project needs building, starting build process',
+            )
+            startBuild()
+            return
+          }
+
+          // If project is already built, redirect to start
+          if (statusData.hasDockerCompose) {
+            debugLog('Build page: Project already built, redirecting to /start')
+            router.push('/start')
+            return
+          }
+        }
+      } catch (error) {
+        debugLog('Build page: Error checking project status', {
+          error: error instanceof Error ? error.message : String(error),
+        })
+        // On error, if no docker-compose exists, start build
+        startBuild()
+      }
+    }
+
+    checkAndBuild()
+  }, [fromWizard, router, startBuild])
 
   const getStepIcon = (step: BuildStep) => {
     if (step.status === 'completed') {

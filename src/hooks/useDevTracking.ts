@@ -17,8 +17,10 @@ export function useDevTracking(componentName: string, props?: any) {
       })
     }
 
+    // Capture the ref at effect setup time to avoid stale closure warning
+    const renderCountRef = renderCount
     return () => {
-      const totalRenders = renderCount.current
+      const totalRenders = renderCountRef.current
       if (typeof window !== 'undefined' && (window as any).devLogger) {
         const devLogger = (window as any).devLogger
         devLogger.log('debug', 'render', `${componentName} unmounted`, {

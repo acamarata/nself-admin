@@ -729,8 +729,8 @@ export default function InitStep4() {
             <div className="space-y-3 text-xs text-blue-700 dark:text-blue-400">
               <p>
                 Add custom backend services with your preferred languages and
-                frameworks. Each service runs in its own container with automatic
-                health checks, logging, and orchestration.
+                frameworks. Each service runs in its own container with
+                automatic health checks, logging, and orchestration.
               </p>
 
               <div>
@@ -738,9 +738,18 @@ export default function InitStep4() {
                   Route Configuration:
                 </p>
                 <ul className="ml-4 space-y-0.5">
-                  <li>• <strong>No route:</strong> Internal-only service (workers, queues, background jobs)</li>
-                  <li>• <strong>Single word (e.g., "api"):</strong> Creates subdomain: api.{baseDomain}</li>
-                  <li>• <strong>Full domain:</strong> Used as-is for external webhooks or custom domains</li>
+                  <li>
+                    • <strong>No route:</strong> Internal-only service (workers,
+                    queues, background jobs)
+                  </li>
+                  <li>
+                    • <strong>Single word (e.g., &quot;api&quot;):</strong>{' '}
+                    Creates subdomain: api.{baseDomain}
+                  </li>
+                  <li>
+                    • <strong>Full domain:</strong> Used as-is for external
+                    webhooks or custom domains
+                  </li>
                 </ul>
               </div>
 
@@ -763,77 +772,81 @@ export default function InitStep4() {
                     Each framework provides a production-ready backend
                     API/microservice template with best practices:
                   </p>
-            {Object.entries(frameworksForDropdown).map(
-              ([category, frameworks]) => (
-                <div key={category} className="mb-3">
-                  <h4 className="mb-1 font-semibold text-blue-900 dark:text-blue-200">
-                    {category}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-1">
-                    {frameworks.map((fw, idx) => {
-                      const tooltip = frameworkTooltips[fw.value]
-                      const tooltipId = `${category}-${fw.value}`
-                      return (
-                        <div
-                          key={fw.value}
-                          className="flex items-center gap-1 text-xs text-blue-700 dark:text-blue-300"
-                        >
-                          <span>• {fw.label}</span>
-                          {/* Info icon with tooltip */}
-                          <span
-                            className="relative inline-block cursor-help"
-                            onMouseEnter={() => setActiveTooltip(tooltipId)}
-                            onMouseLeave={() => setActiveTooltip(null)}
-                          >
-                            <span className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
-                              ⓘ
-                            </span>
-                            {/* Tooltip on hover - only show if this is the active tooltip */}
-                            {activeTooltip === tooltipId && (
-                              <div className="animate-fadeIn pointer-events-none absolute bottom-full left-1/2 z-[100] mb-2 w-64 -translate-x-1/2 rounded-lg bg-zinc-900 p-2 text-xs text-white shadow-xl">
-                                <div className="mb-2">
-                                  {tooltip?.description || fw.description}
-                                </div>
-                                {tooltip?.performance > 0 && (
-                                  <div className="border-t border-zinc-700 pt-2">
-                                    <span className="font-semibold">
-                                      Performance Score:{' '}
-                                    </span>
-                                    <span
-                                      className={`font-bold ${
-                                        tooltip.performance >= 9
-                                          ? 'text-green-400'
-                                          : tooltip.performance >= 7
-                                            ? 'text-yellow-400'
-                                            : tooltip.performance >= 5
-                                              ? 'text-orange-400'
-                                              : 'text-red-400'
-                                      }`}
-                                    >
-                                      {Number.isInteger(tooltip.performance)
-                                        ? tooltip.performance
-                                        : tooltip.performance.toFixed(1)}
-                                      /10
-                                    </span>
-                                  </div>
-                                )}
-                                {tooltip?.performance === 0 && (
-                                  <div className="border-t border-zinc-700 pt-2 text-zinc-400">
-                                    Performance varies by implementation
-                                  </div>
-                                )}
-                                {/* Arrow pointing down */}
-                                <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 transform bg-zinc-900"></div>
+                  {Object.entries(frameworksForDropdown).map(
+                    ([category, frameworks]) => (
+                      <div key={category} className="mb-3">
+                        <h4 className="mb-1 font-semibold text-blue-900 dark:text-blue-200">
+                          {category}
+                        </h4>
+                        <div className="grid grid-cols-2 gap-1">
+                          {frameworks.map((fw, idx) => {
+                            const tooltip = frameworkTooltips[fw.value]
+                            const tooltipId = `${category}-${fw.value}`
+                            return (
+                              <div
+                                key={fw.value}
+                                className="flex items-center gap-1 text-xs text-blue-700 dark:text-blue-300"
+                              >
+                                <span>• {fw.label}</span>
+                                {/* Info icon with tooltip */}
+                                <span
+                                  className="relative inline-block cursor-help"
+                                  onMouseEnter={() =>
+                                    setActiveTooltip(tooltipId)
+                                  }
+                                  onMouseLeave={() => setActiveTooltip(null)}
+                                >
+                                  <span className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300">
+                                    ⓘ
+                                  </span>
+                                  {/* Tooltip on hover - only show if this is the active tooltip */}
+                                  {activeTooltip === tooltipId && (
+                                    <div className="animate-fadeIn pointer-events-none absolute bottom-full left-1/2 z-[100] mb-2 w-64 -translate-x-1/2 rounded-lg bg-zinc-900 p-2 text-xs text-white shadow-xl">
+                                      <div className="mb-2">
+                                        {tooltip?.description || fw.description}
+                                      </div>
+                                      {tooltip?.performance > 0 && (
+                                        <div className="border-t border-zinc-700 pt-2">
+                                          <span className="font-semibold">
+                                            Performance Score:{' '}
+                                          </span>
+                                          <span
+                                            className={`font-bold ${
+                                              tooltip.performance >= 9
+                                                ? 'text-green-400'
+                                                : tooltip.performance >= 7
+                                                  ? 'text-yellow-400'
+                                                  : tooltip.performance >= 5
+                                                    ? 'text-orange-400'
+                                                    : 'text-red-400'
+                                            }`}
+                                          >
+                                            {Number.isInteger(
+                                              tooltip.performance,
+                                            )
+                                              ? tooltip.performance
+                                              : tooltip.performance.toFixed(1)}
+                                            /10
+                                          </span>
+                                        </div>
+                                      )}
+                                      {tooltip?.performance === 0 && (
+                                        <div className="border-t border-zinc-700 pt-2 text-zinc-400">
+                                          Performance varies by implementation
+                                        </div>
+                                      )}
+                                      {/* Arrow pointing down */}
+                                      <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 transform bg-zinc-900"></div>
+                                    </div>
+                                  )}
+                                </span>
                               </div>
-                            )}
-                          </span>
+                            )
+                          })}
                         </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              ),
-            )}
+                      </div>
+                    ),
+                  )}
                 </div>
               )}
             </div>

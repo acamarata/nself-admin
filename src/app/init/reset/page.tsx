@@ -2,7 +2,7 @@
 
 import { AlertCircle, CheckCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export default function InitReset() {
   const router = useRouter()
@@ -13,11 +13,7 @@ export default function InitReset() {
   const [errorMessage, setErrorMessage] = useState('')
   const [details, setDetails] = useState<string[]>([])
 
-  useEffect(() => {
-    handleReset()
-  }, [])
-
-  const handleReset = async () => {
+  const handleReset = useCallback(async () => {
     try {
       // Show initial steps
       setMessage('Preparing to reset project...')
@@ -105,7 +101,11 @@ export default function InitReset() {
         router.push('/init')
       }, 2000)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    handleReset()
+  }, [handleReset])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-black dark:to-zinc-950">

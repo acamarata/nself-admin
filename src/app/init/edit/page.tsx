@@ -2,7 +2,7 @@
 
 import { AlertCircle, CheckCircle, FileText } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export default function InitEdit() {
   const router = useRouter()
@@ -12,11 +12,7 @@ export default function InitEdit() {
   const [message, setMessage] = useState('Resetting project for editing...')
   const [errorMessage, setErrorMessage] = useState('')
 
-  useEffect(() => {
-    handleEdit()
-  }, [])
-
-  const handleEdit = async () => {
+  const handleEdit = useCallback(async () => {
     try {
       setMessage('Preserving your configuration...')
 
@@ -73,7 +69,11 @@ export default function InitEdit() {
         router.push('/start')
       }, 2000)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    handleEdit()
+  }, [handleEdit])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-black dark:to-zinc-950">
