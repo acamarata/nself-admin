@@ -260,10 +260,9 @@ async function getPermissions() {
 
       const actions = ['select', 'insert', 'update', 'delete'] as const
       actions.forEach((action) => {
-        const perms =
-          table[`${action}_permissions` as keyof TableMeta] as
-            | Array<{ role: string; permission: unknown }>
-            | undefined
+        const perms = table[`${action}_permissions` as keyof TableMeta] as
+          | Array<{ role: string; permission: unknown }>
+          | undefined
         if (perms) {
           perms.forEach((perm) => {
             tablePermissions.push({

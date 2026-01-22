@@ -1,5 +1,5 @@
-import path from 'path'
 import os from 'os'
+import path from 'path'
 
 /**
  * Project path utilities for nself-admin

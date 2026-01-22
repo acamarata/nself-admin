@@ -306,7 +306,10 @@ class BackgroundDataService {
             await config.fetcher()
             config.lastFetch = Date.now()
           } catch (err) {
-            console.warn(`[BackgroundDataService] Error updating interval for ${key}:`, err)
+            console.warn(
+              `[BackgroundDataService] Error updating interval for ${key}:`,
+              err,
+            )
           }
         }, interval)
 
@@ -331,7 +334,10 @@ class BackgroundDataService {
               await config.fetcher()
               config.lastFetch = Date.now()
             } catch (err) {
-              console.warn(`[BackgroundDataService] Error during setEnabled for ${key}:`, err)
+              console.warn(
+                `[BackgroundDataService] Error during setEnabled for ${key}:`,
+                err,
+              )
             }
           }, config.interval)
 

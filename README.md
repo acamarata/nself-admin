@@ -34,12 +34,12 @@ Open http://localhost:3021
 
 ## Stack
 
-| Core | Optional |
-|------|----------|
-| PostgreSQL | Redis |
+| Core           | Optional   |
+| -------------- | ---------- |
+| PostgreSQL     | Redis      |
 | Hasura GraphQL | MinIO (S3) |
-| Auth Service | Mailpit |
-| Nginx | Monitoring |
+| Auth Service   | Mailpit    |
+| Nginx          | Monitoring |
 
 ## Documentation
 

@@ -19,14 +19,14 @@
 
 ### Why nself Admin?
 
-| Feature | Description |
-|---------|-------------|
-| **Zero-Config Start** | Launch a complete development stack in under 5 minutes |
-| **Intelligent Wizard** | 6-step configuration with smart defaults and validation |
-| **Real-Time Monitoring** | Live metrics, logs, and health checks for all services |
-| **Docker-First Design** | Runs in a container with zero footprint on your host |
-| **40+ Templates** | Pre-configured for Node.js, Python, Go, Rust, and more |
-| **Multi-Environment** | Manage dev, staging, and production configs |
+| Feature                  | Description                                             |
+| ------------------------ | ------------------------------------------------------- |
+| **Zero-Config Start**    | Launch a complete development stack in under 5 minutes  |
+| **Intelligent Wizard**   | 6-step configuration with smart defaults and validation |
+| **Real-Time Monitoring** | Live metrics, logs, and health checks for all services  |
+| **Docker-First Design**  | Runs in a container with zero footprint on your host    |
+| **40+ Templates**        | Pre-configured for Node.js, Python, Go, Rust, and more  |
+| **Multi-Environment**    | Manage dev, staging, and production configs             |
 
 ---
 
@@ -67,14 +67,14 @@
 
 ## Technology Stack
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 16, React 19, TypeScript |
-| Styling | Tailwind CSS v4 |
-| State | Zustand |
-| Database | LokiJS (embedded) |
-| Container | Docker API via Dockerode |
-| Real-time | WebSockets, Server-Sent Events |
+| Layer     | Technology                       |
+| --------- | -------------------------------- |
+| Frontend  | Next.js 16, React 19, TypeScript |
+| Styling   | Tailwind CSS v4                  |
+| State     | Zustand                          |
+| Database  | LokiJS (embedded)                |
+| Container | Docker API via Dockerode         |
+| Real-time | WebSockets, Server-Sent Events   |
 
 ---
 

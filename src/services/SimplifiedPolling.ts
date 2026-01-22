@@ -102,7 +102,10 @@ class SimplifiedPollingService {
             })
           }
         } catch (e) {
-          console.warn('[SimplifiedPolling] Error parsing containers response:', e)
+          console.warn(
+            '[SimplifiedPolling] Error parsing containers response:',
+            e,
+          )
         }
       }
 

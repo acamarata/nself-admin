@@ -372,7 +372,10 @@ export class DockerAPICollector extends EventEmitter {
         this.statsStreams.delete(containerId)
       })
     } catch (error) {
-      console.warn(`[DockerAPICollector] Error starting stats stream for ${containerId}:`, error)
+      console.warn(
+        `[DockerAPICollector] Error starting stats stream for ${containerId}:`,
+        error,
+      )
     }
   }
 
