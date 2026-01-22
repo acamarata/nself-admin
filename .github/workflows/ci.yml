@@ -17,8 +17,7 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        # Uses packageManager field from package.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -49,8 +48,7 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        # Uses packageManager field from package.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -74,8 +72,7 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        # Uses packageManager field from package.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -148,8 +145,7 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
+        # Uses packageManager field from package.json
 
       - name: Run pnpm audit
         run: pnpm audit --audit-level=high || true
