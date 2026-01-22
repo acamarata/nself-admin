@@ -86,3 +86,6 @@ minio-data/
 # Temporary files
 .tmp/
 tmp/
+
+# Claude session continuation
+next.md

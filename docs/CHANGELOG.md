@@ -5,7 +5,44 @@ All notable changes to nself-admin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.5] - 2026-01-22
+## [0.0.6] - 2026-01-22
+
+### Added
+
+- **SSL Configuration Page** (`/config/ssl`)
+  - Certificate status display (mode, validity, expiry)
+  - Local certificate generation via mkcert integration
+  - Let's Encrypt configuration support
+  - Trust store installation guide with OS-specific instructions
+- **Centralized Constants** (`src/lib/constants.ts`)
+  - All port definitions (ADMIN: 3021, LOKI: 3100, etc.)
+  - Version information for dynamic display
+- **Comprehensive Roadmap** (`docs/ROADMAP.md`)
+  - Detailed plans for v0.0.7 through v0.1.0
+  - Aligned with nself CLI v0.4.3-v0.5.0 release schedule
+  - Technical architecture notes with TypeScript interfaces
+  - Multi-environment deployment considerations
+
+### Changed
+
+- Login page now displays dynamic version from constants (was hardcoded v0.3.9)
+- Standardized error response format across all 30+ API routes
+
+### Fixed
+
+- **TypeScript Error Handling** - Fixed 30+ API routes with proper error handling
+  - Changed `error?.message` and `error.message` patterns to proper type checking
+  - Pattern: `error instanceof Error ? error.message : 'Unknown error'`
+- **Promise Typing** - Fixed `Promise<Response>` return type in SSL generate-local route
+- **File System Errors** - Added `NodeJS.ErrnoException` typing for file operations
+
+### Technical
+
+- 45 files changed, 2,362 insertions(+), 264 deletions(-)
+- New API routes: `/api/config/ssl/*` (4 endpoints)
+- Docker image: `acamarata/nself-admin:0.0.6`
+
+## [0.0.5] - 2026-01-21
 
 ### Added
 
