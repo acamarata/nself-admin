@@ -135,7 +135,9 @@ export class DockerAPICollector extends EventEmitter {
     for (const [id, stream] of this.statsStreams) {
       try {
         stream.destroy()
-      } catch (error) {}
+      } catch (error) {
+        // Ignore errors when destroying streams - stream may already be closed
+      }
     }
     this.statsStreams.clear()
 
@@ -184,7 +186,9 @@ export class DockerAPICollector extends EventEmitter {
       }
 
       this.emit('systemInfo', this.systemInfo)
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[DockerAPICollector] Error loading system info:', error)
+    }
   }
 
   /**
@@ -231,7 +235,9 @@ export class DockerAPICollector extends EventEmitter {
 
       const containerList = Array.from(this.containers.values())
       this.emit('containers', containerList)
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[DockerAPICollector] Error loading containers:', error)
+    }
   }
 
   /**
@@ -258,7 +264,9 @@ export class DockerAPICollector extends EventEmitter {
             try {
               const event = JSON.parse(line)
               this.handleDockerEvent(event)
-            } catch (error) {}
+            } catch (error) {
+              // Skip malformed JSON lines from Docker event stream
+            }
           }
         }
       })
@@ -269,7 +277,9 @@ export class DockerAPICollector extends EventEmitter {
           setTimeout(() => this.startEventStream(), 5000)
         }
       })
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[DockerAPICollector] Error starting event stream:', error)
+    }
   }
 
   /**
@@ -349,7 +359,9 @@ export class DockerAPICollector extends EventEmitter {
         try {
           const stats = JSON.parse(chunk.toString())
           this.processContainerStats(containerId, stats)
-        } catch (error) {}
+        } catch (error) {
+          // Skip malformed JSON from stats stream
+        }
       })
 
       stream.on('error', (error: Error) => {
@@ -359,7 +371,9 @@ export class DockerAPICollector extends EventEmitter {
       stream.on('end', () => {
         this.statsStreams.delete(containerId)
       })
-    } catch (error) {}
+    } catch (error) {
+      console.warn(`[DockerAPICollector] Error starting stats stream for ${containerId}:`, error)
+    }
   }
 
   /**

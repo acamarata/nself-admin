@@ -203,7 +203,9 @@ export async function GET(request: NextRequest) {
               // Ignore parse errors
             }
           })
-      } catch (error: any) {}
+      } catch (error) {
+        // Stats fetch failed - containers will be returned without live stats
+      }
     }
 
     const formattedContainers = projectContainers.map((container) => {
@@ -261,7 +263,7 @@ export async function GET(request: NextRequest) {
       count: formattedContainers.length,
       timestamp: new Date().toISOString(),
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

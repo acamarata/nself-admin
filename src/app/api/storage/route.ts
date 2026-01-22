@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -208,7 +208,7 @@ async function getStorageOverview() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -239,7 +239,7 @@ async function listBuckets() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -271,7 +271,7 @@ async function listFiles(bucketName: string, filePath: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -309,7 +309,7 @@ async function getStorageUsage() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -359,7 +359,7 @@ async function getStorageStats() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -407,7 +407,7 @@ async function createBucket(bucketName: string, options: any) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -438,7 +438,7 @@ async function deleteBucket(bucketName: string, options: any) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -481,7 +481,7 @@ async function deleteFile(bucket: string, filePath: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -515,7 +515,7 @@ async function createFolder(
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -536,7 +536,7 @@ async function getMinIOBuckets() {
     )
 
     return parseBucketsList(stdout)
-  } catch (error: any) {
+  } catch (error) {
     return []
   }
 }
@@ -574,7 +574,7 @@ async function getProjectFileStorage() {
       size,
       type: 'project-files',
     }
-  } catch (error: any) {
+  } catch (error) {
     return {
       path: getProjectPath(),
       size: 'Unknown',
@@ -606,7 +606,7 @@ async function getProjectDirectoryUsage() {
       directories,
       total: directories.length,
     }
-  } catch (error: any) {
+  } catch (error) {
     return {
       directories: [],
       total: 0,
@@ -701,7 +701,7 @@ async function getFileInfo(bucket: string, filePath: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

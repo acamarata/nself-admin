@@ -11,7 +11,7 @@ export async function GET() {
       data: stats,
       timestamp: new Date().toISOString(),
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

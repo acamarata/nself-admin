@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
       message: 'Configuration file generated successfully',
       path: envFilePath,
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

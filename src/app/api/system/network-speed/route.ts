@@ -196,7 +196,7 @@ export async function GET() {
       },
       cached: false,
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -242,7 +242,7 @@ export async function POST(request: Request) {
       message: 'ISP speed saved',
       data: config,
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Failed to save ISP speed' },
       { status: 500 },

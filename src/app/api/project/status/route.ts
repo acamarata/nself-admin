@@ -1,3 +1,4 @@
+import { hasAdminPassword as checkAdminPassword } from '@/lib/database'
 import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import fs from 'fs/promises'
@@ -74,16 +75,16 @@ export async function GET() {
         })
 
       servicesRunning = runningServices.length > 0
-    } catch (error: any) {
+    } catch (error) {
       // nself status failed, check Docker containers directly
     }
 
     // Check Docker containers related to this nself project
     let dockerContainers: any[] = []
-    let projectPrefix = 'nchat' // For nchat project
+    let projectPrefix = 'nself' // Default prefix for nself projects
 
     try {
-      // Try to get the project name from env file first (more reliable)
+      // Try to get the project name from env file first (most reliable)
       if (hasEnvFile && envContent) {
         const projectNameMatch = envContent.match(/PROJECT_NAME=(.+)/)
         if (projectNameMatch) {
@@ -92,7 +93,7 @@ export async function GET() {
       }
 
       // Then try docker-compose.yml as fallback
-      if (isBuilt && projectPrefix === 'nchat') {
+      if (isBuilt && projectPrefix === 'nself') {
         try {
           const dockerComposeContent = await fs.readFile(
             dockerComposePath,
@@ -118,7 +119,7 @@ export async function GET() {
       )
       const lines = stdout.split('\n').filter((line) => line.trim())
 
-      // Filter for containers from this project (more flexible matching)
+      // Filter for containers from this project (flexible matching)
       const projectContainers = lines.filter((line) => {
         const containerName = line.split('\t')[0].toLowerCase()
         const prefixLower = projectPrefix.toLowerCase()
@@ -126,15 +127,7 @@ export async function GET() {
           containerName.startsWith(prefixLower + '_') ||
           containerName.startsWith(prefixLower + '-') ||
           containerName.startsWith('nself_') ||
-          containerName.startsWith('nself-') ||
-          // For nchat project specifically
-          (projectPrefix === 'nchat' &&
-            (containerName.includes('nchat') ||
-              containerName.includes('postgres') ||
-              containerName.includes('hasura') ||
-              containerName.includes('auth') ||
-              containerName.includes('storage') ||
-              containerName.includes('redis')))
+          containerName.startsWith('nself-')
         )
       })
 
@@ -174,7 +167,7 @@ export async function GET() {
           c.status.toLowerCase().includes('up'),
         )
       }
-    } catch (error: any) {
+    } catch (error) {
       // Docker command failed or no containers
       dockerContainers = []
     }
@@ -228,13 +221,8 @@ export async function GET() {
       }
     }
 
-    // Check for admin password setup
-    let hasAdminPassword = false
-    if (envContent) {
-      hasAdminPassword =
-        envContent.includes('ADMIN_PASSWORD_HASH') &&
-        !envContent.includes('ADMIN_PASSWORD_HASH=')
-    }
+    // Check for admin password setup (stored in LokiJS database, not env file)
+    const hasAdminPassword = await checkAdminPassword()
 
     return NextResponse.json({
       success: true,
@@ -260,7 +248,7 @@ export async function GET() {
         running: servicesRunning,
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

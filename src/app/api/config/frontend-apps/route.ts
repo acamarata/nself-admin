@@ -64,7 +64,7 @@ export async function GET() {
       success: true,
       data: apps,
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Failed to read frontend apps config:', error)
     return NextResponse.json(
       {

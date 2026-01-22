@@ -56,7 +56,7 @@ async function getSystemMetrics() {
         tx: 0,
       },
     }
-  } catch (error: any) {
+  } catch (error) {
     return {
       cpu: {
         usage: cpuUsage,
@@ -122,7 +122,7 @@ async function getContainerStats() {
             ).filter((p) => !p.includes('null')),
             uptime: Math.floor((Date.now() - container.Created * 1000) / 1000),
           }
-        } catch (error: any) {
+        } catch (error) {
           return {
             id: container.Id.substring(0, 12),
             name: container.Names[0].replace('/', ''),
@@ -139,7 +139,7 @@ async function getContainerStats() {
       }),
     )
     return containerData
-  } catch (error: any) {
+  } catch (error) {
     return []
   }
 }

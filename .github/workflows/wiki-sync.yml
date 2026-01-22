@@ -4,193 +4,117 @@ on:
   push:
     branches:
       - main
-      - master
     paths:
       - 'docs/**'
-      - 'VERSION'
   workflow_dispatch:
 
 permissions:
   contents: write
-  issues: write
 
 jobs:
   sync-wiki:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          
+
       - name: Get version
         id: version
         run: |
-          VERSION=$(cat VERSION)
+          if [ -f "docs/VERSION" ]; then
+            VERSION=$(cat docs/VERSION | tr -d '\n')
+          else
+            VERSION=$(node -p "require('./package.json').version")
+          fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Syncing docs for version: $VERSION"
-      
+
       - name: Setup Git
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
-      
+
       - name: Clone Wiki
         run: |
-          git clone https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git wiki
-      
+          git clone https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git wiki || {
+            echo "Wiki doesn't exist yet, creating..."
+            mkdir wiki
+            cd wiki
+            git init
+          }
+
       - name: Sync Documentation
         run: |
           # Clear existing wiki content (except .git)
-          find wiki -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
-          
-          # Copy docs to wiki
+          find wiki -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} + 2>/dev/null || true
+
+          # Copy all docs to wiki root
           cp -r docs/* wiki/
-          
-          # Create version file in wiki
-          echo "Current Version: ${{ steps.version.outputs.version }}" > wiki/_Footer.md
-          echo "" >> wiki/_Footer.md
-          echo "Last Updated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> wiki/_Footer.md
-          
-          # Create sidebar navigation
-          cat > wiki/_Sidebar.md << 'EOF'
+
+          # Create footer with version info
+          cat > wiki/_Footer.md << EOF
+          ---
+          **Version:** ${{ steps.version.outputs.version }} | **Updated:** $(date -u +"%Y-%m-%d %H:%M UTC") | [GitHub](https://github.com/${{ github.repository }})
+          EOF
+
+          # Create comprehensive sidebar navigation
+          cat > wiki/_Sidebar.md << 'SIDEBAR'
           ## Navigation
-          
-          * [Home](Home)
-          
-          ### Developer Guide
-          * [Architecture](developer/Architecture)
-          * [Setup](developer/Setup)
-          * [API Reference](developer/API)
-          * [Testing](developer/Testing)
-          * [Components](developer/Components)
-          
-          ### Contributing
-          * [Contributing Guide](contributing/CONTRIBUTING)
-          * [Code of Conduct](contributing/CODE_OF_CONDUCT)
-          * [Development Workflow](contributing/Workflow)
-          * [Pull Request Guide](contributing/Pull-Requests)
-          
-          ### API Documentation
-          * [REST API](api/Reference)
-          * [Authentication](api/Authentication)
-          * [WebSocket Events](api/WebSocket)
-          * [Error Handling](api/Errors)
-          
+
+          **[Home](Home)**
+
+          ---
+
+          ### Getting Started
+          * [Quick Start](Quick-Start)
+          * [Init Wizard Guide](Init-Wizard-Guide)
+          * [Dashboard Overview](Dashboard-Overview)
+
+          ### Core Features
+          * [Architecture](Architecture)
+          * [Service Configuration](Service-Configuration)
+          * [Database Management](Database-Management)
+          * [Monitoring](Monitoring)
+          * [Build Process](Build-Process)
+
+          ### Reference
+          * [API Reference](API)
+          * [Environment Variables](ENVIRONMENT_VARIABLES)
+          * [CLI Integration](CLI_INTEGRATION)
+
           ### Deployment
-          * [Installation](deployment/Installation)
-          * [Docker Setup](deployment/Docker)
-          * [Configuration](deployment/Configuration)
-          * [Auto-Updates](deployment/Auto-Updates)
-          * [Multi-Arch Builds](deployment/Multi-Arch)
-          * [CLI Integration](deployment/CLI_Integration)
-          
-          ### Troubleshooting
-          * [Common Issues](troubleshooting/Common-Issues)
-          * [Debug Mode](troubleshooting/Debug-Mode)
-          * [Logs](troubleshooting/Logs)
-          
-          ### Resources
+          * [Production Deployment](Production-Deployment)
+          * [Updates](Updates)
+          * [CI Setup](CI_SETUP)
+
+          ### Help & Support
+          * [FAQ](FAQ)
+          * [Troubleshooting](TROUBLESHOOTING)
+          * [Security](SECURITY)
+
+          ---
+
+          ### Meta
           * [Changelog](CHANGELOG)
           * [License](LICENSE)
-          * [CLI Integration](CLI_INTEGRATION)
-          * [README](README)
-          * [Releases](https://github.com/${{ github.repository }}/releases)
-          EOF
-      
+          SIDEBAR
+
       - name: Commit and Push Wiki
         working-directory: wiki
         run: |
           git add -A
-          
+
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Sync documentation from main repository (v${{ steps.version.outputs.version }})"
-            git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+            git commit -m "Sync docs v${{ steps.version.outputs.version }} from main"
+            git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git || {
+              echo "Push failed - wiki may not be initialized"
+              echo "Please create the wiki manually first by visiting:"
+              echo "https://github.com/${{ github.repository }}/wiki"
+            }
             echo "Wiki updated successfully!"
           fi
-      
-      - name: Create Wiki Update Issue
-        if: success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const version = '${{ steps.version.outputs.version }}';
-            const timestamp = new Date().toISOString();
-            
-            // Check if there's already an open issue
-            const issues = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'documentation,wiki-sync',
-              state: 'open'
-            });
-            
-            if (issues.data.length === 0) {
-              // Create a new issue
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: `📚 Wiki Documentation Updated (v${version})`,
-                body: `## Wiki Sync Complete
-                
-                The project wiki has been automatically updated from the \`/docs\` folder.
-                
-                **Version:** ${version}
-                **Timestamp:** ${timestamp}
-                **Commit:** ${context.sha}
-                
-                ### Changes Synced
-                - All files in \`/docs\` directory
-                - Version information updated
-                - Navigation sidebar regenerated
-                
-                ### Review Wiki
-                - [View Wiki](https://github.com/${context.repo.owner}/${context.repo.repo}/wiki)
-                - [Recent Wiki History](https://github.com/${context.repo.owner}/${context.repo.repo}/wiki/_history)
-                
-                This issue will auto-close in 24 hours.`,
-                labels: ['documentation', 'wiki-sync', 'automated']
-              });
-            }
-
-  # Auto-close old wiki sync issues
-  cleanup-issues:
-    runs-on: ubuntu-latest
-    needs: sync-wiki
-    
-    steps:
-      - name: Close Old Wiki Sync Issues
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-            
-            const issues = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'documentation,wiki-sync,automated',
-              state: 'open'
-            });
-            
-            for (const issue of issues.data) {
-              const createdAt = new Date(issue.created_at);
-              if (createdAt < oneDayAgo) {
-                await github.rest.issues.update({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  state: 'closed',
-                  state_reason: 'completed'
-                });
-                
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issue.number,
-                  body: '✅ Auto-closing after 24 hours. Wiki sync completed successfully.'
-                });
-              }
-            }

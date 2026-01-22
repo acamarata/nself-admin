@@ -1,4 +1,4 @@
-import { findNselfPath } from '@/lib/nself-path'
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         cwd: projectPath,
         env: {
           ...process.env,
-          PATH: `/opt/homebrew/opt/coreutils/libexec/gnubin:${process.env.PATH}:/Users/admin/bin:/usr/local/bin:/opt/homebrew/bin`,
+          PATH: getEnhancedPath(),
         },
         timeout: 10000, // 10 seconds
       })
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
       throw execError
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error initializing project:', error)
     return NextResponse.json(
       {

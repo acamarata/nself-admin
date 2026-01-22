@@ -454,7 +454,9 @@ export default function DatabaseSeedPage() {
           mapping: {},
         })
         setShowImportDialog(true)
-      } catch (error) {}
+      } catch (error) {
+        console.error('[Seed] Error parsing import file:', error)
+      }
     }
     reader.readAsText(file)
   }

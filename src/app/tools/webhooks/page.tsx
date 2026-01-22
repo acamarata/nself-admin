@@ -916,7 +916,9 @@ export default function WebhooksPage() {
     try {
       await fetch(`/api/webhooks/${id}`, { method: 'DELETE' })
       setWebhooks(webhooks.filter((w) => w.id !== id))
-    } catch (error) {}
+    } catch (error) {
+      console.error('[Webhooks] Error deleting webhook:', error)
+    }
   }
 
   const handleToggleWebhook = async (id: string) => {
@@ -937,7 +939,9 @@ export default function WebhooksPage() {
           ),
         )
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('[Webhooks] Error toggling webhook:', error)
+    }
   }
 
   const handleTestWebhook = async (id: string) => {

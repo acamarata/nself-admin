@@ -1,4 +1,5 @@
 import { envToWizardConfig, readEnvFile } from '@/lib/env-handler'
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import fs from 'fs/promises'
@@ -17,38 +18,9 @@ export async function POST(request: NextRequest) {
     console.log('Project path:', projectPath)
     console.log('Mode:', mode)
 
-    // Find nself CLI - check PATH first (for normal users), then dev location
-    let nselfPath = 'nself'
-
-    // Check if nself is in PATH
-    try {
-      await execAsync('which nself')
-      console.log('Using nself from PATH')
-    } catch {
-      // Fallback to known development location
-      const devPath = '/Users/admin/Sites/nself/bin/nself'
-      const fs = require('fs')
-      if (fs.existsSync(devPath)) {
-        nselfPath = devPath
-        console.log('Using nself from development location')
-      } else {
-        // Try common installation locations
-        const commonPaths = [
-          '/usr/local/bin/nself',
-          '/opt/homebrew/bin/nself',
-          process.env.HOME + '/bin/nself',
-          process.env.HOME + '/.local/bin/nself',
-        ]
-
-        for (const p of commonPaths) {
-          if (fs.existsSync(p)) {
-            nselfPath = p
-            console.log('Found nself at:', p)
-            break
-          }
-        }
-      }
-    }
+    // Find nself CLI using the centralized utility
+    const nselfPath = await findNselfPath()
+    console.log('Using nself from:', nselfPath)
 
     // If mode is 'edit', save current .env.local BEFORE reset
     const envPath = path.join(projectPath, '.env.local')
@@ -84,7 +56,7 @@ export async function POST(request: NextRequest) {
         cwd: projectPath,
         env: {
           ...process.env,
-          PATH: `/opt/homebrew/opt/coreutils/libexec/gnubin:${process.env.PATH}:/Users/admin/bin:/usr/local/bin:/opt/homebrew/bin`,
+          PATH: getEnhancedPath(),
         },
         timeout: 5000, // 5 seconds
       })
@@ -175,7 +147,7 @@ export async function POST(request: NextRequest) {
       message: 'Project reset successfully',
       output: stdout,
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error resetting project:', error)
     return NextResponse.json(
       {

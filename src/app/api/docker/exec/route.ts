@@ -151,7 +151,7 @@ export async function POST(request: Request) {
         error: stderr,
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

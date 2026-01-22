@@ -337,7 +337,7 @@ export async function GET(request: NextRequest) {
             category: getCategory(key),
           })
         }
-      } catch (error: any) {
+      } catch (error) {
         // File doesn't exist, that's okay
       }
     }
@@ -375,7 +375,7 @@ export async function GET(request: NextRequest) {
         hasChanges: false,
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Failed to read environment variables' },
       { status: 500 },
@@ -455,7 +455,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in POST /api/config/env:', error)
     return NextResponse.json(
       {

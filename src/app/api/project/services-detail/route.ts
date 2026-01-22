@@ -49,7 +49,7 @@ function parseDockerCompose(content: string): Record<string, ServiceDetail> {
     }
 
     // Parse service name (2 spaces indentation)
-    if (line.match(/^  [a-zA-Z][a-zA-Z0-9_-]*:/)) {
+    if (line.match(/^ {2}[a-zA-Z][a-zA-Z0-9_-]*:/)) {
       // Save previous service
       if (currentService && currentServiceData) {
         services[currentService] = currentServiceData
@@ -62,7 +62,7 @@ function parseDockerCompose(content: string): Record<string, ServiceDetail> {
     }
 
     // Parse service properties (4 spaces indentation)
-    if (currentService && currentServiceData && line.match(/^    [a-zA-Z]/)) {
+    if (currentService && currentServiceData && line.match(/^ {4}[a-zA-Z]/)) {
       const propLine = line.substring(4)
 
       if (propLine.startsWith('image:')) {
@@ -98,9 +98,9 @@ function parseDockerCompose(content: string): Record<string, ServiceDetail> {
     if (
       currentSection &&
       currentServiceData &&
-      (line.match(/^      - /) || line.match(/^        /))
+      (line.match(/^ {6}- /) || line.match(/^ {8}/))
     ) {
-      const item = line.replace(/^      - |^        /, '').trim()
+      const item = line.replace(/^ {6}- |^ {8}/, '').trim()
 
       if (currentSection === 'ports' && currentServiceData.ports) {
         currentServiceData.ports.push(item.replace(/"/g, ''))
@@ -227,7 +227,7 @@ export async function GET(request: NextRequest) {
       services,
       projectPath,
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error getting service details:', error)
     return NextResponse.json(
       {

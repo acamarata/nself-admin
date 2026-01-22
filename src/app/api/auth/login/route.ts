@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 401 },
     )
-  } catch (error: any) {
+  } catch (error) {
     console.error('Login error:', error?.message || error)
 
     // Don't leak internal errors

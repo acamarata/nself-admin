@@ -1,3 +1,4 @@
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { execFile } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
@@ -9,27 +10,11 @@ export async function POST(request: NextRequest) {
   try {
     const projectPath = getProjectPath()
     console.log('Starting nself services in:', projectPath)
-    console.log('Project path:', projectPath)
     console.log('NODE_ENV:', process.env.NODE_ENV)
 
-    // Execute nself start in the project directory safely
-    // Try to find nself in common locations
-    const nselfPaths = [
-      '/Users/admin/Sites/nself/bin/nself',
-      '/usr/local/bin/nself',
-      'nself',
-    ]
-
-    let nselfPath = 'nself'
-    for (const path of nselfPaths) {
-      try {
-        await execFileAsync('/bin/sh', ['-c', `test -x "${path}"`])
-        nselfPath = path
-        break
-      } catch {
-        // Continue to next path
-      }
-    }
+    // Find nself CLI using the centralized utility
+    const nselfPath = await findNselfPath()
+    console.log('Using nself from:', nselfPath)
 
     const { stdout, stderr } = await execFileAsync(
       '/bin/sh',
@@ -37,7 +22,7 @@ export async function POST(request: NextRequest) {
       {
         env: {
           ...process.env,
-          PATH: `/opt/homebrew/opt/coreutils/libexec/gnubin:${process.env.PATH}:/usr/local/bin:/opt/homebrew/bin`,
+          PATH: getEnhancedPath(),
           NSELF_PROJECT_PATH: projectPath,
         },
         timeout: 300000, // 5 minute timeout
@@ -85,7 +70,7 @@ export async function POST(request: NextRequest) {
         {
           env: {
             ...process.env,
-            PATH: `/opt/homebrew/opt/coreutils/libexec/gnubin:${process.env.PATH}:/usr/local/bin:/opt/homebrew/bin`,
+            PATH: getEnhancedPath(),
             NSELF_PROJECT_PATH: projectPath,
           },
           timeout: 30000,
@@ -131,7 +116,7 @@ export async function POST(request: NextRequest) {
         stderr: stderr ? stderr.split('\n').filter((line) => line.trim()) : [],
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('nself start error:', error)
     console.error('Error message:', error?.message)
     console.error('Error stdout:', error?.stdout)

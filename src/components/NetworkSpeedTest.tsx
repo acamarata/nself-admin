@@ -18,7 +18,9 @@ export default function NetworkSpeedTest() {
       if (data.success) {
         setSpeedInfo(data.data)
       }
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[NetworkSpeedTest] Error fetching speed info:', error)
+    }
   }
 
   // Run a basic speed test

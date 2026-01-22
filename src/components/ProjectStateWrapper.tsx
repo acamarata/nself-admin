@@ -60,7 +60,7 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
       setLoading(false)
       checkProjectStatus()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [isAuthenticated])
 
   const checkProjectStatus = async () => {

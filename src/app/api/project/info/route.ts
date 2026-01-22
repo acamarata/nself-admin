@@ -154,7 +154,7 @@ export async function GET(request: NextRequest) {
           })
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error reading env file:', error)
     }
 
@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
           }
 
           // Parse service names (they have exactly 2 spaces after 'services:')
-          if (inServices && line.match(/^  [a-zA-Z][a-zA-Z0-9_-]*:/)) {
+          if (inServices && line.match(/^ {2}[a-zA-Z][a-zA-Z0-9_-]*:/)) {
             const serviceName = line.trim().replace(':', '')
             // Skip duplicates and helper services
             if (
@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error reading docker-compose.yml:', error)
     }
 
@@ -230,7 +230,7 @@ export async function GET(request: NextRequest) {
           }
 
           // Parse service names (they have exactly 2 spaces after 'services:')
-          if (inServices && line.match(/^  [a-zA-Z][a-zA-Z0-9_-]*:/)) {
+          if (inServices && line.match(/^ {2}[a-zA-Z][a-zA-Z0-9_-]*:/)) {
             const serviceName = line.trim().replace(':', '')
             // Skip the nself CLI service and duplicates
             if (serviceName !== 'nself' && !allServices.includes(serviceName)) {
@@ -239,7 +239,7 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error reading docker-compose.custom.yml:', error)
     }
 
@@ -456,7 +456,7 @@ export async function GET(request: NextRequest) {
             },
           )
         }
-      } catch (error: any) {
+      } catch (error) {
         console.log('docker-compose command failed, using file parsing')
       }
     }
@@ -465,7 +465,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: projectInfo,
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

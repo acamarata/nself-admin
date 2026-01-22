@@ -8,35 +8,28 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true
   },
-  eslint: {
-    ignoreDuringBuilds: true
-  },
   experimental: {
     optimizeCss: true,
   },
-  webpack: (config, { dev, isServer }) => {
-    // Enable HMR optimizations
-    if (dev && !isServer) {
-      config.watchOptions = {
-        poll: 1000,
-        aggregateTimeout: 300,
-      }
-    }
-    
+  // Webpack config for production builds
+  webpack: (config, { isServer }) => {
     // Handle native modules for dockerode
     config.externals = config.externals || []
     if (isServer) {
-      config.externals.push('ssh2')
+      config.externals.push('ssh2', 'cpu-features')
     }
-    
+
     // Ignore native bindings
     config.resolve.alias = {
       ...config.resolve.alias,
       'ssh2': false,
+      'cpu-features': false,
     }
-    
+
     return config
   },
+  // Server external packages for native modules
+  serverExternalPackages: ['ssh2', 'dockerode', 'cpu-features'],
 }
 
 export default nextConfig

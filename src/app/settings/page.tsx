@@ -540,7 +540,9 @@ function APITokensSection() {
         setNewToken({ name: '', permissions: [] })
         setShowCreateForm(false)
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('[Settings] Error creating token:', error)
+    }
   }
 
   const revokeToken = async (tokenId: string) => {
@@ -551,7 +553,9 @@ function APITokensSection() {
           t.id === tokenId ? { ...t, status: 'revoked' as const } : t,
         ),
       )
-    } catch (error) {}
+    } catch (error) {
+      console.error('[Settings] Error revoking token:', error)
+    }
   }
 
   return (
@@ -1074,7 +1078,9 @@ function ExportImportSection() {
         document.body.removeChild(a)
         window.URL.revokeObjectURL(url)
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('[Settings] Error exporting settings:', error)
+    }
   }
 
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1095,7 +1101,9 @@ function ExportImportSection() {
         // Refresh settings data
         window.location.reload()
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error('[Settings] Error importing settings:', error)
+    }
   }
 
   return (

@@ -1,3 +1,4 @@
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { spawn } from 'child_process'
 import fs from 'fs'
@@ -10,11 +11,9 @@ export async function POST(request: NextRequest) {
 
   console.log('Start-stream API called')
   console.log('Project path:', projectPath)
-  console.log('Current working directory:', process.cwd())
 
   // Check if docker-compose.yml exists
   const dockerComposePath = path.join(projectPath, 'docker-compose.yml')
-  console.log('Checking for docker-compose.yml at:', dockerComposePath)
 
   if (!fs.existsSync(dockerComposePath)) {
     console.error('docker-compose.yml not found!')
@@ -33,81 +32,40 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        // Find nself CLI - use absolute path
-        let nselfPath: string | null = null
+        // Find nself CLI using the centralized utility
+        const nselfPath = await findNselfPath()
 
-        // Check known locations in order of preference
-        const possiblePaths = [
-          '/Users/admin/Sites/nself/bin/nself', // Development location
-          '/Users/admin/bin/nself', // User bin (symlink)
-          '/usr/local/bin/nself', // Common installation
-          '/opt/homebrew/bin/nself', // Homebrew location
-          process.env.HOME + '/bin/nself',
-          process.env.HOME + '/.local/bin/nself',
-        ]
-
-        // Find the first existing and executable path
-        for (const path of possiblePaths) {
-          try {
-            if (fs.existsSync(path)) {
-              // Check if it's executable
-              try {
-                fs.accessSync(path, fs.constants.X_OK)
-                nselfPath = path
-                console.log('Found executable nself at:', nselfPath)
-                break
-              } catch {
-                console.log('Found nself but not executable at:', path)
-              }
-            }
-          } catch (err) {
-            console.log('Error checking path:', path, err)
-          }
-        }
-
-        // If not found in known locations, try to find in PATH
-        if (!nselfPath) {
-          console.log('Checking PATH for nself...')
+        // Check if nself was found (returns 'nself' if not found, which might fail)
+        if (nselfPath === 'nself') {
+          // Verify it's actually in PATH
           const whichProcess = spawn('which', ['nself'])
-          const result = await new Promise<string>((resolve) => {
-            let output = ''
-            whichProcess.stdout.on('data', (data) => {
-              output += data.toString()
-            })
-            whichProcess.on('close', (code) => {
-              resolve(code === 0 ? output.trim() : '')
-            })
+          const inPath = await new Promise<boolean>((resolve) => {
+            whichProcess.on('close', (code) => resolve(code === 0))
           })
 
-          if (result) {
-            nselfPath = result
-            console.log('Found nself in PATH at:', nselfPath)
+          if (!inPath) {
+            console.error('nself CLI not found in any expected location')
+            controller.enqueue(
+              encoder.encode(
+                JSON.stringify({
+                  type: 'error',
+                  message:
+                    'nself CLI not found. Please install or reinstall nself.',
+                  error:
+                    'The nself command-line tool is required but was not found on your system.',
+                  instructions: [
+                    'To install nself:',
+                    '1. Visit https://github.com/acamarata/nself',
+                    '2. Follow the installation instructions for your operating system',
+                    '3. Ensure nself is in your PATH or installed in /usr/local/bin',
+                    '4. Try running "nself version" in your terminal to verify installation',
+                  ],
+                }) + '\n',
+              ),
+            )
+            controller.close()
+            return
           }
-        }
-
-        // If no nself found, return error with installation instructions
-        if (!nselfPath) {
-          console.error('nself CLI not found in any expected location')
-          controller.enqueue(
-            encoder.encode(
-              JSON.stringify({
-                type: 'error',
-                message:
-                  'nself CLI not found. Please install or reinstall nself.',
-                error:
-                  'The nself command-line tool is required but was not found on your system.',
-                instructions: [
-                  'To install nself:',
-                  '1. Visit https://github.com/acamarata/nself',
-                  '2. Follow the installation instructions for your operating system',
-                  '3. Ensure nself is in your PATH or installed in /usr/local/bin',
-                  '4. Try running "nself version" in your terminal to verify installation',
-                ],
-              }) + '\n',
-            ),
-          )
-          controller.close()
-          return
         }
 
         console.log('Using nself command:', nselfPath)
@@ -117,7 +75,7 @@ export async function POST(request: NextRequest) {
           cwd: projectPath,
           env: {
             ...process.env,
-            PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin',
+            PATH: getEnhancedPath(),
           },
         })
 
@@ -187,19 +145,17 @@ export async function POST(request: NextRequest) {
           cwd: projectPath,
         })
 
-        const composeProcess = spawn(nselfPath!, ['start'], {
+        const composeProcess = spawn(nselfPath, ['start'], {
           cwd: projectPath,
           env: {
             ...process.env,
-            PATH:
-              '/Users/admin/bin:/usr/local/bin:/opt/homebrew/bin:' +
-              process.env.PATH,
+            PATH: getEnhancedPath(),
             COMPOSE_PARALLEL_LIMIT: '4',
-            NSELF_PROJECT_PATH: projectPath, // Make sure nself knows the project path
-            HOME: process.env.HOME || '/Users/admin',
+            NSELF_PROJECT_PATH: projectPath,
+            HOME: process.env.HOME || '/root',
           },
-          shell: false, // Don't use shell to avoid path issues
-          stdio: ['pipe', 'pipe', 'pipe'], // Capture all streams
+          shell: false,
+          stdio: ['pipe', 'pipe', 'pipe'],
         })
 
         let pulledImages = 0
@@ -344,20 +300,20 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Use the same handler for both stdout and stderr
-        composeProcess.stderr.on('data', handleOutput)
-        composeProcess.stdout.on('data', handleOutput)
-
-        // Collect all output for debugging
+        // Collect all output for debugging while also processing it
         let allOutput = ''
         let errorOutput = ''
 
+        // Single handler for stdout that both processes and collects
         composeProcess.stdout.on('data', (data) => {
           allOutput += data.toString()
+          handleOutput(data)
         })
 
+        // Single handler for stderr that both processes and collects
         composeProcess.stderr.on('data', (data) => {
           errorOutput += data.toString()
+          handleOutput(data)
         })
 
         // Wait for process to complete
@@ -522,7 +478,7 @@ export async function POST(request: NextRequest) {
         })
 
         controller.close()
-      } catch (error: any) {
+      } catch (error) {
         controller.enqueue(
           encoder.encode(
             JSON.stringify({

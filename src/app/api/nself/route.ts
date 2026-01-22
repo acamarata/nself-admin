@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

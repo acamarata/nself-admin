@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -139,7 +139,7 @@ async function getRedisInfo() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -197,7 +197,7 @@ async function getRedisKeys() {
             size: parseInt(sizeOutput.trim() || '0'),
             value: value?.substring(0, 100),
           }
-        } catch (error: any) {
+        } catch (error) {
           return {
             key,
             type: 'unknown',
@@ -218,7 +218,7 @@ async function getRedisKeys() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -263,7 +263,7 @@ async function getRedisStats() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -305,7 +305,7 @@ async function getRedisMemory() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -349,7 +349,7 @@ async function getRedisClients() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -378,7 +378,7 @@ async function getRedisConfig() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -409,7 +409,7 @@ async function setRedisKey(key: string, value: string, ttl?: number) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -435,7 +435,7 @@ async function deleteRedisKey(key: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -486,7 +486,7 @@ async function flushRedis(pattern?: string) {
         },
       })
     }
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -526,7 +526,7 @@ async function executeRedisCommand(command: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }

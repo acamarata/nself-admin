@@ -74,7 +74,9 @@ class BackgroundDataService {
           try {
             await config.fetcher()
             config.lastFetch = Date.now()
-          } catch (err) {}
+          } catch (err) {
+            console.warn(`[BackgroundDataService] Error fetching ${key}:`, err)
+          }
         }, config.interval)
 
         this.intervals.set(key, intervalId)
@@ -115,7 +117,9 @@ class BackgroundDataService {
           this.eventSource = null
         }
       }
-    } catch (err) {}
+    } catch (err) {
+      console.warn('[BackgroundDataService] Error connecting to SSE:', err)
+    }
   }
 
   // Handle real-time updates from SSE
@@ -301,7 +305,9 @@ class BackgroundDataService {
           try {
             await config.fetcher()
             config.lastFetch = Date.now()
-          } catch (err) {}
+          } catch (err) {
+            console.warn(`[BackgroundDataService] Error updating interval for ${key}:`, err)
+          }
         }, interval)
 
         this.intervals.set(key, intervalId)
@@ -324,7 +330,9 @@ class BackgroundDataService {
             try {
               await config.fetcher()
               config.lastFetch = Date.now()
-            } catch (err) {}
+            } catch (err) {
+              console.warn(`[BackgroundDataService] Error during setEnabled for ${key}:`, err)
+            }
           }, config.interval)
 
           this.intervals.set(key, intervalId)

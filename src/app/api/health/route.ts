@@ -206,7 +206,7 @@ export async function GET() {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         status: 'unhealthy',

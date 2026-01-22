@@ -40,7 +40,9 @@ export async function GET(request: NextRequest) {
             })
           }
         }
-      } catch (error: any) {}
+      } catch (error) {
+        // Backup directory listing failed - return empty list
+      }
 
       return NextResponse.json({
         success: true,
@@ -54,7 +56,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: backups,
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -234,7 +236,7 @@ export async function POST(request: NextRequest) {
       { success: false, error: 'Invalid action' },
       { status: 400 },
     )
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -273,7 +275,7 @@ export async function DELETE(request: NextRequest) {
       success: true,
       data: { deleted: backupFile },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

@@ -141,7 +141,7 @@ export async function GET(request: NextRequest) {
         hasEnvFile: false,
       })
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error loading env config:', error)
     return NextResponse.json(
       { success: false, error: 'Failed to load configuration' },

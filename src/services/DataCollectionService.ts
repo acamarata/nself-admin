@@ -190,7 +190,9 @@ export class DataCollectionService {
         this.fetchHasuraMetrics(),
         this.fetchRedisMetrics(),
       ])
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[DataCollectionService] Error fetching all data:', error)
+    }
   }
 
   // Docker stats fetcher

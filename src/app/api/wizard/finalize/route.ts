@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
           Object.keys(currentEnv).length - Object.keys(organized).length,
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error finalizing configuration:', error)
     return NextResponse.json(
       {

@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
     await fs.writeFile(dockerComposePath, dockerComposeContent, 'utf-8')
 
     // Count services
-    const serviceMatches = dockerComposeContent.match(/^  \w+:/gm)
+    const serviceMatches = dockerComposeContent.match(/^ {2}\w+:/gm)
     const serviceCount = serviceMatches ? serviceMatches.length : 0
 
     // Create necessary directories
@@ -292,7 +292,7 @@ export async function POST(request: NextRequest) {
       output: `✓ Generated docker-compose.yml\n✓ ${serviceCount} services configured\n✓ Created project directories\n✓ Configured nginx`,
       serviceCount,
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('=== Build Error ===')
     console.error('Error:', error)
     return NextResponse.json(

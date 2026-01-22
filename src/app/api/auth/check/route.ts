@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       userId: session.userId,
       expiresAt: new Date(session.expiresAt).toISOString(),
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Authentication check failed' },
       { status: 500 },

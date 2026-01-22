@@ -95,7 +95,9 @@ class WebSocketService extends EventEmitter {
         try {
           const message: WebSocketMessage = JSON.parse(event.data)
           this.handleMessage(message)
-        } catch (error) {}
+        } catch (error) {
+          // Skip malformed WebSocket messages
+        }
       }
 
       this.ws.onerror = (error) => {

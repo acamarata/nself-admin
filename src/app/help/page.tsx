@@ -486,7 +486,9 @@ function FAQSection() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ helpful }),
       })
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[Help] Error submitting FAQ feedback:', error)
+    }
   }
 
   return (

@@ -14,7 +14,7 @@ export async function GET() {
         githubLatest: githubInfo.latest,
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       },
       { status: 400 },
     )
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

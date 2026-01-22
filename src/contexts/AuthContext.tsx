@@ -88,7 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: 'DELETE',
         credentials: 'include',
       })
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[AuthContext] Error during logout:', error)
+    }
 
     setIsAuthenticated(false)
     router.push('/login')

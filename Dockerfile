@@ -5,21 +5,23 @@
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 # Only install production dependencies for smaller image
-RUN npm ci --only=production
+RUN pnpm install --prod --frozen-lockfile
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 WORKDIR /app
 
 # Copy package files and install ALL dependencies for build
-COPY package*.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -30,7 +32,7 @@ ENV NODE_ENV=production
 ENV STANDALONE=true
 
 # Build the application in standalone mode
-RUN npm run build
+RUN pnpm run build
 
 # Stage 3: Runner (minimal image)
 FROM node:20-alpine AS runner
@@ -56,12 +58,12 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3021
-ENV ADMIN_VERSION=0.0.3
+ENV ADMIN_VERSION=0.0.5
 
 # Add labels for container metadata
 LABEL org.opencontainers.image.title="nself-admin"
 LABEL org.opencontainers.image.description="Web-based administration interface for nself CLI"
-LABEL org.opencontainers.image.version="0.0.3"
+LABEL org.opencontainers.image.version="0.0.5"
 LABEL org.opencontainers.image.vendor="nself.org"
 LABEL org.opencontainers.image.source="https://github.com/acamarata/nself-admin"
 LABEL org.opencontainers.image.licenses="Proprietary - Free for personal use, Commercial license required"

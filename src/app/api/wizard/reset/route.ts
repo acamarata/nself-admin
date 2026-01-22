@@ -1,3 +1,4 @@
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import { promises as fs } from 'fs'
@@ -10,35 +11,13 @@ const execAsync = promisify(exec)
 export async function POST(req: NextRequest) {
   try {
     // Get project path using centralized resolution
-    // getProjectPath() already handles tilde expansion and relative paths
     const absoluteProjectPath = getProjectPath()
 
     console.log('Resetting project with nself reset command...')
 
-    // Use nself from PATH first, fallback to known location
-    let nselfCommand = 'nself'
-
-    // Check if nself is in PATH
-    try {
-      await execAsync('which nself')
-      console.log('Using nself from PATH')
-    } catch {
-      // Fallback to known location
-      const nselfSourcePath = '/Users/admin/Sites/nself'
-      const nselfPath = path.join(nselfSourcePath, 'bin', 'nself')
-
-      try {
-        await fs.access(nselfPath)
-        nselfCommand = nselfPath
-        console.log('Using nself from:', nselfPath)
-      } catch {
-        console.error('nself CLI not found')
-        return NextResponse.json(
-          { error: 'nself CLI not found. Please ensure nself is installed.' },
-          { status: 500 },
-        )
-      }
-    }
+    // Find nself CLI using the centralized utility
+    const nselfCommand = await findNselfPath()
+    console.log('Using nself from:', nselfCommand)
 
     // Execute nself reset command with force flag
     try {
@@ -48,8 +27,7 @@ export async function POST(req: NextRequest) {
           cwd: absoluteProjectPath,
           env: {
             ...process.env,
-            PATH: `${process.env.PATH}:/Users/admin/bin:/usr/local/bin:/opt/homebrew/bin`,
-            // Keep the terminal environment clean to preserve nself's native output
+            PATH: getEnhancedPath(),
           },
           maxBuffer: 10 * 1024 * 1024, // 10MB buffer for output
           timeout: 30000, // 30 second timeout
@@ -99,7 +77,7 @@ export async function POST(req: NextRequest) {
           const filePath = path.join(absoluteProjectPath, file)
           await fs.unlink(filePath)
           removedFiles.push(file)
-        } catch (error: any) {
+        } catch (error) {
           if (error.code !== 'ENOENT') {
             // Ignore "file not found" errors
             errors.push(`${file}: ${error.message}`)
@@ -177,7 +155,7 @@ POSTGRES_PORT=5433
       try {
         const envPath = path.join(absoluteProjectPath, '.env.dev')
         await fs.writeFile(envPath, basicEnvContent, 'utf8')
-      } catch (error: any) {
+      } catch (error) {
         errors.push(`Failed to create .env.dev: ${error.message}`)
       }
 
@@ -192,7 +170,7 @@ POSTGRES_PORT=5433
         },
       })
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error resetting project:', error)
     return NextResponse.json(
       { error: 'Failed to reset project', details: error.message },

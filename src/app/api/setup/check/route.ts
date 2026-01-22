@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
             success: true,
             message: 'Docker is running and accessible',
           }
-        } catch (error: any) {
+        } catch (error) {
           result = {
             success: false,
             message: 'Docker is not running or not accessible',
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
           const projectPath = getProjectPath()
           await fs.access(projectPath, fs.constants.W_OK)
           result = { success: true, message: 'Project directory is writable' }
-        } catch (error: any) {
+        } catch (error) {
           result = {
             success: false,
             message: 'Cannot write to project directory',
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
           // Simple network check
           await execAsync('ping -c 1 8.8.8.8')
           result = { success: true, message: 'Network connectivity confirmed' }
-        } catch (error: any) {
+        } catch (error) {
           result = { success: false, message: 'No network connectivity' }
         }
         break
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
           } else {
             throw new Error('nself not found')
           }
-        } catch (error: any) {
+        } catch (error) {
           result = { success: false, message: 'nself CLI not found in PATH' }
         }
         break
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(result)
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       { success: false, message: 'Check failed due to internal error' },
       { status: 500 },

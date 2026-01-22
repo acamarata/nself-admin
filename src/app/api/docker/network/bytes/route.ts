@@ -87,7 +87,7 @@ export async function GET() {
             rxBytes: 0,
             txBytes: 0,
           }
-        } catch (error: any) {
+        } catch (error) {
           return {
             name: containerName,
             rxBytes: 0,
@@ -102,7 +102,7 @@ export async function GET() {
       containers: containerStats,
       timestamp: Date.now(),
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Failed to get Docker network statistics' },
       { status: 500 },

@@ -1398,7 +1398,9 @@ export default function DashboardPage() {
       if (data.success) {
         setProjectInfo(data.data)
       }
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[Dashboard] Error fetching project info:', error)
+    }
   }
 
   const startServices = async () => {

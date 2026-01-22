@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     let envContent = ''
     try {
       envContent = await fs.readFile(envPath, 'utf-8')
-    } catch (error: any) {
+    } catch (error) {
       if (error.code !== 'ENOENT') {
         throw error
       }
@@ -111,7 +111,7 @@ export async function PUT(req: NextRequest) {
     let envContent = ''
     try {
       envContent = await fs.readFile(envPath, 'utf-8')
-    } catch (error: any) {
+    } catch (error) {
       if (error.code !== 'ENOENT') {
         throw error
       }

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -114,7 +114,7 @@ async function getMonitoringDashboard() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -145,7 +145,7 @@ async function getDetailedMetrics(timeRange: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -181,7 +181,7 @@ async function getAllLogs(searchParams: URLSearchParams) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -217,7 +217,7 @@ async function getServiceLogs(service: string, searchParams: URLSearchParams) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -289,7 +289,7 @@ async function getActiveAlerts() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -342,7 +342,7 @@ async function getSystemHealth() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -373,7 +373,7 @@ async function getPerformanceMetrics(timeRange: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -404,7 +404,7 @@ async function getResourceUsage() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -440,7 +440,7 @@ async function getServiceHealthData() {
     )
 
     return JSON.parse(stdout)
-  } catch (error: any) {
+  } catch (error) {
     return []
   }
 }
@@ -561,7 +561,7 @@ async function checkDatabaseHealth() {
       message: stdout.trim(),
       timestamp: new Date().toISOString(),
     }
-  } catch (error: any) {
+  } catch (error) {
     return {
       name: 'Database',
       status: 'critical',
@@ -583,7 +583,7 @@ async function checkDockerHealth() {
       message: `Docker ${stdout.trim()} is running`,
       timestamp: new Date().toISOString(),
     }
-  } catch (error: any) {
+  } catch (error) {
     return {
       name: 'Docker',
       status: 'critical',
@@ -641,7 +641,8 @@ function parseNselfStatus(statusOutput: string) {
       line.includes('●') ||
       line.includes('✗')
     ) {
-      const serviceName = line.replace(/[✓○●✗\s\u001b\[\d;m]/g, '').trim()
+      // eslint-disable-next-line no-control-regex
+      const serviceName = line.replace(/[✓○●✗\s\x1b[\d;m]/g, '').trim()
       if (serviceName) {
         services.push({
           name: serviceName,

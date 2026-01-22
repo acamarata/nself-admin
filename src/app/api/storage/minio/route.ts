@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -143,7 +143,7 @@ async function getBuckets() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -193,7 +193,7 @@ async function getObjects(bucket?: string, prefix?: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -236,7 +236,7 @@ async function getStorageInfo() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json({
       success: true,
       data: {
@@ -305,7 +305,7 @@ async function getPolicies(bucket?: string) {
         },
       })
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json({
       success: true,
       data: {
@@ -349,7 +349,7 @@ async function getUsers() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json({
       success: true,
       data: {
@@ -410,7 +410,7 @@ async function getStorageStats() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json({
       success: true,
       data: {
@@ -450,7 +450,7 @@ async function createBucket(bucket: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -476,7 +476,7 @@ async function deleteBucket(bucket: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -514,7 +514,7 @@ async function uploadObject(bucket: string, object: string, content: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -541,7 +541,7 @@ async function deleteObject(bucket: string, object: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -568,7 +568,7 @@ async function setPolicy(bucket: string, policy: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -594,7 +594,7 @@ async function createUser(user: string, password: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }
@@ -620,7 +620,7 @@ async function deleteUser(user: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     throw error
   }
 }

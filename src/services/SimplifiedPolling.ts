@@ -45,7 +45,9 @@ class SimplifiedPollingService {
           setTimeout(() => this.fetchData(), 100)
         }
       }
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[SimplifiedPolling] Error checking page needs data:', error)
+    }
 
     // Schedule next poll
     if (this.isActive) {
@@ -85,7 +87,9 @@ class SimplifiedPollingService {
               systemMetrics: data.data,
             })
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[SimplifiedPolling] Error parsing metrics response:', e)
+        }
       }
 
       // Process containers
@@ -97,7 +101,9 @@ class SimplifiedPollingService {
               containerStats: data.data?.containers || [],
             })
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[SimplifiedPolling] Error parsing containers response:', e)
+        }
       }
 
       // Process status
@@ -111,7 +117,9 @@ class SimplifiedPollingService {
             }
             store.setProjectInfo(data.projectInfo || data.config)
           }
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[SimplifiedPolling] Error parsing status response:', e)
+        }
       }
     } catch (error: any) {
       // Silently ignore all errors to prevent console spam

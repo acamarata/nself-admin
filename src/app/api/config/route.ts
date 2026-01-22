@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -214,7 +214,7 @@ async function getConfigFiles() {
             .filter((line) => line.trim() && !line.trim().startsWith('#'))
             .length,
         })
-      } catch (error: any) {
+      } catch (error) {
         configFiles.push({
           name: envFile,
           type: 'environment',
@@ -247,7 +247,7 @@ async function getConfigFiles() {
           lines: content.split('\n').length,
           services: (content.match(/^\s{2}[a-zA-Z0-9_-]+:/gm) || []).length,
         })
-      } catch (error: any) {
+      } catch (error) {
         configFiles.push({
           name: dockerFile,
           type: 'docker-compose',
@@ -275,7 +275,7 @@ async function getConfigFiles() {
           fileCount: files.filter((f) => f.isFile()).length,
           subdirCount: files.filter((f) => f.isDirectory()).length,
         })
-      } catch (error: any) {
+      } catch (error) {
         // Directory doesn't exist, which is normal
       }
     }
@@ -299,7 +299,7 @@ async function getConfigFiles() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -353,7 +353,7 @@ async function readConfigFile(fileName: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -395,7 +395,7 @@ async function writeConfigFile(
         const existingContent = await fs.readFile(filePath, 'utf-8')
         const backupPath = `${filePath}.backup.${Date.now()}`
         await fs.writeFile(backupPath, existingContent)
-      } catch (error: any) {
+      } catch (error) {
         // File doesn't exist, no backup needed
       }
     }
@@ -419,7 +419,7 @@ async function writeConfigFile(
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -480,7 +480,7 @@ async function updateConfigFile(fileName: string, options: any) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -561,7 +561,7 @@ async function validateConfiguration() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -622,7 +622,7 @@ async function applyConfiguration(options: any) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -659,7 +659,7 @@ async function createEnvironmentFile(options: any) {
 
     try {
       template = await fs.readFile(templatePath, 'utf-8')
-    } catch (error: any) {
+    } catch (error) {
       // Create basic template if .env.example doesn't exist
       template = `# nself Configuration
 PROJECT_NAME=my-project
@@ -705,7 +705,7 @@ EMAIL_FROM=admin@localhost
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -744,7 +744,7 @@ async function backupConfiguration() {
 
         await fs.copyFile(sourcePath, destPath)
         backedUp.push(file)
-      } catch (error: any) {
+      } catch (error) {
         // File doesn't exist, skip
       }
     }
@@ -757,7 +757,7 @@ async function backupConfiguration() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -785,7 +785,7 @@ async function getEnvTemplate() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -845,7 +845,7 @@ async function restoreConfiguration(options: any) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -869,7 +869,7 @@ async function applyEnvironmentChanges() {
     )
 
     return { success: true, stdout, stderr }
-  } catch (error: any) {
+  } catch (error) {
     return { success: false, error: error?.message || 'Unknown error' }
   }
 }

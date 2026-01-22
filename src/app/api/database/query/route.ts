@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         },
       })
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: databases,
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

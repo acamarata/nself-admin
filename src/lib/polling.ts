@@ -37,7 +37,9 @@ class PollingManager {
 
       try {
         await callback()
-      } catch (error) {}
+      } catch (error) {
+        console.warn(`[PollingManager] Error in polling task ${id}:`, error)
+      }
     }
 
     // Execute immediately if requested
@@ -171,7 +173,7 @@ export function usePolling(
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [interval, ...(deps || [])])
 }
 

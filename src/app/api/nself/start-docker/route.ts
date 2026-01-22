@@ -1,3 +1,4 @@
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { execFile } from 'child_process'
 import fs from 'fs'
@@ -26,21 +27,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Find nself CLI using the centralized utility
+    const nselfPath = await findNselfPath()
+    console.log('Using nself from:', nselfPath)
+
     // Use nself CLI to start services
-    const { stdout, stderr } = await execFileAsync(
-      '/Users/admin/Sites/nself/bin/nself',
-      ['start'],
-      {
-        cwd: projectPath,
-        env: {
-          ...process.env,
-          PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin',
-          COMPOSE_PARALLEL_LIMIT: '4', // Limit parallel operations
-        },
-        timeout: 120000, // 2 minute timeout for pulling images
-        maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs
+    const { stdout, stderr } = await execFileAsync(nselfPath, ['start'], {
+      cwd: projectPath,
+      env: {
+        ...process.env,
+        PATH: getEnhancedPath(),
+        COMPOSE_PARALLEL_LIMIT: '4',
       },
-    )
+      timeout: 120000, // 2 minute timeout for pulling images
+      maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs
+    })
 
     // Parse the output
     const lines = stdout.split('\n').filter((line) => line.trim())
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
         stderr: stderr ? stderr.split('\n').filter((line) => line.trim()) : [],
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('docker-compose start error:', error)
 
     const errorMessage = error?.message || 'Start failed'

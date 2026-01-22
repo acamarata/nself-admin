@@ -98,7 +98,7 @@ export async function initDatabase(): Promise<void> {
             db!.addCollection('sessions', {
               unique: ['token'],
               indices: ['token', 'userId'],
-              ttl: 24 * 60 * 60 * 1000, // 24 hours TTL
+              ttl: 7 * 24 * 60 * 60 * 1000, // 7 days TTL to match SESSION_DURATION_HOURS
               ttlInterval: 60000, // Check every minute
             })
 

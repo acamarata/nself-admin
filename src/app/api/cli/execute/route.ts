@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
 import { z } from 'zod'
 
-const execAsync = promisify(exec)
+const _execAsync = promisify(exec) // Reserved for future use
 const execFileAsync = promisify(execFile)
 
 // Define allowed nself subcommands and their valid arguments
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
             allowedArgs.includes(arg) ||
             (parsedCommand.command === 'logs' && /^[a-z0-9_-]+$/i.test(arg)) ||
             (parsedCommand.command === 'restore' &&
-              /^\/backups\/[a-z0-9_\-\.]+$/i.test(arg))
+              /^\/backups\/[a-z0-9_\-.]+$/i.test(arg))
           ) {
             cmdArgs.push(arg)
           } else {
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
               }
               if (
                 opt === '--output' &&
-                !/^\/backups\/[a-z0-9_\-\.]+$/i.test(value)
+                !/^\/backups\/[a-z0-9_\-.]+$/i.test(value)
               ) {
                 return NextResponse.json(
                   { success: false, error: 'Invalid output path' },
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
         stderr: execError.stderr,
       })
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

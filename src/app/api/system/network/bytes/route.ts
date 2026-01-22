@@ -63,7 +63,7 @@ export async function GET() {
         timestamp: Date.now(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       { success: false, error: 'Failed to get network statistics' },
       { status: 500 },

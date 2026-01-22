@@ -219,7 +219,9 @@ export default function PostgreSQLPage() {
           status: 'inactive',
         },
       ])
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[PostgreSQL] Error fetching tables:', error)
+    }
   }
 
   const fetchSlowQueries = async () => {
@@ -239,7 +241,9 @@ export default function PostgreSQLPage() {
           meanTime: '1.2s',
         },
       ])
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[PostgreSQL] Error fetching slow queries:', error)
+    }
   }
 
   const fetchLocks = async () => {
@@ -256,7 +260,9 @@ export default function PostgreSQLPage() {
           duration: '00:00:12',
         },
       ])
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[PostgreSQL] Error fetching locks:', error)
+    }
   }
 
   const executeQuery = async () => {

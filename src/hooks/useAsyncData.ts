@@ -96,14 +96,14 @@ export function useAsyncData<T>(
         abortControllerRef.current.abort()
       }
     }
-  }, []) // eslint-disable-line
+  }, [])  
 
   // Refetch when dependencies change
   useEffect(() => {
     if (dependencies.length > 0 && !loading) {
       fetchData()
     }
-  }, dependencies) // eslint-disable-line
+  }, dependencies)  
 
   // Set up polling if enabled
   useEffect(() => {
@@ -120,7 +120,7 @@ export function useAsyncData<T>(
         }
       }
     }
-  }, [pollingInterval]) // eslint-disable-line
+  }, [pollingInterval])  
 
   return {
     data,
@@ -157,7 +157,7 @@ export function useStoreData<T>(selector: () => T, defaultValue: T): T {
     }, 100) // Check every 100ms for changes
 
     return () => clearInterval(interval)
-  }, []) // eslint-disable-line
+  }, [])  
 
   return data
 }

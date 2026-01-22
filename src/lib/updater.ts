@@ -39,7 +39,9 @@ class AutoUpdater {
       if (packageJson.version) {
         return packageJson.version
       }
-    } catch (e) {}
+    } catch (e) {
+      // package.json not found, fall back to environment variable
+    }
 
     // Fallback to environment variable
     return process.env.ADMIN_VERSION || '0.0.1'

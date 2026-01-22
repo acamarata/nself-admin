@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
     }
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -191,7 +191,7 @@ async function getServicesList() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -232,7 +232,7 @@ async function getServiceDetails(serviceName: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -284,7 +284,7 @@ async function getServiceLogs(
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -312,7 +312,7 @@ async function getServicesStats() {
             stats: stat,
             timestamp: new Date().toISOString(),
           }
-        } catch (error: any) {
+        } catch (error) {
           return {
             id: container.Id,
             name: container.Names[0]?.replace(/^\//, ''),
@@ -327,7 +327,7 @@ async function getServicesStats() {
       success: true,
       data: stats,
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -361,7 +361,7 @@ async function getServicesHealth() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -384,7 +384,7 @@ async function controlService(serviceName: string, operation: string) {
     )
   }
 
-  const backendPath = '/Users/admin/Sites/nself-admin/.backend'
+  const backendPath = getProjectPath()
 
   try {
     let command = ''
@@ -420,7 +420,7 @@ async function controlService(serviceName: string, operation: string) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -433,7 +433,7 @@ async function controlService(serviceName: string, operation: string) {
 }
 
 async function scaleService(serviceName: string, replicas: number) {
-  const backendPath = '/Users/admin/Sites/nself-admin/.backend'
+  const backendPath = getProjectPath()
 
   try {
     const { stdout, stderr } = await execAsync(
@@ -450,7 +450,7 @@ async function scaleService(serviceName: string, replicas: number) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,
@@ -478,7 +478,7 @@ async function batchServiceControl(services: string[], operation: string) {
       try {
         const result = await controlService(service, operation)
         return { service, success: true, result }
-      } catch (error: any) {
+      } catch (error) {
         return {
           service,
           success: false,
@@ -500,7 +500,7 @@ async function batchServiceControl(services: string[], operation: string) {
 }
 
 async function updateService(serviceName: string, options: any) {
-  const backendPath = '/Users/admin/Sites/nself-admin/.backend'
+  const backendPath = getProjectPath()
 
   try {
     // Pull latest image and recreate container
@@ -517,7 +517,7 @@ async function updateService(serviceName: string, options: any) {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
       {
         success: false,

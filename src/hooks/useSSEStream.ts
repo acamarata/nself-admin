@@ -59,7 +59,9 @@ export function useSSEStream() {
         try {
           const message = JSON.parse(event.data)
           handleMessage(message)
-        } catch (error) {}
+        } catch (error) {
+          // Skip malformed SSE messages
+        }
       }
 
       // Handle errors
@@ -90,7 +92,7 @@ export function useSSEStream() {
       }))
       scheduleReconnect()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line
   }, [])
 
   /**
@@ -179,7 +181,9 @@ export function useSSEStream() {
     try {
       const response = await fetch('/api/sse/stream', { method: 'POST' })
       const result = await response.json()
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[SSE Client] Error during refresh:', error)
+    }
   }
 
   // Setup connection on mount

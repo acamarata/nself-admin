@@ -398,7 +398,7 @@ export async function POST(request: NextRequest) {
       message: `Updated ${fileName} for step: ${step}`,
       updates: envUpdates,
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating env file:', error)
     return NextResponse.json(
       {

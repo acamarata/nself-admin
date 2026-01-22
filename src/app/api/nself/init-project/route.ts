@@ -1,3 +1,4 @@
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import fs from 'fs/promises'
@@ -16,8 +17,9 @@ export async function POST(request: NextRequest) {
     console.log('Project path:', projectPath)
     console.log('Config:', config)
 
-    // Path to nself CLI (use global or local)
-    const nselfPath = '/Users/admin/Sites/nself/bin/nself'
+    // Find nself CLI using the centralized utility
+    const nselfPath = await findNselfPath()
+    console.log('Using nself from:', nselfPath)
 
     // First, run nself init --full to create all env files
     console.log('Running nself init --full...')
@@ -25,7 +27,10 @@ export async function POST(request: NextRequest) {
       `${nselfPath} init --full`,
       {
         cwd: projectPath,
-        env: process.env,
+        env: {
+          ...process.env,
+          PATH: getEnhancedPath(),
+        },
         timeout: 30000,
       },
     )
@@ -170,7 +175,7 @@ export async function POST(request: NextRequest) {
       message: 'Project initialized and configured',
       output: initOut,
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error initializing project:', error)
     return NextResponse.json(
       {

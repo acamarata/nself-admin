@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
       systemChecks,
       recommendations,
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('nself doctor error:', error)
     return NextResponse.json(
       {

@@ -81,7 +81,9 @@ class DockerPollingService {
           }
         }
       }
-    } catch (error) {}
+    } catch (error) {
+      console.warn('[DockerPollingService] Error fetching Docker stats:', error)
+    }
   }
 
   // Check if service is running

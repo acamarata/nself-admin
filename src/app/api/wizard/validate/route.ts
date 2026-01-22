@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
         hasDockerCompose,
       },
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error validating configuration:', error)
     return NextResponse.json(
       {

@@ -1,3 +1,4 @@
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import fs from 'fs/promises'
@@ -15,30 +16,9 @@ export async function POST(request: NextRequest) {
     console.log('=== Starting nself build ===')
     console.log('Backend project path:', backendProjectPath)
 
-    // Use nself from PATH first, fallback to known location
-    let nselfCommand = 'nself'
-
-    // Check if nself is in PATH
-    try {
-      await execAsync('which nself')
-      console.log('Using nself from PATH')
-    } catch {
-      // Fallback to known location
-      const nselfSourcePath = '/Users/admin/Sites/nself'
-      const nselfPath = path.join(nselfSourcePath, 'bin', 'nself')
-
-      try {
-        await fs.access(nselfPath)
-        nselfCommand = nselfPath
-        console.log('Using nself from:', nselfPath)
-      } catch {
-        console.error('nself CLI not found')
-        return NextResponse.json(
-          { error: 'nself CLI not found. Please ensure nself is installed.' },
-          { status: 500 },
-        )
-      }
-    }
+    // Find nself CLI using the centralized utility
+    const nselfCommand = await findNselfPath()
+    console.log('Using nself from:', nselfCommand)
 
     // Ensure the backend project directory exists
     try {
@@ -89,8 +69,7 @@ export async function POST(request: NextRequest) {
           cwd: backendProjectPath,
           env: {
             ...process.env,
-            PATH: `${process.env.PATH}:/Users/admin/bin:/usr/local/bin:/opt/homebrew/bin`,
-            // Keep the terminal environment clean to preserve nself's native output
+            PATH: getEnhancedPath(),
           },
           maxBuffer: 10 * 1024 * 1024, // 10MB buffer for output
           timeout: 30000, // 30 second timeout - if it hangs, we'll generate manually
@@ -120,7 +99,7 @@ export async function POST(request: NextRequest) {
           dockerComposePath,
           'utf-8',
         )
-        const serviceMatches = dockerComposeContent.match(/^  \w+:/gm)
+        const serviceMatches = dockerComposeContent.match(/^ {2}\w+:/gm)
         const serviceCount = serviceMatches ? serviceMatches.length : 0
 
         return NextResponse.json({
@@ -160,7 +139,7 @@ export async function POST(request: NextRequest) {
           dockerComposePath,
           'utf-8',
         )
-        const serviceMatches = dockerComposeContent.match(/^  \w+:/gm)
+        const serviceMatches = dockerComposeContent.match(/^ {2}\w+:/gm)
         const serviceCount = serviceMatches ? serviceMatches.length : 0
 
         console.log('Build appears successful despite exit code')
@@ -187,7 +166,7 @@ export async function POST(request: NextRequest) {
         )
       }
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('=== Fatal Error in build API ===')
     console.error('Error:', error)
     return NextResponse.json(

@@ -3,6 +3,7 @@ import {
   envToWizardConfig,
   readEnvFile,
 } from '@/lib/env-handler'
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
@@ -36,15 +37,16 @@ export async function GET(request: NextRequest) {
     // No env file exists, run nself init --full to create one
     console.log('No .env.local found, running nself init --full...')
 
-    // Path to nself CLI
-    const nselfPath = '/Users/admin/Sites/nself/bin/nself'
+    // Find nself CLI using the centralized utility
+    const nselfPath = await findNselfPath()
+    console.log('Using nself from:', nselfPath)
 
     // Run nself init --full to create all env files
     const { stdout, stderr } = await execAsync(`${nselfPath} init --full`, {
       cwd: projectPath,
       env: {
         ...process.env,
-        PATH: `/opt/homebrew/opt/coreutils/libexec/gnubin:${process.env.PATH}:/Users/admin/bin:/usr/local/bin:/opt/homebrew/bin`,
+        PATH: getEnhancedPath(),
       },
       timeout: 30000,
     })
@@ -75,7 +77,7 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 },
     )
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in wizard init:', error)
     return NextResponse.json(
       {
