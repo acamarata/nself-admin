@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: 'Configuration operation failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Configuration operation failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -304,7 +304,7 @@ async function getConfigFiles() {
       {
         success: false,
         error: 'Failed to get configuration files',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -358,7 +358,7 @@ async function readConfigFile(fileName: string) {
       {
         success: false,
         error: `Failed to read file '${safeFileName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -424,7 +424,7 @@ async function writeConfigFile(
       {
         success: false,
         error: `Failed to write file '${safeFileName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -485,7 +485,7 @@ async function updateConfigFile(fileName: string, options: any) {
       {
         success: false,
         error: `Failed to update file '${safeFileName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -510,7 +510,7 @@ async function validateConfiguration() {
       { timeout: 30000 },
     ).catch((error) => ({
       stdout: '',
-      stderr: error?.message || 'Unknown error',
+      stderr: error instanceof Error ? error.message : 'Unknown error',
     }))
 
     // Check for required environment variables - nself prefers .env, falls back to .env.dev
@@ -566,7 +566,7 @@ async function validateConfiguration() {
       {
         success: false,
         error: 'Configuration validation failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -606,7 +606,7 @@ async function applyConfiguration(options: any) {
       { timeout: 30000 },
     ).catch((error) => ({
       stdout: '',
-      stderr: error?.message || 'Unknown error',
+      stderr: error instanceof Error ? error.message : 'Unknown error',
     }))
 
     results.push({
@@ -627,7 +627,7 @@ async function applyConfiguration(options: any) {
       {
         success: false,
         error: 'Failed to apply configuration',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -710,7 +710,7 @@ EMAIL_FROM=admin@localhost
       {
         success: false,
         error: `Failed to create environment file '${fileName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -762,7 +762,7 @@ async function backupConfiguration() {
       {
         success: false,
         error: 'Failed to backup configuration',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -790,7 +790,7 @@ async function getEnvTemplate() {
       {
         success: false,
         error: 'Failed to get environment template',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -850,7 +850,7 @@ async function restoreConfiguration(options: any) {
       {
         success: false,
         error: 'Failed to restore configuration',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -870,7 +870,10 @@ async function applyEnvironmentChanges() {
 
     return { success: true, stdout, stderr }
   } catch (error) {
-    return { success: false, error: error?.message || 'Unknown error' }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
   }
 }
 

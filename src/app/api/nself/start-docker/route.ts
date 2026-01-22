@@ -76,9 +76,14 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
+    const execError = error as {
+      message?: string
+      stdout?: string
+      stderr?: string
+    }
     console.error('docker-compose start error:', error)
 
-    const errorMessage = error?.message || 'Start failed'
+    const errorMessage = execError.message || 'Start failed'
     const isDockerNotRunning = errorMessage.includes(
       'Cannot connect to the Docker daemon',
     )
@@ -99,8 +104,8 @@ export async function POST(request: NextRequest) {
         message: userMessage,
         error: errorMessage,
         output: {
-          stdout: error?.stdout ? error.stdout.split('\n') : [],
-          stderr: error?.stderr ? error.stderr.split('\n') : [],
+          stdout: execError.stdout ? execError.stdout.split('\n') : [],
+          stderr: execError.stderr ? execError.stderr.split('\n') : [],
         },
       },
       { status: 500 },

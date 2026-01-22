@@ -68,13 +68,18 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
+    const execError = error as {
+      message?: string
+      stdout?: string
+      stderr?: string
+    }
     return NextResponse.json(
       {
         success: false,
         error: 'Failed to execute nself command',
-        details: error?.message || 'Unknown error',
-        stderr: error.stderr || '',
-        stdout: error.stdout || '',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        stderr: execError.stderr || '',
+        stdout: execError.stdout || '',
       },
       { status: 500 },
     )
@@ -137,7 +142,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: `Failed to get ${action} data`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

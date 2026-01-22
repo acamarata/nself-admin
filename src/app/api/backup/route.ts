@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Backup operation failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

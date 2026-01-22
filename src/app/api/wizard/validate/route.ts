@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Failed to validate configuration',
-        details: error.message,
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

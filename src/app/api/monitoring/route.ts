@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: 'Monitoring operation failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Monitoring operation failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -119,7 +119,7 @@ async function getMonitoringDashboard() {
       {
         success: false,
         error: 'Failed to get monitoring dashboard',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -150,7 +150,7 @@ async function getDetailedMetrics(timeRange: string) {
       {
         success: false,
         error: 'Failed to get detailed metrics',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -186,7 +186,7 @@ async function getAllLogs(searchParams: URLSearchParams) {
       {
         success: false,
         error: 'Failed to get logs',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -222,7 +222,7 @@ async function getServiceLogs(service: string, searchParams: URLSearchParams) {
       {
         success: false,
         error: `Failed to get logs for service '${service}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -294,7 +294,7 @@ async function getActiveAlerts() {
       {
         success: false,
         error: 'Failed to get active alerts',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -319,7 +319,7 @@ async function getSystemHealth() {
       `cd ${projectPath} && nself doctor`,
     ).catch((error) => ({
       stdout: '',
-      stderr: error?.message || 'Unknown error',
+      stderr: error instanceof Error ? error.message : 'Unknown error',
     }))
 
     const overallHealth = healthChecks.every(
@@ -347,7 +347,7 @@ async function getSystemHealth() {
       {
         success: false,
         error: 'Failed to get system health',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -378,7 +378,7 @@ async function getPerformanceMetrics(timeRange: string) {
       {
         success: false,
         error: 'Failed to get performance metrics',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -409,7 +409,7 @@ async function getResourceUsage() {
       {
         success: false,
         error: 'Failed to get resource usage',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -565,7 +565,7 @@ async function checkDatabaseHealth() {
     return {
       name: 'Database',
       status: 'critical',
-      message: error?.message || 'Unknown error',
+      message: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString(),
     }
   }
@@ -587,7 +587,7 @@ async function checkDockerHealth() {
     return {
       name: 'Docker',
       status: 'critical',
-      message: error?.message || 'Unknown error',
+      message: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString(),
     }
   }

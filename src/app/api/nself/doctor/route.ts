@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'Failed to run diagnostics',
-        message: error?.message,
+        message: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

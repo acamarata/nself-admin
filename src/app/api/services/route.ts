@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: 'Services operation failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Service operation failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -196,7 +196,7 @@ async function getServicesList() {
       {
         success: false,
         error: 'Failed to get services list',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -237,7 +237,7 @@ async function getServiceDetails(serviceName: string) {
       {
         success: false,
         error: `Failed to get details for service '${serviceName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -289,7 +289,7 @@ async function getServiceLogs(
       {
         success: false,
         error: `Failed to get logs for service '${serviceName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -316,7 +316,7 @@ async function getServicesStats() {
           return {
             id: container.Id,
             name: container.Names[0]?.replace(/^\//, ''),
-            error: error?.message || 'Unknown error',
+            error: error instanceof Error ? error.message : 'Unknown error',
             timestamp: new Date().toISOString(),
           }
         }
@@ -332,7 +332,7 @@ async function getServicesStats() {
       {
         success: false,
         error: 'Failed to get services stats',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -366,7 +366,7 @@ async function getServicesHealth() {
       {
         success: false,
         error: 'Failed to get services health',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -425,7 +425,7 @@ async function controlService(serviceName: string, operation: string) {
       {
         success: false,
         error: `Failed to ${operation} service '${serviceName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -455,7 +455,7 @@ async function scaleService(serviceName: string, replicas: number) {
       {
         success: false,
         error: `Failed to scale service '${serviceName}' to ${replicas} replicas`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -482,7 +482,7 @@ async function batchServiceControl(services: string[], operation: string) {
         return {
           service,
           success: false,
-          error: error?.message || 'Unknown error',
+          error: error instanceof Error ? error.message : 'Unknown error',
         }
       }
     }),
@@ -522,7 +522,7 @@ async function updateService(serviceName: string, options: any) {
       {
         success: false,
         error: `Failed to update service '${serviceName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

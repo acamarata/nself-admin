@@ -460,7 +460,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: `Failed to save environment variables: ${error.message}`,
+        error: `Failed to save environment variables: ${error instanceof Error ? error.message : 'Unknown error'}`,
       },
       { status: 500 },
     )

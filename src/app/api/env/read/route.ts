@@ -13,7 +13,10 @@ export async function GET() {
   } catch (error) {
     console.error('Error reading env file:', error)
     return NextResponse.json(
-      { error: 'Failed to read env file', details: error.message },
+      {
+        error: 'Failed to read env file',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 },
     )
   }

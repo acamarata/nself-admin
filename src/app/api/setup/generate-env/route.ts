@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         message: 'Failed to generate configuration file',
-        error: error?.message || 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

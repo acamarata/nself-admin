@@ -18,7 +18,7 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: error?.message || 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

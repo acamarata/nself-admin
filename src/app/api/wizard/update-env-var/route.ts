@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
     try {
       envContent = await fs.readFile(envPath, 'utf-8')
     } catch (error) {
-      if (error.code !== 'ENOENT') {
+      const err = error as NodeJS.ErrnoException
+      if (err.code !== 'ENOENT') {
         throw error
       }
       // File doesn't exist, will create it
@@ -112,7 +113,8 @@ export async function PUT(req: NextRequest) {
     try {
       envContent = await fs.readFile(envPath, 'utf-8')
     } catch (error) {
-      if (error.code !== 'ENOENT') {
+      const err = error as NodeJS.ErrnoException
+      if (err.code !== 'ENOENT') {
         throw error
       }
     }

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: 'Storage operation failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Storage operation failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -213,7 +213,7 @@ async function getStorageOverview() {
       {
         success: false,
         error: 'Failed to get storage overview',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -244,7 +244,7 @@ async function listBuckets() {
       {
         success: false,
         error: 'Failed to list buckets',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -276,7 +276,7 @@ async function listFiles(bucketName: string, filePath: string) {
       {
         success: false,
         error: `Failed to list files in bucket '${bucketName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -314,7 +314,7 @@ async function getStorageUsage() {
       {
         success: false,
         error: 'Failed to get storage usage',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -364,7 +364,7 @@ async function getStorageStats() {
       {
         success: false,
         error: 'Failed to get storage stats',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -412,7 +412,7 @@ async function createBucket(bucketName: string, options: any) {
       {
         success: false,
         error: `Failed to create bucket '${bucketName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -443,7 +443,7 @@ async function deleteBucket(bucketName: string, options: any) {
       {
         success: false,
         error: `Failed to delete bucket '${bucketName}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -486,7 +486,7 @@ async function deleteFile(bucket: string, filePath: string) {
       {
         success: false,
         error: `Failed to delete file '${filePath}' from bucket '${bucket}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -520,7 +520,7 @@ async function createFolder(
       {
         success: false,
         error: `Failed to create folder '${folderName}' in bucket '${bucket}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )
@@ -706,7 +706,7 @@ async function getFileInfo(bucket: string, filePath: string) {
       {
         success: false,
         error: `Failed to get file info for '${filePath}'`,
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

@@ -135,7 +135,10 @@ export async function POST(request: NextRequest) {
       { status: 401 },
     )
   } catch (error) {
-    console.error('Login error:', error?.message || error)
+    console.error(
+      'Login error:',
+      error instanceof Error ? error.message : 'Unknown error',
+    )
 
     // Don't leak internal errors
     return NextResponse.json(

@@ -1,6 +1,6 @@
 # nself Admin (nAdmin)
 
-[![Version](https://img.shields.io/badge/version-0.0.5-blue.svg)](https://github.com/acamarata/nself-admin/releases)
+[![Version](https://img.shields.io/badge/version-0.0.6-blue.svg)](https://github.com/acamarata/nself-admin/releases)
 [![Docker](https://img.shields.io/docker/v/acamarata/nself-admin?label=docker)](https://hub.docker.com/r/acamarata/nself-admin)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/acamarata/nself-admin/ci.yml?branch=main)](https://github.com/acamarata/nself-admin/actions)
@@ -31,6 +31,7 @@ Open http://localhost:3021
 - **40+ Templates** - Node.js, Python, Go, Rust, and more
 - **Database Tools** - SQL console, migrations, backups
 - **Service Management** - Start, stop, logs, health checks
+- **SSL Configuration** - Local (mkcert) and Let's Encrypt support
 
 ## Stack
 
@@ -40,6 +41,71 @@ Open http://localhost:3021
 | Hasura GraphQL | MinIO (S3) |
 | Auth Service   | Mailpit    |
 | Nginx          | Monitoring |
+
+## Port Configuration
+
+nself-admin runs on **port 3021** by default. This is distinct from other services:
+
+| Service     | Port |
+| ----------- | ---- |
+| nself-admin | 3021 |
+| Loki        | 3100 |
+| Grafana     | 3000 |
+| PostgreSQL  | 5432 |
+| Hasura      | 8080 |
+
+## Environment Variables
+
+### Required (for Docker deployment)
+
+| Variable             | Description                | Default      |
+| -------------------- | -------------------------- | ------------ |
+| `NSELF_PROJECT_PATH` | Path to your nself project | `/workspace` |
+
+### Optional
+
+| Variable        | Description                          | Default |
+| --------------- | ------------------------------------ | ------- |
+| `PORT`          | Server port                          | `3021`  |
+| `NODE_ENV`      | Environment (development/production) | -       |
+| `ADMIN_VERSION` | Version displayed in UI              | `0.0.6` |
+
+### Notes
+
+- **Admin password** is stored securely in the internal LokiJS database (`nadmin.db`), not in environment variables
+- **Sessions** are managed via secure httpOnly cookies with 7-day expiry
+- No external database required - nAdmin uses an embedded LokiJS database
+
+## Docker Socket Permissions
+
+When mounting `/var/run/docker.sock`, ensure the container user has appropriate permissions:
+
+```bash
+# Option 1: Add your user to the docker group (recommended)
+sudo usermod -aG docker $USER
+
+# Option 2: Adjust socket permissions (less secure)
+sudo chmod 666 /var/run/docker.sock
+```
+
+## Health Check
+
+The `/api/health` endpoint is available without authentication for container orchestration:
+
+```bash
+curl http://localhost:3021/api/health
+```
+
+Returns:
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-01-22T...",
+  "version": "0.0.6",
+  "checks": { "docker": true, "filesystem": true, ... }
+}
+```
 
 ## Documentation
 

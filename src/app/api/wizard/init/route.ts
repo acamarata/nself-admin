@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: 'Failed to initialize wizard',
-        details: error.message,
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

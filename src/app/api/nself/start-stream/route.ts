@@ -483,7 +483,10 @@ export async function POST(request: NextRequest) {
           encoder.encode(
             JSON.stringify({
               type: 'error',
-              message: error.message || 'Unknown error occurred',
+              message:
+                error instanceof Error
+                  ? error.message
+                  : 'Unknown error occurred',
             }) + '\n',
           ),
         )

@@ -253,7 +253,7 @@ export async function GET() {
       {
         success: false,
         message: 'Failed to check project status',
-        error: error?.message || 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error',
         projectState: 'unknown',
         needsSetup: true,
       },

@@ -3,6 +3,7 @@
 import { LoginBackground } from '@/components/LoginBackground'
 import { LogoIcon } from '@/components/Logo'
 import { useAuth } from '@/contexts/AuthContext'
+import { VERSION } from '@/lib/constants'
 import { getCorrectRoute } from '@/lib/routing-logic'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -193,7 +194,7 @@ export default function LoginPage() {
           {/* Footer */}
           <div className="mt-8 border-t border-blue-500/10 pt-6">
             <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
-              nself Admin v0.3.9
+              nself Admin v{VERSION}
             </p>
           </div>
         </div>

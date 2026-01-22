@@ -72,7 +72,8 @@ docker-compose.yml
 docker-compose.*.yml
 .env
 .env.example
-ssl/
+/ssl/
+/certs/
 data/
 backups/
 pg_data/

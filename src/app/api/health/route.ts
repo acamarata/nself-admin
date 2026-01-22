@@ -1,3 +1,4 @@
+import { VERSION } from '@/lib/constants'
 import { exec } from 'child_process'
 import fs from 'fs/promises'
 import { NextResponse } from 'next/server'
@@ -185,7 +186,7 @@ export async function GET() {
     const health: HealthStatus = {
       status,
       timestamp: new Date().toISOString(),
-      version: process.env.ADMIN_VERSION || '0.0.3',
+      version: VERSION,
       uptime: process.uptime(),
       checks,
       resources: {
@@ -206,12 +207,12 @@ export async function GET() {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     })
-  } catch (error) {
+  } catch (error: unknown) {
     return NextResponse.json(
       {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
-        error: error?.message || 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error',
         checks: {
           docker: false,
           filesystem: false,

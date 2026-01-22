@@ -78,9 +78,10 @@ export async function POST(req: NextRequest) {
           await fs.unlink(filePath)
           removedFiles.push(file)
         } catch (error) {
-          if (error.code !== 'ENOENT') {
+          const err = error as NodeJS.ErrnoException
+          if (err.code !== 'ENOENT') {
             // Ignore "file not found" errors
-            errors.push(`${file}: ${error.message}`)
+            errors.push(`${file}: ${err.message}`)
           }
         }
       }
@@ -156,7 +157,9 @@ POSTGRES_PORT=5433
         const envPath = path.join(absoluteProjectPath, '.env.dev')
         await fs.writeFile(envPath, basicEnvContent, 'utf8')
       } catch (error) {
-        errors.push(`Failed to create .env.dev: ${error.message}`)
+        errors.push(
+          `Failed to create .env.dev: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        )
       }
 
       return NextResponse.json({
@@ -173,7 +176,10 @@ POSTGRES_PORT=5433
   } catch (error) {
     console.error('Error resetting project:', error)
     return NextResponse.json(
-      { error: 'Failed to reset project', details: error.message },
+      {
+        error: 'Failed to reset project',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 },
     )
   }

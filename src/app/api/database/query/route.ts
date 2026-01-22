@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Query execution failed',
-        details: error?.message || 'Unknown error',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

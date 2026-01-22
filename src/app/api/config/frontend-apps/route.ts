@@ -70,7 +70,7 @@ export async function GET() {
       {
         success: false,
         error: 'Failed to read frontend apps configuration',
-        details: error.message,
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },
     )

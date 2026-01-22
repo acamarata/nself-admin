@@ -117,13 +117,18 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
+    const execError = error as {
+      message?: string
+      stdout?: string
+      stderr?: string
+    }
     console.error('nself start error:', error)
-    console.error('Error message:', error?.message)
-    console.error('Error stdout:', error?.stdout)
-    console.error('Error stderr:', error?.stderr)
+    console.error('Error message:', execError.message)
+    console.error('Error stdout:', execError.stdout)
+    console.error('Error stderr:', execError.stderr)
 
     // Parse error output for user-friendly messages
-    const errorMessage = error?.message || 'Start failed'
+    const errorMessage = execError.message || 'Start failed'
     const isTimeout = errorMessage.includes('timeout')
     const isPortConflict =
       errorMessage.includes('port') && errorMessage.includes('already')
@@ -140,8 +145,8 @@ export async function POST(request: NextRequest) {
         'Port conflict detected - some required ports may already be in use'
     } else if (isMissingDependency) {
       userMessage = 'nself CLI not found - please ensure nself is installed'
-    } else if (error?.stdout || error?.stderr) {
-      const errorOutput = error?.stderr || error?.stdout || ''
+    } else if (execError.stdout || execError.stderr) {
+      const errorOutput = execError.stderr || execError.stdout || ''
       const lines = errorOutput
         .split('\n')
         .filter((line: string) => line.trim())
@@ -165,8 +170,8 @@ export async function POST(request: NextRequest) {
         message: userMessage,
         error: errorMessage,
         output: {
-          stdout: error?.stdout ? error.stdout.split('\n') : [],
-          stderr: error?.stderr ? error.stderr.split('\n') : [],
+          stdout: execError.stdout ? execError.stdout.split('\n') : [],
+          stderr: execError.stderr ? execError.stderr.split('\n') : [],
         },
         suggestions: [
           'Check if Docker is running',
