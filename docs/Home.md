@@ -55,6 +55,7 @@
 
 - **[Production Deployment](Production-Deployment)** - Deploy to production
 - **[Updates](Updates)** - Keeping nAdmin up to date
+- **[CI Setup](CI_SETUP)** - Continuous integration configuration
 
 ### Help
 
