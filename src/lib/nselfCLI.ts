@@ -54,6 +54,10 @@ export async function executeNselfCommand(
       'urls',
       'apply',
       'secrets',
+      'ssl',
+      'export',
+      'scale',
+      'healthcheck',
     ]
 
     if (!allowedCommands.includes(command)) {
@@ -192,6 +196,47 @@ export async function nselfDatabase(query: string): Promise<CLIResult> {
   return executeNselfCommand('db', ['query', query])
 }
 
+// Database specific commands - these wrap `nself db <subcommand>`
+export async function nselfDbSync(): Promise<CLIResult> {
+  return executeNselfCommand('db', ['sync'])
+}
+
+export async function nselfDbSeed(options?: { force?: boolean }): Promise<CLIResult> {
+  const args = ['seed']
+  if (options?.force) args.push('--force')
+  return executeNselfCommand('db', args)
+}
+
+export async function nselfDbMigrate(options?: { target?: string }): Promise<CLIResult> {
+  const args = ['migrate']
+  if (options?.target) args.push('--target', options.target)
+  return executeNselfCommand('db', args)
+}
+
+export async function nselfDbBackup(outputPath?: string): Promise<CLIResult> {
+  const args = ['backup']
+  if (outputPath) args.push('--output', outputPath)
+  return executeNselfCommand('db', args)
+}
+
+export async function nselfDbRestore(backupPath: string): Promise<CLIResult> {
+  return executeNselfCommand('db', ['restore', backupPath])
+}
+
+export async function nselfDbReset(options?: { force?: boolean }): Promise<CLIResult> {
+  const args = ['reset']
+  if (options?.force) args.push('--force')
+  return executeNselfCommand('db', args)
+}
+
+export async function nselfDbConsole(): Promise<CLIResult> {
+  return executeNselfCommand('db', ['console'])
+}
+
+export async function nselfDbAnalyze(): Promise<CLIResult> {
+  return executeNselfCommand('db', ['analyze'])
+}
+
 export async function nselfDeploy(
   target: string,
   options?: Record<string, any>,
@@ -270,4 +315,36 @@ export async function nselfScale(
 export async function nselfHealthcheck(service?: string): Promise<CLIResult> {
   const args = service ? [service] : ['--all']
   return executeNselfCommand('healthcheck', args)
+}
+
+// Deployment commands
+export async function nselfStagingDeploy(): Promise<CLIResult> {
+  return executeNselfCommand('deploy', ['staging'])
+}
+
+export async function nselfProdDeploy(): Promise<CLIResult> {
+  return executeNselfCommand('deploy', ['production'])
+}
+
+// SSL commands
+export async function nselfSslGenerate(domain?: string): Promise<CLIResult> {
+  const args = ['generate']
+  if (domain) args.push('--domain', domain)
+  return executeNselfCommand('ssl', args)
+}
+
+export async function nselfSslTrust(): Promise<CLIResult> {
+  return executeNselfCommand('ssl', ['trust'])
+}
+
+// Build command
+export async function nselfBuild(options?: { force?: boolean }): Promise<CLIResult> {
+  const args = options?.force ? ['--force'] : []
+  return executeNselfCommand('build', args)
+}
+
+// Init command
+export async function nselfInit(options?: { full?: boolean }): Promise<CLIResult> {
+  const args = options?.full ? ['--full'] : []
+  return executeNselfCommand('init', args)
 }

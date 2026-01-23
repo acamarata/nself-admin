@@ -1160,7 +1160,16 @@ export default function DashboardPage() {
 
   // Helper to clean service names (remove project prefix)
   const cleanServiceName = (name: string): string => {
-    // Remove common project prefixes like nproj99_ or nself_
+    // Get project name from projectInfo (e.g., "nself-web" -> "web")
+    const projectName = projectInfo?.projectName
+    if (projectName) {
+      // Extract the short name (e.g., "nself-web" -> "web", "my-project" -> "my-project")
+      const shortName = projectName.replace(/^nself-/, '')
+      // Remove project prefix pattern (e.g., "web_postgres" -> "postgres")
+      const projectPrefixPattern = new RegExp(`^${shortName}[_-]`, 'i')
+      name = name.replace(projectPrefixPattern, '')
+    }
+    // Also remove common nself prefixes like nproj99_ or nself_
     return name.replace(/^(nproj\d+_|nself_|nself-)/, '')
   }
 
@@ -1364,12 +1373,10 @@ export default function DashboardPage() {
   // Dashboard just reads from the store - no fetching needed here
   // The polling service updates the store every 1 second automatically
 
-  // Fetch project info when no services are running
+  // Always fetch project info for project name (needed for prefix stripping)
   useEffect(() => {
-    if (!hasRunningServices && !loading) {
-      fetchProjectInfo()
-    }
-  }, [hasRunningServices, loading])
+    fetchProjectInfo()
+  }, [])
 
   // Fetch frontend apps from config
   useEffect(() => {
@@ -1707,22 +1714,28 @@ export default function DashboardPage() {
               <BackendServiceCard
                 title="API Gateway"
                 services={services
-                  .filter((s) =>
-                    [
+                  .filter((s) => {
+                    const name = s.name.toLowerCase()
+                    // Only match actual gateway/proxy services
+                    // Exclude user services that happen to have 'api' in the name (e.g., ping_api)
+                    const isGatewayService = [
                       'hasura',
                       'graphql',
                       'nginx',
                       'gateway',
                       'proxy',
-                      'api',
-                    ].some(
-                      (name) =>
-                        s.name.toLowerCase().includes(name) &&
-                        !['nest', 'fastapi', 'go', 'python'].some((exclude) =>
-                          s.name.toLowerCase().includes(exclude),
-                        ),
-                    ),
-                  )
+                      'traefik',
+                      'kong',
+                      'envoy',
+                    ].some((gw) => name.includes(gw))
+
+                    // Exclude backend frameworks
+                    const isBackendFramework = ['nest', 'fastapi', 'go', 'python'].some(
+                      (exclude) => name.includes(exclude)
+                    )
+
+                    return isGatewayService && !isBackendFramework
+                  })
                   .sort((a, b) => {
                     // Custom sort: Hasura first, then Nginx, then others
                     const aName = a.name.toLowerCase()
@@ -1849,7 +1862,8 @@ export default function DashboardPage() {
                 title="Services"
                 services={services.filter((s) => {
                   const name = s.name.toLowerCase()
-                  // NestJS, Go, Python services that are NOT BullMQ workers or MLflow
+
+                  // Framework services (NestJS, Go, Python)
                   const isFrameworkService = [
                     'nest',
                     'go',
@@ -1857,12 +1871,25 @@ export default function DashboardPage() {
                     'python',
                     'py',
                   ].some((n) => name.includes(n))
-                  // Generic user services (service_X pattern)
-                  const isGenericService = /service_\d+/.test(name)
+
+                  // Generic user services (service_X pattern or *_api pattern)
+                  const isGenericService =
+                    /service_\d+/.test(name) || /_api$/.test(name) || /^api_/.test(name)
+
+                  // Custom user services that contain 'api' but aren't gateways
+                  const isCustomApiService =
+                    name.includes('api') &&
+                    !['hasura', 'graphql', 'nginx', 'gateway', 'proxy', 'traefik', 'kong', 'envoy'].some(
+                      (gw) => name.includes(gw)
+                    )
 
                   const isNotWorker =
                     !name.includes('bull') && !name.includes('mlflow')
-                  return (isFrameworkService || isGenericService) && isNotWorker
+
+                  return (
+                    (isFrameworkService || isGenericService || isCustomApiService) &&
+                    isNotWorker
+                  )
                 })}
                 icon={Terminal}
                 description="Custom APIs & microservices"

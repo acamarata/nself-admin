@@ -27,16 +27,19 @@ export default function InitStep1() {
       loadFromEnv()
     }
 
-    window.addEventListener('focus', handleFocus)
     // Also reload when the page becomes visible (handles tab switching)
-    document.addEventListener('visibilitychange', () => {
+    const handleVisibilityChange = () => {
       if (!document.hidden) {
         loadFromEnv()
       }
-    })
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
 

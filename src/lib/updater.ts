@@ -1,7 +1,19 @@
-import { exec } from 'child_process'
+import { exec, execFile } from 'child_process'
 import { promisify } from 'util'
 
 const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
+
+// Validate version string to prevent injection
+function isValidVersion(version: string): boolean {
+  // Allow 'latest' or semver-like patterns (e.g., 0.0.7, 1.2.3-beta.1)
+  return version === 'latest' || /^[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]+)?$/i.test(version)
+}
+
+// Validate container/hostname string
+function isValidContainerName(name: string): boolean {
+  return /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(name)
+}
 
 export interface VersionInfo {
   current: string
@@ -162,39 +174,59 @@ class AutoUpdater {
     this.isUpdating = true
     const targetVersion = version || 'latest'
 
+    // Validate version to prevent command injection
+    if (!isValidVersion(targetVersion)) {
+      this.isUpdating = false
+      return {
+        updating: false,
+        progress: 0,
+        message: 'Invalid version format',
+        error: 'Version must be "latest" or semver format (e.g., 1.2.3)',
+      }
+    }
+
     try {
-      // Pull the new image
-      const pullCmd = `docker pull nself/admin:${targetVersion}`
-      await execAsync(pullCmd)
+      // Pull the new image using execFile for safety
+      await execFileAsync('docker', ['pull', `nself/admin:${targetVersion}`])
 
       // Get current container ID
-      const { stdout: containerId } = await execAsync('hostname')
+      const { stdout: containerId } = await execFileAsync('hostname', [])
       const containerName = containerId.trim()
 
-      // Create update script
-      const updateScript = `
-        #!/bin/bash
-        # Auto-update script for nself-admin
-        
-        # Stop current container
-        docker stop ${containerName}
-        
-        # Remove old container
-        docker rm ${containerName}
-        
-        # Start new container with same settings
-        docker run -d \\
-          --name nself-admin \\
-          --restart unless-stopped \\
-          -p 3001:3001 \\
-          -v /var/run/docker.sock:/var/run/docker.sock \\
-          -v /project:/project \\
-          -e ADMIN_VERSION=${targetVersion} \\
-          nself/admin:${targetVersion}
-      `
+      // Validate container name
+      if (!isValidContainerName(containerName)) {
+        throw new Error('Invalid container name detected')
+      }
 
-      // Execute update
-      await execAsync(`echo '${updateScript}' | bash`)
+      // Execute update commands safely using execFile
+      // Stop current container
+      await execFileAsync('docker', ['stop', containerName]).catch(() => {
+        // Ignore error if container is already stopped
+      })
+
+      // Remove old container
+      await execFileAsync('docker', ['rm', containerName]).catch(() => {
+        // Ignore error if container doesn't exist
+      })
+
+      // Start new container with same settings
+      await execFileAsync('docker', [
+        'run',
+        '-d',
+        '--name',
+        'nself-admin',
+        '--restart',
+        'unless-stopped',
+        '-p',
+        '3001:3001',
+        '-v',
+        '/var/run/docker.sock:/var/run/docker.sock',
+        '-v',
+        '/project:/project',
+        '-e',
+        `ADMIN_VERSION=${targetVersion}`,
+        `nself/admin:${targetVersion}`,
+      ])
 
       this.isUpdating = false
       return {

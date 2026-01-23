@@ -1,6 +1,6 @@
 # nself Admin (nAdmin)
 
-[![Version](https://img.shields.io/badge/version-0.0.6-blue.svg)](https://github.com/acamarata/nself-admin/releases)
+[![Version](https://img.shields.io/badge/version-0.0.7-blue.svg)](https://github.com/acamarata/nself-admin/releases)
 [![Docker](https://img.shields.io/docker/v/acamarata/nself-admin?label=docker)](https://hub.docker.com/r/acamarata/nself-admin)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/acamarata/nself-admin/ci.yml?branch=main)](https://github.com/acamarata/nself-admin/actions)
@@ -68,7 +68,7 @@ nself-admin runs on **port 3021** by default. This is distinct from other servic
 | --------------- | ------------------------------------ | ------- |
 | `PORT`          | Server port                          | `3021`  |
 | `NODE_ENV`      | Environment (development/production) | -       |
-| `ADMIN_VERSION` | Version displayed in UI              | `0.0.6` |
+| `ADMIN_VERSION` | Version displayed in UI              | `0.0.7` |
 
 ### Notes
 
@@ -102,7 +102,7 @@ Returns:
 {
   "status": "healthy",
   "timestamp": "2025-01-22T...",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "checks": { "docker": true, "filesystem": true, ... }
 }
 ```

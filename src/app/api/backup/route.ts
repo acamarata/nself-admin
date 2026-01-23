@@ -163,10 +163,30 @@ export async function POST(request: NextRequest) {
         decryptionKey,
       } = validation.data
 
-      // Verify backup file exists
+      // Security: Prevent path traversal in restore
+      const pathModule = await import('path')
       const fs = await import('fs/promises')
+
+      const backupsDir = '/backups'
+      const normalizedPath = pathModule.normalize(backupFile)
+
+      // Ensure backup file is within /backups directory
+      if (
+        !normalizedPath.startsWith(backupsDir + '/') ||
+        normalizedPath.includes('..')
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid backup path - must be within /backups directory',
+          },
+          { status: 400 },
+        )
+      }
+
+      // Verify backup file exists
       try {
-        await fs.access(backupFile)
+        await fs.access(normalizedPath)
       } catch {
         return NextResponse.json(
           {
@@ -177,7 +197,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const result = await nselfRestore(backupFile)
+      const result = await nselfRestore(normalizedPath)
 
       if (!result.success) {
         return NextResponse.json(
@@ -260,16 +280,37 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Security: Only allow deletion from /backups directory
-    if (!backupFile.startsWith('/backups/')) {
+    // Security: Prevent path traversal attacks
+    const path = await import('path')
+    const fs = await import('fs/promises')
+
+    // Resolve the path and check it's still within /backups
+    const backupsDir = '/backups'
+    const normalizedPath = path.normalize(backupFile)
+    const resolvedPath = path.resolve(backupsDir, path.basename(backupFile))
+
+    // Ensure path is within /backups and doesn't contain traversal attempts
+    if (
+      !normalizedPath.startsWith(backupsDir + '/') ||
+      normalizedPath.includes('..') ||
+      resolvedPath !== normalizedPath
+    ) {
       return NextResponse.json(
         { success: false, error: 'Invalid backup path' },
         { status: 400 },
       )
     }
 
-    const fs = await import('fs/promises')
-    await fs.unlink(backupFile)
+    // Only allow deletion of backup files (*.sql, *.sql.gz, *.tar.gz)
+    const filename = path.basename(normalizedPath)
+    if (!/^[a-zA-Z0-9_-]+\.(sql|sql\.gz|tar\.gz|backup)$/i.test(filename)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid backup file type' },
+        { status: 400 },
+      )
+    }
+
+    await fs.unlink(normalizedPath)
 
     return NextResponse.json({
       success: true,

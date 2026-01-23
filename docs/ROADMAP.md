@@ -19,14 +19,14 @@ nself-admin is a **visual companion** to the nself CLI. It does NOT reimplement 
 | nself CLI    | nself-admin | Focus                                       |
 | ------------ | ----------- | ------------------------------------------- |
 | v0.4.2       | v0.0.6      | Foundation, SSL UI, TypeScript fixes        |
-| v0.4.3       | v0.0.7      | Multi-environment deployment UI             |
+| v0.4.4       | v0.0.7      | Admin integration, deployment features      |
 | v0.4.4       | v0.0.8      | Database, backup, restore UI                |
 | v0.4.5-0.4.9 | v0.0.9      | Mock data, scale, cloud providers, k8s prep |
 | v0.5.0       | v0.1.0      | Production-ready stable release             |
 
 ---
 
-## Current State (v0.0.6) ✅ COMPLETE
+## Current State (v0.0.7) ✅ COMPLETE
 
 ### What's Done
 

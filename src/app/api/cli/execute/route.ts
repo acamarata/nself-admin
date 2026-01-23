@@ -188,10 +188,12 @@ export async function POST(request: NextRequest) {
       }
 
       // Use execFile for safety - prevents shell injection
+      // Pass command and args separately, use cwd option instead of cd
       const { stdout, stderr } = await execFileAsync(
-        '/bin/sh',
-        ['-c', `cd "${backendPath}" && "${cmdArgs.join('" "')}"`],
+        cmdArgs[0], // 'nself'
+        cmdArgs.slice(1), // remaining args
         {
+          cwd: backendPath,
           env: {
             ...process.env,
             PATH: getEnhancedPath(),

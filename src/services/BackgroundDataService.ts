@@ -165,20 +165,25 @@ class BackgroundDataService {
       )
       if (response.ok) {
         const data = await response.json()
-        if (data.success) {
-          // Group containers by category for efficient updates
-          const byCategory: Record<string, any[]> = {}
-          data.data.containers.forEach((container: any) => {
-            const category = container.category || 'services'
-            if (!byCategory[category]) {
-              byCategory[category] = []
-            }
-            byCategory[category].push(container)
-          })
+        if (data.success && Array.isArray(data.data)) {
+          // Only update if we got valid container data
+          // Don't replace existing data with empty array when services are running
+          const containers = data.data
+          if (containers.length > 0 || store.projectStatus !== 'running') {
+            // Group containers by category for efficient updates
+            const byCategory: Record<string, any[]> = {}
+            containers.forEach((container: any) => {
+              const category = container.category || 'services'
+              if (!byCategory[category]) {
+                byCategory[category] = []
+              }
+              byCategory[category].push(container)
+            })
 
-          store.updateCachedData({
-            containerStats: data.data.containers,
-          })
+            store.updateCachedData({
+              containerStats: containers,
+            })
+          }
         }
       }
     } catch (err) {
@@ -201,22 +206,32 @@ class BackgroundDataService {
       )
       if (response.ok) {
         const data = await response.json()
-        if (data.success) {
+        if (data.success && Array.isArray(data.data)) {
           // Merge stats into existing container data
           const currentContainers = store.containerStats || []
-          const updatedContainers = currentContainers.map((container) => {
-            const statsContainer = data.data.containers.find(
-              (c: any) => c.id === container.id,
-            )
-            if (statsContainer) {
-              return { ...container, ...statsContainer }
-            }
-            return container
-          })
+          const newContainers = data.data
 
-          store.updateCachedData({
-            containerStats: updatedContainers,
-          })
+          // If we have current containers, merge stats; otherwise use new data
+          if (currentContainers.length > 0) {
+            const updatedContainers = currentContainers.map((container) => {
+              const statsContainer = newContainers.find(
+                (c: any) => c.id === container.id,
+              )
+              if (statsContainer) {
+                return { ...container, ...statsContainer }
+              }
+              return container
+            })
+
+            store.updateCachedData({
+              containerStats: updatedContainers,
+            })
+          } else if (newContainers.length > 0) {
+            // No current data, use the new data
+            store.updateCachedData({
+              containerStats: newContainers,
+            })
+          }
         }
       }
     } catch (err) {
