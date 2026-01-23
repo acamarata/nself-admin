@@ -13,6 +13,7 @@ interface HealthStatus {
   version: string
   cliVersion?: string
   uptime: number
+  uptimeFormatted: string
   checks: {
     docker: boolean
     filesystem: boolean
@@ -30,6 +31,19 @@ interface HealthStatus {
       usage: number
     }
   }
+}
+
+function formatUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+
+  const parts: string[] = []
+  if (days > 0) parts.push(`${days}d`)
+  if (hours > 0) parts.push(`${hours}h`)
+  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`)
+
+  return parts.join(' ')
 }
 
 async function checkDocker(): Promise<boolean> {
@@ -216,12 +230,14 @@ export async function GET() {
       status = 'unhealthy'
     }
 
+    const uptimeSeconds = process.uptime()
     const health: HealthStatus = {
       status,
       timestamp: new Date().toISOString(),
       version: VERSION,
       cliVersion: nselfCheck.version,
-      uptime: process.uptime(),
+      uptime: uptimeSeconds,
+      uptimeFormatted: formatUptime(uptimeSeconds),
       checks,
       resources: {
         memory: memoryUsage,
