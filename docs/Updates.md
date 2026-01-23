@@ -34,14 +34,14 @@ Update to a specific version:
 
 ```bash
 # Pull specific version
-docker pull acamarata/nself-admin:0.0.4
+docker pull acamarata/nself-admin:0.0.7
 
 # Update container with specific version
 docker run -d --name nself-admin \
   -p 3021:3021 \
   -v $(pwd):/workspace \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  acamarata/nself-admin:0.0.4
+  acamarata/nself-admin:0.0.7
 ```
 
 ### Development Updates
@@ -92,8 +92,8 @@ curl http://localhost:3021/api/version
 
 # Response
 {
-  "version": "0.0.4",
-  "buildDate": "2024-01-15T10:30:00Z",
+  "version": "0.0.7",
+  "buildDate": "2026-01-23T10:30:00Z",
   "gitCommit": "abc123",
   "nodeVersion": "20.10.0"
 }
@@ -105,8 +105,8 @@ Available release channels:
 
 | Channel         | Description         | Docker Tag           | Stability |
 | --------------- | ------------------- | -------------------- | --------- |
-| **Stable**      | Production releases | `latest`, `0.0.4`    | High      |
-| **Beta**        | Pre-release testing | `beta`, `0.0.5-beta` | Medium    |
+| **Stable**      | Production releases | `latest`, `0.0.7`    | High      |
+| **Beta**        | Pre-release testing | `beta`, `0.0.8-beta` | Medium    |
 | **Development** | Latest changes      | `dev`, `main`        | Low       |
 
 ### Version Pinning
@@ -116,44 +116,59 @@ Pin to specific versions in production:
 ```bash
 # Production deployment
 docker run -d --name nself-admin \
-  acamarata/nself-admin:0.0.4  # Specific version
+  acamarata/nself-admin:0.0.7  # Specific version
 
 # Kubernetes deployment
-image: acamarata/nself-admin:0.0.4
+image: acamarata/nself-admin:0.0.7
 ```
 
 ## Migration Guide
 
 ### Breaking Changes
 
-#### v0.0.3 to v0.0.4
+#### v0.0.6 to v0.0.7
 
-**Database Changes:**
+**New Features:**
 
-- LokiJS database format updated
-- Automatic migration on first start
-- Sessions now use TTL (24-hour expiry)
+- Multi-environment deployment UI (staging, production)
+- Enhanced CLI path resolution with `findNselfPath()`
+- Dynamic CLI version detection in health endpoint
+- Security hardening (shell injection, SQL injection prevention)
 
 **Configuration Changes:**
 
-- Environment variable standardization
-- `ADMIN_PASSWORD` moved to database
-- New centralized path resolution
+- New deploy API routes (`/api/deploy/staging`, `/api/deploy/production`)
+- Enhanced PATH environment for container compatibility
+- CSRF protection improvements
 
 **Migration Steps:**
 
 1. Backup existing data: `cp data/nadmin.db data/nadmin.db.backup`
-2. Update to v0.0.4
-3. First login will migrate database automatically
-4. Verify all settings in admin interface
+2. Update to v0.0.7
+3. Verify deployment pages work correctly
+4. Test CLI integration with `nself doctor`
+
+#### v0.0.5 to v0.0.6
+
+**New Features:**
+
+- SSL Configuration page (`/config/ssl`)
+- Centralized constants (`src/lib/constants.ts`)
+- Comprehensive roadmap documentation
+
+**Migration Steps:**
+
+1. Update to v0.0.6
+2. Access SSL configuration at `/config/ssl`
+3. Review new constants file for port definitions
 
 #### Future Versions
 
-**v0.0.5 (Planned):**
+**v0.0.8 (Planned):**
 
-- Multi-user support
-- Enhanced monitoring
-- Kubernetes native deployment
+- Database management UI (backups, restore, migrations)
+- CLI environment sync improvements
+- Enhanced monitoring integration
 
 ### Data Migration
 
@@ -256,7 +271,7 @@ else
     -p 3021:3021 \
     -v $(pwd):/workspace \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    acamarata/nself-admin:0.0.3  # Previous version
+    acamarata/nself-admin:0.0.6  # Previous version
   exit 1
 fi
 ```
@@ -303,7 +318,7 @@ docker run -d --name nself-admin \
   -p 3021:3021 \
   -v $(pwd):/workspace \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  acamarata/nself-admin:0.0.3  # Previous version
+  acamarata/nself-admin:0.0.6  # Previous version
 
 # Restore database if needed
 docker exec nself-admin cp /app/data/nadmin.db.backup /app/data/nadmin.db
@@ -357,7 +372,7 @@ const response = await fetch(
   'https://api.github.com/repos/acamarata/nself-admin/releases/latest',
 )
 const latest = await response.json()
-const currentVersion = '0.0.4'
+const currentVersion = '0.0.7'
 
 if (latest.tag_name !== `v${currentVersion}`) {
   console.log(`Update available: ${latest.tag_name}`)

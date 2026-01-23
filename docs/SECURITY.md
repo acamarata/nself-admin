@@ -75,17 +75,26 @@ All API routes under the following paths require authentication:
 4. Enable HTTPS in production deployments
 5. Monitor authentication logs for suspicious activity
 
-### Known Limitations
+### Session Storage (v0.0.7+)
 
-- Sessions are currently stored in memory (will be lost on restart)
-- No built-in rate limiting yet (planned for next release)
-- Single admin user only (multi-user support planned)
+Sessions are now stored in LokiJS embedded database (`nadmin.db`):
+- Sessions persist across restarts
+- Automatic TTL expiration (7 days by default)
+- Session activity tracking and extension
+- Audit logging for login attempts
+
+### Security Features (v0.0.7+)
+
+- **CSRF Protection**: SameSite=strict cookies + origin validation
+- **Rate Limiting**: Built-in rate limiting on authentication endpoints
+- **Input Validation**: Comprehensive validation using Zod schemas
+- **Shell Injection Prevention**: execFile() with array arguments instead of exec()
+- **SQL Injection Prevention**: Parameterized queries and identifier validation
+- **Path Traversal Prevention**: Resolved path validation
 
 ### Future Improvements
 
-- [ ] Redis-based session storage
-- [ ] Rate limiting on auth endpoints
-- [ ] CSRF token validation
 - [ ] Multi-factor authentication
 - [ ] Role-based access control
-- [ ] Audit logging
+- [ ] Redis-based session storage (optional)
+- [ ] Hardware key support (WebAuthn)

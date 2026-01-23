@@ -88,4 +88,4 @@ minio-data/
 tmp/
 
 # Claude session continuation
-next.md
+# (next.md is now tracked as v0.0.8 planning document)

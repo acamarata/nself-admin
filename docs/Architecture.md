@@ -417,7 +417,7 @@ GET /api/health
     "filesystem": "ok"
   },
   "uptime": 3600,
-  "version": "0.0.5"
+  "version": "0.0.7"
 }
 ```
 

@@ -18,7 +18,7 @@ nself admin install
 nself admin install --version 1.0.0-beta.3
 
 # Install with custom port
-nself admin install --port 3001
+nself admin install --port 3021
 
 # Update existing installation
 nself admin update
@@ -31,7 +31,7 @@ nself admin update
 docker run -d \
   --name nself-admin \
   --restart unless-stopped \
-  -p 3001:3001 \
+  -p 3021:3021 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(pwd):/project \
   -e ADMIN_PASSWORD=your-secure-password \
@@ -53,7 +53,7 @@ services:
     container_name: nself-admin
     restart: unless-stopped
     ports:
-      - '3001:3001'
+      - '3021:3021'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./:/project:rw
@@ -74,7 +74,7 @@ services:
 | Variable                | Description                    | Default    |
 | ----------------------- | ------------------------------ | ---------- |
 | `ADMIN_PASSWORD`        | Admin interface password       | (required) |
-| `ADMIN_PORT`            | Port to expose admin interface | 3001       |
+| `ADMIN_PORT`            | Port to expose admin interface | 3021       |
 | `PROJECT_PATH`          | Path to nself project          | /project   |
 | `AUTO_UPDATE`           | Enable automatic updates       | true       |
 | `UPDATE_CHECK_INTERVAL` | Hours between update checks    | 6          |
@@ -201,7 +201,7 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
   alpine sh -c "apk add docker && docker ps"
 
 # Check port availability
-lsof -i :3001
+lsof -i :3021
 ```
 
 ### Cannot access interface
@@ -211,10 +211,10 @@ lsof -i :3001
 docker ps | grep nself-admin
 
 # Test health endpoint
-curl http://localhost:3001/api/health
+curl http://localhost:3021/api/health
 
 # Check firewall rules
-sudo iptables -L | grep 3001
+sudo iptables -L | grep 3021
 ```
 
 ### Update issues

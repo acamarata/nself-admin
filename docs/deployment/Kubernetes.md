@@ -115,7 +115,7 @@ spec:
     spec:
       containers:
         - name: nself-admin
-          image: acamarata/nself-admin:0.0.4
+          image: acamarata/nself-admin:0.0.7
           ports:
             - containerPort: 3021
               name: http
