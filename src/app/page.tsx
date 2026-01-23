@@ -74,6 +74,7 @@ type ViewMode = 'table' | 'grid' | 'list'
 
 interface ContainersTableProps {
   services: ServiceStatus[]
+  isLoadingContainers?: boolean
 }
 
 interface ProjectInfoCardProps {
@@ -472,7 +473,7 @@ function StatusTooltip({ service, children }: StatusTooltipProps) {
   )
 }
 
-function ContainersTable({ services }: ContainersTableProps) {
+function ContainersTable({ services, isLoadingContainers = false }: ContainersTableProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [sortBy, setSortBy] = useState<
     'default' | 'name' | 'status' | 'cpu' | 'memory'
@@ -788,7 +789,7 @@ function ContainersTable({ services }: ContainersTableProps) {
                 </>
               )}
 
-              {services.length === 0 && (
+              {services.length === 0 && !isLoadingContainers && (
                 <tr>
                   <td
                     colSpan={5}
@@ -796,6 +797,19 @@ function ContainersTable({ services }: ContainersTableProps) {
                   >
                     No containers found. Start your nself services to see them
                     here.
+                  </td>
+                </tr>
+              )}
+              {services.length === 0 && isLoadingContainers && (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-12 text-center text-sm text-zinc-500 dark:text-zinc-400"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                      Loading services...
+                    </div>
                   </td>
                 </tr>
               )}
@@ -839,6 +853,7 @@ interface BackendServiceCardProps {
   description: string
   color: 'blue' | 'emerald' | 'purple' | 'red' | 'orange' | 'violet'
   category?: 'required' | 'optional' | 'user'
+  isLoading?: boolean
 }
 
 function BackendServiceCard({
@@ -848,6 +863,7 @@ function BackendServiceCard({
   description,
   color,
   category,
+  isLoading = false,
 }: BackendServiceCardProps) {
   const [expanded, setExpanded] = useState(false)
 
@@ -1072,11 +1088,18 @@ function BackendServiceCard({
           </div>
         )}
 
-        {sortedServices.length === 0 && (
+        {sortedServices.length === 0 && !isLoading && (
           <div className="text-xs text-zinc-500 italic dark:text-zinc-400">
             {title === 'Applications'
               ? 'No apps configured yet'
               : 'No services detected'}
+          </div>
+        )}
+
+        {sortedServices.length === 0 && isLoading && (
+          <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+            <div className="h-3 w-3 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+            Loading...
           </div>
         )}
       </div>
@@ -1708,6 +1731,7 @@ export default function DashboardPage() {
                 description="PostgreSQL, Redis & caching layer"
                 color="blue"
                 category="required"
+                isLoading={isLoadingContainers}
               />
 
               {/* API Gateway */}
@@ -1750,6 +1774,7 @@ export default function DashboardPage() {
                 description="Nginx, Hasura GraphQL & REST APIs"
                 color="blue"
                 category="required"
+                isLoading={isLoadingContainers}
               />
 
               {/* Authentication */}
@@ -1768,6 +1793,7 @@ export default function DashboardPage() {
                 description="Auth service, JWT & session management"
                 color="blue"
                 category="required"
+                isLoading={isLoadingContainers}
               />
 
               {/* Row 2 - Platform Services */}
@@ -1783,6 +1809,7 @@ export default function DashboardPage() {
                 description="MinIO object storage & file management"
                 color="violet"
                 category="optional"
+                isLoading={isLoadingContainers}
               />
 
               {/* Mail & Search */}
@@ -1811,6 +1838,7 @@ export default function DashboardPage() {
                 description="MeiliSearch, Mailpit & email services"
                 color="violet"
                 category="optional"
+                isLoading={isLoadingContainers}
               />
 
               {/* Monitoring */}
@@ -1834,6 +1862,7 @@ export default function DashboardPage() {
                 description="Prometheus, Grafana, Loki & tracing"
                 color="violet"
                 category="optional"
+                isLoading={isLoadingContainers}
               />
 
               {/* Row 3 - User Applications */}
@@ -1855,6 +1884,7 @@ export default function DashboardPage() {
                 description="Background jobs & ML pipelines"
                 color="orange"
                 category="user"
+                isLoading={isLoadingContainers}
               />
 
               {/* Services */}
@@ -1895,6 +1925,7 @@ export default function DashboardPage() {
                 description="Custom APIs & microservices"
                 color="orange"
                 category="user"
+                isLoading={isLoadingContainers}
               />
 
               {/* Applications */}
@@ -1931,6 +1962,7 @@ export default function DashboardPage() {
                 description="Frontend & client applications"
                 color="orange"
                 category="user"
+                isLoading={isLoadingContainers || loadingApps}
               />
             </div>
           </div>
