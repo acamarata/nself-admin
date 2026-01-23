@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
 import {
-  nselfDbSync,
-  nselfDbSeed,
-  nselfDbMigrate,
-  nselfDbBackup,
-  nselfDbRestore,
-  nselfDbReset,
   nselfDbAnalyze,
+  nselfDbBackup,
+  nselfDbMigrate,
+  nselfDbReset,
+  nselfDbRestore,
+  nselfDbSeed,
+  nselfDbSync,
 } from '@/lib/nselfCLI'
+import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * Database CLI operations - wraps nself db commands

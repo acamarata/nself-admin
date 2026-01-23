@@ -129,7 +129,10 @@ export default function DatabaseSyncPage() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Sync Direction</label>
-                  <Select value={syncDirection} onValueChange={setSyncDirection}>
+                  <Select
+                    value={syncDirection}
+                    onValueChange={setSyncDirection}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -233,7 +236,7 @@ export default function DatabaseSyncPage() {
             <CardContent>
               <ScrollArea className="h-80 rounded-lg bg-zinc-950 p-4">
                 {lastOutput ? (
-                  <pre className="whitespace-pre-wrap font-mono text-xs text-zinc-300">
+                  <pre className="font-mono text-xs whitespace-pre-wrap text-zinc-300">
                     {lastOutput}
                   </pre>
                 ) : (

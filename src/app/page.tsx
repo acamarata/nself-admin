@@ -473,7 +473,10 @@ function StatusTooltip({ service, children }: StatusTooltipProps) {
   )
 }
 
-function ContainersTable({ services, isLoadingContainers = false }: ContainersTableProps) {
+function ContainersTable({
+  services,
+  isLoadingContainers = false,
+}: ContainersTableProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [sortBy, setSortBy] = useState<
     'default' | 'name' | 'status' | 'cpu' | 'memory'
@@ -1754,9 +1757,12 @@ export default function DashboardPage() {
                     ].some((gw) => name.includes(gw))
 
                     // Exclude backend frameworks
-                    const isBackendFramework = ['nest', 'fastapi', 'go', 'python'].some(
-                      (exclude) => name.includes(exclude)
-                    )
+                    const isBackendFramework = [
+                      'nest',
+                      'fastapi',
+                      'go',
+                      'python',
+                    ].some((exclude) => name.includes(exclude))
 
                     return isGatewayService && !isBackendFramework
                   })
@@ -1904,20 +1910,31 @@ export default function DashboardPage() {
 
                   // Generic user services (service_X pattern or *_api pattern)
                   const isGenericService =
-                    /service_\d+/.test(name) || /_api$/.test(name) || /^api_/.test(name)
+                    /service_\d+/.test(name) ||
+                    /_api$/.test(name) ||
+                    /^api_/.test(name)
 
                   // Custom user services that contain 'api' but aren't gateways
                   const isCustomApiService =
                     name.includes('api') &&
-                    !['hasura', 'graphql', 'nginx', 'gateway', 'proxy', 'traefik', 'kong', 'envoy'].some(
-                      (gw) => name.includes(gw)
-                    )
+                    ![
+                      'hasura',
+                      'graphql',
+                      'nginx',
+                      'gateway',
+                      'proxy',
+                      'traefik',
+                      'kong',
+                      'envoy',
+                    ].some((gw) => name.includes(gw))
 
                   const isNotWorker =
                     !name.includes('bull') && !name.includes('mlflow')
 
                   return (
-                    (isFrameworkService || isGenericService || isCustomApiService) &&
+                    (isFrameworkService ||
+                      isGenericService ||
+                      isCustomApiService) &&
                     isNotWorker
                   )
                 })}

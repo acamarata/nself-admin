@@ -297,49 +297,74 @@ function formatEnvFile(
   return content
 }
 
+// Valid environment names - strictly defined
+const VALID_ENVIRONMENTS = ['local', 'dev', 'stage', 'prod', 'secrets'] as const
+type ValidEnvironment = (typeof VALID_ENVIRONMENTS)[number]
+
+function isValidEnvironment(env: string): env is ValidEnvironment {
+  return VALID_ENVIRONMENTS.includes(env as ValidEnvironment)
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const environment = searchParams.get('env') || 'local'
+    const envParam = searchParams.get('env') || 'local'
     const includeDefaults = searchParams.get('defaults') !== 'false'
 
+    // Validate environment parameter
+    if (!isValidEnvironment(envParam)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid environment parameter' },
+        { status: 400 },
+      )
+    }
+    const environment = envParam
+
     // Get paths for both admin project and backend project
-    const adminPath = process.cwd() // Current admin project root
     const backendPath = getProjectPath()
 
-    // Use backend path for all environment files
-    const envFiles = {
-      local: path.join(backendPath, '.env.local'), // Backend project's .env.local
-      dev: path.join(backendPath, '.env.dev'),
-      stage: path.join(backendPath, '.env.stage'),
-      prod: path.join(backendPath, '.env.prod'),
-      secrets: path.join(backendPath, '.env.secrets'),
+    // Map environment to file name (safe - environment already validated)
+    const envFileNames: Record<ValidEnvironment, string> = {
+      local: '.env.local',
+      dev: '.env.dev',
+      stage: '.env.stage',
+      prod: '.env.prod',
+      secrets: '.env.secrets',
     }
 
     const variables: any[] = []
     const loadedVars: Record<string, string> = {}
 
-    // Load environment-specific file
-    const envFile = envFiles[environment as keyof typeof envFiles]
-    if (envFile) {
-      try {
-        const content = await fs.readFile(envFile, 'utf-8')
-        const parsed = parseEnvFile(content)
-        Object.assign(loadedVars, parsed)
+    // Load environment-specific file (path is constructed safely)
+    const envFile = path.join(backendPath, envFileNames[environment])
 
-        for (const [key, value] of Object.entries(parsed)) {
-          variables.push({
-            key,
-            value,
-            defaultValue: SMART_DEFAULTS[key as keyof typeof SMART_DEFAULTS],
-            isSecret: isSecret(key),
-            source: 'env',
-            category: getCategory(key),
-          })
-        }
-      } catch (error) {
-        // File doesn't exist, that's okay
+    // Verify the resolved path is within backendPath (defense in depth)
+    const resolvedPath = path.resolve(envFile)
+    const resolvedBackend = path.resolve(backendPath)
+    if (!resolvedPath.startsWith(resolvedBackend)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid path' },
+        { status: 400 },
+      )
+    }
+
+    try {
+      const content = await fs.readFile(envFile, 'utf-8')
+      const parsed = parseEnvFile(content)
+      Object.assign(loadedVars, parsed)
+
+      for (const [key, value] of Object.entries(parsed)) {
+        variables.push({
+          key,
+          value,
+          defaultValue: SMART_DEFAULTS[key as keyof typeof SMART_DEFAULTS],
+          isSecret: isSecret(key),
+          source: 'env',
+          category: getCategory(key),
+        })
       }
+    } catch {
+      // File doesn't exist, that's okay
     }
 
     // Add defaults for missing variables
@@ -389,30 +414,40 @@ export async function POST(request: NextRequest) {
     const { environment, variables, action } = body
 
     if (action === 'save') {
-      // Get paths for both admin project and backend project
-      const adminPath = process.cwd() // Current admin project root
+      // Validate environment parameter
+      if (!environment || !isValidEnvironment(environment)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid environment parameter' },
+          { status: 400 },
+        )
+      }
+
       const backendPath = getProjectPath()
 
       // Ensure the backend directory exists
       try {
         await fs.mkdir(backendPath, { recursive: true })
-      } catch (mkdirError) {
-        console.error('Failed to create backend directory:', mkdirError)
+      } catch {
+        // Directory may already exist, that's okay
       }
 
-      // Use backend path for all environment files
-      const envFiles = {
-        local: path.join(backendPath, '.env.local'), // Backend project's .env.local
-        dev: path.join(backendPath, '.env.dev'),
-        stage: path.join(backendPath, '.env.stage'),
-        prod: path.join(backendPath, '.env.prod'),
-        secrets: path.join(backendPath, '.env.secrets'),
+      // Map environment to file name (safe - environment already validated)
+      const envFileNames: Record<ValidEnvironment, string> = {
+        local: '.env.local',
+        dev: '.env.dev',
+        stage: '.env.stage',
+        prod: '.env.prod',
+        secrets: '.env.secrets',
       }
 
-      const envFile = envFiles[environment as keyof typeof envFiles]
-      if (!envFile) {
+      const envFile = path.join(backendPath, envFileNames[environment])
+
+      // Verify the resolved path is within backendPath (defense in depth)
+      const resolvedPath = path.resolve(envFile)
+      const resolvedBackend = path.resolve(backendPath)
+      if (!resolvedPath.startsWith(resolvedBackend)) {
         return NextResponse.json(
-          { success: false, error: 'Invalid environment' },
+          { success: false, error: 'Invalid path' },
           { status: 400 },
         )
       }

@@ -1,11 +1,18 @@
 import { getProjectPath } from '@/lib/paths'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import fs from 'fs/promises'
 import { NextResponse } from 'next/server'
 import path from 'path'
 import { promisify } from 'util'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
+
+// Valid container name pattern
+const VALID_CONTAINER_NAME = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/
+
+function validateContainerName(name: string): boolean {
+  return name.length <= 64 && VALID_CONTAINER_NAME.test(name)
+}
 
 export async function GET() {
   try {
@@ -31,12 +38,17 @@ export async function GET() {
       // Path error, use default
     }
 
-    // Get list of project containers
-    const { stdout: containerList } = await execAsync(
-      "docker ps --format '{{.Names}}'",
-    )
+    // Get list of project containers using execFile (safe)
+    const { stdout: containerList } = await execFileAsync('docker', [
+      'ps',
+      '--format',
+      '{{.Names}}',
+    ])
     const projectContainers = containerList.split('\n').filter((name) => {
       if (!name) return false
+      // Validate container name format
+      if (!validateContainerName(name)) return false
+
       const lowerName = name.toLowerCase()
       return (
         lowerName.startsWith(projectPrefix.toLowerCase() + '_') ||
@@ -61,24 +73,35 @@ export async function GET() {
     const containerStats = await Promise.all(
       projectContainers.map(async (containerName) => {
         try {
-          // Get network stats from inside the container
-          const { stdout } = await execAsync(
-            `docker exec ${containerName} cat /proc/net/dev 2>/dev/null | grep -E 'eth0:|eth[0-9]:|ens[0-9]' | head -1`,
+          // Get network stats from inside the container using execFile (safe)
+          const { stdout } = await execFileAsync('docker', [
+            'exec',
+            containerName,
+            'cat',
+            '/proc/net/dev',
+          ])
+
+          // Filter for network interface lines (eth0, eth1, ens1, etc.)
+          const lines = stdout.split('\n')
+          const interfaceLine = lines.find((line) =>
+            /^\s*(eth[0-9]+|ens[0-9]+):/.test(line),
           )
 
-          // Parse the network stats line
-          // Format: interface: rx_bytes rx_packets ... tx_bytes tx_packets ...
-          const parts = stdout.trim().split(/\s+/)
+          if (interfaceLine) {
+            // Parse the network stats line
+            // Format: interface: rx_bytes rx_packets ... tx_bytes tx_packets ...
+            const parts = interfaceLine.trim().split(/\s+/)
 
-          if (parts.length >= 10) {
-            // rx_bytes is at index 1, tx_bytes is at index 9
-            const rxBytes = parseInt(parts[1]) || 0
-            const txBytes = parseInt(parts[9]) || 0
+            if (parts.length >= 10) {
+              // rx_bytes is at index 1, tx_bytes is at index 9
+              const rxBytes = parseInt(parts[1]) || 0
+              const txBytes = parseInt(parts[9]) || 0
 
-            return {
-              name: containerName,
-              rxBytes,
-              txBytes,
+              return {
+                name: containerName,
+                rxBytes,
+                txBytes,
+              }
             }
           }
 
@@ -87,7 +110,7 @@ export async function GET() {
             rxBytes: 0,
             txBytes: 0,
           }
-        } catch (error) {
+        } catch {
           return {
             name: containerName,
             rxBytes: 0,

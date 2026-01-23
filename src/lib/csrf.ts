@@ -5,6 +5,16 @@ const CSRF_TOKEN_LENGTH = 32
 const CSRF_COOKIE_NAME = 'nself-csrf'
 const CSRF_HEADER_NAME = 'x-csrf-token'
 
+// Allowed origins for requests (local development and production)
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https?:\/\/localhost(:\d+)?$/,
+  /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+  /^https?:\/\/0\.0\.0\.0(:\d+)?$/,
+  /^https?:\/\/[^\/]+\.localhost(:\d+)?$/,
+  /^https?:\/\/[^\/]+\.local(:\d+)?$/,
+  /^https?:\/\/admin\.local\.nself\.org(:\d+)?$/,
+]
+
 /**
  * Generate a CSRF token using Web Crypto API
  */
@@ -70,6 +80,47 @@ export function validateCSRFToken(request: NextRequest): boolean {
 export function csrfErrorResponse(): NextResponse {
   return NextResponse.json(
     { error: 'CSRF token validation failed' },
+    { status: 403 },
+  )
+}
+
+/**
+ * Validate request origin/referer for additional CSRF protection
+ * This is used alongside sameSite cookies for defense in depth
+ */
+export function validateOrigin(request: NextRequest): boolean {
+  // Skip for GET and HEAD requests
+  if (['GET', 'HEAD', 'OPTIONS'].includes(request.method)) {
+    return true
+  }
+
+  // Get origin or referer header
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
+
+  // If neither is present, it might be a same-origin request or non-browser client
+  // In development, we're more lenient; in production, require origin
+  if (!origin && !referer) {
+    // Allow requests without origin in development
+    return process.env.NODE_ENV === 'development'
+  }
+
+  const urlToCheck = origin || (referer ? new URL(referer).origin : null)
+
+  if (!urlToCheck) {
+    return false
+  }
+
+  // Check against allowed patterns
+  return ALLOWED_ORIGIN_PATTERNS.some((pattern) => pattern.test(urlToCheck))
+}
+
+/**
+ * Origin validation error response
+ */
+export function originErrorResponse(): NextResponse {
+  return NextResponse.json(
+    { error: 'Request origin not allowed' },
     { status: 403 },
   )
 }

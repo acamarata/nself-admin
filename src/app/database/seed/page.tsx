@@ -14,7 +14,6 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
 import {
-  AlertCircle,
   CheckCircle,
   Database,
   Loader2,
@@ -125,8 +124,12 @@ export default function DatabaseSeedPage() {
           <Database className="h-4 w-4" />
           <AlertTitle>nself CLI Integration</AlertTitle>
           <AlertDescription>
-            This page executes <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">nself db seed</code> to populate your database.
-            Seed files are managed in your project&apos;s seed directory.
+            This page executes{' '}
+            <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">
+              nself db seed
+            </code>{' '}
+            to populate your database. Seed files are managed in your
+            project&apos;s seed directory.
           </AlertDescription>
         </Alert>
 
@@ -151,10 +154,7 @@ export default function DatabaseSeedPage() {
                     Clear existing data before seeding (--force flag)
                   </div>
                 </div>
-                <Switch
-                  checked={forceMode}
-                  onCheckedChange={setForceMode}
-                />
+                <Switch checked={forceMode} onCheckedChange={setForceMode} />
               </div>
 
               {/* Action Buttons */}
@@ -213,7 +213,7 @@ export default function DatabaseSeedPage() {
             <CardContent>
               <ScrollArea className="h-80 rounded-lg bg-zinc-950 p-4">
                 {lastOutput ? (
-                  <pre className="whitespace-pre-wrap font-mono text-xs text-zinc-300">
+                  <pre className="font-mono text-xs whitespace-pre-wrap text-zinc-300">
                     {lastOutput}
                   </pre>
                 ) : (

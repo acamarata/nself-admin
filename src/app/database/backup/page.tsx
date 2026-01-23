@@ -91,8 +91,12 @@ export default function DatabaseBackupPage() {
           <Database className="h-4 w-4" />
           <AlertTitle>nself CLI Integration</AlertTitle>
           <AlertDescription>
-            This page executes <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">nself db backup</code> to create database backups.
-            Backups are stored in your project&apos;s backups directory.
+            This page executes{' '}
+            <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">
+              nself db backup
+            </code>{' '}
+            to create database backups. Backups are stored in your
+            project&apos;s backups directory.
           </AlertDescription>
         </Alert>
 
@@ -131,7 +135,9 @@ export default function DatabaseBackupPage() {
 
               {/* Info */}
               <div className="rounded-lg border p-4 text-sm text-zinc-600 dark:text-zinc-400">
-                <p className="font-medium text-zinc-900 dark:text-white">What gets backed up:</p>
+                <p className="font-medium text-zinc-900 dark:text-white">
+                  What gets backed up:
+                </p>
                 <ul className="mt-2 list-inside list-disc space-y-1">
                   <li>All database schemas and tables</li>
                   <li>Hasura metadata and migrations</li>
@@ -161,7 +167,7 @@ export default function DatabaseBackupPage() {
             <CardContent>
               <ScrollArea className="h-80 rounded-lg bg-zinc-950 p-4">
                 {lastOutput ? (
-                  <pre className="whitespace-pre-wrap font-mono text-xs text-zinc-300">
+                  <pre className="font-mono text-xs whitespace-pre-wrap text-zinc-300">
                     {lastOutput}
                   </pre>
                 ) : (
@@ -202,7 +208,10 @@ export default function DatabaseBackupPage() {
                       )}
                       <div>
                         <div className="font-medium">
-                          {result.filename || (result.success ? 'Backup Created' : 'Backup Failed')}
+                          {result.filename ||
+                            (result.success
+                              ? 'Backup Created'
+                              : 'Backup Failed')}
                         </div>
                         <div className="text-sm text-zinc-500">
                           {result.timestamp}
@@ -210,7 +219,9 @@ export default function DatabaseBackupPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={result.success ? 'default' : 'destructive'}>
+                      <Badge
+                        variant={result.success ? 'default' : 'destructive'}
+                      >
                         {result.success ? 'Completed' : 'Error'}
                       </Badge>
                       {result.success && result.filename && (

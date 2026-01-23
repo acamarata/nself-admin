@@ -26,6 +26,7 @@ function ensureDataDir() {
 // Initialize database
 let db: Loki | null = null
 let isInitialized = false
+let initializationPromise: Promise<void> | null = null
 
 // Collection references
 let configCollection: Collection<ConfigItem> | null = null
@@ -64,10 +65,15 @@ export interface AuditLogItem {
   userId?: string
 }
 
-// Initialize database
+// Initialize database with race condition protection
 export async function initDatabase(): Promise<void> {
-  // Check if db exists and collections are initialized
+  // If already initialized, return immediately
   if (isInitialized && db && configCollection) return
+
+  // If initialization is in progress, wait for it
+  if (initializationPromise) {
+    return initializationPromise
+  }
 
   // Reset initialization flag if db is null
   if (!db) {
@@ -77,7 +83,8 @@ export async function initDatabase(): Promise<void> {
   // Ensure directory exists before initializing database
   ensureDataDir()
 
-  return new Promise((resolve, reject) => {
+  // Create and store the initialization promise to prevent race conditions
+  initializationPromise = new Promise<void>((resolve, reject) => {
     db = new Loki(DB_PATH, {
       autoload: true,
       autosave: true,
@@ -118,14 +125,18 @@ export async function initDatabase(): Promise<void> {
             })
 
           isInitialized = true
+          initializationPromise = null // Clear the promise after successful init
           console.log('Database initialized at:', DB_PATH)
           resolve()
         } catch (error) {
+          initializationPromise = null // Clear the promise on error to allow retry
           reject(error)
         }
       },
     })
   })
+
+  return initializationPromise
 }
 
 // Config operations

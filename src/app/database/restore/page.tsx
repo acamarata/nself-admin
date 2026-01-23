@@ -93,7 +93,8 @@ export default function DatabaseRestorePage() {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Warning: Destructive Operation</AlertTitle>
           <AlertDescription>
-            Restoring a database will overwrite all existing data. Make sure you have a recent backup before proceeding.
+            Restoring a database will overwrite all existing data. Make sure you
+            have a recent backup before proceeding.
           </AlertDescription>
         </Alert>
 
@@ -101,7 +102,11 @@ export default function DatabaseRestorePage() {
           <Database className="h-4 w-4" />
           <AlertTitle>nself CLI Integration</AlertTitle>
           <AlertDescription>
-            This page executes <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">nself db restore</code> to restore your database.
+            This page executes{' '}
+            <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-800">
+              nself db restore
+            </code>{' '}
+            to restore your database.
           </AlertDescription>
         </Alert>
 
@@ -174,7 +179,7 @@ export default function DatabaseRestorePage() {
             <CardContent>
               <ScrollArea className="h-80 rounded-lg bg-zinc-950 p-4">
                 {lastOutput ? (
-                  <pre className="whitespace-pre-wrap font-mono text-xs text-zinc-300">
+                  <pre className="font-mono text-xs whitespace-pre-wrap text-zinc-300">
                     {lastOutput}
                   </pre>
                 ) : (

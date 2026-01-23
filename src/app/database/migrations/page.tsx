@@ -291,7 +291,8 @@ export default function DatabaseMigrationsPage() {
                   <span>Command:</span>
                 </div>
                 <div className="mt-2">
-                  $ nself db migrate{targetVersion ? ` --target=${targetVersion}` : ''}
+                  $ nself db migrate
+                  {targetVersion ? ` --target=${targetVersion}` : ''}
                 </div>
               </div>
             </CardContent>
@@ -308,7 +309,7 @@ export default function DatabaseMigrationsPage() {
             <CardContent>
               <ScrollArea className="h-80 rounded-lg bg-zinc-950 p-4">
                 {lastOutput ? (
-                  <pre className="whitespace-pre-wrap font-mono text-xs text-zinc-300">
+                  <pre className="font-mono text-xs whitespace-pre-wrap text-zinc-300">
                     {lastOutput}
                   </pre>
                 ) : (

@@ -201,13 +201,17 @@ export async function nselfDbSync(): Promise<CLIResult> {
   return executeNselfCommand('db', ['sync'])
 }
 
-export async function nselfDbSeed(options?: { force?: boolean }): Promise<CLIResult> {
+export async function nselfDbSeed(options?: {
+  force?: boolean
+}): Promise<CLIResult> {
   const args = ['seed']
   if (options?.force) args.push('--force')
   return executeNselfCommand('db', args)
 }
 
-export async function nselfDbMigrate(options?: { target?: string }): Promise<CLIResult> {
+export async function nselfDbMigrate(options?: {
+  target?: string
+}): Promise<CLIResult> {
   const args = ['migrate']
   if (options?.target) args.push('--target', options.target)
   return executeNselfCommand('db', args)
@@ -223,7 +227,9 @@ export async function nselfDbRestore(backupPath: string): Promise<CLIResult> {
   return executeNselfCommand('db', ['restore', backupPath])
 }
 
-export async function nselfDbReset(options?: { force?: boolean }): Promise<CLIResult> {
+export async function nselfDbReset(options?: {
+  force?: boolean
+}): Promise<CLIResult> {
   const args = ['reset']
   if (options?.force) args.push('--force')
   return executeNselfCommand('db', args)
@@ -338,13 +344,17 @@ export async function nselfSslTrust(): Promise<CLIResult> {
 }
 
 // Build command
-export async function nselfBuild(options?: { force?: boolean }): Promise<CLIResult> {
+export async function nselfBuild(options?: {
+  force?: boolean
+}): Promise<CLIResult> {
   const args = options?.force ? ['--force'] : []
   return executeNselfCommand('build', args)
 }
 
 // Init command
-export async function nselfInit(options?: { full?: boolean }): Promise<CLIResult> {
+export async function nselfInit(options?: {
+  full?: boolean
+}): Promise<CLIResult> {
   const args = options?.full ? ['--full'] : []
   return executeNselfCommand('init', args)
 }

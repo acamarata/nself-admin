@@ -7,7 +7,10 @@ const execFileAsync = promisify(execFile)
 // Validate version string to prevent injection
 function isValidVersion(version: string): boolean {
   // Allow 'latest' or semver-like patterns (e.g., 0.0.7, 1.2.3-beta.1)
-  return version === 'latest' || /^[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]+)?$/i.test(version)
+  return (
+    version === 'latest' ||
+    /^[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9.]+)?$/i.test(version)
+  )
 }
 
 // Validate container/hostname string

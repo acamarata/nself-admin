@@ -1,22 +1,57 @@
-import { getEnhancedPath } from '@/lib/nself-path'
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
+
+// Input validation patterns
+const VALID_DOMAIN = /^[a-z0-9][a-z0-9.-]*[a-z0-9]$/i
+const VALID_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const VALID_ACTION = /^[a-z]+$/i
+const VALID_SECRET_NAME = /^[A-Z][A-Z0-9_]*$/
+const VALID_SSL_ACTION = /^(status|request|renew|self-signed)$/
+const VALID_FIREWALL_ACTION = /^(status|configure|allow|block)$/
+const VALID_SECRET_ACTION = /^(show|generate|rotate)$/
+const VALID_PORT = /^\d{1,5}$/
+const VALID_PROTOCOL = /^(tcp|udp)$/i
+
+function validateInput(
+  value: string | undefined,
+  pattern: RegExp,
+  name: string,
+): string | null {
+  if (!value) return null
+  if (!pattern.test(value)) {
+    throw new Error(`Invalid ${name}: contains disallowed characters`)
+  }
+  return value
+}
 
 // GET /api/deploy/production - Get production status
 export async function GET() {
   try {
     const projectPath = getProjectPath()
+    const nselfPath = await findNselfPath()
+
+    if (!nselfPath) {
+      return NextResponse.json(
+        { success: false, error: 'nself CLI not found' },
+        { status: 500 },
+      )
+    }
 
     try {
-      const { stdout, stderr } = await execAsync('nself prod status', {
-        cwd: projectPath,
-        env: { ...process.env, PATH: getEnhancedPath() },
-        timeout: 30000,
-      })
+      const { stdout, stderr } = await execFileAsync(
+        nselfPath,
+        ['prod', 'status'],
+        {
+          cwd: projectPath,
+          env: { ...process.env, PATH: getEnhancedPath() },
+          timeout: 30000,
+        },
+      )
 
       return NextResponse.json({
         success: true,
@@ -50,88 +85,197 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { action, options = {} } = body
     const projectPath = getProjectPath()
+    const nselfPath = await findNselfPath()
 
-    let command = ''
+    if (!nselfPath) {
+      return NextResponse.json(
+        { success: false, error: 'nself CLI not found' },
+        { status: 500 },
+      )
+    }
+
+    // Validate action
+    if (!action || !VALID_ACTION.test(action)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid action' },
+        { status: 400 },
+      )
+    }
+
+    // Build args array safely
+    const args: string[] = []
 
     switch (action) {
-      case 'init':
+      case 'init': {
         // nself prod init <domain> [--email <email>]
-        command = `nself prod init ${options.domain}`
-        if (options.email) command += ` --email ${options.email}`
+        const domain = validateInput(options.domain, VALID_DOMAIN, 'domain')
+        if (!domain) {
+          return NextResponse.json(
+            { success: false, error: 'Domain is required for init' },
+            { status: 400 },
+          )
+        }
+        args.push('prod', 'init', domain)
+        const email = validateInput(options.email, VALID_EMAIL, 'email')
+        if (email) {
+          args.push('--email', email)
+        }
         break
+      }
 
       case 'check':
       case 'audit':
         // nself prod check [--verbose]
-        command = 'nself prod check'
-        if (options.verbose) command += ' --verbose'
+        args.push('prod', 'check')
+        if (options.verbose === true) {
+          args.push('--verbose')
+        }
         break
 
       case 'secrets': {
         // nself prod secrets <action> [options]
-        const secretAction = options.secretAction || 'show'
-        command = `nself prod secrets ${secretAction}`
-        if (secretAction === 'generate' && options.force) {
-          command += ' --force'
+        const secretAction = validateInput(
+          options.secretAction || 'show',
+          VALID_SECRET_ACTION,
+          'secret action',
+        )
+        if (!secretAction) {
+          return NextResponse.json(
+            { success: false, error: 'Invalid secret action' },
+            { status: 400 },
+          )
         }
-        if (secretAction === 'rotate' && options.secretName) {
-          command = `nself prod secrets rotate ${options.secretName}`
+
+        args.push('prod', 'secrets', secretAction)
+
+        if (secretAction === 'generate' && options.force === true) {
+          args.push('--force')
         }
-        if (secretAction === 'show' && options.unmask) {
-          command += ' --unmask'
+        if (secretAction === 'rotate') {
+          const secretName = validateInput(
+            options.secretName,
+            VALID_SECRET_NAME,
+            'secret name',
+          )
+          if (secretName) {
+            args.push(secretName)
+          }
+        }
+        if (secretAction === 'show' && options.unmask === true) {
+          args.push('--unmask')
         }
         break
       }
 
       case 'ssl': {
         // nself prod ssl <action> [options]
-        const sslAction = options.sslAction || 'status'
-        command = `nself prod ssl ${sslAction}`
+        const sslAction = validateInput(
+          options.sslAction || 'status',
+          VALID_SSL_ACTION,
+          'SSL action',
+        )
+        if (!sslAction) {
+          return NextResponse.json(
+            { success: false, error: 'Invalid SSL action' },
+            { status: 400 },
+          )
+        }
+
+        args.push('prod', 'ssl', sslAction)
+
         if (sslAction === 'request') {
-          command += ` ${options.domain}`
-          if (options.email) command += ` --email ${options.email}`
-          if (options.staging) command += ' --staging'
+          const domain = validateInput(options.domain, VALID_DOMAIN, 'domain')
+          if (domain) {
+            args.push(domain)
+          }
+          const email = validateInput(options.email, VALID_EMAIL, 'email')
+          if (email) {
+            args.push('--email', email)
+          }
+          if (options.staging === true) {
+            args.push('--staging')
+          }
         }
-        if (sslAction === 'renew' && options.force) {
-          command += ' --force'
+        if (sslAction === 'renew' && options.force === true) {
+          args.push('--force')
         }
-        if (sslAction === 'self-signed' && options.domain) {
-          command += ` ${options.domain}`
+        if (sslAction === 'self-signed') {
+          const domain = validateInput(options.domain, VALID_DOMAIN, 'domain')
+          if (domain) {
+            args.push(domain)
+          }
         }
         break
       }
 
       case 'firewall': {
         // nself prod firewall <action> [options]
-        const fwAction = options.firewallAction || 'status'
-        command = `nself prod firewall ${fwAction}`
-        if (fwAction === 'configure' && options.dryRun) {
-          command += ' --dry-run'
+        const fwAction = validateInput(
+          options.firewallAction || 'status',
+          VALID_FIREWALL_ACTION,
+          'firewall action',
+        )
+        if (!fwAction) {
+          return NextResponse.json(
+            { success: false, error: 'Invalid firewall action' },
+            { status: 400 },
+          )
         }
-        if (fwAction === 'allow' && options.port) {
-          command = `nself prod firewall allow ${options.port}`
-          if (options.protocol) command += ` ${options.protocol}`
+
+        args.push('prod', 'firewall', fwAction)
+
+        if (fwAction === 'configure' && options.dryRun === true) {
+          args.push('--dry-run')
         }
-        if (fwAction === 'block' && options.port) {
-          command = `nself prod firewall block ${options.port}`
+        if ((fwAction === 'allow' || fwAction === 'block') && options.port) {
+          const port = validateInput(
+            options.port?.toString(),
+            VALID_PORT,
+            'port',
+          )
+          if (port && parseInt(port) > 0 && parseInt(port) <= 65535) {
+            args.push(port)
+          }
+          if (fwAction === 'allow' && options.protocol) {
+            const protocol = validateInput(
+              options.protocol,
+              VALID_PROTOCOL,
+              'protocol',
+            )
+            if (protocol) {
+              args.push(protocol)
+            }
+          }
         }
         break
       }
 
       case 'harden':
         // nself prod harden [--dry-run] [--skip-firewall]
-        command = 'nself prod harden'
-        if (options.dryRun) command += ' --dry-run'
-        if (options.skipFirewall) command += ' --skip-firewall'
+        args.push('prod', 'harden')
+        if (options.dryRun === true) {
+          args.push('--dry-run')
+        }
+        if (options.skipFirewall === true) {
+          args.push('--skip-firewall')
+        }
         break
 
       case 'deploy':
         // nself deploy prod [options]
-        command = 'nself deploy prod'
-        if (options.dryRun) command += ' --dry-run'
-        if (options.force) command += ' --force'
-        if (options.rolling) command += ' --rolling'
-        if (options.skipHealth) command += ' --skip-health'
+        args.push('deploy', 'prod')
+        if (options.dryRun === true) {
+          args.push('--dry-run')
+        }
+        if (options.force === true) {
+          args.push('--force')
+        }
+        if (options.rolling === true) {
+          args.push('--rolling')
+        }
+        if (options.skipHealth === true) {
+          args.push('--skip-health')
+        }
         break
 
       default:
@@ -141,7 +285,7 @@ export async function POST(request: NextRequest) {
         )
     }
 
-    const { stdout, stderr } = await execAsync(command, {
+    const { stdout, stderr } = await execFileAsync(nselfPath, args, {
       cwd: projectPath,
       env: { ...process.env, PATH: getEnhancedPath() },
       timeout: 300000, // 5 minute timeout
