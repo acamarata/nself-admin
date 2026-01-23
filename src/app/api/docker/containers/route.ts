@@ -311,21 +311,30 @@ export async function GET(request: NextRequest) {
       projectContainers.map(async (container) => {
         const stats = statsMap.get(container.ID)
         let health = getHealthStatus(container.Status, container.State)
-        let healthNote: string | null = null
+        let healthNote: string | undefined = undefined
 
-        // Check if this is a distroless service with Docker reporting unhealthy
+        // Check if this is a known distroless service
         const distrolessService = isDistrolessService(container.Names)
-        if (distrolessService && health === 'unhealthy') {
+        if (distrolessService) {
+          // Distroless images can't use Docker healthcheck (no shell)
+          // Always check via HTTP endpoint for accurate health status
           const httpCheck = await checkDistrolessHealth(distrolessService)
           if (httpCheck.checked) {
+            const dockerSaysUnhealthy =
+              container.Status?.includes('(unhealthy)')
             if (httpCheck.healthy) {
               health = 'healthy'
-              healthNote = 'Distroless image - verified via HTTP endpoint'
-              console.log(
-                `[CONTAINERS API] ${container.Names}: Docker reports unhealthy but HTTP check passed`,
-              )
+              healthNote = dockerSaysUnhealthy
+                ? 'Docker healthcheck unavailable (distroless) - verified healthy via HTTP'
+                : 'Verified via HTTP endpoint'
+              if (dockerSaysUnhealthy) {
+                console.log(
+                  `[CONTAINERS API] ${container.Names}: Docker reports unhealthy but HTTP check passed`,
+                )
+              }
             } else {
-              healthNote = 'Distroless image - HTTP endpoint check failed'
+              health = 'unhealthy'
+              healthNote = 'HTTP endpoint check failed'
             }
           }
         }
