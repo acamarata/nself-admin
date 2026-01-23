@@ -1,3 +1,4 @@
+import { getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import fs from 'fs/promises'
@@ -53,11 +54,14 @@ export async function POST(request: NextRequest) {
 
       case 'nself CLI available':
         try {
-          const { stdout } = await execAsync('which nself')
+          const enhancedPath = getEnhancedPath()
+          const { stdout } = await execAsync('which nself', {
+            env: { ...process.env, PATH: enhancedPath },
+          })
           if (stdout.trim()) {
             result = {
               success: true,
-              message: 'nself CLI found and accessible',
+              message: `nself CLI found at ${stdout.trim()}`,
             }
           } else {
             throw new Error('nself not found')

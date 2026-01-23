@@ -35,10 +35,13 @@ export async function POST(request: NextRequest) {
         // Find nself CLI using the centralized utility
         const nselfPath = await findNselfPath()
 
-        // Check if nself was found (returns 'nself' if not found, which might fail)
+        // Check if nself was found - findNselfPath now returns the actual path
+        // If it returns just 'nself', it couldn't find a specific path but it might still work
         if (nselfPath === 'nself') {
-          // Verify it's actually in PATH
-          const whichProcess = spawn('which', ['nself'])
+          // Verify it's actually in PATH using enhanced PATH
+          const whichProcess = spawn('which', ['nself'], {
+            env: { ...process.env, PATH: getEnhancedPath() },
+          })
           const inPath = await new Promise<boolean>((resolve) => {
             whichProcess.on('close', (code) => resolve(code === 0))
           })

@@ -1,3 +1,4 @@
+import { getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { exec, execFile } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
@@ -12,19 +13,40 @@ const ALLOWED_NSELF_COMMANDS: Record<
   string,
   { args?: string[]; options?: string[] }
 > = {
-  init: { options: ['--template', '--force'] },
-  build: { options: ['--clean', '--verbose'] },
-  start: { args: ['all'], options: ['--detach', '--force-recreate'] },
-  stop: { args: ['all'], options: ['--timeout'] },
-  status: { options: ['--json', '--verbose'] },
+  // Core commands
+  init: { options: ['--template', '--force', '--full'] },
+  build: { options: ['--clean', '--verbose', '--force', '--debug'] },
+  start: { args: ['all', 'service'], options: ['--detach', '--force-recreate'] },
+  stop: { args: ['all', 'service'], options: ['--timeout'] },
+  restart: { args: ['service'], options: ['--timeout'] },
+  status: { options: ['--json', '--verbose', '--watch'] },
   logs: { args: ['service'], options: ['--follow', '--tail', '--since'] },
+  // Management commands
   doctor: { options: ['--fix', '--verbose'] },
-  backup: { options: ['--output', '--compress'] },
+  backup: { options: ['--output', '--compress', '--database', '--files'] },
   restore: { args: ['file'], options: ['--force'] },
   monitor: { options: ['--enable', '--disable'] },
-  urls: { options: ['--format'] },
-  help: {},
-  version: {},
+  urls: { options: ['--format', '--json'] },
+  // SSL and trust
+  ssl: { args: ['action'], options: ['--generate', '--trust', '--domain', '--email'] },
+  trust: { options: ['--install', '--uninstall'] },
+  // Environment management
+  env: { args: ['action', 'name'], options: ['--file', '--force'] },
+  // Cleanup commands
+  clean: { options: ['--volumes', '--images', '--all', '--force'] },
+  reset: { options: ['--force', '--keep-data', '--keep-volumes'] },
+  // Execution and deployment
+  exec: { args: ['service', 'command'], options: ['--user', '--workdir'] },
+  deploy: { args: ['target'], options: ['--dry-run', '--force', '--rolling'] },
+  staging: { args: ['action'], options: ['--force', '--seed', '--sync'] },
+  prod: { args: ['action'], options: ['--force', '--verbose', '--dry-run'] },
+  // Update command
+  update: { options: ['--check', '--cli', '--admin', '--restart', '--force'] },
+  // Info commands
+  help: { args: ['command'] },
+  version: { options: ['--short', '--json'] },
+  // Database commands
+  db: { args: ['action'], options: ['--force', '--verbose'] },
 }
 
 // Schema for command validation
@@ -166,7 +188,7 @@ export async function POST(request: NextRequest) {
         {
           env: {
             ...process.env,
-            PATH: process.env.PATH + ':/usr/local/bin:/opt/homebrew/bin',
+            PATH: getEnhancedPath(),
             FORCE_COLOR: '0',
           },
           timeout: 300000,

@@ -1,3 +1,4 @@
+import { getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
       cwd: projectPath,
       env: {
         ...process.env,
-        PATH: process.env.PATH + ':/usr/local/bin',
+        PATH: getEnhancedPath(),
         // Ensure nself runs in the correct context
         NSELF_PROJECT_PATH: projectPath,
       },
@@ -122,7 +123,7 @@ export async function GET(request: NextRequest) {
       cwd: projectPath,
       env: {
         ...process.env,
-        PATH: process.env.PATH + ':/usr/local/bin',
+        PATH: getEnhancedPath(),
         NSELF_PROJECT_PATH: projectPath,
       },
       timeout: 30000,

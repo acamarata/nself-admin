@@ -1316,6 +1316,18 @@ export default function StartPage() {
                 )}
               </div>
             </div>
+
+            {/* Project Path Info */}
+            {projectInfo?.projectPath && (
+              <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                <div className="text-center text-xs text-zinc-400 dark:text-zinc-500">
+                  <span className="font-medium">Project Path:</span>{' '}
+                  <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono dark:bg-zinc-800">
+                    {projectInfo.projectPath}
+                  </code>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

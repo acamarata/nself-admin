@@ -1,3 +1,4 @@
+import { getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { sanitizePath } from '@/lib/validation'
 import { execFile } from 'child_process'
@@ -500,14 +501,14 @@ async function validateConfiguration() {
     const { stdout: nselfValidation, stderr } = await execFileAsync(
       '/bin/sh',
       ['-c', `cd "${backendPath}" && nself doctor`],
-      { timeout: 30000 },
+      { timeout: 30000, env: { ...process.env, PATH: getEnhancedPath() } },
     )
 
     // Validate Docker Compose
     const { stdout: dockerValidation } = await execFileAsync(
       '/bin/sh',
       ['-c', `cd "${backendPath}" && docker-compose config --quiet`],
-      { timeout: 30000 },
+      { timeout: 30000, env: { ...process.env, PATH: getEnhancedPath() } },
     ).catch((error) => ({
       stdout: '',
       stderr: error instanceof Error ? error.message : 'Unknown error',
@@ -584,7 +585,7 @@ async function applyConfiguration(options: any) {
       const { stdout, stderr } = await execFileAsync(
         '/bin/sh',
         ['-c', `cd "${backendPath}" && docker-compose restart`],
-        { timeout: 60000 },
+        { timeout: 60000, env: { ...process.env, PATH: getEnhancedPath() } },
       )
       results.push({ action: 'restart', stdout, stderr })
     }
@@ -594,7 +595,7 @@ async function applyConfiguration(options: any) {
       const { stdout, stderr } = await execFileAsync(
         '/bin/sh',
         ['-c', `cd "${backendPath}" && docker-compose build`],
-        { timeout: 300000 },
+        { timeout: 300000, env: { ...process.env, PATH: getEnhancedPath() } },
       )
       results.push({ action: 'rebuild', stdout, stderr })
     }
@@ -603,7 +604,7 @@ async function applyConfiguration(options: any) {
     const { stdout: nselfOutput, stderr: nselfError } = await execFileAsync(
       '/bin/sh',
       ['-c', `cd "${backendPath}" && nself apply`],
-      { timeout: 30000 },
+      { timeout: 30000, env: { ...process.env, PATH: getEnhancedPath() } },
     ).catch((error) => ({
       stdout: '',
       stderr: error instanceof Error ? error.message : 'Unknown error',
@@ -865,7 +866,7 @@ async function applyEnvironmentChanges() {
     const { stdout, stderr } = await execFileAsync(
       '/bin/sh',
       ['-c', `cd "${backendPath}" && docker-compose restart`],
-      { timeout: 60000 },
+      { timeout: 60000, env: { ...process.env, PATH: getEnhancedPath() } },
     )
 
     return { success: true, stdout, stderr }

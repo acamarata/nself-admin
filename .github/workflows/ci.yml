@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
   push:
@@ -8,16 +8,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Quick checks that run first
   lint:
-    name: Lint & Format Check
+    name: Lint & Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        # Uses packageManager field from package.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,26 +27,19 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
-        run: pnpm run lint || true  # Continue even if there are warnings
+        run: pnpm run lint
 
-      - name: Check formatting (if script exists)
-        run: |
-          if pnpm run | grep -q "format:check"; then
-            pnpm run format:check
-          else
-            echo "No format:check script found, skipping"
-          fi
+      - name: Check formatting
+        run: pnpm run format:check
 
-  # TypeScript type checking
   typecheck:
-    name: TypeScript Type Check
+    name: TypeScript
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        # Uses packageManager field from package.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -60,19 +51,16 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run TypeScript compiler
-        run: pnpm exec tsc --noEmit || true  # Continue with warnings
+        run: pnpm run type-check
 
-  # Test the Next.js build
-  build-test:
-    name: Next.js Build Test
+  test:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    needs: [lint, typecheck]
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        # Uses packageManager field from package.json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -83,194 +71,87 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Next.js application
-        run: pnpm run build
-        env:
-          NODE_ENV: production
-          NEXT_TELEMETRY_DISABLED: 1
-      
-      - name: Check build output
-        run: |
-          if [ -d ".next" ]; then
-            echo "✅ Build output exists"
-            du -sh .next
-          else
-            echo "❌ Build failed - no .next directory"
-            exit 1
-          fi
-      
-      - name: Upload build artifacts
+      - name: Run tests with coverage
+        run: pnpm run test:ci
+
+      - name: Upload coverage report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: nextjs-build
-          path: .next
-          retention-days: 1
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
 
-  # Docker build test (without push)
-  docker-build:
-    name: Docker Build Test
+  build:
+    name: Build
     runs-on: ubuntu-latest
-    needs: [build-test]
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Build Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64
-          push: false
-          tags: nself-admin:ci-test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      
-      - name: Test Docker image
-        run: |
-          docker run --rm nself-admin:ci-test --version || echo "Version check not implemented"
-
-  # Security scanning
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
+    needs: [lint, typecheck, test]
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        # Uses packageManager field from package.json
 
-      - name: Run pnpm audit
-        run: pnpm audit --audit-level=high || true
-      
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-      
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
+          node-version: '20'
+          cache: 'pnpm'
 
-  # Build and push Docker images (only on main branch)
-  docker-publish:
-    name: Build & Publish Docker
-    runs-on: ubuntu-latest
-    needs: [build-test, docker-build]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: linux/amd64,linux/arm64
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Check Docker Hub credentials
-        id: check-dockerhub
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        run: pnpm run build
+        env:
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Verify build output
         run: |
-          if [ -n "${{ secrets.DOCKERHUB_USERNAME }}" ] && [ -n "${{ secrets.DOCKERHUB_TOKEN }}" ]; then
-            echo "available=true" >> $GITHUB_OUTPUT
+          if [ -d ".next" ]; then
+            echo "Build successful"
+            du -sh .next
           else
-            echo "available=false" >> $GITHUB_OUTPUT
-            echo "⚠️ Docker Hub credentials not configured"
+            echo "Build failed - no .next directory"
+            exit 1
           fi
-      
-      - name: Log in to Docker Hub
-        if: steps.check-dockerhub.outputs.available == 'true'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ steps.check-dockerhub.outputs.available == 'true' && 'acamarata/nself-admin' || '' }}
-            ghcr.io/${{ github.repository }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=raw,value=latest,enable={{is_default_branch}}
-      
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
-  # Summary job
-  ci-summary:
+  summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, build-test, docker-build]
+    needs: [lint, typecheck, test, build]
     if: always()
     steps:
-      - name: CI Summary
+      - name: Generate summary
         run: |
-          echo "### CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### CI Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Check job statuses
           if [ "${{ needs.lint.result }}" == "success" ]; then
-            echo "✅ Linting passed" >> $GITHUB_STEP_SUMMARY
+            echo "- Lint & Format: passed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Linting failed" >> $GITHUB_STEP_SUMMARY
+            echo "- Lint & Format: failed" >> $GITHUB_STEP_SUMMARY
           fi
 
           if [ "${{ needs.typecheck.result }}" == "success" ]; then
-            echo "✅ TypeScript check passed" >> $GITHUB_STEP_SUMMARY
+            echo "- TypeScript: passed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ TypeScript check failed" >> $GITHUB_STEP_SUMMARY
+            echo "- TypeScript: failed" >> $GITHUB_STEP_SUMMARY
           fi
 
-          
-          if [ "${{ needs.build-test.result }}" == "success" ]; then
-            echo "✅ Next.js build passed" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.test.result }}" == "success" ]; then
+            echo "- Unit Tests: passed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Next.js build failed" >> $GITHUB_STEP_SUMMARY
+            echo "- Unit Tests: failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
-          if [ "${{ needs.docker-build.result }}" == "success" ]; then
-            echo "✅ Docker build passed" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.build.result }}" == "success" ]; then
+            echo "- Build: passed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ Docker build failed" >> $GITHUB_STEP_SUMMARY
+            echo "- Build: failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ github.ref }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Actor:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

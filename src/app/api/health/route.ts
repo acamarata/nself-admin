@@ -1,4 +1,5 @@
 import { VERSION } from '@/lib/constants'
+import { getEnhancedPath } from '@/lib/nself-path'
 import { exec } from 'child_process'
 import fs from 'fs/promises'
 import { NextResponse } from 'next/server'
@@ -10,12 +11,14 @@ interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy'
   timestamp: string
   version: string
+  cliVersion?: string
   uptime: number
   checks: {
     docker: boolean
     filesystem: boolean
     memory: boolean
     network: boolean
+    nself: boolean
   }
   resources: {
     memory: {
@@ -38,6 +41,23 @@ async function checkDocker(): Promise<boolean> {
   }
 }
 
+async function checkNselfCli(): Promise<{ available: boolean; version?: string }> {
+  try {
+    const { stdout } = await execAsync('nself -v', {
+      env: { ...process.env, PATH: getEnhancedPath() },
+      timeout: 5000,
+    })
+    // Extract version from output (e.g., "v0.4.4" or "0.4.4")
+    const versionMatch = stdout.match(/v?(\d+\.\d+\.\d+)/)
+    return {
+      available: true,
+      version: versionMatch ? versionMatch[1] : stdout.trim(),
+    }
+  } catch {
+    return { available: false }
+  }
+}
+
 async function checkFilesystem(): Promise<boolean> {
   try {
     // Check if we can write to /tmp
@@ -45,8 +65,9 @@ async function checkFilesystem(): Promise<boolean> {
     await fs.writeFile(testFile, 'test')
     await fs.unlink(testFile)
 
-    // Check if project directory is accessible
-    await fs.access('/project', fs.constants.R_OK | fs.constants.W_OK)
+    // Check if project directory is accessible (mounted at /workspace in container)
+    const projectPath = process.env.NSELF_PROJECT_PATH || '/workspace'
+    await fs.access(projectPath, fs.constants.R_OK | fs.constants.W_OK)
     return true
   } catch {
     return false
@@ -149,12 +170,13 @@ export async function GET() {
     const startTime = process.hrtime()
 
     // Run all checks in parallel
-    const [dockerOk, filesystemOk, memoryOk, networkOk, memoryUsage, cpuUsage] =
+    const [dockerOk, filesystemOk, memoryOk, networkOk, nselfCheck, memoryUsage, cpuUsage] =
       await Promise.all([
         checkDocker(),
         checkFilesystem(),
         checkMemory(),
         checkNetwork(),
+        checkNselfCli(),
         getMemoryUsage(),
         getCpuUsage(),
       ])
@@ -164,6 +186,7 @@ export async function GET() {
       filesystem: filesystemOk,
       memory: memoryOk,
       network: networkOk,
+      nself: nselfCheck.available,
     }
 
     const allChecksPass = Object.values(checks).every((check) => check === true)
@@ -187,6 +210,7 @@ export async function GET() {
       status,
       timestamp: new Date().toISOString(),
       version: VERSION,
+      cliVersion: nselfCheck.version,
       uptime: process.uptime(),
       checks,
       resources: {
@@ -218,6 +242,7 @@ export async function GET() {
           filesystem: false,
           memory: false,
           network: false,
+          nself: false,
         },
       },
       { status: 503 },

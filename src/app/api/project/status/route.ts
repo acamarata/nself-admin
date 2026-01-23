@@ -1,4 +1,5 @@
 import { hasAdminPassword as checkAdminPassword } from '@/lib/database'
+import { getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { exec } from 'child_process'
 import fs from 'fs/promises'
@@ -8,6 +9,12 @@ import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
+// Strip ANSI escape codes from terminal output
+function stripAnsi(str: string): string {
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/\x1b\[[0-9;]*m/g, '').replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
+}
+
 export async function GET() {
   try {
     // Use the same project path as the build API uses
@@ -15,17 +22,25 @@ export async function GET() {
 
     // Check if any env file exists - nself prefers .env, falls back to .env.dev
     let hasEnvFile = false
-    let envContent = null
+    let envContent = ''
+    let projectNameFromEnv: string | null = null
 
-    // Check in nself's priority order
-    const envFiles = ['.env', '.env.dev', '.env.staging', '.env.prod']
+    // Check in nself's priority order - but combine content to get all config
+    const envFiles = ['.env', '.env.local', '.env.dev', '.env.staging', '.env.prod']
     for (const envFile of envFiles) {
       const envPath = path.join(projectPath, envFile)
       try {
         const content = await fs.readFile(envPath, 'utf8')
         hasEnvFile = true
-        envContent = content
-        break // Stop at first file found
+        // Combine all env content for full configuration detection
+        envContent += '\n' + content
+        // Extract PROJECT_NAME from first file that has it
+        if (!projectNameFromEnv) {
+          const match = content.match(/PROJECT_NAME=(.+)/)
+          if (match) {
+            projectNameFromEnv = match[1].trim().replace(/[\"']/g, '')
+          }
+        }
       } catch {
         // File doesn't exist, try next
       }
@@ -51,13 +66,15 @@ export async function GET() {
         cwd: projectPath,
         env: {
           ...process.env,
-          PATH: process.env.PATH + ':/usr/local/bin',
+          PATH: getEnhancedPath(),
           NSELF_PROJECT_PATH: projectPath,
         },
         timeout: 10000,
       })
 
-      const lines = stdout.split('\n').filter((line) => line.trim())
+      // Strip ANSI codes before parsing
+      const cleanOutput = stripAnsi(stdout)
+      const lines = cleanOutput.split('\n').filter((line) => line.trim())
       runningServices = lines
         .filter(
           (line) =>
@@ -66,11 +83,12 @@ export async function GET() {
             line.includes('up'),
         )
         .map((line) => {
-          const parts = line.split(/\s+/)
+          const cleanLine = line.trim()
+          const parts = cleanLine.split(/\s+/)
           return {
             name: parts[0] || 'unknown',
-            status: line.includes('healthy') ? 'healthy' : 'running',
-            details: line.trim(),
+            status: cleanLine.includes('healthy') ? 'healthy' : 'running',
+            details: cleanLine,
           }
         })
 
@@ -81,18 +99,11 @@ export async function GET() {
 
     // Check Docker containers related to this nself project
     let dockerContainers: any[] = []
-    let projectPrefix = 'nself' // Default prefix for nself projects
+    // Use already extracted project name or default to 'nself'
+    let projectPrefix = projectNameFromEnv || 'nself'
 
     try {
-      // Try to get the project name from env file first (most reliable)
-      if (hasEnvFile && envContent) {
-        const projectNameMatch = envContent.match(/PROJECT_NAME=(.+)/)
-        if (projectNameMatch) {
-          projectPrefix = projectNameMatch[1].trim().replace(/["']/g, '')
-        }
-      }
-
-      // Then try docker-compose.yml as fallback
+      // Try docker-compose.yml as fallback if still default
       if (isBuilt && projectPrefix === 'nself') {
         try {
           const dockerComposeContent = await fs.readFile(
@@ -180,12 +191,12 @@ export async function GET() {
     let isMinimalSetup = false
 
     if (hasEnvFile && envContent) {
-      // Parse basic config from .env.local
-      const projectNameMatch = envContent.match(/PROJECT_NAME=(.+)/)
+      // Parse basic config from env files
       const baseDomainMatch = envContent.match(/BASE_DOMAIN=(.+)/)
 
-      projectName = projectNameMatch ? projectNameMatch[1].trim() : null
-      baseDomain = baseDomainMatch ? baseDomainMatch[1].trim() : null
+      // Use already extracted projectName or try to find it in combined content
+      projectName = projectNameFromEnv
+      baseDomain = baseDomainMatch ? baseDomainMatch[1].trim().replace(/[\"']/g, '') : null
 
       // Check if this is a minimal setup (only basic env vars, no service configuration)
       // A minimal setup has PROJECT_NAME and BASE_DOMAIN but lacks service-specific configuration

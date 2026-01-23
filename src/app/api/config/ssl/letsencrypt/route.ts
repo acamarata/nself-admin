@@ -1,3 +1,4 @@
+import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { execFile } from 'child_process'
 import { promises as fs } from 'fs'
@@ -165,7 +166,7 @@ export async function POST(request: NextRequest) {
     // Try to run nself ssl letsencrypt if available
     let nselfOutput = null
     try {
-      const nselfPath = '/usr/local/bin/nself'
+      const nselfPath = await findNselfPath()
       await fs.access(nselfPath)
 
       const args = ['ssl', 'letsencrypt', '--domain', domain, '--email', email]
@@ -176,6 +177,7 @@ export async function POST(request: NextRequest) {
       const { stdout } = await execFileAsync(nselfPath, args, {
         cwd: projectPath,
         timeout: 120000, // 2 minutes
+        env: { ...process.env, PATH: getEnhancedPath() },
       })
       nselfOutput = stdout
     } catch {

@@ -338,6 +338,18 @@ export const navigation: Array<NavGroup> = [
     title: 'Deployment',
     links: [
       {
+        title: 'Environments',
+        href: '/deployment/environments',
+        icon: 'layers',
+        description: 'Manage all environments',
+        submenu: [
+          { label: 'All Environments', href: '/deployment/environments' },
+          { label: 'Create Environment', href: '/deployment/environments/create' },
+          { label: 'Compare Environments', href: '/deployment/environments/diff' },
+          { label: 'Environment Variables', href: '/deployment/environments/vars' },
+        ],
+      },
+      {
         title: 'Setup',
         href: '/deployment/setup',
         icon: 'package',
@@ -367,13 +379,11 @@ export const navigation: Array<NavGroup> = [
         icon: 'test-tube',
         description: 'Staging environment',
         submenu: [
-          { label: 'Staging Environment', href: '/deployment/staging' },
-          { label: 'Pre-production Tests', href: '/deployment/staging/tests' },
-          {
-            label: 'Performance Testing',
-            href: '/deployment/staging/performance',
-          },
-          { label: 'UAT Management', href: '/deployment/staging/uat' },
+          { label: 'Staging Overview', href: '/deployment/staging' },
+          { label: 'Deploy to Staging', href: '/deployment/staging/deploy' },
+          { label: 'Staging Logs', href: '/deployment/staging/logs' },
+          { label: 'Seed Database', href: '/deployment/staging/seed' },
+          { label: 'Sync from Dev', href: '/deployment/staging/sync' },
         ],
       },
       {
@@ -382,10 +392,11 @@ export const navigation: Array<NavGroup> = [
         icon: 'rocket',
         description: 'Production deployment',
         submenu: [
-          { label: 'Production Deploy', href: '/deployment/prod' },
-          { label: 'Rolling Updates', href: '/deployment/prod/rolling' },
-          { label: 'Blue-Green Deploy', href: '/deployment/prod/blue-green' },
-          { label: 'Canary Releases', href: '/deployment/prod/canary' },
+          { label: 'Production Overview', href: '/deployment/prod' },
+          { label: 'Deploy to Production', href: '/deployment/prod/deploy' },
+          { label: 'SSL/TLS Certificates', href: '/deployment/prod/ssl' },
+          { label: 'Security Hardening', href: '/deployment/prod/security' },
+          { label: 'Production Audit', href: '/deployment/prod/audit' },
         ],
       },
       {

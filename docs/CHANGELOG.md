@@ -5,6 +5,51 @@ All notable changes to nself-admin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.7] - 2026-01-23
+
+### Added
+
+- **Multi-Environment Deployment UI**
+  - New `/deployment/staging` page for staging deployments
+  - New `/deployment/prod` page for production deployments
+  - New `/deployment/environments` page for environment management
+  - Deploy API routes (`/api/deploy/staging`, `/api/deploy/production`)
+- **CLI Integration Improvements**
+  - Added `findNselfPath()` and `findNselfPathSync()` for dynamic CLI path resolution
+  - Added `getEnhancedPath()` for proper PATH environment in container
+  - CLI version detection in health endpoint (`cliVersion` field)
+  - Support for `PROJECT_PATH` and `NSELF_PROJECT_PATH` environment variables
+- **Container Enhancements**
+  - Added mkcert binary for local SSL certificate generation
+  - Added docker-cli-compose for Docker Compose support
+  - Documented Docker socket security considerations
+- **Unit Testing Infrastructure**
+  - Added Jest configuration (`jest.config.js`, `jest.setup.js`)
+  - Created initial test suite for nself-path utilities
+
+### Changed
+
+- Navigation updated with new deployment routes
+- CLI command whitelist expanded with new commands: `restart`, `ssl`, `trust`, `env`, `clean`, `reset`, `exec`, `staging`, `prod`
+- Default CLI command timeout increased from 30s to 60s
+- Health check now includes nself CLI availability and version
+
+### Fixed
+
+- **CLI Path Resolution** - Fixed hardcoded paths in `letsencrypt/route.ts` and `config/route.ts`
+- **Enhanced PATH** - Added `getEnhancedPath()` to all exec calls for container compatibility
+- **Project Name Detection** - Fixed extraction from multiple env files (.env, .env.local, .env.dev)
+- **ANSI Escape Codes** - Added `stripAnsi()` function for parsing CLI output
+- **Filesystem Health Check** - Changed from `/project` to `/workspace` (NSELF_PROJECT_PATH)
+
+### Technical
+
+- 20+ files changed
+- New API routes: `/api/deploy/*` (3 endpoints), `/api/env` (1 endpoint)
+- New pages: `/deployment/*` (3 pages)
+- Docker image: `acamarata/nself-admin:0.0.7`
+- Aligned with nself CLI v0.4.4
+
 ## [0.0.6] - 2026-01-22
 
 ### Added

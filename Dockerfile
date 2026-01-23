@@ -38,11 +38,44 @@ RUN pnpm run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install only essential runtime dependencies
+# Install runtime dependencies including nself CLI requirements
+# - bash: Required for nself CLI (Alpine uses ash by default)
+# - docker-cli, docker-cli-compose: For nself to interact with Docker
+# - curl, git: Required by nself commands
+# - openssl, nss-tools: For SSL certificate management
+# - mkcert: For local SSL certificates (installed separately)
 RUN apk add --no-cache \
+    bash \
     curl \
+    git \
+    docker-cli \
+    docker-cli-compose \
+    openssl \
+    nss-tools \
+    ca-certificates \
     && addgroup -g 1001 -S nodejs \
     && adduser -S nextjs -u 1001
+
+# Install mkcert for local SSL certificate generation
+# Using pre-built binary for Alpine Linux
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then MKCERT_ARCH="amd64"; \
+    elif [ "$ARCH" = "aarch64" ]; then MKCERT_ARCH="arm64"; \
+    else MKCERT_ARCH="amd64"; fi && \
+    curl -fsSL "https://github.com/FiloSottile/mkcert/releases/download/v1.4.4/mkcert-v1.4.4-linux-${MKCERT_ARCH}" \
+    -o /usr/local/bin/mkcert && \
+    chmod +x /usr/local/bin/mkcert
+
+# Install nself CLI (can be overridden by mounting local source at /opt/nself)
+ARG NSELF_VERSION=0.4.4
+RUN mkdir -p /opt/nself \
+    && curl -fsSL "https://github.com/acamarata/nself/archive/refs/tags/v${NSELF_VERSION}.tar.gz" \
+       | tar -xz -C /opt/nself --strip-components=1 \
+    && ln -s /opt/nself/src/cli/nself.sh /usr/local/bin/nself \
+    && chmod +x /opt/nself/src/cli/nself.sh
+
+# Note: For development, mount your local nself source at /opt/nself to override
+# The symlink at /usr/local/bin/nself will work with either installed or mounted source
 
 # Copy only the standalone build output (much smaller!)
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -59,12 +92,17 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
 # Port 3021 is the reserved port for nself-admin (not 3100, which is for Loki)
 ENV PORT=3021
-ENV ADMIN_VERSION=0.0.6
+ENV ADMIN_VERSION=0.0.7
+
+# Environment variables that can be set at runtime:
+# NSELF_PROJECT_PATH - Path to mounted project (default: /workspace)
+# NSELF_CLI_PATH     - Override nself CLI location (default: /usr/local/bin/nself)
+# DOCKER_HOST        - Docker socket (default: unix:///var/run/docker.sock)
 
 # Add labels for container metadata
 LABEL org.opencontainers.image.title="nself-admin"
 LABEL org.opencontainers.image.description="Web-based administration interface for nself CLI"
-LABEL org.opencontainers.image.version="0.0.6"
+LABEL org.opencontainers.image.version="0.0.7"
 LABEL org.opencontainers.image.vendor="nself.org"
 LABEL org.opencontainers.image.source="https://github.com/acamarata/nself-admin"
 LABEL org.opencontainers.image.licenses="Proprietary - Free for personal use, Commercial license required"
@@ -74,8 +112,22 @@ LABEL org.opencontainers.image.documentation="https://github.com/acamarata/nself
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3021/api/health || exit 1
 
-# Switch to non-root user
-USER nextjs
+# SECURITY NOTE: Running as root to access Docker socket for nself commands
+# This is required because the Docker socket is typically owned by root:docker
+#
+# For better security in production, consider one of these alternatives:
+#
+# Option A: Docker Socket Proxy (most secure)
+#   - Use tecnativa/docker-socket-proxy
+#   - Set DOCKER_HOST=tcp://docker-socket-proxy:2375
+#   - Remove socket mount from nself-admin
+#
+# Option B: Match Host Docker GID
+#   - Pass DOCKER_GID build arg matching host's docker group
+#   - Uncomment USER nextjs below
+#
+# For local development, running as root is acceptable.
+# USER nextjs
 
 # Expose port 3021 (reserved for nself-admin, distinct from Loki on 3100)
 EXPOSE 3021

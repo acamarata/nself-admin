@@ -1,10 +1,19 @@
 import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
+import { findNselfPathSync, getEnhancedPath } from './nself-path'
+import { getProjectPath } from './paths'
 
 const execFileAsync = promisify(execFile)
 
-// Path to nself CLI
-const NSELF_CLI_PATH = process.env.NSELF_CLI_PATH || '/usr/local/bin/nself'
+// Get nself CLI path using centralized resolver
+const getNselfCliPath = (): string => {
+  return findNselfPathSync()
+}
+
+// Get the project working directory for nself commands
+const getWorkingDirectory = (): string => {
+  return getProjectPath()
+}
 
 export interface CLIResult {
   success: boolean
@@ -58,11 +67,14 @@ export async function executeNselfCommand(
     ]
 
     // Execute with timeout using execFile for safety
-    const timeout = options.timeout || 30000
-    const { stdout, stderr } = await execFileAsync(NSELF_CLI_PATH, cmdArgs, {
+    const timeout = options.timeout || 60000 // Increased default timeout
+    const cwd = options.cwd || getWorkingDirectory()
+    const nselfPath = getNselfCliPath()
+    const { stdout, stderr } = await execFileAsync(nselfPath, cmdArgs, {
       timeout,
       maxBuffer: 10 * 1024 * 1024, // 10MB
-      env: { ...process.env, ...options.env },
+      cwd, // Run in project directory
+      env: { ...process.env, PATH: getEnhancedPath(), ...options.env },
     })
 
     return {
@@ -99,7 +111,12 @@ export function streamNselfCommand(
     throw new Error(`Invalid streaming command: ${command}`)
   }
 
-  const child = spawn(NSELF_CLI_PATH, [command, ...args])
+  const cwd = getWorkingDirectory()
+  const nselfPath = getNselfCliPath()
+  const child = spawn(nselfPath, [command, ...args], {
+    cwd,
+    env: { ...process.env, PATH: getEnhancedPath() },
+  })
 
   child.stdout.on('data', (data) => {
     onData(data.toString())

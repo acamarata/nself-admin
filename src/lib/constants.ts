@@ -4,7 +4,7 @@
  */
 
 // Version - imported from package.json at build time or from env
-export const VERSION = process.env.ADMIN_VERSION || '0.0.6'
+export const VERSION = process.env.ADMIN_VERSION || '0.0.7'
 
 // Default ports for all services
 export const PORTS = {
