@@ -150,15 +150,39 @@ export async function GET(request: NextRequest) {
       ? containers
       : containers.filter((container) => {
           const name = container.Names?.toLowerCase() || ''
+
+          // Explicitly exclude buildx/buildkit containers - these are build infrastructure, not services
+          if (name.includes('buildx_buildkit') || name.includes('buildkit')) {
+            console.log(
+              `[CONTAINERS API] ✗ Excluding buildx container: ${container.Names}`,
+            )
+            return false
+          }
+
           const matches =
             name.startsWith(projectPrefix.toLowerCase() + '_') ||
             name.startsWith(projectPrefix.toLowerCase() + '-') ||
             name.startsWith('nself_') ||
             name.startsWith('nself-') ||
             // Also check if container name contains common nself service names
-            ['postgres', 'hasura', 'grafana', 'prometheus'].some((service) =>
-              name.includes(service),
-            )
+            [
+              'postgres',
+              'hasura',
+              'grafana',
+              'prometheus',
+              'loki',
+              'tempo',
+              'alertmanager',
+              'cadvisor',
+              'node-exporter',
+              'minio',
+              'redis',
+              'mailpit',
+              'nginx',
+              'auth',
+              'storage',
+              'functions',
+            ].some((service) => name.includes(service))
 
           if (matches) {
             console.log(
