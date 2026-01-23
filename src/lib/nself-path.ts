@@ -8,6 +8,7 @@ const execAsync = promisify(exec)
 /**
  * Get the nself CLI development path from environment or derive from HOME
  * Supports NSELF_CLI_PATH env var for explicit override
+ * Handles both container and local development environments
  */
 function getDevPath(): string {
   // Allow explicit override via environment variable
@@ -15,23 +16,33 @@ function getDevPath(): string {
     return process.env.NSELF_CLI_PATH
   }
 
-  // Derive from HOME directory for development setups
+  // In production container, nself is at /usr/local/bin/nself (symlink to /opt/nself)
+  if (process.env.NODE_ENV === 'production') {
+    return '/usr/local/bin/nself'
+  }
+
+  // For local development, check HOME directory
   const home = process.env.HOME || '/root'
   return path.join(home, 'Sites', 'nself', 'bin', 'nself')
 }
 
 /**
  * Get common installation paths for nself CLI
+ * Priority: Container paths first (for production), then local development paths
  */
 function getCommonPaths(): string[] {
   const home = process.env.HOME || '/root'
   return [
-    '/usr/local/bin/nself',
-    '/opt/homebrew/bin/nself',
-    path.join(home, 'bin', 'nself'),
-    path.join(home, '.local', 'bin', 'nself'),
-    path.join(home, '.nself', 'bin', 'nself'),
-    '/usr/bin/nself',
+    // Container paths (priority for production)
+    '/usr/local/bin/nself', // Container symlink
+    '/opt/nself/bin/nself', // Alternative container location
+    '/opt/nself/src/cli/nself.sh', // Direct script path in container
+    // macOS/Linux standard paths
+    '/opt/homebrew/bin/nself', // macOS Homebrew
+    path.join(home, 'bin', 'nself'), // User local bin
+    path.join(home, '.local', 'bin', 'nself'), // User local bin (Linux)
+    path.join(home, '.nself', 'bin', 'nself'), // nself-specific directory
+    '/usr/bin/nself', // System bin
   ]
 }
 
@@ -51,7 +62,14 @@ export async function findNselfPath(): Promise<string> {
 
   // 2. Check if nself is in PATH (most common for users)
   try {
-    await execAsync('which nself')
+    const enhancedPath = getEnhancedPath()
+    const { stdout } = await execAsync('which nself', {
+      env: { ...process.env, PATH: enhancedPath },
+    })
+    const nselfPath = stdout.trim()
+    if (nselfPath && fs.existsSync(nselfPath)) {
+      return nselfPath
+    }
     return 'nself'
   } catch {
     // Not in PATH, continue checking
@@ -87,7 +105,15 @@ export function findNselfPathSync(): string {
 
   // 2. Check if nself is in PATH
   try {
-    require('child_process').execSync('which nself', { stdio: 'ignore' })
+    const enhancedPath = getEnhancedPath()
+    const result = require('child_process').execSync('which nself', {
+      encoding: 'utf-8',
+      env: { ...process.env, PATH: enhancedPath },
+    })
+    const nselfPath = result.trim()
+    if (nselfPath && fs.existsSync(nselfPath)) {
+      return nselfPath
+    }
     return 'nself'
   } catch {
     // Not in PATH, continue checking
@@ -114,13 +140,17 @@ export function findNselfPathSync(): string {
 /**
  * Get the PATH environment with common binary locations included
  * This ensures nself and other tools can be found during command execution
+ * Includes both container and local development paths
  */
 export function getEnhancedPath(): string {
   const home = process.env.HOME || '/root'
   const additionalPaths = [
+    // Container paths (priority for production)
+    '/usr/local/bin', // Standard container bin (nself symlink here)
+    '/opt/nself/bin', // nself CLI directory in container
+    // macOS/Linux paths
     '/opt/homebrew/bin',
     '/opt/homebrew/opt/coreutils/libexec/gnubin',
-    '/usr/local/bin',
     path.join(home, 'bin'),
     path.join(home, '.local', 'bin'),
     path.join(home, '.nself', 'bin'),

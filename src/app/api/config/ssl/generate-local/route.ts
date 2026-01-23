@@ -1,3 +1,4 @@
+import { findNselfPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
 import { execFile, spawn } from 'child_process'
 import { promises as fs } from 'fs'
@@ -11,7 +12,7 @@ const execFileAsync = promisify(execFile)
  * POST /api/config/ssl/generate-local
  * Generates local SSL certificates using mkcert
  *
- * Delegates to: nself ssl generate (if available) or runs mkcert directly
+ * Delegates to: nself ssl bootstrap (if available) or runs mkcert directly
  */
 export async function POST() {
   try {
@@ -39,14 +40,14 @@ export async function POST() {
       )
     }
 
-    // Try nself ssl generate first
+    // Try nself ssl bootstrap first
     try {
-      const nselfPath = '/usr/local/bin/nself'
+      const nselfPath = await findNselfPath()
       await fs.access(nselfPath)
 
       const { stdout, stderr } = await execFileAsync(
         nselfPath,
-        ['ssl', 'generate'],
+        ['ssl', 'bootstrap'],
         {
           cwd: projectPath,
           timeout: 60000,
