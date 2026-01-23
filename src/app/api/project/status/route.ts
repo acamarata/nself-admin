@@ -12,7 +12,9 @@ const execAsync = promisify(exec)
 // Strip ANSI escape codes from terminal output
 function stripAnsi(str: string): string {
   // eslint-disable-next-line no-control-regex
-  return str.replace(/\x1b\[[0-9;]*m/g, '').replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
+  return str
+    .replace(/\x1b\[[0-9;]*m/g, '')
+    .replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
 }
 
 export async function GET() {
@@ -26,7 +28,13 @@ export async function GET() {
     let projectNameFromEnv: string | null = null
 
     // Check in nself's priority order - but combine content to get all config
-    const envFiles = ['.env', '.env.local', '.env.dev', '.env.staging', '.env.prod']
+    const envFiles = [
+      '.env',
+      '.env.local',
+      '.env.dev',
+      '.env.staging',
+      '.env.prod',
+    ]
     for (const envFile of envFiles) {
       const envPath = path.join(projectPath, envFile)
       try {
@@ -196,7 +204,9 @@ export async function GET() {
 
       // Use already extracted projectName or try to find it in combined content
       projectName = projectNameFromEnv
-      baseDomain = baseDomainMatch ? baseDomainMatch[1].trim().replace(/[\"']/g, '') : null
+      baseDomain = baseDomainMatch
+        ? baseDomainMatch[1].trim().replace(/[\"']/g, '')
+        : null
 
       // Check if this is a minimal setup (only basic env vars, no service configuration)
       // A minimal setup has PROJECT_NAME and BASE_DOMAIN but lacks service-specific configuration

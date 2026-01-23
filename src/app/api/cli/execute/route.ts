@@ -16,7 +16,10 @@ const ALLOWED_NSELF_COMMANDS: Record<
   // Core commands
   init: { options: ['--template', '--force', '--full'] },
   build: { options: ['--clean', '--verbose', '--force', '--debug'] },
-  start: { args: ['all', 'service'], options: ['--detach', '--force-recreate'] },
+  start: {
+    args: ['all', 'service'],
+    options: ['--detach', '--force-recreate'],
+  },
   stop: { args: ['all', 'service'], options: ['--timeout'] },
   restart: { args: ['service'], options: ['--timeout'] },
   status: { options: ['--json', '--verbose', '--watch'] },
@@ -28,7 +31,10 @@ const ALLOWED_NSELF_COMMANDS: Record<
   monitor: { options: ['--enable', '--disable'] },
   urls: { options: ['--format', '--json'] },
   // SSL and trust
-  ssl: { args: ['action'], options: ['--generate', '--trust', '--domain', '--email'] },
+  ssl: {
+    args: ['action'],
+    options: ['--generate', '--trust', '--domain', '--email'],
+  },
   trust: { options: ['--install', '--uninstall'] },
   // Environment management
   env: { args: ['action', 'name'], options: ['--file', '--force'] },

@@ -344,9 +344,18 @@ export const navigation: Array<NavGroup> = [
         description: 'Manage all environments',
         submenu: [
           { label: 'All Environments', href: '/deployment/environments' },
-          { label: 'Create Environment', href: '/deployment/environments/create' },
-          { label: 'Compare Environments', href: '/deployment/environments/diff' },
-          { label: 'Environment Variables', href: '/deployment/environments/vars' },
+          {
+            label: 'Create Environment',
+            href: '/deployment/environments/create',
+          },
+          {
+            label: 'Compare Environments',
+            href: '/deployment/environments/diff',
+          },
+          {
+            label: 'Environment Variables',
+            href: '/deployment/environments/vars',
+          },
         ],
       },
       {

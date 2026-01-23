@@ -41,7 +41,10 @@ async function checkDocker(): Promise<boolean> {
   }
 }
 
-async function checkNselfCli(): Promise<{ available: boolean; version?: string }> {
+async function checkNselfCli(): Promise<{
+  available: boolean
+  version?: string
+}> {
   try {
     const { stdout } = await execAsync('nself -v', {
       env: { ...process.env, PATH: getEnhancedPath() },
@@ -170,16 +173,23 @@ export async function GET() {
     const startTime = process.hrtime()
 
     // Run all checks in parallel
-    const [dockerOk, filesystemOk, memoryOk, networkOk, nselfCheck, memoryUsage, cpuUsage] =
-      await Promise.all([
-        checkDocker(),
-        checkFilesystem(),
-        checkMemory(),
-        checkNetwork(),
-        checkNselfCli(),
-        getMemoryUsage(),
-        getCpuUsage(),
-      ])
+    const [
+      dockerOk,
+      filesystemOk,
+      memoryOk,
+      networkOk,
+      nselfCheck,
+      memoryUsage,
+      cpuUsage,
+    ] = await Promise.all([
+      checkDocker(),
+      checkFilesystem(),
+      checkMemory(),
+      checkNetwork(),
+      checkNselfCli(),
+      getMemoryUsage(),
+      getCpuUsage(),
+    ])
 
     const checks = {
       docker: dockerOk,

@@ -63,7 +63,7 @@ export async function GET() {
           try {
             const serverJson = await fs.readFile(
               path.join(envPath, 'server.json'),
-              'utf-8'
+              'utf-8',
             )
             serverConfig = JSON.parse(serverJson)
           } catch {
@@ -75,7 +75,8 @@ export async function GET() {
         let type: Environment['type'] = 'custom'
         if (envName === 'dev' || envName === 'local') type = 'local'
         else if (envName === 'staging') type = 'staging'
-        else if (envName === 'prod' || envName === 'production') type = 'production'
+        else if (envName === 'prod' || envName === 'production')
+          type = 'production'
 
         environments.push({
           name: envName,
@@ -146,7 +147,7 @@ export async function GET() {
         error: 'Failed to list environments',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -184,7 +185,7 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json(
           { success: false, error: `Unknown action: ${action}` },
-          { status: 400 }
+          { status: 400 },
         )
     }
 
@@ -201,7 +202,11 @@ export async function POST(request: NextRequest) {
       stderr: stderr.trim(),
     })
   } catch (error) {
-    const execError = error as { message?: string; stdout?: string; stderr?: string }
+    const execError = error as {
+      message?: string
+      stdout?: string
+      stderr?: string
+    }
     return NextResponse.json(
       {
         success: false,
@@ -210,7 +215,7 @@ export async function POST(request: NextRequest) {
         stdout: execError.stdout || '',
         stderr: execError.stderr || '',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

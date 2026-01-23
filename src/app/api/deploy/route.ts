@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         error: 'Failed to get deployment status',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       default:
         return NextResponse.json(
           { success: false, error: `Unknown action: ${action}` },
-          { status: 400 }
+          { status: 400 },
         )
     }
 
@@ -113,7 +113,11 @@ export async function POST(request: NextRequest) {
       stderr: stderr.trim(),
     })
   } catch (error) {
-    const execError = error as { message?: string; stdout?: string; stderr?: string }
+    const execError = error as {
+      message?: string
+      stdout?: string
+      stderr?: string
+    }
     return NextResponse.json(
       {
         success: false,
@@ -122,7 +126,7 @@ export async function POST(request: NextRequest) {
         stdout: execError.stdout || '',
         stderr: execError.stderr || '',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

@@ -1,12 +1,12 @@
 import {
+  CACHE_TTL,
+  PASSWORD,
   PORTS,
   PORT_RANGES,
-  SSL_MODES,
-  SESSION,
-  CACHE_TTL,
-  TIMEOUTS,
-  PASSWORD,
   RETENTION,
+  SESSION,
+  SSL_MODES,
+  TIMEOUTS,
 } from '../constants'
 
 describe('PORTS', () => {
@@ -61,7 +61,7 @@ describe('PORT_RANGES', () => {
     expect(PORT_RANGES.SYSTEM_SERVICES.start).toBe(3100)
     expect(PORT_RANGES.SYSTEM_SERVICES.end).toBe(3199)
     expect(PORT_RANGES.SYSTEM_SERVICES.start).toBeLessThan(
-      PORT_RANGES.SYSTEM_SERVICES.end
+      PORT_RANGES.SYSTEM_SERVICES.end,
     )
   })
 })

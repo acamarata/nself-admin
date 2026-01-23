@@ -73,9 +73,13 @@ export async function GET(request: NextRequest) {
         const mlflowEnabled = envContent.match(/MLFLOW_ENABLED=true/)
         const mailpitEnabled = envContent.match(/MAILPIT_ENABLED=true/)
         // Support both SEARCH_ENABLED and MEILISEARCH_ENABLED
-        const searchEnabled = envContent.match(/SEARCH_ENABLED=true/) || envContent.match(/MEILISEARCH_ENABLED=true/)
+        const searchEnabled =
+          envContent.match(/SEARCH_ENABLED=true/) ||
+          envContent.match(/MEILISEARCH_ENABLED=true/)
         // Support both STORAGE_ENABLED and MINIO_ENABLED
-        const storageEnabled = envContent.match(/STORAGE_ENABLED=true/) || envContent.match(/MINIO_ENABLED=true/)
+        const storageEnabled =
+          envContent.match(/STORAGE_ENABLED=true/) ||
+          envContent.match(/MINIO_ENABLED=true/)
         const functionsEnabled = envContent.match(/FUNCTIONS_ENABLED=true/)
         const nselfAdminEnabled = envContent.match(/NSELF_ADMIN_ENABLED=true/)
 
