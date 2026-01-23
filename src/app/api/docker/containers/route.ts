@@ -8,6 +8,15 @@ import { z } from 'zod'
 
 const execFileAsync = promisify(execFile)
 
+// Known distroless services that can't use Docker healthcheck
+// These services have no shell, so we check their HTTP endpoints directly
+const DISTROLESS_SERVICES: Record<
+  string,
+  { port: number; path: string; internalPort?: number }
+> = {
+  tempo: { port: 3200, path: '/ready', internalPort: 3200 },
+}
+
 // Schema for query parameters
 const querySchema = z.object({
   detailed: z.enum(['true', 'false']).optional(),
@@ -29,21 +38,49 @@ function getServiceType(name: string, labels: any): string {
   return 'service'
 }
 
-function getServiceCategory(name: string, labels: any): string {
+function getServiceCategory(
+  name: string,
+  _labels: Record<string, unknown>,
+): string {
   const n = name.toLowerCase()
+  // Core/Required services (same as project info)
   if (['postgres', 'hasura', 'auth', 'nginx'].some((s) => n.includes(s)))
-    return 'core'
-  if (['minio', 'redis', 'mailpit'].some((s) => n.includes(s)))
-    return 'infrastructure'
-  if (['bull', 'nest', 'python', 'go'].some((s) => n.includes(s)))
-    return 'application'
-  return 'other'
+    return 'required'
+  // Optional services including monitoring stack
+  if (
+    [
+      'redis',
+      'minio',
+      'storage',
+      'functions',
+      'mailpit',
+      'meilisearch',
+      'mlflow',
+      'nself-admin',
+      'admin',
+      'grafana',
+      'prometheus',
+      'loki',
+      'tempo',
+      'jaeger',
+      'alertmanager',
+      'node-exporter',
+      'postgres-exporter',
+      'cadvisor',
+      'promtail',
+      'redis-exporter',
+      'minio-client',
+    ].some((s) => n.includes(s))
+  )
+    return 'optional'
+  // User/Custom services
+  return 'user'
 }
 
 function getHealthStatus(status: string, state: string): string {
   // Check for explicit health indicators first
-  if (status.includes('healthy')) return 'healthy'
-  if (status.includes('unhealthy')) return 'unhealthy'
+  if (status.includes('(healthy)')) return 'healthy'
+  if (status.includes('(unhealthy)')) return 'unhealthy'
 
   // Map container states to user-friendly health statuses
   switch (state) {
@@ -61,6 +98,44 @@ function getHealthStatus(status: string, state: string): string {
       return 'created' // Created but not started
     default:
       return state // Return the raw state for unknown states
+  }
+}
+
+// Check if a service is a known distroless image
+function isDistrolessService(name: string): string | null {
+  const lowerName = name.toLowerCase()
+  for (const service of Object.keys(DISTROLESS_SERVICES)) {
+    if (lowerName.includes(service)) {
+      return service
+    }
+  }
+  return null
+}
+
+// Check health of a distroless service via HTTP endpoint
+async function checkDistrolessHealth(
+  serviceName: string,
+): Promise<{ healthy: boolean; checked: boolean }> {
+  const config = DISTROLESS_SERVICES[serviceName]
+  if (!config) return { healthy: false, checked: false }
+
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 2000)
+
+    const response = await fetch(
+      `http://localhost:${config.port}${config.path}`,
+      {
+        method: 'GET',
+        signal: controller.signal,
+      },
+    )
+
+    clearTimeout(timeout)
+    return { healthy: response.ok, checked: true }
+  } catch {
+    // If we can't reach the endpoint, it's unhealthy
+    return { healthy: false, checked: true }
   }
 }
 
@@ -232,39 +307,63 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const formattedContainers = projectContainers.map((container) => {
-      const stats = statsMap.get(container.ID)
-      const health = getHealthStatus(container.Status, container.State)
+    const formattedContainers = await Promise.all(
+      projectContainers.map(async (container) => {
+        const stats = statsMap.get(container.ID)
+        let health = getHealthStatus(container.Status, container.State)
+        let healthNote: string | null = null
 
-      console.log(
-        `[CONTAINERS API] Processing ${container.Names}: State=${container.State}, Status="${container.Status}", Health=${health}`,
-      )
+        // Check if this is a distroless service with Docker reporting unhealthy
+        const distrolessService = isDistrolessService(container.Names)
+        if (distrolessService && health === 'unhealthy') {
+          const httpCheck = await checkDistrolessHealth(distrolessService)
+          if (httpCheck.checked) {
+            if (httpCheck.healthy) {
+              health = 'healthy'
+              healthNote = 'Distroless image - verified via HTTP endpoint'
+              console.log(
+                `[CONTAINERS API] ${container.Names}: Docker reports unhealthy but HTTP check passed`,
+              )
+            } else {
+              healthNote = 'Distroless image - HTTP endpoint check failed'
+            }
+          }
+        }
 
-      return {
-        id: container.ID,
-        name: container.Names,
-        image: container.Image,
-        state: container.State, // Keep the actual Docker state
-        status: container.Status,
-        ports: container.Ports?.split(',')
-          .map((p: any) => {
-            const match = p.match(/(\d+)->(\d+)/)
-            return match
-              ? {
-                  private: parseInt(match[2]),
-                  public: parseInt(match[1]),
-                  type: 'tcp',
-                }
-              : null
-          })
-          .filter((p: any) => p),
-        created: container.CreatedAt,
-        serviceType: getServiceType(container.Names, {}),
-        category: getServiceCategory(container.Names, {}),
-        health: health,
-        stats: stats || null,
-      }
-    })
+        console.log(
+          `[CONTAINERS API] Processing ${container.Names}: State=${container.State}, Status="${container.Status}", Health=${health}`,
+        )
+
+        return {
+          id: container.ID,
+          name: container.Names,
+          image: container.Image,
+          state: container.State, // Keep the actual Docker state
+          status: container.Status,
+          ports: container.Ports?.split(',')
+            .map((p: string) => {
+              const match = p.match(/(\d+)->(\d+)/)
+              return match
+                ? {
+                    private: parseInt(match[2]),
+                    public: parseInt(match[1]),
+                    type: 'tcp',
+                  }
+                : null
+            })
+            .filter(
+              (p: { private: number; public: number; type: string } | null) =>
+                p,
+            ),
+          created: container.CreatedAt,
+          serviceType: getServiceType(container.Names, {}),
+          category: getServiceCategory(container.Names, {}),
+          health: health,
+          healthNote: healthNote,
+          stats: stats || null,
+        }
+      }),
+    )
 
     // Debug summary
     const healthCounts = formattedContainers.reduce(
