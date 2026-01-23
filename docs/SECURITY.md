@@ -78,6 +78,7 @@ All API routes under the following paths require authentication:
 ### Session Storage (v0.0.7+)
 
 Sessions are now stored in LokiJS embedded database (`nadmin.db`):
+
 - Sessions persist across restarts
 - Automatic TTL expiration (7 days by default)
 - Session activity tracking and extension
