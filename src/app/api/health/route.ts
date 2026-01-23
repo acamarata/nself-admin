@@ -59,20 +59,42 @@ async function checkNselfCli(): Promise<{
   available: boolean
   version?: string
 }> {
+  // Helper to extract version from output
+  const extractVersion = (stdout: string): string | undefined => {
+    const versionMatch = stdout.match(/v?(\d+\.\d+\.\d+)/)
+    return versionMatch ? versionMatch[1] : stdout.trim() || undefined
+  }
+
+  // First try: Use nself command directly (works on host)
   try {
     const { stdout } = await execAsync('nself -v', {
       env: { ...process.env, PATH: getEnhancedPath() },
       timeout: 5000,
     })
-    // Extract version from output (e.g., "v0.4.4" or "0.4.4")
-    const versionMatch = stdout.match(/v?(\d+\.\d+\.\d+)/)
-    return {
-      available: true,
-      version: versionMatch ? versionMatch[1] : stdout.trim(),
+    const version = extractVersion(stdout)
+    if (version) {
+      return { available: true, version }
     }
   } catch {
-    return { available: false }
+    // Fall through to try direct path
   }
+
+  // Second try: Use full path to nself.sh (for Docker container)
+  // This fixes BASH_SOURCE resolution issue when called via Node.js exec()
+  try {
+    const { stdout } = await execAsync('/opt/nself/src/cli/nself.sh -v', {
+      env: { ...process.env, PATH: getEnhancedPath() },
+      timeout: 5000,
+    })
+    const version = extractVersion(stdout)
+    if (version) {
+      return { available: true, version }
+    }
+  } catch {
+    // Fall through
+  }
+
+  return { available: false }
 }
 
 async function checkFilesystem(): Promise<boolean> {
