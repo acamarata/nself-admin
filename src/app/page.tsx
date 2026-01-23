@@ -1133,6 +1133,9 @@ export default function DashboardPage() {
     (state) => state.checkProjectStatus,
   )
 
+  // Project info for name prefix stripping
+  const [projectInfo, setProjectInfo] = useState<any>(null)
+
   // Mark initial load complete after first render
   useEffect(() => {
     const timer = setTimeout(() => setIsInitialLoad(false), 100)
@@ -1393,7 +1396,6 @@ export default function DashboardPage() {
       </div>
     )
   }
-  const [projectInfo, setProjectInfo] = useState<any>(null)
 
   // Docker polling service handles all data fetching centrally
   // Dashboard just reads from the store - no fetching needed here
