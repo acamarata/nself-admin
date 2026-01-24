@@ -6,7 +6,7 @@ import { promisify } from 'util'
 
 const execFileAsync = promisify(execFile)
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const projectPath = getProjectPath()
     console.log('Starting nself services in:', projectPath)

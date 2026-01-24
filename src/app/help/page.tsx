@@ -108,7 +108,8 @@ function SearchSection() {
       )
       const data = await response.json()
       setSearchResults(data.results || [])
-    } catch (error) {
+    } catch (_error) {
+      // Intentionally empty - search results remain empty on error
     } finally {
       setSearching(false)
     }
@@ -592,7 +593,8 @@ function SupportContactSection() {
           priority: 'normal',
         })
       }
-    } catch (error) {
+    } catch (_error) {
+      // Intentionally empty - form submission errors handled silently
     } finally {
       setSubmitting(false)
     }

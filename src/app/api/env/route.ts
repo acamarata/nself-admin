@@ -178,10 +178,11 @@ export async function POST(request: NextRequest) {
       case 'info':
         command = `nself env info ${name || ''}`
         break
-      case 'diff':
+      case 'diff': {
         const { env1, env2, values } = await request.json()
         command = `nself env diff ${env1} ${env2}${values ? ' --values' : ''}`
         break
+      }
       default:
         return NextResponse.json(
           { success: false, error: `Unknown action: ${action}` },

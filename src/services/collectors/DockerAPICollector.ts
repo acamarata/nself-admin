@@ -132,10 +132,10 @@ export class DockerAPICollector extends EventEmitter {
     this.isRunning = false
 
     // Stop all stats streams
-    for (const [id, stream] of this.statsStreams) {
+    for (const [_id, stream] of this.statsStreams) {
       try {
         stream.destroy()
-      } catch (error) {
+      } catch (_error) {
         // Ignore errors when destroying streams - stream may already be closed
       }
     }
@@ -264,14 +264,14 @@ export class DockerAPICollector extends EventEmitter {
             try {
               const event = JSON.parse(line)
               this.handleDockerEvent(event)
-            } catch (error) {
-              // Skip malformed JSON lines from Docker event stream
+            } catch {
+              // Intentionally empty - skip malformed JSON lines from Docker event stream
             }
           }
         }
       })
 
-      this.eventStream.on('error', (error: Error) => {
+      this.eventStream.on('error', (_error: Error) => {
         // Attempt to reconnect
         if (this.isRunning) {
           setTimeout(() => this.startEventStream(), 5000)
@@ -359,12 +359,12 @@ export class DockerAPICollector extends EventEmitter {
         try {
           const stats = JSON.parse(chunk.toString())
           this.processContainerStats(containerId, stats)
-        } catch (error) {
-          // Skip malformed JSON from stats stream
+        } catch {
+          // Intentionally empty - skip malformed JSON from stats stream
         }
       })
 
-      stream.on('error', (error: Error) => {
+      stream.on('error', (_error: Error) => {
         this.stopStatsStream(containerId)
       })
 
@@ -387,8 +387,8 @@ export class DockerAPICollector extends EventEmitter {
     if (stream) {
       try {
         stream.destroy()
-      } catch (error) {
-        // Ignore errors when destroying
+      } catch {
+        // Intentionally empty - ignore errors when destroying
       }
       this.statsStreams.delete(containerId)
     }

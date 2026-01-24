@@ -16,7 +16,6 @@ export function ProjectStateProvider({ children }: ProjectStateProviderProps) {
     projectStatus,
     isChecking,
     checkProjectStatus,
-    startBackgroundRefresh,
     stopBackgroundRefresh,
   } = useProjectStore()
 

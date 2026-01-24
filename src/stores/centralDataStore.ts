@@ -224,7 +224,7 @@ const initialState: CentralDataState = {
 // Create the store with immer for immutability and subscribeWithSelector for granular subscriptions
 export const useCentralDataStore = create<CentralDataStore>()(
   subscribeWithSelector(
-    immer((set, get) => ({
+    immer((set, _get) => ({
       ...initialState,
 
       updateDocker: (metrics) =>

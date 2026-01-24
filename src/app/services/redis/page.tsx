@@ -727,7 +727,7 @@ function ConfigurationEditor() {
 export default function RedisPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedKey, setSelectedKey] = useState<RedisKey | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [_loading, _setLoading] = useState(false)
 
   // Mock data
   const [stats] = useState<RedisStats>({

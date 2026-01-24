@@ -50,7 +50,7 @@ export default function InitReset() {
       })
 
       if (response.ok) {
-        const data = await response.json()
+        const _data = await response.json()
 
         // Show final steps
         await new Promise((resolve) => setTimeout(resolve, 500))

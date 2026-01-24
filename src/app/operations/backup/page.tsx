@@ -506,7 +506,7 @@ function JobCard({
 }
 
 export default function BackupsPage() {
-  const [backups, setBackups] = useState<Backup[]>(mockBackups)
+  const [backups, _setBackups] = useState<Backup[]>(mockBackups)
   const [jobs, setJobs] = useState<BackupJob[]>(mockJobs)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'backups' | 'jobs' | 'settings'>(
@@ -515,7 +515,7 @@ export default function BackupsPage() {
   const [filter, setFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
 
-  const handleBackupAction = async (action: string, id: string) => {
+  const handleBackupAction = async (_action: string, _id: string) => {
     // Simulate API call
     setLoading(true)
     setTimeout(() => setLoading(false), 1000)

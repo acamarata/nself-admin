@@ -85,7 +85,7 @@ export function ProgressSteps() {
               visitedSteps.has(step.number) && step.number < currentStep
             const isFutureDone =
               visitedSteps.has(step.number) && step.number > currentStep
-            const isNotVisited = !visitedSteps.has(step.number) && !isActive
+            const _isNotVisited = !visitedSteps.has(step.number) && !isActive
             // Make all steps up to the max visited step clickable
             const isClickable = step.number <= maxVisitedStep || isActive
 

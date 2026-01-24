@@ -76,7 +76,7 @@ interface Environment {
   baseUrl?: string
 }
 
-interface ApiDocumentation {
+interface _ApiDocumentation {
   title: string
   version: string
   description: string
@@ -153,7 +153,7 @@ function RequestBuilder({
     })
   }
 
-  const getMethodColor = (method: string) => {
+  const _getMethodColor = (method: string) => {
     switch (method) {
       case 'GET':
         return 'bg-green-500'
@@ -650,7 +650,7 @@ function ResponseViewer({ response }: { response: ApiResponse | null }) {
 
 function CollectionManager({
   collections,
-  onCollectionSelect,
+  onCollectionSelect: _onCollectionSelect,
   onRequestSelect,
   requests,
 }: {
@@ -878,13 +878,13 @@ function RequestHistory({
 
 function EnvironmentManager({
   environments,
-  onEnvironmentUpdate,
+  onEnvironmentUpdate: _onEnvironmentUpdate,
 }: {
   environments: Environment[]
   onEnvironmentUpdate: (environments: Environment[]) => void
 }) {
-  const [selectedEnv, setSelectedEnv] = useState<string | null>(null)
-  const [isCreating, setIsCreating] = useState(false)
+  const [_selectedEnv, _setSelectedEnv] = useState<string | null>(null)
+  const [_isCreating, setIsCreating] = useState(false)
 
   return (
     <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">

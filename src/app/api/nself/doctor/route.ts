@@ -6,10 +6,10 @@ import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const projectPath = getProjectPath()
-    const body = await request.json().catch(() => ({}))
+    const body = await _request.json().catch(() => ({}))
     const shouldFix = body.fix === true
 
     // Find nself CLI
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       ? `${nselfPath} doctor --fix`
       : `${nselfPath} doctor`
 
-    const { stdout, stderr } = await execAsync(command, {
+    const { stdout, stderr: _stderr } = await execAsync(command, {
       cwd: projectPath,
       env: process.env,
       timeout: 30000, // 30 second timeout
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
               { timeout: 5000 },
             )
             logs = logOutput.split('\n').filter((l) => l.trim())
-          } catch (e) {
+          } catch {
             // Ignore log fetch errors
           }
         }

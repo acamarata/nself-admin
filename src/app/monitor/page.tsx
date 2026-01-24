@@ -61,7 +61,7 @@ interface Service {
 }
 
 export default function MonitorPage() {
-  const [loading, setLoading] = useState(false)
+  const [_loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<
     'overview' | 'metrics' | 'alerts' | 'health'
   >('overview')
@@ -177,7 +177,8 @@ export default function MonitorPage() {
           lastCheck: '30s ago',
         },
       ])
-    } catch (error) {
+    } catch (_error) {
+      // Intentionally empty - monitoring data load failure handled silently
     } finally {
       setLoading(false)
     }

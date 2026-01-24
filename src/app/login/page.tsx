@@ -78,7 +78,7 @@ export default function LoginPage() {
         } else {
           setError(data.error || 'Failed to set password')
         }
-      } catch (error) {
+      } catch (_error) {
         setError('Failed to set password. Please try again.')
       }
     } else {

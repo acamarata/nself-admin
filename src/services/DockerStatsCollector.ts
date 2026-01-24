@@ -4,9 +4,6 @@
  */
 
 import { exec } from 'child_process'
-import { promisify } from 'util'
-
-const execAsync = promisify(exec)
 
 export interface DockerStats {
   cpu: number
@@ -73,7 +70,7 @@ export class DockerStatsCollector {
       this.cache = { data: result, timestamp: now }
 
       return result
-    } catch (error) {
+    } catch (_error) {
       // Return empty stats on error
       return {
         cpu: 0,
@@ -129,7 +126,7 @@ export class DockerStatsCollector {
         healthy,
         unhealthy,
       }
-    } catch (error) {
+    } catch (_error) {
       return { total: 0, running: 0, stopped: 0, healthy: 0, unhealthy: 0 }
     }
   }
@@ -205,8 +202,8 @@ export class DockerStatsCollector {
           if (totalUsedMiB > 0) {
             memUsed = totalUsedMiB / 1024 // Convert MiB to GiB
           }
-        } catch (e) {
-          // Fallback to single container memory if sum fails
+        } catch {
+          // Intentionally empty - fallback to single container memory if sum fails
         }
       }
 
@@ -218,7 +215,7 @@ export class DockerStatsCollector {
           percentage: Math.round((memUsed / memTotal) * 100),
         },
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         cpu: 0,
         memory: { used: 0, total: 8, percentage: 0 },
@@ -241,7 +238,6 @@ export class DockerStatsCollector {
         .split('\n')
         .filter((l) => l)
       let totalSize = 0
-      let activeSize = 0
 
       for (const line of lines) {
         try {
@@ -261,10 +257,11 @@ export class DockerStatsCollector {
 
           totalSize += parseSize(data.Size)
           if (data.Active && data.Active !== 'N/A') {
-            activeSize += parseSize(data.Size)
+            // activeSize is computed but not used - future enhancement
+            // _activeSize += parseSize(data.Size)
           }
-        } catch (e) {
-          // Skip invalid JSON lines
+        } catch {
+          // Intentionally empty - skip invalid JSON lines
         }
       }
 
@@ -276,7 +273,7 @@ export class DockerStatsCollector {
         total: totalAvailable,
         percentage: Math.round((totalSize / totalAvailable) * 100),
       }
-    } catch (error) {
+    } catch (_error) {
       return { used: 0, total: 50, percentage: 0 }
     }
   }
@@ -322,8 +319,8 @@ export class DockerStatsCollector {
             totalRx += parseNetIO(rx)
             totalTx += parseNetIO(tx)
           }
-        } catch (e) {
-          // Skip invalid JSON lines
+        } catch {
+          // Intentionally empty - skip invalid JSON lines
         }
       }
 
@@ -333,7 +330,7 @@ export class DockerStatsCollector {
         rx: Math.round(totalRx * 10) / 10,
         tx: Math.round(totalTx * 10) / 10,
       }
-    } catch (error) {
+    } catch (_error) {
       return { rx: 0, tx: 0 }
     }
   }

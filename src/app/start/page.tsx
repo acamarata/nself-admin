@@ -393,7 +393,7 @@ function getServiceInfo(name: string): {
 }
 
 // Keep simple description helper for backward compatibility
-function getServiceDescription(name: string): string {
+function _getServiceDescription(name: string): string {
   const info = getServiceInfo(name)
   return `${info.description}\n${info.details.join('\n')}`
 }
@@ -453,8 +453,8 @@ function getServiceDisplayName(name: string): string {
 export default function StartPage() {
   const router = useRouter()
   const [projectInfo, setProjectInfo] = useState<any>(null)
-  const [serviceDetails, setServiceDetails] = useState<any>(null)
-  const [loadingServices, setLoadingServices] = useState(true)
+  const [_serviceDetails, setServiceDetails] = useState<any>(null)
+  const [_loadingServices, setLoadingServices] = useState(true)
   const [starting, setStarting] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [showDbPassword, setShowDbPassword] = useState(false)
@@ -475,7 +475,7 @@ export default function StartPage() {
   const checkProjectStatus = useProjectStore(
     (state) => state.checkProjectStatus,
   )
-  const projectStatus = useProjectStore((state) => state.projectStatus)
+  const _projectStatus = useProjectStore((state) => state.projectStatus)
 
   // Check routing and load start page data
   useEffect(() => {
@@ -618,7 +618,7 @@ export default function StartPage() {
                   }
                   break
 
-                case 'error':
+                case 'error': {
                   // Store full error details including instructions
                   const errorProgress: any = {
                     message: data.message || 'An error occurred',
@@ -630,7 +630,6 @@ export default function StartPage() {
                     errorProgress.instructions = data.instructions
                   }
 
-                  setStartProgress(errorProgress)
                   console.error(
                     'Start error:',
                     data.message,
@@ -639,6 +638,7 @@ export default function StartPage() {
                   )
                   setStarting(false) // Reset starting state on error
                   break
+                }
 
                 case 'complete':
                   setStartProgress({
@@ -845,8 +845,8 @@ export default function StartPage() {
                             </div>
                             <div className="ml-4 space-y-1">
                               {projectInfo.servicesByCategory.required.map(
-                                (service: string, idx: number) => {
-                                  const serviceData = serviceDetails?.[service]
+                                (service: string, _idx: number) => {
+                                  const serviceData = _serviceDetails?.[service]
                                   const info = serviceData
                                     ? {
                                         description:
@@ -921,8 +921,8 @@ export default function StartPage() {
                             </div>
                             <div className="ml-4 space-y-1">
                               {projectInfo.servicesByCategory.optional.map(
-                                (service: string, idx: number) => {
-                                  const serviceData = serviceDetails?.[service]
+                                (service: string, _idx: number) => {
+                                  const serviceData = _serviceDetails?.[service]
                                   const info = serviceData
                                     ? {
                                         description:
@@ -995,8 +995,8 @@ export default function StartPage() {
                             </div>
                             <div className="ml-4 space-y-1">
                               {projectInfo.servicesByCategory.user.map(
-                                (service: string, idx: number) => {
-                                  const serviceData = serviceDetails?.[service]
+                                (service: string, _idx: number) => {
+                                  const serviceData = _serviceDetails?.[service]
                                   const info = serviceData
                                     ? {
                                         description: `Custom Service: ${service}`,

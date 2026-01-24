@@ -8,6 +8,10 @@ const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || 'storage.nae.local'
 const MINIO_ACCESS_KEY = process.env.MINIO_ACCESS_KEY || 'minioadmin'
 const MINIO_SECRET_KEY = process.env.MINIO_SECRET_KEY || 'minioadmin'
 
+const _MINIO_ENDPOINT = MINIO_ENDPOINT
+const _MINIO_ACCESS_KEY = MINIO_ACCESS_KEY
+const _MINIO_SECRET_KEY = MINIO_SECRET_KEY
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -85,67 +89,63 @@ export async function POST(request: NextRequest) {
 }
 
 async function getBuckets() {
-  try {
-    const { stdout } = await execAsync(
-      `docker exec nself_minio mc ls minio --json`,
-    )
+  const { stdout } = await execAsync(
+    `docker exec nself_minio mc ls minio --json`,
+  )
 
-    const buckets = stdout
-      .trim()
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => {
-        try {
-          const data = JSON.parse(line)
-          return {
-            name: data.key,
-            created: data.lastModified,
-            size: data.size || 0,
-            type: data.type,
-          }
-        } catch {
-          return null
+  const buckets = stdout
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        const data = JSON.parse(line)
+        return {
+          name: data.key,
+          created: data.lastModified,
+          size: data.size || 0,
+          type: data.type,
         }
-      })
-      .filter(Boolean)
-
-    const bucketDetails = await Promise.all(
-      buckets.map(async (bucket: any) => {
-        try {
-          const { stdout: statOutput } = await execAsync(
-            `docker exec nself_minio mc stat minio/${bucket.name} --json`,
-          )
-          const stat = JSON.parse(statOutput)
-
-          const { stdout: duOutput } = await execAsync(
-            `docker exec nself_minio mc du minio/${bucket.name} --json | tail -1`,
-          )
-          const du = JSON.parse(duOutput)
-
-          return {
-            ...bucket,
-            objects: du.objects || 0,
-            totalSize: du.size || 0,
-            versioning: stat.metadata?.versioning || false,
-            encryption: stat.metadata?.encryption || false,
-          }
-        } catch {
-          return bucket
-        }
-      }),
-    )
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        buckets: bucketDetails,
-        total: bucketDetails.length,
-        timestamp: new Date().toISOString(),
-      },
+      } catch {
+        return null
+      }
     })
-  } catch (error) {
-    throw error
-  }
+    .filter(Boolean)
+
+  const bucketDetails = await Promise.all(
+    buckets.map(async (bucket: any) => {
+      try {
+        const { stdout: statOutput } = await execAsync(
+          `docker exec nself_minio mc stat minio/${bucket.name} --json`,
+        )
+        const stat = JSON.parse(statOutput)
+
+        const { stdout: duOutput } = await execAsync(
+          `docker exec nself_minio mc du minio/${bucket.name} --json | tail -1`,
+        )
+        const du = JSON.parse(duOutput)
+
+        return {
+          ...bucket,
+          objects: du.objects || 0,
+          totalSize: du.size || 0,
+          versioning: stat.metadata?.versioning || false,
+          encryption: stat.metadata?.encryption || false,
+        }
+      } catch {
+        return bucket
+      }
+    }),
+  )
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      buckets: bucketDetails,
+      total: bucketDetails.length,
+      timestamp: new Date().toISOString(),
+    },
+  })
 }
 
 async function getObjects(bucket?: string, prefix?: string) {
@@ -156,46 +156,42 @@ async function getObjects(bucket?: string, prefix?: string) {
     )
   }
 
-  try {
-    const path = prefix ? `${bucket}/${prefix}` : bucket
-    const { stdout } = await execAsync(
-      `docker exec nself_minio mc ls minio/${path} --json`,
-    )
+  const objectPath = prefix ? `${bucket}/${prefix}` : bucket
+  const { stdout } = await execAsync(
+    `docker exec nself_minio mc ls minio/${objectPath} --json`,
+  )
 
-    const objects = stdout
-      .trim()
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => {
-        try {
-          const data = JSON.parse(line)
-          return {
-            name: data.key,
-            size: data.size,
-            lastModified: data.lastModified,
-            etag: data.etag,
-            type: data.type,
-            storageClass: data.storageClass,
-          }
-        } catch {
-          return null
+  const objects = stdout
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        const data = JSON.parse(line)
+        return {
+          name: data.key,
+          size: data.size,
+          lastModified: data.lastModified,
+          etag: data.etag,
+          type: data.type,
+          storageClass: data.storageClass,
         }
-      })
-      .filter(Boolean)
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        bucket,
-        prefix,
-        objects,
-        total: objects.length,
-        timestamp: new Date().toISOString(),
-      },
+      } catch {
+        return null
+      }
     })
-  } catch (error) {
-    throw error
-  }
+    .filter(Boolean)
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      bucket,
+      prefix,
+      objects,
+      total: objects.length,
+      timestamp: new Date().toISOString(),
+    },
+  })
 }
 
 async function getStorageInfo() {
@@ -236,7 +232,7 @@ async function getStorageInfo() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       success: true,
       data: {
@@ -305,7 +301,7 @@ async function getPolicies(bucket?: string) {
         },
       })
     }
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       success: true,
       data: {
@@ -349,7 +345,7 @@ async function getUsers() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       success: true,
       data: {
@@ -410,7 +406,7 @@ async function getStorageStats() {
         timestamp: new Date().toISOString(),
       },
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       success: true,
       data: {
@@ -437,22 +433,18 @@ async function createBucket(bucket: string) {
     )
   }
 
-  try {
-    const { stdout } = await execAsync(
-      `docker exec nself_minio mc mb minio/${bucket}`,
-    )
+  const { stdout } = await execAsync(
+    `docker exec nself_minio mc mb minio/${bucket}`,
+  )
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        bucket,
-        result: stdout.trim(),
-        timestamp: new Date().toISOString(),
-      },
-    })
-  } catch (error) {
-    throw error
-  }
+  return NextResponse.json({
+    success: true,
+    data: {
+      bucket,
+      result: stdout.trim(),
+      timestamp: new Date().toISOString(),
+    },
+  })
 }
 
 async function deleteBucket(bucket: string) {
@@ -463,22 +455,18 @@ async function deleteBucket(bucket: string) {
     )
   }
 
-  try {
-    const { stdout } = await execAsync(
-      `docker exec nself_minio mc rb minio/${bucket} --force`,
-    )
+  const { stdout } = await execAsync(
+    `docker exec nself_minio mc rb minio/${bucket} --force`,
+  )
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        bucket,
-        result: stdout.trim(),
-        timestamp: new Date().toISOString(),
-      },
-    })
-  } catch (error) {
-    throw error
-  }
+  return NextResponse.json({
+    success: true,
+    data: {
+      bucket,
+      result: stdout.trim(),
+      timestamp: new Date().toISOString(),
+    },
+  })
 }
 
 async function uploadObject(bucket: string, object: string, content: string) {
@@ -492,31 +480,27 @@ async function uploadObject(bucket: string, object: string, content: string) {
     )
   }
 
-  try {
-    const tempFile = `/tmp/${Date.now()}_${object}`
-    await execAsync(
-      `docker exec nself_minio sh -c "echo '${content}' > ${tempFile}"`,
-    )
+  const tempFile = `/tmp/${Date.now()}_${object}`
+  await execAsync(
+    `docker exec nself_minio sh -c "echo '${content}' > ${tempFile}"`,
+  )
 
-    const { stdout } = await execAsync(
-      `docker exec nself_minio mc cp ${tempFile} minio/${bucket}/${object}`,
-    )
+  const { stdout } = await execAsync(
+    `docker exec nself_minio mc cp ${tempFile} minio/${bucket}/${object}`,
+  )
 
-    await execAsync(`docker exec nself_minio rm ${tempFile}`)
+  await execAsync(`docker exec nself_minio rm ${tempFile}`)
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        bucket,
-        object,
-        size: content.length,
-        result: stdout.trim(),
-        timestamp: new Date().toISOString(),
-      },
-    })
-  } catch (error) {
-    throw error
-  }
+  return NextResponse.json({
+    success: true,
+    data: {
+      bucket,
+      object,
+      size: content.length,
+      result: stdout.trim(),
+      timestamp: new Date().toISOString(),
+    },
+  })
 }
 
 async function deleteObject(bucket: string, object: string) {
@@ -527,23 +511,19 @@ async function deleteObject(bucket: string, object: string) {
     )
   }
 
-  try {
-    const { stdout } = await execAsync(
-      `docker exec nself_minio mc rm minio/${bucket}/${object}`,
-    )
+  const { stdout } = await execAsync(
+    `docker exec nself_minio mc rm minio/${bucket}/${object}`,
+  )
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        bucket,
-        object,
-        result: stdout.trim(),
-        timestamp: new Date().toISOString(),
-      },
-    })
-  } catch (error) {
-    throw error
-  }
+  return NextResponse.json({
+    success: true,
+    data: {
+      bucket,
+      object,
+      result: stdout.trim(),
+      timestamp: new Date().toISOString(),
+    },
+  })
 }
 
 async function setPolicy(bucket: string, policy: string) {
@@ -554,23 +534,19 @@ async function setPolicy(bucket: string, policy: string) {
     )
   }
 
-  try {
-    const { stdout } = await execAsync(
-      `docker exec nself_minio mc policy set ${policy} minio/${bucket}`,
-    )
+  const { stdout } = await execAsync(
+    `docker exec nself_minio mc policy set ${policy} minio/${bucket}`,
+  )
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        bucket,
-        policy,
-        result: stdout.trim(),
-        timestamp: new Date().toISOString(),
-      },
-    })
-  } catch (error) {
-    throw error
-  }
+  return NextResponse.json({
+    success: true,
+    data: {
+      bucket,
+      policy,
+      result: stdout.trim(),
+      timestamp: new Date().toISOString(),
+    },
+  })
 }
 
 async function createUser(user: string, password: string) {
@@ -581,22 +557,18 @@ async function createUser(user: string, password: string) {
     )
   }
 
-  try {
-    const { stdout } = await execAsync(
-      `docker exec nself_minio mc admin user add minio ${user} ${password}`,
-    )
+  const { stdout } = await execAsync(
+    `docker exec nself_minio mc admin user add minio ${user} ${password}`,
+  )
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        user,
-        result: stdout.trim(),
-        timestamp: new Date().toISOString(),
-      },
-    })
-  } catch (error) {
-    throw error
-  }
+  return NextResponse.json({
+    success: true,
+    data: {
+      user,
+      result: stdout.trim(),
+      timestamp: new Date().toISOString(),
+    },
+  })
 }
 
 async function deleteUser(user: string) {
@@ -607,20 +579,16 @@ async function deleteUser(user: string) {
     )
   }
 
-  try {
-    const { stdout } = await execAsync(
-      `docker exec nself_minio mc admin user remove minio ${user}`,
-    )
+  const { stdout } = await execAsync(
+    `docker exec nself_minio mc admin user remove minio ${user}`,
+  )
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        user,
-        result: stdout.trim(),
-        timestamp: new Date().toISOString(),
-      },
-    })
-  } catch (error) {
-    throw error
-  }
+  return NextResponse.json({
+    success: true,
+    data: {
+      user,
+      result: stdout.trim(),
+      timestamp: new Date().toISOString(),
+    },
+  })
 }

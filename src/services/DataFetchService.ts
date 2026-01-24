@@ -226,7 +226,7 @@ class DataFetchService {
 
   // DEPRECATED: Docker metrics are now included in fetchSystemMetrics
   // Keeping for backward compatibility but not used
-  async fetchDockerMetrics(options: FetchOptions = {}) {
+  async fetchDockerMetrics(_options: FetchOptions = {}) {
     // Docker metrics are now fetched as part of fetchSystemMetrics
     // to avoid duplicate fetching and oscillation
     return null

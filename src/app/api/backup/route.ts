@@ -4,7 +4,7 @@ import { backupSchema, restoreSchema, validateRequest } from '@/lib/validation'
 import { NextRequest, NextResponse } from 'next/server'
 
 // List backups
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const result = await executeNselfCommand('backup', ['list', '--json'])
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
             })
           }
         }
-      } catch (error) {
+      } catch {
         // Backup directory listing failed - return empty list
       }
 
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: backups,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         success: false,
@@ -155,13 +155,7 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const {
-        backupFile,
-        includeDatabase,
-        includeFiles,
-        includeConfig,
-        decryptionKey,
-      } = validation.data
+      const { backupFile } = validation.data
 
       // Security: Prevent path traversal in restore
       const pathModule = await import('path')
@@ -316,7 +310,7 @@ export async function DELETE(request: NextRequest) {
       success: true,
       data: { deleted: backupFile },
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         success: false,

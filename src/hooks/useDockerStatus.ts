@@ -43,7 +43,7 @@ export function useDockerStatus(refreshInterval = 5000) {
       } else {
         setError(result.error || 'Failed to fetch Docker status')
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to connect to Docker API')
     } finally {
       setLoading(false)

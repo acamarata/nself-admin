@@ -58,7 +58,7 @@ class NetworkMonitor {
 
       this.lastSystemSnapshot = currentSnapshot
       return { rx: 0, tx: 0 }
-    } catch (error) {
+    } catch (_error) {
       return { rx: 0, tx: 0 }
     }
   }
@@ -116,7 +116,7 @@ class NetworkMonitor {
 
       this.lastDockerSnapshot = currentSnapshot
       return { rx: 0, tx: 0 }
-    } catch (error) {
+    } catch (_error) {
       return { rx: 0, tx: 0 }
     }
   }

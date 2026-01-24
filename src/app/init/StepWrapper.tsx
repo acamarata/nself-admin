@@ -13,7 +13,7 @@ interface StepWrapperProps {
 
 export function StepWrapper({ children }: StepWrapperProps) {
   const router = useRouter()
-  const [resetting, setResetting] = useState(false)
+  const [resetting, _setResetting] = useState(false)
 
   const handleReset = () => {
     if (

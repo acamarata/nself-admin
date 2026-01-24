@@ -242,7 +242,7 @@ export async function POST(request: Request) {
       message: 'ISP speed saved',
       data: config,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to save ISP speed' },
       { status: 500 },

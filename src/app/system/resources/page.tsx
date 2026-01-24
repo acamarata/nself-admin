@@ -213,7 +213,7 @@ function MetricsCard({
 function ResourceChart({
   title,
   data,
-  type = 'line',
+  type: _type = 'line',
   height = 200,
 }: {
   title: string
@@ -646,7 +646,7 @@ function ResourceAlerts({
   alerts: ResourceAlert[]
   onAlertUpdate: (alert: ResourceAlert) => void
 }) {
-  const [isCreating, setIsCreating] = useState(false)
+  const [_isCreating, setIsCreating] = useState(false)
 
   return (
     <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
@@ -887,7 +887,7 @@ export default function SystemResourcesPage() {
       setMetrics(mockMetrics)
       setAlerts(mockAlerts)
       setLoading(false)
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to fetch system metrics')
       setLoading(false)
     }
@@ -901,7 +901,7 @@ export default function SystemResourcesPage() {
     }
   }, [fetchMetrics, autoRefresh])
 
-  const handleProcessAction = (action: string, pid: number) => {
+  const handleProcessAction = (_action: string, _pid: number) => {
     // Process action logic would go here
   }
 

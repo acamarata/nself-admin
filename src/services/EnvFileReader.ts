@@ -69,7 +69,7 @@ export class EnvFileReader {
       this.cache.set(absolutePath, { data: config, timestamp: now })
 
       return config
-    } catch (error) {
+    } catch (_error) {
       return {}
     }
   }

@@ -188,9 +188,9 @@ export default function DatabasePage() {
     version,
   } = useDatabaseData()
 
-  const [selectedTable, setSelectedTable] = useState<TableInfo | null>(null)
-  const [tableData, setTableData] = useState<any>(null)
-  const [loadingTableData, setLoadingTableData] = useState(false)
+  const [_selectedTable, setSelectedTable] = useState<TableInfo | null>(null)
+  const [_tableData, setTableData] = useState<any>(null)
+  const [_loadingTableData, setLoadingTableData] = useState(false)
   const [query, setQuery] = useState('')
   const [queryResults, setQueryResults] = useState<any>(null)
   const [executing, setExecuting] = useState(false)
@@ -198,7 +198,7 @@ export default function DatabasePage() {
     'tables',
   )
   const [searchTerm, setSearchTerm] = useState('')
-  const [showTableDetails, setShowTableDetails] = useState(false)
+  const [_showTableDetails, setShowTableDetails] = useState(false)
 
   // Handle table selection and load its data
   const handleTableSelect = async (table: TableInfo) => {
@@ -208,7 +208,7 @@ export default function DatabasePage() {
       const data = await getTableData(table.name, table.schema)
       setTableData(data)
       setShowTableDetails(true)
-    } catch (error) {
+    } catch (_error) {
       setTableData(null)
     } finally {
       setLoadingTableData(false)

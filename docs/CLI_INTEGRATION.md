@@ -163,13 +163,13 @@ nself admin open
 
 nself Admin v0.0.8 wraps the CLI plugin system with a visual UI. These are the CLI commands executed by the Admin API:
 
-| nself Admin Action | CLI Command Executed |
-|--------------------|---------------------|
-| View plugins page | `nself plugin list` |
+| nself Admin Action    | CLI Command Executed          |
+| --------------------- | ----------------------------- |
+| View plugins page     | `nself plugin list`           |
 | Install plugin button | `nself plugin install <name>` |
-| Remove plugin button | `nself plugin remove <name>` |
-| Sync button | `nself plugin <name> sync` |
-| View plugin status | `nself plugin status <name>` |
+| Remove plugin button  | `nself plugin remove <name>`  |
+| Sync button           | `nself plugin <name> sync`    |
+| View plugin status    | `nself plugin status <name>`  |
 
 > **Full CLI docs**: See [nself CLI](https://github.com/acamarata/nself) for complete plugin command reference.
 
@@ -177,15 +177,15 @@ nself Admin v0.0.8 wraps the CLI plugin system with a visual UI. These are the C
 
 nself Admin v0.0.8 wraps database operations. These are the CLI commands executed by the Admin API:
 
-| nself Admin Action | CLI Command Executed |
-|--------------------|---------------------|
-| Create backup button | `nself db backup create` |
-| Backup list | `nself db backup list` |
-| Restore button | `nself db restore <file>` |
-| Run migrations | `nself db migrate up` |
+| nself Admin Action    | CLI Command Executed      |
+| --------------------- | ------------------------- |
+| Create backup button  | `nself db backup create`  |
+| Backup list           | `nself db backup list`    |
+| Restore button        | `nself db restore <file>` |
+| Run migrations        | `nself db migrate up`     |
 | View migration status | `nself db migrate status` |
-| Execute SQL query | `nself db query "<sql>"` |
-| Schema browser | `nself db inspect` |
+| Execute SQL query     | `nself db query "<sql>"`  |
+| Schema browser        | `nself db inspect`        |
 
 > **Full CLI docs**: See [nself CLI](https://github.com/acamarata/nself) for complete database command reference.
 

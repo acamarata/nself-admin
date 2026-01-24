@@ -127,7 +127,7 @@ class BackgroundDataService {
     const store = useProjectStore.getState()
 
     switch (data.type) {
-      case 'container-update':
+      case 'container-update': {
         // Update specific container in store
         const containers = [...store.containerStats]
         const index = containers.findIndex((c) => c.id === data.payload.id)
@@ -136,6 +136,7 @@ class BackgroundDataService {
           store.updateCachedData({ containerStats: containers })
         }
         break
+      }
 
       case 'metrics-update':
         store.updateCachedData({ systemMetrics: data.payload })
@@ -186,7 +187,7 @@ class BackgroundDataService {
           }
         }
       }
-    } catch (err) {
+    } catch (_err) {
       // Silent fail - will retry on next interval
     }
   }
@@ -234,7 +235,7 @@ class BackgroundDataService {
           }
         }
       }
-    } catch (err) {
+    } catch (_err) {
       // Silent fail - will retry on next interval
     }
   }
@@ -263,7 +264,7 @@ class BackgroundDataService {
       if (Object.keys(updates).length > 0) {
         store.updateCachedData(updates)
       }
-    } catch (err) {
+    } catch (_err) {
       // Silent fail
     }
   }
@@ -281,7 +282,7 @@ class BackgroundDataService {
           store.updateCachedData({ systemMetrics: data.data })
         }
       }
-    } catch (err) {
+    } catch (_err) {
       // Silent fail
     }
   }
@@ -301,7 +302,7 @@ class BackgroundDataService {
           containersRunning: data.dockerContainers?.length || 0,
         })
       }
-    } catch (err) {
+    } catch (_err) {
       // Silent fail
     }
   }

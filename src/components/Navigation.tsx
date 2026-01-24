@@ -74,7 +74,7 @@ function NavLink({
   )
 }
 
-function VisibleSectionHighlight({
+function _VisibleSectionHighlight({
   group,
   pathname,
 }: {

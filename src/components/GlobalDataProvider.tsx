@@ -12,7 +12,7 @@ export function GlobalDataProvider({
 }: {
   children: React.ReactNode
 }) {
-  const pathname = usePathname()
+  const _pathname = usePathname()
   const projectStatus = useProjectStore((state) => state.projectStatus)
   const { isAuthenticated } = useAuth()
 

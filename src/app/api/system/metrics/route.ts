@@ -186,7 +186,7 @@ export async function GET() {
         tx: networkTxRate, // Mbps rate
       },
       storage: {
-        used: state.docker.containers.reduce((sum, c) => {
+        used: state.docker.containers.reduce((sum, _c) => {
           // Estimate storage based on container count (rough estimate)
           return sum + 0.5 // Each container ~500MB
         }, 0),
@@ -242,7 +242,7 @@ export async function GET() {
       // Set a reasonable total for project data storage (10GB for volumes/containers)
       // This is more realistic for project-specific data
       dockerMetrics.storage.total = 10
-    } catch (error) {
+    } catch {
       // Fallback: use simpler parsing (only Containers and Volumes)
       try {
         const { stdout } = await execAsync(

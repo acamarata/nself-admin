@@ -210,13 +210,14 @@ export default function ServiceHealthPage() {
         overall: overallStatus,
         timestamp: new Date().toISOString(),
       })
-    } catch (error) {
+    } catch (_error) {
+      // Intentionally empty - health data load failure handled silently
     } finally {
       setLoading(false)
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const _getStatusColor = (status: string) => {
     switch (status) {
       case 'healthy':
         return 'bg-green-500'

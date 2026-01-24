@@ -1,7 +1,6 @@
-import { exec, execFile } from 'child_process'
+import { execFile } from 'child_process'
 import { promisify } from 'util'
 
-const execAsync = promisify(exec)
 const execFileAsync = promisify(execFile)
 
 // Validate version string to prevent injection
@@ -54,7 +53,7 @@ class AutoUpdater {
       if (packageJson.version) {
         return packageJson.version
       }
-    } catch (e) {
+    } catch {
       // package.json not found, fall back to environment variable
     }
 
@@ -90,7 +89,7 @@ class AutoUpdater {
         updateAvailable: this.compareVersions(latest, current) > 0,
         publishedAt: versions?.[0]?.last_updated,
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         current,
         latest: current,
@@ -117,7 +116,7 @@ class AutoUpdater {
         releaseNotes: data.body,
         publishedAt: data.published_at,
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         current,
         latest: current,

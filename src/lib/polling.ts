@@ -173,8 +173,7 @@ export function usePolling(
         }
       }
     }
-    // eslint-disable-next-line
-  }, [interval, ...(deps || [])])
+  }, [interval, ...deps])
 }
 
 // Ensure cleanup on page unload

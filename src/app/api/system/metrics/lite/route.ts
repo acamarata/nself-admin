@@ -115,7 +115,7 @@ export async function GET() {
       data: metrics,
       cached: false,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         success: false,

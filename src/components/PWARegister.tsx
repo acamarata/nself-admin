@@ -8,8 +8,12 @@ export function PWARegister() {
       window.addEventListener('load', () => {
         navigator.serviceWorker
           .register('/sw.js')
-          .then((registration) => {})
-          .catch((error) => {})
+          .then((_registration) => {
+            // Intentionally empty - service worker registered
+          })
+          .catch((_error) => {
+            // Intentionally empty - registration failed silently
+          })
       })
     }
   }, [])

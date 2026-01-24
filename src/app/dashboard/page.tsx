@@ -36,7 +36,7 @@ function MetricCard({
   percentage,
   description,
   icon: Icon,
-  trend,
+  trend: _trend,
 }: {
   title: string
   value: string | number

@@ -281,7 +281,7 @@ function UserManagement({ users }: { users: User[] }) {
     }
   }
 
-  const handleBulkAction = (action: string) => {
+  const handleBulkAction = (_action: string) => {
     setSelectedUsers([])
   }
 

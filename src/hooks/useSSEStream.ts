@@ -59,13 +59,13 @@ export function useSSEStream() {
         try {
           const message = JSON.parse(event.data)
           handleMessage(message)
-        } catch (error) {
-          // Skip malformed SSE messages
+        } catch {
+          // Intentionally empty - skip malformed SSE messages
         }
       }
 
       // Handle errors
-      eventSource.onerror = (error) => {
+      eventSource.onerror = (_error) => {
         // Check if this is a connection failure
         if (eventSource.readyState === EventSource.CLOSED) {
           setState((prev) => ({
@@ -83,7 +83,7 @@ export function useSSEStream() {
           scheduleReconnect()
         }
       }
-    } catch (error) {
+    } catch (_error) {
       setState((prev) => ({
         ...prev,
         connected: false,
@@ -92,7 +92,6 @@ export function useSSEStream() {
       }))
       scheduleReconnect()
     }
-    // eslint-disable-next-line
   }, [])
 
   /**
@@ -180,9 +179,9 @@ export function useSSEStream() {
   const refresh = async () => {
     try {
       const response = await fetch('/api/sse/stream', { method: 'POST' })
-      const result = await response.json()
-    } catch (error) {
-      console.warn('[SSE Client] Error during refresh:', error)
+      const _result = await response.json()
+    } catch (_error) {
+      // Intentionally empty - refresh failures are handled silently
     }
   }
 
@@ -193,6 +192,7 @@ export function useSSEStream() {
     // Handle page visibility changes
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        // Intentionally empty - page is hidden
       } else {
         // If not connected and not already reconnecting, try to reconnect
         if (!eventSourceRef.current && !reconnectTimeoutRef.current) {

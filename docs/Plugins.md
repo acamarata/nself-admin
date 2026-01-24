@@ -10,15 +10,15 @@ nself Admin provides a **visual interface** for managing plugins installed via t
 
 ## What nself Admin Provides
 
-| Feature | Description |
-|---------|-------------|
-| **Plugin Dashboard** | Visual overview of installed and available plugins |
-| **Install Wizard** | Guided installation with environment variable forms |
-| **Configuration UI** | Edit plugin settings without touching .env files |
-| **Sync Controls** | One-click sync with real-time progress |
-| **Webhook Monitor** | View and retry webhook events |
+| Feature               | Description                                                       |
+| --------------------- | ----------------------------------------------------------------- |
+| **Plugin Dashboard**  | Visual overview of installed and available plugins                |
+| **Install Wizard**    | Guided installation with environment variable forms               |
+| **Configuration UI**  | Edit plugin settings without touching .env files                  |
+| **Sync Controls**     | One-click sync with real-time progress                            |
+| **Webhook Monitor**   | View and retry webhook events                                     |
 | **Plugin Dashboards** | Plugin-specific analytics (Stripe revenue, GitHub activity, etc.) |
-| **Schema Viewer** | Browse tables created by plugins |
+| **Schema Viewer**     | Browse tables created by plugins                                  |
 
 ---
 
@@ -29,6 +29,7 @@ The main plugin page shows:
 ### Installed Plugins Grid
 
 Each installed plugin displays:
+
 - Plugin name and version
 - Status indicator (active, syncing, error)
 - Last sync timestamp
@@ -37,6 +38,7 @@ Each installed plugin displays:
 ### Available Plugins
 
 Browse the plugin registry:
+
 - Filter by category (billing, ecommerce, devops, etc.)
 - Search plugins
 - View plugin details before installing
@@ -45,6 +47,7 @@ Browse the plugin registry:
 ### Health Overview
 
 At-a-glance monitoring:
+
 - Webhook handler status for each plugin
 - Recent webhook event counts
 - Sync success/failure rates
@@ -118,6 +121,7 @@ Each installed plugin has a detail page with tabs:
 ### Configuration Tab
 
 Edit plugin settings through the UI:
+
 - Environment variables (masked for secrets)
 - Webhook URL with copy button
 - Sync schedule configuration
@@ -126,6 +130,7 @@ Edit plugin settings through the UI:
 ### Schema Tab
 
 Browse database tables created by the plugin:
+
 - Table list with row counts
 - Click to view table structure
 - Quick link to Hasura console
@@ -141,6 +146,7 @@ Browse database tables created by the plugin:
 ### Webhooks Tab
 
 Monitor incoming webhooks:
+
 - Recent events table
 - Event type, timestamp, status
 - Payload preview (expandable)
@@ -343,9 +349,9 @@ interface WebhookEvent {
 }
 
 interface PluginConfig {
-  env: Record<string, string>  // Masked values for secrets
+  env: Record<string, string> // Masked values for secrets
   webhookUrl: string
-  syncSchedule?: string        // Cron expression
+  syncSchedule?: string // Cron expression
 }
 ```
 
@@ -378,4 +384,4 @@ interface PluginConfig {
 
 ---
 
-*This documentation covers nself-admin's UI for plugin management. For CLI plugin commands and plugin development, see the nself CLI and nself-plugins repositories.*
+_This documentation covers nself-admin's UI for plugin management. For CLI plugin commands and plugin development, see the nself CLI and nself-plugins repositories._

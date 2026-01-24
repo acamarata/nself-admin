@@ -13,7 +13,7 @@ export function useDatabaseData() {
   const hasData = hasStats || hasTables
 
   // Loading state based on project status and data availability
-  const isLoading = projectStatus === 'running' && !hasData
+  const _isLoading = projectStatus === 'running' && !hasData
   const isInitializing = projectStatus === 'running' && !hasData
   const error = null // No error state needed since we're just reading from store
 
@@ -22,25 +22,21 @@ export function useDatabaseData() {
 
   // Execute a custom query
   const executeQuery = async (query: string) => {
-    try {
-      const response = await fetch('/api/database', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query }),
-      })
+    const response = await fetch('/api/database', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    })
 
-      const data = await response.json()
+    const data = await response.json()
 
-      if (!data.success) {
-        throw new Error(data.error || 'Query execution failed')
-      }
-
-      return data.data
-    } catch (err) {
-      throw err
+    if (!data.success) {
+      throw new Error(data.error || 'Query execution failed')
     }
+
+    return data.data
   }
 
   // Get table data with pagination
@@ -50,21 +46,17 @@ export function useDatabaseData() {
     limit: number = 100,
     offset: number = 0,
   ) => {
-    try {
-      const response = await fetch(
-        `/api/database?action=table-data&table=${tableName}&schema=${schema}&limit=${limit}&offset=${offset}`,
-      )
+    const response = await fetch(
+      `/api/database?action=table-data&table=${tableName}&schema=${schema}&limit=${limit}&offset=${offset}`,
+    )
 
-      const data = await response.json()
+    const data = await response.json()
 
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch table data')
-      }
-
-      return data.data
-    } catch (err) {
-      throw err
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to fetch table data')
     }
+
+    return data.data
   }
 
   return {

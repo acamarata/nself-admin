@@ -387,7 +387,7 @@ async function createBucket(bucketName: string, options: any) {
       )
     }
 
-    const { stdout, stderr } = await execAsync(
+    const { stdout } = await execAsync(
       `cd ${backendPath} && docker-compose exec minio mc mb local/${bucketName}`,
     )
 
@@ -428,7 +428,7 @@ async function deleteBucket(bucketName: string, options: any) {
       command += ' --force'
     }
 
-    const { stdout, stderr } = await execAsync(command)
+    const { stdout } = await execAsync(command)
 
     return NextResponse.json({
       success: true,
@@ -450,15 +450,19 @@ async function deleteBucket(bucketName: string, options: any) {
   }
 }
 
-async function uploadFile(bucket: string, file: any, options: any) {
+async function uploadFile(
+  bucket: string,
+  file: { name?: string; size?: number } | null,
+  _options: unknown,
+) {
   // This would handle file upload in a real implementation
   // For now, return a placeholder response
   return NextResponse.json({
     success: true,
     data: {
       bucket,
-      file: file.name || 'uploaded-file',
-      size: file.size || 0,
+      file: file?.name || 'uploaded-file',
+      size: file?.size || 0,
       timestamp: new Date().toISOString(),
     },
   })
@@ -468,7 +472,7 @@ async function deleteFile(bucket: string, filePath: string) {
   try {
     const backendPath = getProjectPath()
 
-    const { stdout, stderr } = await execAsync(
+    const { stdout } = await execAsync(
       `cd ${backendPath} && docker-compose exec minio mc rm local/${bucket}/${filePath}`,
     )
 
@@ -503,7 +507,7 @@ async function createFolder(
     const fullPath = `${parentPath}${folderName}/`
 
     // Create empty object to represent folder
-    const { stdout, stderr } = await execAsync(
+    const { stdout: _stdout } = await execAsync(
       `cd ${backendPath} && echo '' | docker-compose exec -T minio mc pipe local/${bucket}/${fullPath}.keep`,
     )
 
@@ -536,7 +540,7 @@ async function getMinIOBuckets() {
     )
 
     return parseBucketsList(stdout)
-  } catch (error) {
+  } catch {
     return []
   }
 }
@@ -574,7 +578,7 @@ async function getProjectFileStorage() {
       size,
       type: 'project-files',
     }
-  } catch (error) {
+  } catch {
     return {
       path: getProjectPath(),
       size: 'Unknown',
@@ -606,7 +610,7 @@ async function getProjectDirectoryUsage() {
       directories,
       total: directories.length,
     }
-  } catch (error) {
+  } catch {
     return {
       directories: [],
       total: 0,
@@ -656,7 +660,7 @@ function parseFilesList(output: string) {
   return files
 }
 
-function parseMinIOUsage(output: string) {
+function parseMinIOUsage(_output: string) {
   // Parse MinIO admin info output
   return {
     drives: 1,
@@ -665,7 +669,7 @@ function parseMinIOUsage(output: string) {
   }
 }
 
-function parseVolumeUsage(output: string) {
+function parseVolumeUsage(_output: string) {
   // Parse Docker volume usage
   return {
     total: 0,
@@ -673,7 +677,7 @@ function parseVolumeUsage(output: string) {
   }
 }
 
-async function getBucketStats(bucketName: string) {
+async function getBucketStats(_bucketName: string) {
   // Get detailed stats for a specific bucket
   return {
     files: 0,
@@ -727,14 +731,18 @@ async function downloadFile(bucket: string, filePath: string) {
 }
 
 // Placeholder functions for additional operations
-async function copyFile(options: any) {
+async function copyFile(_options: unknown) {
   return NextResponse.json({ success: true, message: 'File copied' })
 }
 
-async function moveFile(options: any) {
+async function moveFile(_options: unknown) {
   return NextResponse.json({ success: true, message: 'File moved' })
 }
 
-async function setFilePermissions(bucket: string, file: string, options: any) {
+async function setFilePermissions(
+  _bucket: string,
+  _file: string,
+  _options: unknown,
+) {
   return NextResponse.json({ success: true, message: 'Permissions set' })
 }

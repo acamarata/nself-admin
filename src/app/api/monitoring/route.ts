@@ -440,7 +440,7 @@ async function getServiceHealthData() {
     )
 
     return JSON.parse(stdout)
-  } catch (error) {
+  } catch {
     return []
   }
 }
@@ -516,24 +516,24 @@ async function getCurrentNetworkUsage() {
 }
 
 // Placeholder functions for more complex metrics
-async function getCpuMetricsHistory(timeRange: string) {
+async function getCpuMetricsHistory(_timeRange: string) {
   // Would integrate with Prometheus/Grafana in real implementation
   return []
 }
 
-async function getMemoryMetricsHistory(timeRange: string) {
+async function getMemoryMetricsHistory(_timeRange: string) {
   return []
 }
 
-async function getDiskMetricsHistory(timeRange: string) {
+async function getDiskMetricsHistory(_timeRange: string) {
   return []
 }
 
-async function getNetworkMetricsHistory(timeRange: string) {
+async function getNetworkMetricsHistory(_timeRange: string) {
   return []
 }
 
-async function getDockerMetricsHistory(timeRange: string) {
+async function getDockerMetricsHistory(_timeRange: string) {
   return []
 }
 
@@ -641,7 +641,6 @@ function parseNselfStatus(statusOutput: string) {
       line.includes('●') ||
       line.includes('✗')
     ) {
-      // eslint-disable-next-line no-control-regex
       const serviceName = line.replace(/[✓○●✗\s\x1b[\d;m]/g, '').trim()
       if (serviceName) {
         services.push({
@@ -661,7 +660,7 @@ function parseNselfStatus(statusOutput: string) {
   return { services }
 }
 
-function parseDockerLogs(logs: string, level: string) {
+function parseDockerLogs(logs: string, _level: string) {
   const lines = logs.split('\n').filter((line) => line.trim())
 
   return lines
@@ -683,7 +682,7 @@ function parseDockerLogs(logs: string, level: string) {
         level: detectLogLevel(line),
       }
     })
-    .filter((log) => level === 'all' || log.level === level)
+    .filter((log) => _level === 'all' || log.level === _level)
 }
 
 function detectLogLevel(logLine: string): string {
@@ -696,31 +695,31 @@ function detectLogLevel(logLine: string): string {
 }
 
 // Placeholder functions for additional features
-async function getResponseTimeMetrics(timeRange: string) {
+async function getResponseTimeMetrics(_timeRange: string) {
   return []
 }
-async function getThroughputMetrics(timeRange: string) {
+async function getThroughputMetrics(_timeRange: string) {
   return []
 }
-async function getErrorRateMetrics(timeRange: string) {
+async function getErrorRateMetrics(_timeRange: string) {
   return []
 }
-async function getLatencyMetrics(timeRange: string) {
+async function getLatencyMetrics(_timeRange: string) {
   return []
 }
 
-async function createAlert(options: any) {
+async function createAlert(_options: unknown) {
   return NextResponse.json({ success: true, message: 'Alert created' })
 }
 
-async function acknowledgeAlert(alertId: string) {
+async function acknowledgeAlert(_alertId: string) {
   return NextResponse.json({ success: true, message: 'Alert acknowledged' })
 }
 
-async function exportLogs(service: string, options: any) {
+async function exportLogs(_service: string, _options: unknown) {
   return NextResponse.json({ success: true, message: 'Logs exported' })
 }
 
-async function setLogLevel(service: string, level: string) {
+async function setLogLevel(_service: string, _level: string) {
   return NextResponse.json({ success: true, message: 'Log level set' })
 }

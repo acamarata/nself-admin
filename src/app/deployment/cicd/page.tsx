@@ -308,7 +308,7 @@ function DeploymentHistory({ deployments }: { deployments: Deployment[] }) {
       ? deployments
       : deployments.filter((d) => d.environment === selectedEnvironment)
 
-  const handleRollback = async (deploymentId: string) => {
+  const handleRollback = async (_deploymentId: string) => {
     // Rollback logic would go here
   }
 
@@ -417,13 +417,13 @@ function DeploymentHistory({ deployments }: { deployments: Deployment[] }) {
 
 function WebhookManagement({
   webhooks,
-  onWebhookUpdate,
+  onWebhookUpdate: _onWebhookUpdate,
 }: {
   webhooks: WebhookConfig[]
   onWebhookUpdate: (webhook: WebhookConfig) => void
 }) {
-  const [isCreating, setIsCreating] = useState(false)
-  const [editingWebhook, setEditingWebhook] = useState<WebhookConfig | null>(
+  const [_isCreating, setIsCreating] = useState(false)
+  const [_editingWebhook, setEditingWebhook] = useState<WebhookConfig | null>(
     null,
   )
 
@@ -507,7 +507,9 @@ export default function DeploymentCICDPage() {
   const [selectedTab, setSelectedTab] = useState<
     'pipelines' | 'deployments' | 'webhooks'
   >('pipelines')
-  const [selectedPipeline, setSelectedPipeline] = useState<string | null>(null)
+  const [_selectedPipeline, _setSelectedPipeline] = useState<string | null>(
+    null,
+  )
 
   const fetchData = useCallback(async () => {
     try {
@@ -651,7 +653,7 @@ export default function DeploymentCICDPage() {
       setDeployments(mockDeployments)
       setWebhooks(mockWebhooks)
       setLoading(false)
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to fetch deployment data')
       setLoading(false)
     }
@@ -663,7 +665,7 @@ export default function DeploymentCICDPage() {
     return () => clearInterval(interval)
   }, [fetchData])
 
-  const handlePipelineAction = async (action: string, pipelineId: string) => {
+  const handlePipelineAction = async (_action: string, _pipelineId: string) => {
     // Pipeline action logic would go here
   }
 

@@ -260,7 +260,7 @@ export const useProjectStore = create<ProjectState>()(
           // if (projectStatus === 'running') {
           //   get().fetchAllData()
           // }
-        } catch (error) {
+        } catch (_error) {
           set({
             projectStatus: 'error',
             isChecking: false,
@@ -411,7 +411,7 @@ export const useProjectStore = create<ProjectState>()(
           }
 
           set({ isLoadingDatabase: false })
-        } catch (error) {
+        } catch (_error) {
           set({ isLoadingDatabase: false })
         }
       },

@@ -95,8 +95,8 @@ class WebSocketService extends EventEmitter {
         try {
           const message: WebSocketMessage = JSON.parse(event.data)
           this.handleMessage(message)
-        } catch (error) {
-          // Skip malformed WebSocket messages
+        } catch {
+          // Intentionally empty - skip malformed WebSocket messages
         }
       }
 
@@ -110,7 +110,7 @@ class WebSocketService extends EventEmitter {
         this.stopPing()
         this.attemptReconnect()
       }
-    } catch (error) {
+    } catch {
       this.attemptReconnect()
     }
   }

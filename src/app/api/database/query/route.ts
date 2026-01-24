@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
           executionTime: queryResult.executionTime || 0,
         },
       })
-    } catch (parseError) {
+    } catch {
       // If not JSON, return raw result
       return NextResponse.json({
         success: true,
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 }
 
 // Get database list
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get list of databases
     const result = await executeNselfCommand('db', ['list', '--json'])
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: databases,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         success: false,

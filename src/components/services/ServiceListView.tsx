@@ -99,11 +99,12 @@ export function ServiceListView({
         case 'uptime':
           comparison = a.created - b.created
           break
-        case 'port':
+        case 'port': {
           const aPort = a.ports?.find((p) => p.public)?.public || 99999
           const bPort = b.ports?.find((p) => p.public)?.public || 99999
           comparison = aPort - bPort
           break
+        }
       }
 
       return sortDirection === 'asc' ? comparison : -comparison

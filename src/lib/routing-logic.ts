@@ -66,7 +66,7 @@ export async function getCorrectRoute(): Promise<RoutingResult> {
 
     const status: ProjectStatus = await response.json()
     return determineRoute(status)
-  } catch (error) {
+  } catch (_error) {
     return {
       route: '/init',
       reason: 'Error checking project status - defaulting to init',

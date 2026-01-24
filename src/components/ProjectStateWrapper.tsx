@@ -33,7 +33,7 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
   const [projectStatus, setProjectStatus] = useState<ProjectStatus | null>(null)
   // Start with loading false to avoid blocking page loads
   const [loading, setLoading] = useState(false)
-  const [skipInitialCheck, setSkipInitialCheck] = useState(false)
+  const [_skipInitialCheck, setSkipInitialCheck] = useState(false)
 
   useEffect(() => {
     // Only check project status if authenticated
@@ -60,7 +60,6 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
       setLoading(false)
       checkProjectStatus()
     }
-    // eslint-disable-next-line
   }, [isAuthenticated])
 
   const checkProjectStatus = async () => {
@@ -111,7 +110,7 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
         }
         return
       }
-    } catch (error) {
+    } catch (_error) {
       localStorage.removeItem(PROJECT_SETUP_KEY) // Clear cached status on error
       // On error, assume setup is needed unless we're already on init page
       if (!pathname.startsWith('/init')) {
@@ -155,7 +154,7 @@ export function ProjectStateWrapper({ children }: ProjectStateWrapperProps) {
       ) {
         localStorage.setItem(PROJECT_SETUP_KEY, 'true')
       }
-    } catch (error) {
+    } catch (_error) {
       // On silent check failure, clear cache but don't redirect immediately
       localStorage.removeItem(PROJECT_SETUP_KEY)
     }

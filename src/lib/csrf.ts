@@ -10,8 +10,8 @@ const ALLOWED_ORIGIN_PATTERNS = [
   /^https?:\/\/localhost(:\d+)?$/,
   /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
   /^https?:\/\/0\.0\.0\.0(:\d+)?$/,
-  /^https?:\/\/[^\/]+\.localhost(:\d+)?$/,
-  /^https?:\/\/[^\/]+\.local(:\d+)?$/,
+  /^https?:\/\/[^/]+\.localhost(:\d+)?$/,
+  /^https?:\/\/[^/]+\.local(:\d+)?$/,
   /^https?:\/\/admin\.local\.nself\.org(:\d+)?$/,
 ]
 

@@ -2,7 +2,7 @@ import { getDatabase } from '@/lib/database'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET wizard state
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const db = await getDatabase()
     if (!db) {
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE wizard state (clear)
-export async function DELETE(request: NextRequest) {
+export async function DELETE(_request: NextRequest) {
   try {
     const db = await getDatabase()
     if (!db) {

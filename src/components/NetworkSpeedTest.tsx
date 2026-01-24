@@ -79,7 +79,8 @@ export default function NetworkSpeedTest() {
         // Refresh speed info
         await fetchSpeedInfo()
       }
-    } catch (error) {
+    } catch {
+      // Intentionally empty - test results are handled above
     } finally {
       setTesting(false)
     }

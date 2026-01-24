@@ -193,10 +193,11 @@ function ContainersTable({ services }: ContainersTableProps) {
   ) => {
     return [...serviceList].sort((a, b) => {
       switch (sortBy) {
-        case 'default':
+        case 'default': {
           const orderA = getServiceDefaultOrder(a.name, category)
           const orderB = getServiceDefaultOrder(b.name, category)
           return orderA - orderB
+        }
         case 'name':
           return a.name.localeCompare(b.name)
         case 'status':

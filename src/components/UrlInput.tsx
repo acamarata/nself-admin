@@ -32,7 +32,7 @@ export function UrlInput({
     if (!val) return required ? 'Required' : undefined
 
     // Check for invalid characters
-    const cleanValue = val.replace(/[^a-z0-9.\-]/g, '')
+    const cleanValue = val.replace(/[^a-z0-9.-]/g, '')
     if (cleanValue !== val) {
       return 'Contains invalid characters'
     }
@@ -147,7 +147,7 @@ export function UrlInput({
     const cleanValue = value
       .trim()
       .toLowerCase()
-      .replace(/[^a-z0-9.\-]/g, '')
+      .replace(/[^a-z0-9.-]/g, '')
     const validationError = validateUrl(cleanValue)
     setError(validationError)
     onError?.(validationError)

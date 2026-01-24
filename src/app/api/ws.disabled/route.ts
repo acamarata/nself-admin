@@ -56,7 +56,7 @@ async function getSystemMetrics() {
         tx: 0,
       },
     }
-  } catch (error) {
+  } catch {
     return {
       cpu: {
         usage: cpuUsage,
@@ -122,7 +122,7 @@ async function getContainerStats() {
             ).filter((p) => !p.includes('null')),
             uptime: Math.floor((Date.now() - container.Created * 1000) / 1000),
           }
-        } catch (error) {
+        } catch {
           return {
             id: container.Id.substring(0, 12),
             name: container.Names[0].replace('/', ''),
@@ -139,7 +139,7 @@ async function getContainerStats() {
       }),
     )
     return containerData
-  } catch (error) {
+  } catch {
     return []
   }
 }
@@ -202,7 +202,7 @@ function initializeWebSocket() {
   return io
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   initializeWebSocket()
 
   return new Response(

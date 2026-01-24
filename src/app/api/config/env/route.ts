@@ -400,7 +400,7 @@ export async function GET(request: NextRequest) {
         hasChanges: false,
       },
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to read environment variables' },
       { status: 500 },

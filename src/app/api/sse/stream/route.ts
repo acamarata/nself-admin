@@ -17,7 +17,7 @@ async function ensureInitialized() {
   await initPromise
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // Ensure SSE manager is initialized
   await ensureInitialized()
 

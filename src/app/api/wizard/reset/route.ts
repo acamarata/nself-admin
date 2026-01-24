@@ -8,7 +8,7 @@ import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     // Get project path using centralized resolution
     const absoluteProjectPath = getProjectPath()

@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
         // DO NOT touch CS_ variables or SERVICES_ENABLED here - that's step 4's job
         break
 
-      case 'user-services':
+      case 'user-services': {
         // Update custom services
         envUpdates = {}
         const services =
@@ -210,6 +210,7 @@ export async function POST(request: NextRequest) {
           envUpdates[`CS_${i}`] = ''
         }
         break
+      }
 
       case 'apps':
         // Update frontend apps

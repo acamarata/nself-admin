@@ -118,13 +118,14 @@ function UserPreferencesSection() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const response = await fetch('/api/settings/preferences', {
+      const _response = await fetch('/api/settings/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(preferences),
       })
       // Handle response
-    } catch (error) {
+    } catch (_error) {
+      // Intentionally empty - save errors handled silently
     } finally {
       setSaving(false)
     }

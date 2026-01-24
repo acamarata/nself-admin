@@ -276,7 +276,7 @@ query GetUsers {
       }
 
       setResult(mockResult)
-    } catch (error) {
+    } catch (_error) {
       setResult({
         errors: [
           {

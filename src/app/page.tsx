@@ -36,14 +36,14 @@ import { useEffect, useState } from 'react'
 // DEV ONLY - REMOVE FOR PRODUCTION
 import { useDevTracking } from '@/hooks/useDevTracking'
 
-interface SystemMetrics {
+interface _SystemMetrics {
   cpu: number
   memory: { used: number; total: number; percentage: number }
   disk: { used: number; total: number; percentage: number }
   network: { rx: number; tx: number }
 }
 
-interface DockerMetrics {
+interface _DockerMetrics {
   cpu: number
   memory: { used: number; total: number; percentage: number }
   containers: number
@@ -141,7 +141,7 @@ function ProjectInfoPattern({
   )
 }
 
-function ProjectInfoCard({
+function _ProjectInfoCard({
   icon,
   label,
   value,
@@ -275,7 +275,7 @@ function getServiceDefaultOrder(
 }
 
 // Helper to get service sort order within optional category
-function getOptionalServiceOrder(name: string): number {
+function _getOptionalServiceOrder(name: string): number {
   const lowerName = name.toLowerCase()
 
   // Define the preferred order for optional services
@@ -357,15 +357,15 @@ function getServiceDisplayName(name: string): string {
 // ContainersTable and related components have been moved to /src/components/services_pending_code.tsx
 // They will be used as the 4th view option on the Services page
 
-interface UnusedServiceTooltipProps {
+interface _UnusedServiceTooltipProps {
   service: ServiceStatus
   children: React.ReactNode
 }
 
-function UnusedServiceTooltip({
+function _UnusedServiceTooltip({
   service,
   children,
-}: UnusedServiceTooltipProps) {
+}: _UnusedServiceTooltipProps) {
   const [showTooltip, setShowTooltip] = useState(false)
 
   const getServiceDescription = (name: string) => {
@@ -433,7 +433,7 @@ interface StatusTooltipProps {
   children: React.ReactNode
 }
 
-function StatusTooltip({ service, children }: StatusTooltipProps) {
+function _StatusTooltip({ service, children }: StatusTooltipProps) {
   const [showTooltip, setShowTooltip] = useState(false)
 
   const getHealthReason = (service: ServiceStatus) => {
@@ -473,7 +473,7 @@ function StatusTooltip({ service, children }: StatusTooltipProps) {
   )
 }
 
-function ContainersTable({
+function _ContainersTable({
   services,
   isLoadingContainers = false,
 }: ContainersTableProps) {
@@ -502,10 +502,11 @@ function ContainersTable({
   ) => {
     return [...serviceList].sort((a, b) => {
       switch (sortBy) {
-        case 'default':
+        case 'default': {
           const orderA = getServiceDefaultOrder(a.name, category)
           const orderB = getServiceDefaultOrder(b.name, category)
           return orderA - orderB
+        }
         case 'name':
           return a.name.localeCompare(b.name)
         case 'status':
@@ -1113,7 +1114,11 @@ function BackendServiceCard({
 export default function DashboardPage() {
   const router = useRouter()
   // DEV TRACKING - REMOVE FOR PRODUCTION
-  const { logEvent, startTimer, endTimer } = useDevTracking('DashboardPage')
+  const {
+    logEvent: _logEvent,
+    startTimer: _startTimer,
+    endTimer: _endTimer,
+  } = useDevTracking('DashboardPage')
 
   // Show loading state immediately while data loads
   const [isInitialLoad, setIsInitialLoad] = useState(true)
@@ -1125,7 +1130,7 @@ export default function DashboardPage() {
   const isLoadingContainers = useProjectStore(
     (state) => state.isLoadingContainers,
   )
-  const lastDataUpdate = useProjectStore((state) => state.lastDataUpdate)
+  const _lastDataUpdate = useProjectStore((state) => state.lastDataUpdate)
   const fetchAllData = useProjectStore((state) => state.fetchAllData)
   const projectStatus = useProjectStore((state) => state.projectStatus)
   const containersRunning = useProjectStore((state) => state.containersRunning)
@@ -1250,7 +1255,7 @@ export default function DashboardPage() {
   }, 0)
 
   // Derive docker metrics - prefer API data, fallback to calculated
-  const dockerMetrics = apiDockerMetrics
+  const _dockerMetrics = apiDockerMetrics
     ? {
         ...apiDockerMetrics,
         cpu:
@@ -1290,28 +1295,28 @@ export default function DashboardPage() {
       }
 
   // Use loading state only for initial load when we have no data at all
-  const loading =
+  const _loading =
     !systemMetrics &&
     !containerStats.length &&
     !projectStatus &&
     (isLoadingMetrics || isLoadingContainers)
-  const refreshing = isLoadingMetrics || isLoadingContainers
+  const _refreshing = isLoadingMetrics || isLoadingContainers
 
   // Manual refresh function
-  const handleRefresh = async () => {
+  const _handleRefresh = async () => {
     await fetchAllData()
   }
 
-  const runningServices = services.filter(
+  const _runningServices = services.filter(
     (s) => s.status === 'healthy' || s.status === 'running',
   ).length
-  const totalServices = services.length
+  const _totalServices = services.length
   // Check both project status and actual services
-  const hasRunningServices =
-    projectStatus === 'running' || containersRunning > 0 || runningServices > 0
+  const _hasRunningServices =
+    projectStatus === 'running' || containersRunning > 0 || _runningServices > 0
 
-  const [starting, setStarting] = useState(false)
-  const [startProgress, setStartProgress] = useState<{
+  const [_starting, setStarting] = useState(false)
+  const [_startProgress, setStartProgress] = useState<{
     message: string
     percentage?: number
     type?:
@@ -1438,7 +1443,7 @@ export default function DashboardPage() {
     }
   }
 
-  const startServices = async () => {
+  const _startServices = async () => {
     try {
       setStarting(true)
       setStartProgress({
@@ -1541,7 +1546,7 @@ export default function DashboardPage() {
   }
 
   // Show content immediately with loading states
-  const showLoadingState =
+  const _showLoadingState =
     isInitialLoad || (!systemMetrics && !containerStats.length)
   // Fix flickering: Use multiple signals to determine if services should be shown
   // Check containerStats directly (most reliable), then containersRunning, then projectStatus

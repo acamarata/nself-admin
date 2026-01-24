@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       await writer.write(
         encoder.encode(`data: ${JSON.stringify(healthUpdate)}\n\n`),
       )
-    } catch (error) {
+    } catch {
       // Client disconnected
       clearInterval(interval)
       writer.close()

@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Session cookie exists but is invalid or expired
         setIsAuthenticated(false)
       }
-    } catch (error) {
+    } catch (_error) {
       // Network error - also treat as not authenticated
       setIsAuthenticated(false)
     }
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       return false
-    } catch (error) {
+    } catch (_error) {
       return false
     }
   }

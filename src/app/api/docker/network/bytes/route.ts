@@ -125,7 +125,7 @@ export async function GET() {
       containers: containerStats,
       timestamp: Date.now(),
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to get Docker network statistics' },
       { status: 500 },

@@ -4,9 +4,6 @@
  */
 
 import { exec } from 'child_process'
-import { promisify } from 'util'
-
-const execAsync = promisify(exec)
 
 export interface PostgresStats {
   status: 'healthy' | 'unhealthy' | 'stopped'
@@ -86,7 +83,7 @@ export class PostgresCollector {
       this.cache = { data: result, timestamp: now }
 
       return result
-    } catch (error) {
+    } catch (_error) {
       return this.getEmptyStats('unhealthy')
     }
   }
@@ -137,7 +134,7 @@ export class PostgresCollector {
         max,
         percentage: Math.round((total / max) * 100),
       }
-    } catch (error) {
+    } catch (_error) {
       return { active: 0, idle: 0, max: 100, percentage: 0 }
     }
   }
@@ -168,7 +165,6 @@ export class PostgresCollector {
         .split('\n')
         .filter((l) => l.trim())
       const databases: DatabaseInfo[] = []
-      let totalSize = 0
 
       for (const line of lines) {
         const parts = line.split('|').map((s) => s.trim())
@@ -180,16 +176,6 @@ export class PostgresCollector {
             tableCount: parseInt(tableCount) || 0,
             connections: 0, // Would need separate query per DB
           })
-
-          // Parse size for total
-          const sizeMatch = size.match(/([0-9.]+)\s*([A-Z]+)/i)
-          if (sizeMatch) {
-            const value = parseFloat(sizeMatch[1])
-            const unit = sizeMatch[2].toUpperCase()
-            if (unit.startsWith('G')) totalSize += value * 1024
-            else if (unit.startsWith('M')) totalSize += value
-            else if (unit.startsWith('K')) totalSize += value / 1024
-          }
         }
       }
 
@@ -205,7 +191,7 @@ export class PostgresCollector {
         totalSize: totalOut.trim() || '0 MB',
         list: databases,
       }
-    } catch (error) {
+    } catch (_error) {
       return { count: 0, totalSize: '0 MB', list: [] }
     }
   }
@@ -241,7 +227,7 @@ export class PostgresCollector {
         cacheHitRatio: Math.round(cacheHitRatio * 10) / 10,
         transactionsPerSecond: Math.round(tps * 10) / 10,
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         activeQueries: 0,
         slowQueries: 0,

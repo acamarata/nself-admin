@@ -135,6 +135,7 @@ export class DataCollectionService {
         ])
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
+          // Intentionally empty - error handled silently
         }
       }
     }
@@ -153,6 +154,7 @@ export class DataCollectionService {
         ])
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
+          // Intentionally empty - error handled silently
         }
       }
     }
@@ -172,6 +174,7 @@ export class DataCollectionService {
         ])
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
+          // Intentionally empty - error handled silently
         }
       }
     }
@@ -255,6 +258,7 @@ export class DataCollectionService {
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
+          // Intentionally empty - error handled silently
         }
       }
     })
@@ -342,6 +346,7 @@ export class DataCollectionService {
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
+          // Intentionally empty - error handled silently
         }
       }
     })
@@ -401,6 +406,7 @@ export class DataCollectionService {
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
+          // Intentionally empty - error handled silently
         }
       }
     })
@@ -500,6 +506,7 @@ export class DataCollectionService {
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
+          // Intentionally empty - error handled silently
         }
       }
     })

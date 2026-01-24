@@ -135,11 +135,11 @@ class DevLogger {
   private trackClicks() {
     this.clickHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement
-      const tagName = target.tagName
-      const id = target.id
-      const className = target.className
-      const text = target.textContent?.substring(0, 50)
-      const href = (target as HTMLAnchorElement).href
+      const _tagName = target.tagName
+      const _id = target.id
+      const _className = target.className
+      const _text = target.textContent?.substring(0, 50)
+      const _href = (target as HTMLAnchorElement).href
 
       // Find closest button or link
       const button = target.closest('button')
@@ -225,8 +225,8 @@ class DevLogger {
           }
         })
         longTaskObserver.observe({ entryTypes: ['longtask'] })
-      } catch (e) {
-        // Some browsers don't support longtask
+      } catch {
+        // Intentionally empty - some browsers don't support longtask
       }
 
       // Track navigation timing
@@ -245,8 +245,8 @@ class DevLogger {
           }
         })
         navObserver.observe({ entryTypes: ['navigation'] })
-      } catch (e) {
-        // Fallback
+      } catch {
+        // Intentionally empty - fallback
       }
     }
   }
@@ -312,8 +312,8 @@ class DevLogger {
     // Store in localStorage for persistence
     try {
       localStorage.setItem('devLogs', JSON.stringify(this.logs.slice(0, 100)))
-    } catch (e) {
-      // localStorage might be full
+    } catch {
+      // Intentionally empty - localStorage might be full
     }
 
     // Notify listeners
@@ -390,8 +390,8 @@ class DevLogger {
           duration: Math.round(measure.duration),
         },
       )
-    } catch (e) {
-      // Timing mark might not exist
+    } catch {
+      // Intentionally empty - timing mark might not exist
     }
   }
 

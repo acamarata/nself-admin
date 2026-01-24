@@ -161,7 +161,7 @@ export class CollectionOrchestrator extends EventEmitter {
       const data = await this.postgresCollector.collect()
       this.state.services.postgres = data
       this.emit('serviceUpdate', { service: 'postgres', data })
-    } catch (error) {
+    } catch (_error) {
       this.state.services.postgres = null
     }
   }
@@ -174,7 +174,7 @@ export class CollectionOrchestrator extends EventEmitter {
       const data = await this.hasuraCollector.collect()
       this.state.services.hasura = data
       this.emit('serviceUpdate', { service: 'hasura', data })
-    } catch (error) {
+    } catch (_error) {
       this.state.services.hasura = null
     }
   }
@@ -187,7 +187,7 @@ export class CollectionOrchestrator extends EventEmitter {
       const data = await this.redisCollector.collect()
       this.state.services.redis = data
       this.emit('serviceUpdate', { service: 'redis', data })
-    } catch (error) {
+    } catch (_error) {
       this.state.services.redis = null
     }
   }

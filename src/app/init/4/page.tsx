@@ -29,7 +29,7 @@ export default function InitStep4() {
   const [showFrameworkInfo, setShowFrameworkInfo] = useState(false)
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState<number | null>(null)
-  const [autoSaving, setAutoSaving] = useState(false)
+  const [autoSaving, _setAutoSaving] = useState(false)
   const [showInfoBox, setShowInfoBox] = useState(false)
 
   const [localServices, setLocalServices] = useState<CustomService[]>([])
@@ -779,7 +779,7 @@ export default function InitStep4() {
                           {category}
                         </h4>
                         <div className="grid grid-cols-2 gap-1">
-                          {frameworks.map((fw, idx) => {
+                          {frameworks.map((fw, _idx) => {
                             const tooltip = frameworkTooltips[fw.value]
                             const tooltipId = `${category}-${fw.value}`
                             return (

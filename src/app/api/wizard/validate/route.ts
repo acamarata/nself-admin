@@ -12,7 +12,7 @@ interface ValidationIssue {
 
 export async function POST(request: NextRequest) {
   try {
-    const { config } = await request.json()
+    const { config: _config } = await request.json()
     const issues: ValidationIssue[] = []
     const projectPath = getProjectPath()
 

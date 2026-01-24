@@ -601,7 +601,7 @@ const serviceConfigs: Record<string, (initialConfig?: any) => ConfigField[]> = {
       helperText: 'Configure alert rules and notifications',
     },
   ],
-  mlflow: (initialConfig) => [
+  mlflow: (_initialConfig) => [
     {
       key: 'MLFLOW_VERSION',
       label: 'Version',

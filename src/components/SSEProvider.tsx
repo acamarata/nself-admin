@@ -9,7 +9,7 @@ import { useSSEStream } from '@/hooks/useSSEStream'
 import { Circle, RefreshCw, WifiOff } from 'lucide-react'
 
 export function SSEProvider({ children }: { children: React.ReactNode }) {
-  const { connected, reconnecting, error, lastUpdate, refresh, reconnect } =
+  const { connected, reconnecting, error, lastUpdate, reconnect } =
     useSSEStream()
 
   return (

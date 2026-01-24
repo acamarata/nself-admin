@@ -198,7 +198,7 @@ ${volumes.map((v) => `  ${v}:`).join('\n')}
   return dockerCompose
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Get project path - use the same as other APIs
     const projectPath = getProjectPath()

@@ -36,14 +36,14 @@ export const envUpdateSchema = z.object({
 })
 
 export const configFileSchema = z.object({
-  filename: z.string().regex(/^[a-zA-Z0-9_\-\.]+$/, 'Invalid filename'),
+  filename: z.string().regex(/^[a-zA-Z0-9_\-.]+$/, 'Invalid filename'),
   content: z.string().max(1000000), // 1MB max
   backup: z.boolean().optional(),
 })
 
 // Service management schemas
 export const serviceCommandSchema = z.object({
-  service: z.string().regex(/^[a-z][a-z0-9_\-]*$/i),
+  service: z.string().regex(/^[a-z][a-z0-9_-]*$/i),
   command: z.enum(['logs', 'inspect', 'stats', 'exec']),
   args: z.array(z.string()).optional(),
 })
@@ -54,7 +54,7 @@ export const projectInitSchema = z.object({
     .string()
     .min(1)
     .max(100)
-    .regex(/^[a-z][a-z0-9\-]*$/),
+    .regex(/^[a-z][a-z0-9-]*$/),
   template: z.enum(['basic', 'full', 'minimal', 'custom']).optional(),
   services: z.array(z.string()).optional(),
   environment: z.enum(['development', 'staging', 'production']).optional(),
@@ -79,7 +79,7 @@ export const restoreSchema = z.object({
 
 // CLI execution schemas
 export const cliCommandSchema = z.object({
-  command: z.string().regex(/^[a-z][a-z\-]*$/, 'Invalid command'),
+  command: z.string().regex(/^[a-z][a-z-]*$/, 'Invalid command'),
   args: z.array(z.string()).max(20),
   options: z.record(z.string(), z.any()).optional(),
   timeout: z.number().min(1000).max(300000).optional(), // 1-300 seconds
@@ -135,7 +135,7 @@ export function escapeShellArg(arg: string): string {
   if (!arg) return "''"
 
   // If arg contains no special characters, return as-is
-  if (/^[a-zA-Z0-9_\-\/\.]+$/.test(arg)) {
+  if (/^[a-zA-Z0-9_\-/.]+$/.test(arg)) {
     return arg
   }
 

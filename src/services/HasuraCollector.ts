@@ -4,9 +4,6 @@
  */
 
 import { exec } from 'child_process'
-import { promisify } from 'util'
-
-const execAsync = promisify(exec)
 
 export interface HasuraStats {
   status: 'healthy' | 'unhealthy' | 'stopped'
@@ -83,7 +80,7 @@ export class HasuraCollector {
       this.cache = { data: result, timestamp: now }
 
       return result
-    } catch (error) {
+    } catch (_error) {
       return this.getEmptyStats('unhealthy')
     }
   }
@@ -162,7 +159,7 @@ export class HasuraCollector {
         cronTriggers,
         remoteSchemas,
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         tables: 0,
         relationships: 0,
@@ -219,7 +216,7 @@ export class HasuraCollector {
         lastReload: new Date().toISOString(),
         version,
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         inconsistentObjects: [],
         lastReload: new Date().toISOString(),

@@ -528,14 +528,14 @@ function PolicyCard({
 }
 
 export default function StoragePage() {
-  const [buckets, setBuckets] = useState<Bucket[]>(mockBuckets)
-  const [objects, setObjects] = useState<StorageObject[]>(mockObjects)
-  const [policies, setPolicies] = useState<StoragePolicy[]>(mockPolicies)
+  const [buckets, _setBuckets] = useState<Bucket[]>(mockBuckets)
+  const [objects, _setObjects] = useState<StorageObject[]>(mockObjects)
+  const [policies, _setPolicies] = useState<StoragePolicy[]>(mockPolicies)
   const [activeTab, setActiveTab] = useState<
     'buckets' | 'browser' | 'policies'
   >('buckets')
   const [selectedBucket, setSelectedBucket] = useState<string>('nself-uploads')
-  const [currentPath, setCurrentPath] = useState<string>('/')
+  const [currentPath, _setCurrentPath] = useState<string>('/')
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [loading, setLoading] = useState(false)
@@ -549,12 +549,15 @@ export default function StoragePage() {
     setTimeout(() => setLoading(false), 1000)
   }
 
-  const handleObjectAction = async (action: string, object: StorageObject) => {
+  const handleObjectAction = async (
+    _action: string,
+    _object: StorageObject,
+  ) => {
     setLoading(true)
     setTimeout(() => setLoading(false), 1000)
   }
 
-  const handlePolicyAction = async (action: string, id: string) => {
+  const handlePolicyAction = async (_action: string, _id: string) => {
     setLoading(true)
     setTimeout(() => setLoading(false), 1000)
   }

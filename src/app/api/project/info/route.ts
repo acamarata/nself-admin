@@ -7,7 +7,7 @@ import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Use the same project path as the build API uses (from getProjectPath)
     const projectPath = getProjectPath()
@@ -177,13 +177,13 @@ export async function GET(request: NextRequest) {
         // Parse services section only
         const lines = dockerComposeContent.split('\n')
         let inServices = false
-        let currentIndent = 0
+        let _currentIndent = 0
 
         for (const line of lines) {
           // Check if we're entering the services section
           if (line.trim() === 'services:') {
             inServices = true
-            currentIndent = line.indexOf('services:')
+            _currentIndent = line.indexOf('services:')
             continue
           }
 
@@ -463,7 +463,7 @@ export async function GET(request: NextRequest) {
             },
           )
         }
-      } catch (error) {
+      } catch {
         console.log('docker-compose command failed, using file parsing')
       }
     }
@@ -472,7 +472,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: projectInfo,
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         success: false,

@@ -87,8 +87,8 @@ export default function SQLConsolePage() {
   const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [showSaved, setShowSaved] = useState(false)
-  const [autoComplete, setAutoComplete] = useState<string[]>([])
-  const [isConnected, setIsConnected] = useState(true)
+  const [_autoComplete, setAutoComplete] = useState<string[]>([])
+  const [isConnected, _setIsConnected] = useState(true)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Mock data
@@ -286,7 +286,7 @@ export default function SQLConsolePage() {
     }
   }
 
-  const exportResults = (format: 'csv' | 'json') => {
+  const exportResults = (_format: 'csv' | 'json') => {
     const activeTabData = tabs.find((t) => t.id === activeTab)
     if (!activeTabData?.result) return
 

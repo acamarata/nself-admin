@@ -11,7 +11,6 @@ const execAsync = promisify(exec)
 
 // Strip ANSI escape codes from terminal output
 function stripAnsi(str: string): string {
-  // eslint-disable-next-line no-control-regex
   return str
     .replace(/\x1b\[[0-9;]*m/g, '')
     .replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
@@ -46,7 +45,7 @@ export async function GET() {
         if (!projectNameFromEnv) {
           const match = content.match(/PROJECT_NAME=(.+)/)
           if (match) {
-            projectNameFromEnv = match[1].trim().replace(/[\"']/g, '')
+            projectNameFromEnv = match[1].trim().replace(/["']/g, '')
           }
         }
       } catch {
@@ -101,7 +100,7 @@ export async function GET() {
         })
 
       servicesRunning = runningServices.length > 0
-    } catch (error) {
+    } catch {
       // nself status failed, check Docker containers directly
     }
 
@@ -186,7 +185,7 @@ export async function GET() {
           c.status.toLowerCase().includes('up'),
         )
       }
-    } catch (error) {
+    } catch {
       // Docker command failed or no containers
       dockerContainers = []
     }
@@ -205,7 +204,7 @@ export async function GET() {
       // Use already extracted projectName or try to find it in combined content
       projectName = projectNameFromEnv
       baseDomain = baseDomainMatch
-        ? baseDomainMatch[1].trim().replace(/[\"']/g, '')
+        ? baseDomainMatch[1].trim().replace(/["']/g, '')
         : null
 
       // Check if this is a minimal setup (only basic env vars, no service configuration)

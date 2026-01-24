@@ -5,7 +5,7 @@ import fs from 'fs'
 import { NextRequest } from 'next/server'
 import path from 'path'
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   const encoder = new TextEncoder()
   const projectPath = getProjectPath()
 

@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
 
   try {
     switch (action) {
-      case 'status':
+      case 'status': {
         // Get database status via nself CLI
         const analyzeResult = await nselfDbAnalyze()
         return NextResponse.json({
@@ -127,6 +127,7 @@ export async function GET(request: NextRequest) {
             healthy: analyzeResult.success,
           },
         })
+      }
 
       default:
         return NextResponse.json({

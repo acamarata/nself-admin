@@ -107,7 +107,7 @@ export class SSEManager {
       const data = `data: ${JSON.stringify(message)}\n\n`
       const encoder = new TextEncoder()
       client.controller.enqueue(encoder.encode(data))
-    } catch (error) {
+    } catch (_error) {
       this.removeClient(clientId)
     }
   }
@@ -123,7 +123,7 @@ export class SSEManager {
         const data = `data: ${JSON.stringify(message)}\n\n`
         const encoder = new TextEncoder()
         client.controller.enqueue(encoder.encode(data))
-      } catch (error) {
+      } catch (_error) {
         deadClients.push(clientId)
       }
     }

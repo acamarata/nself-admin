@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
               `event: heartbeat\ndata: ${JSON.stringify({ type: 'heartbeat', timestamp: new Date().toISOString() })}\n\n`,
             ),
           )
-        } catch (error) {
+        } catch {
           // Connection closed
           clearInterval(heartbeatInterval)
         }
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
               ),
             )
           }
-        } catch (error) {
+        } catch {
           // Silent fail on stream updates - will retry on next interval
         }
       }, 2000) // Every 2 seconds

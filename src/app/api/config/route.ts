@@ -11,7 +11,8 @@ import { z } from 'zod'
 const execFileAsync = promisify(execFile)
 
 // Schema for file operations
-const fileOperationSchema = z.object({
+// Schema for file operations - validated before use
+const _fileOperationSchema = z.object({
   action: z.enum([
     'list',
     'read',
@@ -215,7 +216,7 @@ async function getConfigFiles() {
             .filter((line) => line.trim() && !line.trim().startsWith('#'))
             .length,
         })
-      } catch (error) {
+      } catch {
         configFiles.push({
           name: envFile,
           type: 'environment',
@@ -248,7 +249,7 @@ async function getConfigFiles() {
           lines: content.split('\n').length,
           services: (content.match(/^\s{2}[a-zA-Z0-9_-]+:/gm) || []).length,
         })
-      } catch (error) {
+      } catch {
         configFiles.push({
           name: dockerFile,
           type: 'docker-compose',
@@ -276,7 +277,7 @@ async function getConfigFiles() {
           fileCount: files.filter((f) => f.isFile()).length,
           subdirCount: files.filter((f) => f.isDirectory()).length,
         })
-      } catch (error) {
+      } catch {
         // Directory doesn't exist, which is normal
       }
     }
@@ -396,7 +397,7 @@ async function writeConfigFile(
         const existingContent = await fs.readFile(filePath, 'utf-8')
         const backupPath = `${filePath}.backup.${Date.now()}`
         await fs.writeFile(backupPath, existingContent)
-      } catch (error) {
+      } catch {
         // File doesn't exist, no backup needed
       }
     }
@@ -660,7 +661,7 @@ async function createEnvironmentFile(options: any) {
 
     try {
       template = await fs.readFile(templatePath, 'utf-8')
-    } catch (error) {
+    } catch {
       // Create basic template if .env.example doesn't exist
       template = `# nself Configuration
 PROJECT_NAME=my-project
@@ -745,7 +746,7 @@ async function backupConfiguration() {
 
         await fs.copyFile(sourcePath, destPath)
         backedUp.push(file)
-      } catch (error) {
+      } catch {
         // File doesn't exist, skip
       }
     }

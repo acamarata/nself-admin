@@ -4,9 +4,6 @@
  */
 
 import { exec } from 'child_process'
-import { promisify } from 'util'
-
-const execAsync = promisify(exec)
 
 export interface RedisStats {
   status: 'healthy' | 'unhealthy' | 'stopped'
@@ -79,7 +76,7 @@ export class RedisCollector {
       this.cache = { data: result, timestamp: now }
 
       return result
-    } catch (error) {
+    } catch (_error) {
       return this.getEmptyStats('unhealthy')
     }
   }

@@ -95,7 +95,8 @@ export default function ConfigPage() {
         // Refetch to get latest state
         refetch()
       }
-    } catch (error) {
+    } catch (_error) {
+      // Intentionally empty - errors handled by refetch
     } finally {
       setSaving(false)
     }

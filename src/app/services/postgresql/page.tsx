@@ -86,7 +86,7 @@ interface TableInfo {
   status: 'active' | 'inactive' | 'maintenance'
 }
 
-interface DatabaseProcess {
+interface _DatabaseProcess {
   pid: number
   user: string
   database: string
@@ -96,7 +96,7 @@ interface DatabaseProcess {
   clientAddr: string
 }
 
-interface SlowQuery {
+interface _SlowQuery {
   id: string
   query: string
   duration: number
@@ -158,7 +158,8 @@ export default function PostgreSQLPage() {
           utilization: 25,
         },
       })
-    } catch (error) {
+    } catch (_error) {
+      // Intentionally empty - stats load failure handled silently
     } finally {
       setLoading(false)
     }
@@ -314,7 +315,7 @@ export default function PostgreSQLPage() {
     }
   }
 
-  const formatBytes = (bytes: number) => {
+  const _formatBytes = (bytes: number) => {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     if (bytes === 0) return '0 B'
     const i = Math.floor(Math.log(bytes) / Math.log(1024))

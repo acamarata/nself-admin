@@ -699,7 +699,7 @@ function DeliveryLogCard({ delivery }: { delivery: WebhookDelivery }) {
 }
 
 function PayloadTemplatesSection() {
-  const [templates, setTemplates] = useState<PayloadTemplate[]>([
+  const [templates, _setTemplates] = useState<PayloadTemplate[]>([
     {
       id: '1',
       name: 'User Registration',
@@ -720,7 +720,7 @@ function PayloadTemplatesSection() {
       ),
     },
   ])
-  const [showTemplateForm, setShowTemplateForm] = useState(false)
+  const [_showTemplateForm, setShowTemplateForm] = useState(false)
 
   return (
     <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
@@ -806,7 +806,7 @@ export default function WebhooksPage() {
     },
   ])
 
-  const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([
+  const [deliveries, _setDeliveries] = useState<WebhookDelivery[]>([
     {
       id: '1',
       webhookId: '1',
@@ -842,7 +842,7 @@ export default function WebhooksPage() {
     },
   ])
 
-  const [loading, setLoading] = useState(false)
+  const [_loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editingWebhook, setEditingWebhook] = useState<
     WebhookEndpoint | undefined
@@ -904,7 +904,8 @@ export default function WebhooksPage() {
 
       setShowForm(false)
       setEditingWebhook(undefined)
-    } catch (error) {
+    } catch (_error) {
+      // Intentionally empty - webhook save errors handled silently
     } finally {
       setLoading(false)
     }
@@ -956,7 +957,7 @@ export default function WebhooksPage() {
       } else {
         alert(`Test failed: ${result.error}`)
       }
-    } catch (error) {
+    } catch (_error) {
       alert('Test failed: Network error')
     }
   }

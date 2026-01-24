@@ -24,7 +24,7 @@ const querySchema = z.object({
   all: z.enum(['true', 'false']).optional(),
 })
 
-function getServiceType(name: string, labels: any): string {
+function getServiceType(name: string, _labels: unknown): string {
   const n = name.toLowerCase()
   if (n.includes('postgres')) return 'database'
   if (n.includes('hasura')) return 'api'
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
       all: searchParams.get('all'),
     }
 
-    const validation = querySchema.safeParse(params)
+    const _validation = querySchema.safeParse(params)
     const detailed = params.detailed === 'true'
     const withStats = params.stats === 'true'
 
@@ -302,7 +302,7 @@ export async function GET(request: NextRequest) {
               // Ignore parse errors
             }
           })
-      } catch (error) {
+      } catch {
         // Stats fetch failed - containers will be returned without live stats
       }
     }

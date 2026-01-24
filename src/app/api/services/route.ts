@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const backendPath = getProjectPath()
+    const _backendPath = getProjectPath()
 
     switch (action) {
       case 'start':
@@ -499,7 +499,7 @@ async function batchServiceControl(services: string[], operation: string) {
   })
 }
 
-async function updateService(serviceName: string, options: any) {
+async function updateService(serviceName: string, _options: unknown) {
   const backendPath = getProjectPath()
 
   try {
@@ -530,7 +530,7 @@ async function updateService(serviceName: string, options: any) {
 }
 
 // Helper functions (same as in docker containers API)
-function getServiceType(containerName: string, labels: any): string {
+function getServiceType(containerName: string, _labels: unknown): string {
   const name = containerName?.toLowerCase() || ''
 
   if (name.includes('postgres')) return 'database'

@@ -102,7 +102,7 @@ export function BackupConfiguration({
     switch (frequency) {
       case 'daily':
         return `Daily backups at ${timeStr}`
-      case 'weekly':
+      case 'weekly': {
         const days = [
           'Sunday',
           'Monday',
@@ -113,7 +113,8 @@ export function BackupConfiguration({
           'Saturday',
         ]
         return `Weekly backups on ${days[dayOfWeek || 0]}s at ${timeStr}`
-      case 'monthly':
+      }
+      case 'monthly': {
         const suffix =
           dayOfMonth === 1
             ? 'st'
@@ -123,6 +124,7 @@ export function BackupConfiguration({
                 ? 'rd'
                 : 'th'
         return `Monthly backups on the ${dayOfMonth}${suffix} at ${timeStr}`
+      }
       case 'custom':
         return `Custom schedule: ${getCronExpression()}`
       default:

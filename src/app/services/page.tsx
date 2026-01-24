@@ -22,7 +22,7 @@ const ServiceCard = dynamic(
   },
 )
 
-const ServiceListView = dynamic(
+const _ServiceListView = dynamic(
   () =>
     import('@/components/services/ServiceListView').then((mod) => ({
       default: mod.ServiceListView,
@@ -355,7 +355,7 @@ function EnhancedListView({
           comparison =
             (a.stats?.memory.usage || 0) - (b.stats?.memory.usage || 0)
           break
-        case 'disk':
+        case 'disk': {
           const diskA =
             a.stats?.disk?.used ||
             (a.stats?.blockIO
@@ -368,11 +368,13 @@ function EnhancedListView({
               : 0)
           comparison = diskA - diskB
           break
-        case 'ports':
+        }
+        case 'ports': {
           const portA = a.ports?.find((p) => p.public)?.public || 0
           const portB = b.ports?.find((p) => p.public)?.public || 0
           comparison = portA - portB
           break
+        }
       }
 
       return sortDirection === 'asc' ? comparison : -comparison
@@ -1032,7 +1034,7 @@ export default function ServicesPage() {
       if (!data.success) {
         setError(data.error)
       }
-    } catch (err) {
+    } catch (_err) {
       setError(`Failed to ${action} container`)
     }
   }
@@ -1054,7 +1056,7 @@ export default function ServicesPage() {
       } else {
         setError(data.error)
       }
-    } catch (err) {
+    } catch (_err) {
       setError(`Failed to ${action} containers`)
     }
   }
