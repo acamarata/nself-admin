@@ -47,9 +47,7 @@ function validatePolicy(input: string): boolean {
 function validatePassword(input: string): boolean {
   // Password must be 8-40 chars, no shell metacharacters
   return (
-    input.length >= 8 &&
-    input.length <= 40 &&
-    !/[;&|`$(){}[\]<>\\]/.test(input)
+    input.length >= 8 && input.length <= 40 && !/[;&|`$(){}[\]<>\\]/.test(input)
   )
 }
 
@@ -389,7 +387,15 @@ async function getPolicies(bucket?: string) {
     if (bucket) {
       const { stdout } = await execFileAsync(
         'docker',
-        ['exec', 'nself_minio', 'mc', 'policy', 'get', `minio/${bucket}`, '--json'],
+        [
+          'exec',
+          'nself_minio',
+          'mc',
+          'policy',
+          'get',
+          `minio/${bucket}`,
+          '--json',
+        ],
         { timeout: 30000 },
       )
 
@@ -404,7 +410,16 @@ async function getPolicies(bucket?: string) {
     } else {
       const { stdout } = await execFileAsync(
         'docker',
-        ['exec', 'nself_minio', 'mc', 'admin', 'policy', 'list', 'minio', '--json'],
+        [
+          'exec',
+          'nself_minio',
+          'mc',
+          'admin',
+          'policy',
+          'list',
+          'minio',
+          '--json',
+        ],
         { timeout: 30000 },
       )
 
@@ -625,7 +640,15 @@ async function uploadObject(bucket: string, object: string, content: string) {
   // Write content using printf in docker (safer than echo with quotes)
   await execFileAsync(
     'docker',
-    ['exec', 'nself_minio', 'sh', '-c', `printf '%s' "$1" > ${tempFile}`, '--', content],
+    [
+      'exec',
+      'nself_minio',
+      'sh',
+      '-c',
+      `printf '%s' "$1" > ${tempFile}`,
+      '--',
+      content,
+    ],
     { timeout: 30000 },
   )
 
@@ -636,11 +659,9 @@ async function uploadObject(bucket: string, object: string, content: string) {
   )
 
   // Clean up temp file
-  await execFileAsync(
-    'docker',
-    ['exec', 'nself_minio', 'rm', tempFile],
-    { timeout: 10000 },
-  ).catch(() => {
+  await execFileAsync('docker', ['exec', 'nself_minio', 'rm', tempFile], {
+    timeout: 10000,
+  }).catch(() => {
     // Ignore cleanup errors
   })
 
@@ -716,7 +737,17 @@ async function createUser(user: string, password: string) {
 
   const { stdout } = await execFileAsync(
     'docker',
-    ['exec', 'nself_minio', 'mc', 'admin', 'user', 'add', 'minio', user, password],
+    [
+      'exec',
+      'nself_minio',
+      'mc',
+      'admin',
+      'user',
+      'add',
+      'minio',
+      user,
+      password,
+    ],
     { timeout: 30000 },
   )
 

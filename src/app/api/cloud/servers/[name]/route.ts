@@ -59,7 +59,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       logger.warn('Failed to parse server status JSON', { stdout })
     }
 
-    logger.cli(`nself cloud server status ${name} --json`, true, Date.now() - startTime)
+    logger.cli(
+      `nself cloud server status ${name} --json`,
+      true,
+      Date.now() - startTime,
+    )
 
     return NextResponse.json({
       success: true,
@@ -127,7 +131,11 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
       },
     )
 
-    logger.cli(`nself cloud server destroy ${name} --yes`, true, Date.now() - startTime)
+    logger.cli(
+      `nself cloud server destroy ${name} --yes`,
+      true,
+      Date.now() - startTime,
+    )
 
     return NextResponse.json({
       success: true,

@@ -135,13 +135,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       for (const [key, value] of Object.entries(body.env)) {
         if (!validateEnvKey(key)) {
           return NextResponse.json(
-            { success: false, error: `Invalid environment variable key: ${key}` },
+            {
+              success: false,
+              error: `Invalid environment variable key: ${key}`,
+            },
             { status: 400 },
           )
         }
         if (typeof value === 'string' && !validateEnvValue(value)) {
           return NextResponse.json(
-            { success: false, error: `Invalid environment variable value for: ${key}` },
+            {
+              success: false,
+              error: `Invalid environment variable value for: ${key}`,
+            },
             { status: 400 },
           )
         }
@@ -155,7 +161,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     if (body.resources) {
       // Validate resources is a simple object with safe values
       const resourcesJson = JSON.stringify(body.resources)
-      if (resourcesJson.length <= 1024 && !/[;&|`$(){}[\]<>\\]/.test(resourcesJson)) {
+      if (
+        resourcesJson.length <= 1024 &&
+        !/[;&|`$(){}[\]<>\\]/.test(resourcesJson)
+      ) {
         args.push(`--resources=${resourcesJson}`)
       } else {
         return NextResponse.json(
