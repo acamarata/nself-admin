@@ -5,9 +5,17 @@ All notable changes to nself-admin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - v0.0.8
+## [0.0.8] - 2026-01-24
 
-### Planned
+### Added
+
+- **Comprehensive Security Audit** (`docs/SECURITY_AUDIT.md`)
+  - 3-pass security review covering OWASP Top 10
+  - Authentication and session management audit
+  - API routes and input validation analysis
+  - Command injection vulnerability assessment
+  - Dependency vulnerability scan
+  - Prioritized remediation recommendations
 
 - **Plugin Management UI** (Aligns with nself CLI v0.4.8)
   - Plugin dashboard (`/plugins`) with installed/available plugins grid
@@ -52,6 +60,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Query results export (CSV, JSON)
   - Query explain/analyze support
 
+- **Cloud Provider Integration**
+  - AWS configuration and deployment
+  - Google Cloud Platform (GCP) support
+  - DigitalOcean integration
+  - Provider status monitoring
+
+- **Kubernetes Management UI**
+  - Cluster configuration
+  - Namespace management
+  - Pod monitoring
+  - Helm chart support
+
+- **Performance & Deployment**
+  - Benchmark runner UI
+  - Cache management interface
+  - Blue-green deployment controls
+  - Rollback management
+
+### Security Fixes
+
+- **Command Injection** - Fixed vulnerabilities in 9 API routes using `execFile` instead of `exec`
+  - `/api/database/backups/route.ts`
+  - `/api/database/migrations/route.ts`
+  - `/api/database/schema/route.ts`
+  - `/api/cloud/aws/route.ts`
+  - `/api/cloud/gcp/route.ts`
+  - `/api/cloud/digitalocean/route.ts`
+  - `/api/kubernetes/route.ts`
+  - `/api/kubernetes/helm/route.ts`
+  - `/api/performance/benchmark/route.ts`
+- **GraphQL Query Injection** - Added allowlisted query patterns to prevent arbitrary query execution
+- **Session Validation** - Enhanced session security with proper token verification
+- **Password Storage** - Improved password hashing and validation
+
+### Fixed
+
+- **Build Page Race Condition** - Changed `buildStarted` from `useState` to `useRef` to prevent double builds
+- **Store Cleanup on Logout** - Added Zustand store reset calls in AuthContext for security
+- **Memory Leak Prevention** - Proper cleanup in DockerPollingService with `beforeunload` handler
+
 ### API Routes
 
 - `GET/POST /api/plugins/*` - Plugin management endpoints
@@ -59,6 +107,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GET/POST /api/database/backups/*` - Backup management
 - `GET/POST /api/database/migrations/*` - Migration management
 - `GET/POST /api/database/schema/*` - Schema browser
+- `GET/POST /api/cloud/*` - Cloud provider integration
+- `GET/POST /api/kubernetes/*` - Kubernetes management
+- `GET/POST /api/performance/*` - Performance tools
 
 ### Dependencies
 
@@ -72,6 +123,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New plugin command wrapping infrastructure
 - Enhanced database command support
 - Plugin registry integration
+- Docker image: `acamarata/nself-admin:0.0.8`
+- 50+ files changed with security hardening
 
 ---
 

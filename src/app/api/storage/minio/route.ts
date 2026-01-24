@@ -1,8 +1,8 @@
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
 
 const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || 'storage.nae.local'
 const MINIO_ACCESS_KEY = process.env.MINIO_ACCESS_KEY || 'minioadmin'
@@ -12,12 +12,69 @@ const _MINIO_ENDPOINT = MINIO_ENDPOINT
 const _MINIO_ACCESS_KEY = MINIO_ACCESS_KEY
 const _MINIO_SECRET_KEY = MINIO_SECRET_KEY
 
+// Strict validation patterns for safe inputs
+const SAFE_BUCKET_PATTERN = /^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/
+const SAFE_OBJECT_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_\-./]{0,254}$/
+const SAFE_USER_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{2,62}$/
+const SAFE_POLICY_PATTERN = /^(none|download|upload|public|private|readwrite)$/
+
+function validateBucketName(input: string): boolean {
+  return (
+    SAFE_BUCKET_PATTERN.test(input) &&
+    !input.includes('..') &&
+    !input.startsWith('-') &&
+    !input.endsWith('-')
+  )
+}
+
+function validateObjectName(input: string): boolean {
+  return (
+    SAFE_OBJECT_PATTERN.test(input) &&
+    !input.includes('..') &&
+    !input.includes('//') &&
+    !input.startsWith('/')
+  )
+}
+
+function validateUserName(input: string): boolean {
+  return SAFE_USER_PATTERN.test(input) && !input.includes('..')
+}
+
+function validatePolicy(input: string): boolean {
+  return SAFE_POLICY_PATTERN.test(input)
+}
+
+function validatePassword(input: string): boolean {
+  // Password must be 8-40 chars, no shell metacharacters
+  return (
+    input.length >= 8 &&
+    input.length <= 40 &&
+    !/[;&|`$(){}[\]<>\\]/.test(input)
+  )
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const action = searchParams.get('action') || 'buckets'
     const bucket = searchParams.get('bucket')
     const prefix = searchParams.get('prefix')
+
+    // Validate bucket if provided
+    if (bucket && !validateBucketName(bucket)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid bucket name' },
+        { status: 400 },
+      )
+    }
+
+    // Validate prefix if provided
+    if (prefix && !validateObjectName(prefix)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid prefix' },
+        { status: 400 },
+      )
+    }
 
     switch (action) {
       case 'buckets':
@@ -55,6 +112,50 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { action, bucket, object, policy, user, password, content } = body
 
+    // Validate bucket if provided
+    if (bucket && !validateBucketName(bucket)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid bucket name' },
+        { status: 400 },
+      )
+    }
+
+    // Validate object if provided
+    if (object && !validateObjectName(object)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid object name' },
+        { status: 400 },
+      )
+    }
+
+    // Validate user if provided
+    if (user && !validateUserName(user)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid user name' },
+        { status: 400 },
+      )
+    }
+
+    // Validate policy if provided
+    if (policy && !validatePolicy(policy)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid policy' },
+        { status: 400 },
+      )
+    }
+
+    // Validate password if provided
+    if (password && !validatePassword(password)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Invalid password. Must be 8-40 characters without shell metacharacters.',
+        },
+        { status: 400 },
+      )
+    }
+
     switch (action) {
       case 'createBucket':
         return await createBucket(bucket)
@@ -89,8 +190,10 @@ export async function POST(request: NextRequest) {
 }
 
 async function getBuckets() {
-  const { stdout } = await execAsync(
-    `docker exec nself_minio mc ls minio --json`,
+  const { stdout } = await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'mc', 'ls', 'minio', '--json'],
+    { timeout: 30000 },
   )
 
   const buckets = stdout
@@ -113,17 +216,31 @@ async function getBuckets() {
     .filter(Boolean)
 
   const bucketDetails = await Promise.all(
-    buckets.map(async (bucket: any) => {
+    buckets.map(async (bucket: { name: string } | null) => {
+      if (!bucket) return null
       try {
-        const { stdout: statOutput } = await execAsync(
-          `docker exec nself_minio mc stat minio/${bucket.name} --json`,
+        const { stdout: statOutput } = await execFileAsync(
+          'docker',
+          [
+            'exec',
+            'nself_minio',
+            'mc',
+            'stat',
+            `minio/${bucket.name}`,
+            '--json',
+          ],
+          { timeout: 30000 },
         )
         const stat = JSON.parse(statOutput)
 
-        const { stdout: duOutput } = await execAsync(
-          `docker exec nself_minio mc du minio/${bucket.name} --json | tail -1`,
+        const { stdout: duOutput } = await execFileAsync(
+          'docker',
+          ['exec', 'nself_minio', 'mc', 'du', `minio/${bucket.name}`, '--json'],
+          { timeout: 30000 },
         )
-        const du = JSON.parse(duOutput)
+        // Get last line of output
+        const duLines = duOutput.trim().split('\n')
+        const du = JSON.parse(duLines[duLines.length - 1] || '{}')
 
         return {
           ...bucket,
@@ -141,8 +258,8 @@ async function getBuckets() {
   return NextResponse.json({
     success: true,
     data: {
-      buckets: bucketDetails,
-      total: bucketDetails.length,
+      buckets: bucketDetails.filter(Boolean),
+      total: bucketDetails.filter(Boolean).length,
       timestamp: new Date().toISOString(),
     },
   })
@@ -156,9 +273,11 @@ async function getObjects(bucket?: string, prefix?: string) {
     )
   }
 
-  const objectPath = prefix ? `${bucket}/${prefix}` : bucket
-  const { stdout } = await execAsync(
-    `docker exec nself_minio mc ls minio/${objectPath} --json`,
+  const objectPath = prefix ? `minio/${bucket}/${prefix}` : `minio/${bucket}`
+  const { stdout } = await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'mc', 'ls', objectPath, '--json'],
+    { timeout: 30000 },
   )
 
   const objects = stdout
@@ -196,17 +315,23 @@ async function getObjects(bucket?: string, prefix?: string) {
 
 async function getStorageInfo() {
   try {
-    const { stdout: adminInfo } = await execAsync(
-      `docker exec nself_minio mc admin info minio --json`,
+    const { stdout: adminInfo } = await execFileAsync(
+      'docker',
+      ['exec', 'nself_minio', 'mc', 'admin', 'info', 'minio', '--json'],
+      { timeout: 30000 },
     )
 
     const info = JSON.parse(adminInfo)
 
-    const { stdout: diskUsage } = await execAsync(
-      `docker exec nself_minio mc admin disk minio --json | head -1`,
+    const { stdout: diskUsage } = await execFileAsync(
+      'docker',
+      ['exec', 'nself_minio', 'mc', 'admin', 'disk', 'minio', '--json'],
+      { timeout: 30000 },
     )
 
-    const disk = JSON.parse(diskUsage)
+    // Get first line
+    const diskLines = diskUsage.trim().split('\n')
+    const disk = JSON.parse(diskLines[0] || '{}')
 
     return NextResponse.json({
       success: true,
@@ -262,8 +387,10 @@ async function getStorageInfo() {
 async function getPolicies(bucket?: string) {
   try {
     if (bucket) {
-      const { stdout } = await execAsync(
-        `docker exec nself_minio mc policy get minio/${bucket} --json`,
+      const { stdout } = await execFileAsync(
+        'docker',
+        ['exec', 'nself_minio', 'mc', 'policy', 'get', `minio/${bucket}`, '--json'],
+        { timeout: 30000 },
       )
 
       return NextResponse.json({
@@ -275,8 +402,10 @@ async function getPolicies(bucket?: string) {
         },
       })
     } else {
-      const { stdout } = await execAsync(
-        `docker exec nself_minio mc admin policy list minio --json`,
+      const { stdout } = await execFileAsync(
+        'docker',
+        ['exec', 'nself_minio', 'mc', 'admin', 'policy', 'list', 'minio', '--json'],
+        { timeout: 30000 },
       )
 
       const policies = stdout
@@ -315,8 +444,10 @@ async function getPolicies(bucket?: string) {
 
 async function getUsers() {
   try {
-    const { stdout } = await execAsync(
-      `docker exec nself_minio mc admin user list minio --json`,
+    const { stdout } = await execFileAsync(
+      'docker',
+      ['exec', 'nself_minio', 'mc', 'admin', 'user', 'list', 'minio', '--json'],
+      { timeout: 30000 },
     )
 
     const users = stdout
@@ -365,12 +496,16 @@ async function getUsers() {
 
 async function getStorageStats() {
   try {
-    const { stdout: prometheus } = await execAsync(
-      `docker exec nself_minio mc admin prometheus metrics minio | head -50`,
+    const { stdout: prometheus } = await execFileAsync(
+      'docker',
+      ['exec', 'nself_minio', 'mc', 'admin', 'prometheus', 'metrics', 'minio'],
+      { timeout: 30000 },
     )
 
-    const metrics: any = {}
-    prometheus.split('\n').forEach((line) => {
+    // Only take first 50 lines
+    const lines = prometheus.split('\n').slice(0, 50)
+    const metrics: Record<string, number> = {}
+    lines.forEach((line) => {
       if (!line.startsWith('#') && line.includes(' ')) {
         const [key, value] = line.split(' ')
         if (key && value) {
@@ -433,8 +568,10 @@ async function createBucket(bucket: string) {
     )
   }
 
-  const { stdout } = await execAsync(
-    `docker exec nself_minio mc mb minio/${bucket}`,
+  const { stdout } = await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'mc', 'mb', `minio/${bucket}`],
+    { timeout: 30000 },
   )
 
   return NextResponse.json({
@@ -455,8 +592,10 @@ async function deleteBucket(bucket: string) {
     )
   }
 
-  const { stdout } = await execAsync(
-    `docker exec nself_minio mc rb minio/${bucket} --force`,
+  const { stdout } = await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'mc', 'rb', `minio/${bucket}`, '--force'],
+    { timeout: 30000 },
   )
 
   return NextResponse.json({
@@ -480,16 +619,30 @@ async function uploadObject(bucket: string, object: string, content: string) {
     )
   }
 
-  const tempFile = `/tmp/${Date.now()}_${object}`
-  await execAsync(
-    `docker exec nself_minio sh -c "echo '${content}' > ${tempFile}"`,
+  // Create a safe temp file name using timestamp
+  const tempFile = `/tmp/${Date.now()}_upload`
+
+  // Write content using printf in docker (safer than echo with quotes)
+  await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'sh', '-c', `printf '%s' "$1" > ${tempFile}`, '--', content],
+    { timeout: 30000 },
   )
 
-  const { stdout } = await execAsync(
-    `docker exec nself_minio mc cp ${tempFile} minio/${bucket}/${object}`,
+  const { stdout } = await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'mc', 'cp', tempFile, `minio/${bucket}/${object}`],
+    { timeout: 30000 },
   )
 
-  await execAsync(`docker exec nself_minio rm ${tempFile}`)
+  // Clean up temp file
+  await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'rm', tempFile],
+    { timeout: 10000 },
+  ).catch(() => {
+    // Ignore cleanup errors
+  })
 
   return NextResponse.json({
     success: true,
@@ -511,8 +664,10 @@ async function deleteObject(bucket: string, object: string) {
     )
   }
 
-  const { stdout } = await execAsync(
-    `docker exec nself_minio mc rm minio/${bucket}/${object}`,
+  const { stdout } = await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'mc', 'rm', `minio/${bucket}/${object}`],
+    { timeout: 30000 },
   )
 
   return NextResponse.json({
@@ -534,8 +689,10 @@ async function setPolicy(bucket: string, policy: string) {
     )
   }
 
-  const { stdout } = await execAsync(
-    `docker exec nself_minio mc policy set ${policy} minio/${bucket}`,
+  const { stdout } = await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'mc', 'policy', 'set', policy, `minio/${bucket}`],
+    { timeout: 30000 },
   )
 
   return NextResponse.json({
@@ -557,8 +714,10 @@ async function createUser(user: string, password: string) {
     )
   }
 
-  const { stdout } = await execAsync(
-    `docker exec nself_minio mc admin user add minio ${user} ${password}`,
+  const { stdout } = await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'mc', 'admin', 'user', 'add', 'minio', user, password],
+    { timeout: 30000 },
   )
 
   return NextResponse.json({
@@ -579,8 +738,10 @@ async function deleteUser(user: string) {
     )
   }
 
-  const { stdout } = await execAsync(
-    `docker exec nself_minio mc admin user remove minio ${user}`,
+  const { stdout } = await execFileAsync(
+    'docker',
+    ['exec', 'nself_minio', 'mc', 'admin', 'user', 'remove', 'minio', user],
+    { timeout: 30000 },
   )
 
   return NextResponse.json({

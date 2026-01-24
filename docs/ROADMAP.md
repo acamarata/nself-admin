@@ -26,7 +26,7 @@ nself-admin is a **visual companion** to the nself CLI. It does NOT reimplement 
 
 ---
 
-## Current State (v0.0.7) ✅ COMPLETE
+## Current State (v0.0.8) ✅ COMPLETE
 
 ### What's Done
 
@@ -34,15 +34,25 @@ nself-admin is a **visual companion** to the nself CLI. It does NOT reimplement 
 - Service status dashboard
 - Real-time container monitoring
 - Log viewing
-- Database console
+- Database console with SQL editor
 - Build/Start/Reset operations
-- Authentication (password-based)
+- Authentication (password-based with bcrypt)
 - Docker stats via Dockerode
 - SSL configuration UI (mkcert + Let's Encrypt)
 - TypeScript error handling standardized
 - Health check endpoint (`/api/health`)
 - Version consistency (constants.ts)
 - Port 3021 documented (not 3100)
+- **NEW in v0.0.8:**
+  - Plugin management UI (Stripe, GitHub, Shopify)
+  - Database backup/restore/migrations UI
+  - Cloud provider integration (AWS, GCP, DigitalOcean)
+  - Kubernetes management UI
+  - Performance monitoring and profiling
+  - Comprehensive 3-pass security audit
+  - 80+ new pages and 60+ new API routes
+  - Command injection fixes (execFile instead of exec)
+  - Store cleanup on logout (security)
 
 ---
 

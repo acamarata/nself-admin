@@ -1,12 +1,22 @@
 import { getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
 import { promisify } from 'util'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
+
+// Strict validation patterns for safe inputs
+const SAFE_NAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{0,62}$/
+
+function validateSafeName(input: string): boolean {
+  return SAFE_NAME_PATTERN.test(input) && !input.includes('..')
+}
+
+// Allowed templates for environment creation
+const ALLOWED_TEMPLATES = ['local', 'staging', 'production', 'custom', 'dev']
 
 interface Environment {
   name: string
@@ -120,7 +130,7 @@ export async function GET() {
 
     // Also try nself env list command
     try {
-      const { stdout } = await execAsync('nself env list', {
+      const { stdout } = await execFileAsync('nself', ['env', 'list'], {
         cwd: projectPath,
         env: { ...process.env, PATH: getEnhancedPath() },
         timeout: 10000,
@@ -155,32 +165,98 @@ export async function GET() {
 // POST /api/env - Execute environment commands
 export async function POST(request: NextRequest) {
   try {
-    const { action, name, template, force } = await request.json()
+    const body = await request.json()
+    const { action, name, template, force } = body
     const projectPath = getProjectPath()
 
-    let command = ''
+    // Validate name if provided
+    if (name && typeof name === 'string' && !validateSafeName(name)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid environment name' },
+        { status: 400 },
+      )
+    }
+
+    // Validate template if provided
+    if (
+      template &&
+      typeof template === 'string' &&
+      !ALLOWED_TEMPLATES.includes(template)
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid template name' },
+        { status: 400 },
+      )
+    }
+
+    const execArgs: string[] = ['env']
+
     switch (action) {
-      case 'create':
-        command = `nself env create ${name} ${template || 'local'}${force ? ' --force' : ''}`
+      case 'create': {
+        if (!name) {
+          return NextResponse.json(
+            { success: false, error: 'Name is required for create action' },
+            { status: 400 },
+          )
+        }
+        execArgs.push('create', name, template || 'local')
+        if (force) execArgs.push('--force')
         break
-      case 'switch':
-        command = `nself env switch ${name}`
+      }
+      case 'switch': {
+        if (!name) {
+          return NextResponse.json(
+            { success: false, error: 'Name is required for switch action' },
+            { status: 400 },
+          )
+        }
+        execArgs.push('switch', name)
         break
-      case 'delete':
-        command = `nself env delete ${name}${force ? ' --force' : ''}`
+      }
+      case 'delete': {
+        if (!name) {
+          return NextResponse.json(
+            { success: false, error: 'Name is required for delete action' },
+            { status: 400 },
+          )
+        }
+        execArgs.push('delete', name)
+        if (force) execArgs.push('--force')
         break
-      case 'validate':
-        command = `nself env validate ${name || ''}`
+      }
+      case 'validate': {
+        execArgs.push('validate')
+        if (name) execArgs.push(name)
         break
-      case 'status':
-        command = 'nself env status'
+      }
+      case 'status': {
+        execArgs.push('status')
         break
-      case 'info':
-        command = `nself env info ${name || ''}`
+      }
+      case 'info': {
+        execArgs.push('info')
+        if (name) execArgs.push(name)
         break
+      }
       case 'diff': {
-        const { env1, env2, values } = await request.json()
-        command = `nself env diff ${env1} ${env2}${values ? ' --values' : ''}`
+        const { env1, env2, values } = body
+        if (!env1 || !env2) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'env1 and env2 are required for diff action',
+            },
+            { status: 400 },
+          )
+        }
+        if (!validateSafeName(env1) || !validateSafeName(env2)) {
+          return NextResponse.json(
+            { success: false, error: 'Invalid environment names for diff' },
+            { status: 400 },
+          )
+        }
+        execArgs.push('diff', env1, env2)
+        if (values) execArgs.push('--values')
         break
       }
       default:
@@ -190,7 +266,7 @@ export async function POST(request: NextRequest) {
         )
     }
 
-    const { stdout, stderr } = await execAsync(command, {
+    const { stdout, stderr } = await execFileAsync('nself', execArgs, {
       cwd: projectPath,
       env: { ...process.env, PATH: getEnhancedPath() },
       timeout: 30000,

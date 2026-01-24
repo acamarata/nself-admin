@@ -1,10 +1,26 @@
 import { getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
+
+// Strict validation patterns for safe inputs
+const SAFE_ARG_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_\-.:=/]*$/
+
+function validateSafeArg(input: string): boolean {
+  return (
+    SAFE_ARG_PATTERN.test(input) &&
+    !input.includes('..') &&
+    !input.includes('&&') &&
+    !input.includes('||') &&
+    !input.includes(';') &&
+    !input.includes('`') &&
+    !input.includes('$(') &&
+    !input.includes('|')
+  )
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,11 +60,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate args is an array
+    if (!Array.isArray(args)) {
+      return NextResponse.json(
+        { success: false, error: 'Args must be an array' },
+        { status: 400 },
+      )
+    }
+
+    // Validate each argument
+    const validatedArgs: string[] = []
+    for (const arg of args) {
+      if (typeof arg !== 'string') {
+        return NextResponse.json(
+          { success: false, error: 'All arguments must be strings' },
+          { status: 400 },
+        )
+      }
+      if (arg.length > 0 && !validateSafeArg(arg)) {
+        return NextResponse.json(
+          { success: false, error: `Invalid argument: ${arg}` },
+          { status: 400 },
+        )
+      }
+      if (arg.length > 0) {
+        validatedArgs.push(arg)
+      }
+    }
+
     // Execute nself command in the project directory using centralized resolution
     const projectPath = getProjectPath()
-    const fullCommand = `nself ${command} ${args.join(' ')}`
+    const execArgs = [command, ...validatedArgs]
 
-    const { stdout, stderr } = await execAsync(fullCommand, {
+    const { stdout, stderr } = await execFileAsync('nself', execArgs, {
       cwd: projectPath,
       env: {
         ...process.env,
@@ -62,7 +106,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        command: `nself ${command} ${args.join(' ')}`,
+        command: `nself ${command} ${validatedArgs.join(' ')}`,
         stdout: stdout.trim(),
         stderr: stderr.trim(),
         timestamp: new Date().toISOString(),
@@ -92,34 +136,19 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const action = searchParams.get('action') || 'status'
 
+  // Validate action against allowlist
+  const allowedActions = ['status', 'urls', 'doctor', 'version', 'help']
+  if (!allowedActions.includes(action)) {
+    return NextResponse.json(
+      { success: false, error: `Unknown action: ${action}` },
+      { status: 400 },
+    )
+  }
+
   try {
     const projectPath = getProjectPath()
 
-    let command = ''
-    switch (action) {
-      case 'status':
-        command = 'nself status'
-        break
-      case 'urls':
-        command = 'nself urls'
-        break
-      case 'doctor':
-        command = 'nself doctor'
-        break
-      case 'version':
-        command = 'nself version'
-        break
-      case 'help':
-        command = 'nself help'
-        break
-      default:
-        return NextResponse.json(
-          { success: false, error: `Unknown action: ${action}` },
-          { status: 400 },
-        )
-    }
-
-    const { stdout, stderr } = await execAsync(command, {
+    const { stdout, stderr } = await execFileAsync('nself', [action], {
       cwd: projectPath,
       env: {
         ...process.env,

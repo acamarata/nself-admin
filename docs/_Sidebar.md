@@ -50,6 +50,7 @@
 - [[TROUBLESHOOTING]]
 - [[FAQ]]
 - [[SECURITY]]
+- [[SECURITY_AUDIT|Security Audit Report]]
 
 ## Resources
 

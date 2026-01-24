@@ -13,7 +13,7 @@ import {
 // Configuration
 const SALT_ROUNDS = 12
 const MIN_PASSWORD_LENGTH_PROD = 12
-const MIN_PASSWORD_LENGTH_DEV = 3
+const MIN_PASSWORD_LENGTH_DEV = 8 // SECURITY: Increased from 3 to 8
 
 // Password validation for production
 export function validatePassword(
@@ -151,22 +151,9 @@ export function generateSecureToken(): string {
 }
 
 // Check if development mode
+// SECURITY: Only use NODE_ENV for security decisions (hostname can be spoofed)
 export async function isDevMode(): Promise<boolean> {
-  // Check hostname patterns
-  const hostname = process.env.HOSTNAME || 'localhost'
-  const devPatterns = [
-    /^localhost/,
-    /^127\.0\.0\.1/,
-    /^0\.0\.0\.0/,
-    /\.localhost$/,
-    /\.local$/,
-    /^admin\.localhost$/,
-  ]
-
-  const isDevHostname = devPatterns.some((pattern) => pattern.test(hostname))
-  const isDevEnv = process.env.NODE_ENV === 'development'
-
-  return isDevHostname || isDevEnv
+  return process.env.NODE_ENV === 'development'
 }
 
 // Legacy auth object for backwards compatibility with tests

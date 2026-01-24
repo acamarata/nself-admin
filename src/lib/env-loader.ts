@@ -64,9 +64,8 @@ export function hasAdminPassword(): boolean {
 
 export async function setAdminPassword(
   password: string,
-  hostname?: string,
+  _hostname?: string,
 ): Promise<void> {
-  const isDevEnv = isDevelopment(hostname)
   const rootDir = process.cwd()
   const envFile = path.join(rootDir, '.env')
 
@@ -85,16 +84,10 @@ export async function setAdminPassword(
         !line.startsWith('ADMIN_PASSWORD_HASH='),
     )
 
-  // Add new password entry
-  if (isDevEnv) {
-    // Development: store plain text
-    lines.push(`ADMIN_PASSWORD=${password}`)
-  } else {
-    // Production: store hashed password
-    const bcrypt = await import('bcryptjs')
-    const hash = await bcrypt.hash(password, 10)
-    lines.push(`ADMIN_PASSWORD_HASH=${hash}`)
-  }
+  // ALWAYS store hashed password (even in development)
+  const bcrypt = await import('bcryptjs')
+  const hash = await bcrypt.hash(password, 12)
+  lines.push(`ADMIN_PASSWORD_HASH=${hash}`)
 
   // Write back to file
   fs.writeFileSync(envFile, lines.join('\n'))
@@ -102,18 +95,21 @@ export async function setAdminPassword(
 
 export async function verifyAdminPassword(
   password: string,
-  hostname?: string,
+  _hostname?: string,
 ): Promise<boolean> {
   const { adminPassword, adminPasswordHash } = loadEnvironmentVariables()
-  const isDevEnv = isDevelopment(hostname)
+  const bcrypt = await import('bcryptjs')
 
-  if (isDevEnv && adminPassword) {
-    // Development: plain text comparison
-    return password === adminPassword
-  } else if (adminPasswordHash) {
-    // Production: bcrypt comparison
-    const bcrypt = await import('bcryptjs')
+  // If there's a hash, use it
+  if (adminPasswordHash) {
     return bcrypt.compare(password, adminPasswordHash)
+  }
+
+  // If there's a plain password (legacy), hash and compare
+  // This provides backwards compatibility while still being secure
+  if (adminPassword) {
+    const tempHash = await bcrypt.hash(adminPassword, 12)
+    return bcrypt.compare(password, tempHash)
   }
 
   return false

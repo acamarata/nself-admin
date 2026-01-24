@@ -1,10 +1,13 @@
 import { getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
+
+// Allowed environments for deployment
+const ALLOWED_ENVIRONMENTS = ['staging', 'production', 'development']
 
 // GET /api/deploy - Get deployment status
 export async function GET(request: NextRequest) {
@@ -13,13 +16,22 @@ export async function GET(request: NextRequest) {
     const environment = searchParams.get('environment')
     const projectPath = getProjectPath()
 
-    // Get deployment status
-    const command = environment
-      ? `nself deploy status --env=${environment}`
-      : 'nself deploy status'
+    // Validate environment if provided
+    if (environment && !ALLOWED_ENVIRONMENTS.includes(environment)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid environment' },
+        { status: 400 },
+      )
+    }
+
+    // Build args array
+    const execArgs = ['deploy', 'status']
+    if (environment) {
+      execArgs.push(`--env=${environment}`)
+    }
 
     try {
-      const { stdout, stderr } = await execAsync(command, {
+      const { stdout, stderr } = await execFileAsync('nself', execArgs, {
         cwd: projectPath,
         env: { ...process.env, PATH: getEnhancedPath() },
         timeout: 30000,
@@ -58,39 +70,61 @@ export async function POST(request: NextRequest) {
     const { action, environment, options = {} } = body
     const projectPath = getProjectPath()
 
-    let command = ''
+    // Validate environment if provided
+    if (environment && !ALLOWED_ENVIRONMENTS.includes(environment)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid environment' },
+        { status: 400 },
+      )
+    }
+
+    const execArgs: string[] = ['deploy']
 
     switch (action) {
-      case 'deploy':
+      case 'deploy': {
+        if (!environment) {
+          return NextResponse.json(
+            { success: false, error: 'Environment is required for deploy' },
+            { status: 400 },
+          )
+        }
         // nself deploy staging|prod [options]
-        command = `nself deploy ${environment}`
-        if (options.dryRun) command += ' --dry-run'
-        if (options.force) command += ' --force'
-        if (options.rolling) command += ' --rolling'
-        if (options.skipHealth) command += ' --skip-health'
-        if (options.includeFrontends) command += ' --include-frontends'
-        if (options.excludeFrontends) command += ' --exclude-frontends'
+        execArgs.push(environment)
+        if (options.dryRun) execArgs.push('--dry-run')
+        if (options.force) execArgs.push('--force')
+        if (options.rolling) execArgs.push('--rolling')
+        if (options.skipHealth) execArgs.push('--skip-health')
+        if (options.includeFrontends) execArgs.push('--include-frontends')
+        if (options.excludeFrontends) execArgs.push('--exclude-frontends')
         break
+      }
 
-      case 'check-access':
+      case 'check-access': {
         // nself deploy check-access
-        command = 'nself deploy check-access'
+        execArgs.push('check-access')
         break
+      }
 
-      case 'rollback':
+      case 'rollback': {
         // nself deploy rollback
-        command = `nself deploy rollback${environment ? ` ${environment}` : ''}`
+        execArgs.push('rollback')
+        if (environment) execArgs.push(environment)
         break
+      }
 
-      case 'logs':
+      case 'logs': {
         // nself deploy logs
-        command = `nself deploy logs${environment ? ` ${environment}` : ''}`
+        execArgs.push('logs')
+        if (environment) execArgs.push(environment)
         break
+      }
 
-      case 'health':
+      case 'health': {
         // nself deploy health
-        command = `nself deploy health${environment ? ` ${environment}` : ''}`
+        execArgs.push('health')
+        if (environment) execArgs.push(environment)
         break
+      }
 
       default:
         return NextResponse.json(
@@ -99,7 +133,7 @@ export async function POST(request: NextRequest) {
         )
     }
 
-    const { stdout, stderr } = await execAsync(command, {
+    const { stdout, stderr } = await execFileAsync('nself', execArgs, {
       cwd: projectPath,
       env: { ...process.env, PATH: getEnhancedPath() },
       timeout: 300000, // 5 minute timeout for deployments

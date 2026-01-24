@@ -2,7 +2,7 @@
 
 import { AlertCircle, CheckCircle, Hammer } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface BuildStep {
   name: string
@@ -31,7 +31,8 @@ export default function BuildPage() {
   >('building')
   const [errorMessage, setErrorMessage] = useState('')
   const [serviceCount, setServiceCount] = useState(0)
-  const [buildStarted, setBuildStarted] = useState(false)
+  // Use useRef instead of useState to prevent race condition when startBuild is called twice
+  const buildStartedRef = useRef(false)
 
   const debugLog = (message: string, data?: any) => {
     // Fire-and-forget debug logging
@@ -55,13 +56,13 @@ export default function BuildPage() {
   }
 
   const startBuild = useCallback(async () => {
-    // Prevent multiple builds
-    if (buildStarted) {
+    // Prevent multiple builds - use ref to avoid race condition with useState
+    if (buildStartedRef.current) {
       debugLog('Build page: Build already started, skipping')
       return
     }
 
-    setBuildStarted(true)
+    buildStartedRef.current = true
     debugLog('Build page: startBuild function called!')
     try {
       // Step 1: Initialize
@@ -188,7 +189,7 @@ export default function BuildPage() {
         router.push('/init/1')
       }, 3000)
     }
-  }, [buildStarted, currentStep, router])
+  }, [currentStep, router])
 
   const simulateDelay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms))

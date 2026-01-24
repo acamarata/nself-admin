@@ -2,8 +2,58 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const HASURA_ENDPOINT =
   process.env.HASURA_GRAPHQL_ENDPOINT || 'http://localhost:8080/v1/graphql'
-const HASURA_ADMIN_SECRET =
-  process.env.HASURA_GRAPHQL_ADMIN_SECRET || 'myadminsecretkey'
+
+// SECURITY: No fallback secret - must be configured via environment
+const HASURA_ADMIN_SECRET = process.env.HASURA_GRAPHQL_ADMIN_SECRET
+
+// Allowlist of safe query operations (read-only)
+const ALLOWED_QUERY_PATTERNS = [
+  /^\s*query\s+/i, // Only allow query operations
+  /^\s*{\s*__schema/i, // Allow introspection
+  /^\s*{\s*__type/i, // Allow type introspection
+]
+
+// Blocked patterns (mutations, subscriptions, dangerous operations)
+const BLOCKED_PATTERNS = [
+  /mutation\s*\{/i,
+  /mutation\s+\w+/i,
+  /subscription\s*\{/i,
+  /subscription\s+\w+/i,
+  /delete_/i,
+  /update_/i,
+  /insert_/i,
+  /__schema\s*\{\s*mutationType/i, // Block mutation type introspection for execution
+]
+
+function isQueryAllowed(query: string): { allowed: boolean; reason?: string } {
+  if (!query || typeof query !== 'string') {
+    return { allowed: false, reason: 'Invalid query' }
+  }
+
+  // Check for blocked patterns
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(query)) {
+      return {
+        allowed: false,
+        reason:
+          'Mutation and write operations are not allowed via this endpoint',
+      }
+    }
+  }
+
+  // Must match at least one allowed pattern
+  const isAllowed = ALLOWED_QUERY_PATTERNS.some((pattern) =>
+    pattern.test(query),
+  )
+  if (!isAllowed) {
+    return {
+      allowed: false,
+      reason: 'Only read-only query operations are allowed',
+    }
+  }
+
+  return { allowed: true }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -79,7 +129,9 @@ async function getMetadata() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+        ...(HASURA_ADMIN_SECRET && {
+          'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+        }),
       },
       body: JSON.stringify({
         type: 'export_metadata',
@@ -132,7 +184,9 @@ async function getSchema() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+      ...(HASURA_ADMIN_SECRET && {
+        'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+      }),
     },
     body: JSON.stringify({
       query: introspectionQuery,
@@ -167,7 +221,9 @@ async function getTables() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+      ...(HASURA_ADMIN_SECRET && {
+        'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+      }),
     },
     body: JSON.stringify({ query }),
   })
@@ -178,12 +234,13 @@ async function getTables() {
 
   const detailedTables = await Promise.all(
     tablesData.map(async (table: { table_name: string }) => {
+      // SECURITY: Use GraphQL variables instead of string interpolation
       const columnsQuery = `
-        query GetColumns {
+        query GetColumns($tableName: String!) {
           information_schema_columns(
             where: {
               table_schema: { _eq: "public" },
-              table_name: { _eq: "${table.table_name}" }
+              table_name: { _eq: $tableName }
             }
           ) {
             column_name
@@ -198,9 +255,14 @@ async function getTables() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+          ...(HASURA_ADMIN_SECRET && {
+            'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+          }),
         },
-        body: JSON.stringify({ query: columnsQuery }),
+        body: JSON.stringify({
+          query: columnsQuery,
+          variables: { tableName: table.table_name },
+        }),
       })
 
       const colData = await colResponse.json()
@@ -229,7 +291,9 @@ async function getPermissions() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+        ...(HASURA_ADMIN_SECRET && {
+          'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+        }),
       },
       body: JSON.stringify({
         type: 'export_metadata',
@@ -296,7 +360,9 @@ async function getRelationships() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+        ...(HASURA_ADMIN_SECRET && {
+          'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
+        }),
       },
       body: JSON.stringify({
         type: 'export_metadata',
@@ -412,10 +478,27 @@ async function getStats() {
 }
 
 async function executeGraphQL(query: string, variables?: unknown) {
+  // SECURITY: Require admin secret to be configured
+  if (!HASURA_ADMIN_SECRET) {
+    return NextResponse.json(
+      { success: false, error: 'Hasura admin secret not configured' },
+      { status: 500 },
+    )
+  }
+
   if (!query) {
     return NextResponse.json(
       { success: false, error: 'Query is required' },
       { status: 400 },
+    )
+  }
+
+  // SECURITY: Validate query is read-only
+  const validation = isQueryAllowed(query)
+  if (!validation.allowed) {
+    return NextResponse.json(
+      { success: false, error: validation.reason },
+      { status: 403 },
     )
   }
 
@@ -540,36 +623,15 @@ async function introspectSchema() {
   return executeGraphQL(introspectionQuery)
 }
 
-async function updateMetadata(metadata: unknown) {
-  if (!metadata) {
-    return NextResponse.json(
-      { success: false, error: 'Metadata is required' },
-      { status: 400 },
-    )
-  }
-
-  const response = await fetch(
-    `${HASURA_ENDPOINT.replace('/v1/graphql', '/v1/metadata')}`,
+async function updateMetadata(_metadata: unknown) {
+  // SECURITY: Metadata updates are disabled for safety
+  // This prevents arbitrary schema/permission changes via the API
+  return NextResponse.json(
     {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Hasura-Admin-Secret': HASURA_ADMIN_SECRET,
-      },
-      body: JSON.stringify({
-        type: 'replace_metadata',
-        args: metadata,
-      }),
+      success: false,
+      error:
+        'Metadata updates are disabled for security. Use Hasura console directly.',
     },
+    { status: 403 },
   )
-
-  const data = await response.json()
-
-  return NextResponse.json({
-    success: true,
-    data: {
-      result: data,
-      timestamp: new Date().toISOString(),
-    },
-  })
 }

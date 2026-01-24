@@ -1,5 +1,7 @@
 'use client'
 
+import { useCentralDataStore } from '@/stores/centralDataStore'
+import { useProjectStore } from '@/stores/projectStore'
 import { useRouter } from 'next/navigation'
 import {
   createContext,
@@ -90,6 +92,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
     } catch (error) {
       console.warn('[AuthContext] Error during logout:', error)
+    }
+
+    // SECURITY: Clear all stores on logout to prevent sensitive data persistence
+    try {
+      useProjectStore.getState().reset()
+      useCentralDataStore.getState().reset()
+    } catch (error) {
+      console.warn('[AuthContext] Error clearing stores:', error)
     }
 
     setIsAuthenticated(false)

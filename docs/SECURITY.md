@@ -99,3 +99,18 @@ Sessions are now stored in LokiJS embedded database (`nadmin.db`):
 - [ ] Role-based access control
 - [ ] Redis-based session storage (optional)
 - [ ] Hardware key support (WebAuthn)
+
+---
+
+## Security Audit
+
+For a comprehensive security audit of the nself-admin codebase, see **[[SECURITY_AUDIT|Security Audit Report]]**.
+
+The audit covers:
+
+- OWASP Top 10 vulnerabilities
+- Command injection risks
+- Authentication and session management
+- Input validation
+- Dependency vulnerabilities
+- Remediation recommendations

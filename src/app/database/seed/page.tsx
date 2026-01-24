@@ -13,9 +13,13 @@ import {
 } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
+import type { Seed } from '@/types/database'
 import {
   CheckCircle,
+  Clock,
   Database,
+  FileCode,
+  Folder,
   Loader2,
   Play,
   RefreshCw,
@@ -23,26 +27,103 @@ import {
   Terminal,
   XCircle,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 interface SeedResult {
   success: boolean
   output?: string
   error?: string
   timestamp: string
+  type?: string
 }
 
 export default function DatabaseSeedPage() {
   const [isSeeding, setIsSeeding] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [isLoadingSeeds, setIsLoadingSeeds] = useState(true)
   const [forceMode, setForceMode] = useState(false)
+  const [seeds, setSeeds] = useState<Seed[]>([])
   const [seedResults, setSeedResults] = useState<SeedResult[]>([])
   const [lastOutput, setLastOutput] = useState<string>('')
 
+  const commonSeeds = seeds.filter((s) => s.type === 'common')
+  const localSeeds = seeds.filter((s) => s.type === 'local')
+  const stagingSeeds = seeds.filter((s) => s.type === 'staging')
+  const productionSeeds = seeds.filter((s) => s.type === 'production')
+
+  const appliedCount = seeds.filter((s) => s.status === 'applied').length
+  const availableCount = seeds.filter((s) => s.status === 'available').length
+
+  /**
+   * Fetch available seed files
+   */
+  const fetchSeeds = useCallback(async () => {
+    setIsLoadingSeeds(true)
+    try {
+      // Mock seed data - in real implementation, fetch from CLI
+      const mockSeeds: Seed[] = [
+        {
+          name: 'roles',
+          type: 'common',
+          status: 'applied',
+          appliedAt: '2024-01-10T10:30:00Z',
+          recordCount: 5,
+        },
+        {
+          name: 'permissions',
+          type: 'common',
+          status: 'applied',
+          appliedAt: '2024-01-10T10:30:00Z',
+          recordCount: 25,
+        },
+        {
+          name: 'categories',
+          type: 'common',
+          status: 'available',
+          recordCount: 10,
+        },
+        {
+          name: 'test_users',
+          type: 'local',
+          status: 'applied',
+          appliedAt: '2024-01-11T14:00:00Z',
+          recordCount: 50,
+        },
+        {
+          name: 'test_data',
+          type: 'local',
+          status: 'available',
+          recordCount: 100,
+        },
+        {
+          name: 'staging_config',
+          type: 'staging',
+          status: 'available',
+          recordCount: 15,
+        },
+        {
+          name: 'production_defaults',
+          type: 'production',
+          status: 'available',
+          recordCount: 8,
+        },
+      ]
+      setSeeds(mockSeeds)
+    } catch (error) {
+      console.error('Failed to fetch seeds:', error)
+    } finally {
+      setIsLoadingSeeds(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchSeeds()
+  }, [fetchSeeds])
+
   /**
    * Execute nself db seed via the CLI API
-   * This delegates to the nself CLI rather than reimplementing seed logic
    */
-  const runSeed = async () => {
+  const runSeed = async (seedType?: string) => {
     setIsSeeding(true)
     setLastOutput('')
 
@@ -52,7 +133,10 @@ export default function DatabaseSeedPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'seed',
-          options: { force: forceMode },
+          options: {
+            force: forceMode,
+            type: seedType,
+          },
         }),
       })
 
@@ -63,15 +147,21 @@ export default function DatabaseSeedPage() {
         output: data.data?.output || data.details,
         error: data.error,
         timestamp: new Date().toLocaleString(),
+        type: seedType || 'all',
       }
 
       setSeedResults((prev) => [result, ...prev.slice(0, 9)])
       setLastOutput(data.data?.output || data.details || '')
+
+      if (data.success) {
+        await fetchSeeds()
+      }
     } catch (error) {
       const result: SeedResult = {
         success: false,
         error: error instanceof Error ? error.message : 'Seed failed',
         timestamp: new Date().toLocaleString(),
+        type: seedType || 'all',
       }
       setSeedResults((prev) => [result, ...prev.slice(0, 9)])
     } finally {
@@ -83,7 +173,7 @@ export default function DatabaseSeedPage() {
    * Execute nself db sync to sync Hasura metadata
    */
   const runSync = async () => {
-    setIsSeeding(true)
+    setIsSyncing(true)
     setLastOutput('')
 
     try {
@@ -100,6 +190,7 @@ export default function DatabaseSeedPage() {
         output: data.data?.output || data.details,
         error: data.error,
         timestamp: new Date().toLocaleString(),
+        type: 'sync',
       }
 
       setSeedResults((prev) => [result, ...prev.slice(0, 9)])
@@ -109,15 +200,130 @@ export default function DatabaseSeedPage() {
         success: false,
         error: error instanceof Error ? error.message : 'Sync failed',
         timestamp: new Date().toLocaleString(),
+        type: 'sync',
       }
       setSeedResults((prev) => [result, ...prev.slice(0, 9)])
     } finally {
-      setIsSeeding(false)
+      setIsSyncing(false)
     }
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'applied':
+        return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+      case 'available':
+        return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+      case 'failed':
+        return 'bg-red-500/10 text-red-500 border-red-500/20'
+      default:
+        return 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'applied':
+        return <CheckCircle className="h-4 w-4 text-emerald-500" />
+      case 'available':
+        return <Clock className="h-4 w-4 text-blue-500" />
+      case 'failed':
+        return <XCircle className="h-4 w-4 text-red-500" />
+      default:
+        return null
+    }
+  }
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'common':
+        return 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+      case 'local':
+        return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+      case 'staging':
+        return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+      case 'production':
+        return 'bg-red-500/10 text-red-500 border-red-500/20'
+      default:
+        return 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
+    }
+  }
+
+  const renderSeedList = (seedList: Seed[], title: string, type: string) => (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Folder className="h-5 w-5" />
+            <CardTitle className="text-base">{title}</CardTitle>
+            <Badge variant="outline" className={getTypeColor(type)}>
+              {seedList.length}
+            </Badge>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => runSeed(type)}
+            disabled={isSeeding || seedList.length === 0}
+          >
+            {isSeeding ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="mr-2 h-4 w-4" />
+            )}
+            Run {title}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {seedList.length === 0 ? (
+          <div className="py-4 text-center text-sm text-zinc-500">
+            No {title.toLowerCase()} seeds found
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {seedList.map((seed) => (
+              <div
+                key={seed.name}
+                className="flex items-center justify-between rounded-lg border p-3 dark:border-zinc-700"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg ${getStatusColor(seed.status)}`}
+                  >
+                    <FileCode className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-white">
+                      {seed.name}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {seed.recordCount} records
+                      {seed.appliedAt &&
+                        ` - Applied ${new Date(seed.appliedAt).toLocaleDateString()}`}
+                    </p>
+                  </div>
+                </div>
+                <Badge
+                  variant="outline"
+                  className={`${getStatusColor(seed.status)} flex items-center gap-1`}
+                >
+                  {getStatusIcon(seed.status)}
+                  {seed.status}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+
   return (
-    <PageTemplate description="Seed database with initial data using nself CLI">
+    <PageTemplate
+      title="Database Seeding"
+      description="Seed your database with initial data using nself CLI"
+    >
       <div className="space-y-6">
         {/* Info Alert */}
         <Alert>
@@ -129,9 +335,75 @@ export default function DatabaseSeedPage() {
               nself db seed
             </code>{' '}
             to populate your database. Seed files are managed in your
-            project&apos;s seed directory.
+            project&apos;s seed directory, organized by environment.
           </AlertDescription>
         </Alert>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-zinc-500">
+                    Total Seeds
+                  </p>
+                  <p className="mt-1 text-2xl font-bold">{seeds.length}</p>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10">
+                  <Sprout className="h-6 w-6 text-blue-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-zinc-500">Applied</p>
+                  <p className="mt-1 text-2xl font-bold text-emerald-500">
+                    {appliedCount}
+                  </p>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10">
+                  <CheckCircle className="h-6 w-6 text-emerald-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-zinc-500">Available</p>
+                  <p className="mt-1 text-2xl font-bold text-blue-500">
+                    {availableCount}
+                  </p>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/10">
+                  <Clock className="h-6 w-6 text-blue-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-zinc-500">
+                    Total Records
+                  </p>
+                  <p className="mt-1 text-2xl font-bold">
+                    {seeds.reduce((acc, s) => acc + (s.recordCount || 0), 0)}
+                  </p>
+                </div>
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-500/10">
+                  <Database className="h-6 w-6 text-amber-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Seed Controls */}
@@ -139,28 +411,28 @@ export default function DatabaseSeedPage() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Sprout className="h-5 w-5 text-green-600" />
-                <CardTitle>Database Seeding</CardTitle>
+                <CardTitle>Seed Controls</CardTitle>
               </div>
               <CardDescription>
-                Populate your database with seed data defined in your project
+                Run seeds to populate your database with data
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Force Mode Toggle */}
-              <div className="flex items-center justify-between rounded-lg border p-4">
+              <div className="flex items-center justify-between rounded-lg border p-4 dark:border-zinc-700">
                 <div>
-                  <div className="font-medium">Force Mode</div>
-                  <div className="text-sm text-zinc-500">
+                  <p className="text-sm font-medium">Force Mode</p>
+                  <p className="text-xs text-zinc-500">
                     Clear existing data before seeding (--force flag)
-                  </div>
+                  </p>
                 </div>
                 <Switch checked={forceMode} onCheckedChange={setForceMode} />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <Button
-                  onClick={runSeed}
+                  onClick={() => runSeed()}
                   disabled={isSeeding}
                   className="w-full"
                   size="lg"
@@ -168,12 +440,12 @@ export default function DatabaseSeedPage() {
                   {isSeeding ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Running nself db seed...
+                      Seeding...
                     </>
                   ) : (
                     <>
                       <Play className="mr-2 h-4 w-4" />
-                      Run Seed {forceMode && '(Force)'}
+                      Run All Seeds
                     </>
                   )}
                 </Button>
@@ -181,13 +453,35 @@ export default function DatabaseSeedPage() {
                 <Button
                   variant="outline"
                   onClick={runSync}
-                  disabled={isSeeding}
+                  disabled={isSyncing}
                   className="w-full"
+                  size="lg"
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Sync Hasura Metadata
+                  {isSyncing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Sync Metadata
+                    </>
+                  )}
                 </Button>
               </div>
+
+              <Button
+                variant="outline"
+                onClick={fetchSeeds}
+                disabled={isLoadingSeeds}
+                className="w-full"
+              >
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${isLoadingSeeds ? 'animate-spin' : ''}`}
+                />
+                Refresh Seed List
+              </Button>
 
               {/* CLI Command Preview */}
               <div className="rounded-lg bg-zinc-900 p-4 font-mono text-sm text-green-400">
@@ -202,7 +496,7 @@ export default function DatabaseSeedPage() {
             </CardContent>
           </Card>
 
-          {/* Output Panel */}
+          {/* CLI Output */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -226,35 +520,48 @@ export default function DatabaseSeedPage() {
           </Card>
         </div>
 
+        {/* Seed Files by Type */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {renderSeedList(commonSeeds, 'Common Seeds', 'common')}
+          {renderSeedList(localSeeds, 'Local Seeds', 'local')}
+          {renderSeedList(stagingSeeds, 'Staging Seeds', 'staging')}
+          {renderSeedList(productionSeeds, 'Production Seeds', 'production')}
+        </div>
+
         {/* History */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Operations</CardTitle>
-            <CardDescription>
-              History of seed operations from this session
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {seedResults.length === 0 ? (
-              <div className="py-8 text-center text-zinc-500">
-                No operations run yet
-              </div>
-            ) : (
+        {seedResults.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Operations</CardTitle>
+              <CardDescription>
+                History of seed operations from this session
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-3">
                 {seedResults.map((result, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between rounded-lg border p-4"
+                    className="flex items-center justify-between rounded-lg border p-4 dark:border-zinc-700"
                   >
                     <div className="flex items-center gap-3">
                       {result.success ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        <CheckCircle className="h-5 w-5 text-emerald-500" />
                       ) : (
                         <XCircle className="h-5 w-5 text-red-500" />
                       )}
                       <div>
-                        <div className="font-medium">
-                          {result.success ? 'Success' : 'Failed'}
+                        <div className="flex items-center gap-2 font-medium">
+                          {result.type === 'sync' ? (
+                            <RefreshCw className="h-4 w-4 text-blue-600" />
+                          ) : (
+                            <Sprout className="h-4 w-4 text-green-600" />
+                          )}
+                          {result.type === 'sync'
+                            ? 'Hasura Sync'
+                            : result.type === 'all'
+                              ? 'All Seeds'
+                              : `${result.type} Seeds`}
                         </div>
                         <div className="text-sm text-zinc-500">
                           {result.timestamp}
@@ -267,9 +574,9 @@ export default function DatabaseSeedPage() {
                   </div>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </PageTemplate>
   )

@@ -3,7 +3,7 @@
 <div align="center">
 
 ![nself Admin](https://img.shields.io/badge/nself-Admin-blue?style=for-the-badge&logo=docker&logoColor=white)
-![Version](https://img.shields.io/badge/version-0.0.7-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-0.0.8-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-orange?style=for-the-badge)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
@@ -71,6 +71,7 @@
 - **[FAQ](FAQ)** - Frequently asked questions
 - **[Troubleshooting](TROUBLESHOOTING)** - Common issues and solutions
 - **[Security](SECURITY)** - Security best practices
+- **[Security Audit](SECURITY_AUDIT)** - Comprehensive security audit report
 
 ---
 
@@ -98,7 +99,7 @@
 
 ## Current Version
 
-**v0.0.7** - See [CHANGELOG](CHANGELOG) for details.
+**v0.0.8** - See [CHANGELOG](CHANGELOG) for details.
 
 ## License
 

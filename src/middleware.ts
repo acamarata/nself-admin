@@ -8,11 +8,11 @@ const PUBLIC_ROUTES = [
   '/api/auth/login',
   '/api/auth/init',
   '/api/auth/check', // Allow checking auth status
+  '/api/auth/validate-session', // Allow session validation from middleware
   '/api/health',
   '/api/project/status', // Allow checking project status without auth
   '/api/wizard', // Allow all wizard endpoints
   '/api/env/read', // Allow reading env during wizard
-  '/api/debug', // Debug endpoints (dev only)
   '/_next',
   '/favicon.ico',
   '/site.webmanifest',
@@ -33,6 +33,19 @@ const PROTECTED_API_ROUTES = [
   '/api/graphql',
   '/api/redis',
   '/api/cli',
+  '/api/backup',
+  '/api/deploy',
+  '/api/environments',
+  '/api/cloud',
+  '/api/k8s',
+  '/api/helm',
+  '/api/frontend',
+  '/api/benchmark',
+  '/api/logs',
+  '/api/scale',
+  '/api/performance',
+  '/api/plugins',
+  '/api/version',
 ]
 
 export async function middleware(request: NextRequest) {
@@ -57,9 +70,36 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // For now, accept any session token that exists
-  // Validation happens in the API routes themselves since Edge Runtime
-  // doesn't support Node.js modules needed for database access
+  // Validate session token via internal API call
+  const baseUrl = request.nextUrl.origin
+  try {
+    const validateResponse = await fetch(
+      `${baseUrl}/api/auth/validate-session`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: sessionToken }),
+      },
+    )
+
+    if (!validateResponse.ok) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
+      }
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+  } catch {
+    // If validation fails, reject the request
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        { error: 'Session validation failed' },
+        { status: 401 },
+      )
+    }
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
 
   // Check if it's a protected API route
   if (PROTECTED_API_ROUTES.some((route) => pathname.startsWith(route))) {
@@ -73,6 +113,11 @@ export async function middleware(request: NextRequest) {
     response.headers.set('X-Content-Type-Options', 'nosniff')
     response.headers.set('X-Frame-Options', 'DENY')
     response.headers.set('X-XSS-Protection', '1; mode=block')
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    response.headers.set(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=()',
+    )
 
     // Ensure CSRF token is set
     if (!request.cookies.get('nself-csrf')) {

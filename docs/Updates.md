@@ -34,14 +34,14 @@ Update to a specific version:
 
 ```bash
 # Pull specific version
-docker pull acamarata/nself-admin:0.0.7
+docker pull acamarata/nself-admin:0.0.8
 
 # Update container with specific version
 docker run -d --name nself-admin \
   -p 3021:3021 \
   -v $(pwd):/workspace \
   -v /var/run/docker.sock:/var/run/docker.sock \
-  acamarata/nself-admin:0.0.7
+  acamarata/nself-admin:0.0.8
 ```
 
 ### Development Updates
@@ -92,8 +92,8 @@ curl http://localhost:3021/api/version
 
 # Response
 {
-  "version": "0.0.7",
-  "buildDate": "2026-01-23T10:30:00Z",
+  "version": "0.0.8",
+  "buildDate": "2026-01-24T20:30:00Z",
   "gitCommit": "abc123",
   "nodeVersion": "20.10.0"
 }
@@ -105,8 +105,8 @@ Available release channels:
 
 | Channel         | Description         | Docker Tag           | Stability |
 | --------------- | ------------------- | -------------------- | --------- |
-| **Stable**      | Production releases | `latest`, `0.0.7`    | High      |
-| **Beta**        | Pre-release testing | `beta`, `0.0.8-beta` | Medium    |
+| **Stable**      | Production releases | `latest`, `0.0.8`    | High      |
+| **Beta**        | Pre-release testing | `beta`, `0.0.9-beta` | Medium    |
 | **Development** | Latest changes      | `dev`, `main`        | Low       |
 
 ### Version Pinning
@@ -116,15 +116,44 @@ Pin to specific versions in production:
 ```bash
 # Production deployment
 docker run -d --name nself-admin \
-  acamarata/nself-admin:0.0.7  # Specific version
+  acamarata/nself-admin:0.0.8  # Specific version
 
 # Kubernetes deployment
-image: acamarata/nself-admin:0.0.7
+image: acamarata/nself-admin:0.0.8
 ```
 
 ## Migration Guide
 
 ### Breaking Changes
+
+#### v0.0.7 to v0.0.8
+
+**New Features:**
+
+- Comprehensive security audit with 3-pass review (OWASP Top 10)
+- Plugin management UI (Stripe, GitHub, Shopify integrations)
+- Enhanced database UI (backups, restore, migrations, SQL console)
+- Cloud provider integration pages (AWS, GCP, DigitalOcean)
+- Kubernetes management UI (clusters, deployments, services)
+- Performance monitoring and profiling tools
+- 80+ new pages and 60+ new API routes
+
+**Security Fixes:**
+
+- Fixed command injection vulnerabilities in 9 API routes (uses `execFile` instead of `exec`)
+- Fixed GraphQL arbitrary query execution (query allowlisting)
+- Fixed session validation in middleware (proper token validation)
+- Fixed password storage (always use bcrypt, even in development)
+- Fixed store cleanup on logout (prevents sensitive data persistence)
+- Fixed build page race condition (useState → useRef)
+- Updated vulnerable dependencies (tar >= 7.5.4)
+
+**Migration Steps:**
+
+1. Backup existing data: `cp data/nadmin.db data/nadmin.db.backup`
+2. Update to v0.0.8
+3. Verify all security-sensitive operations work correctly
+4. Test logout clears all cached data
 
 #### v0.0.6 to v0.0.7
 
@@ -164,11 +193,11 @@ image: acamarata/nself-admin:0.0.7
 
 #### Future Versions
 
-**v0.0.8 (Planned):**
+**v0.0.9 (Planned):**
 
-- Database management UI (backups, restore, migrations)
-- CLI environment sync improvements
-- Enhanced monitoring integration
+- Scale and cloud provider improvements
+- Kubernetes production deployment
+- Enhanced monitoring dashboards
 
 ### Data Migration
 
@@ -271,7 +300,7 @@ else
     -p 3021:3021 \
     -v $(pwd):/workspace \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    acamarata/nself-admin:0.0.6  # Previous version
+    acamarata/nself-admin:0.0.7  # Previous version
   exit 1
 fi
 ```
@@ -372,7 +401,7 @@ const response = await fetch(
   'https://api.github.com/repos/acamarata/nself-admin/releases/latest',
 )
 const latest = await response.json()
-const currentVersion = '0.0.7'
+const currentVersion = '0.0.8'
 
 if (latest.tag_name !== `v${currentVersion}`) {
   console.log(`Update available: ${latest.tag_name}`)

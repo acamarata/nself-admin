@@ -89,5 +89,6 @@ tmp/
 
 # Claude session continuation
 next.md
+NEXT.md
 feedback*.md
 feedback.md
