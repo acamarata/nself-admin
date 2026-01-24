@@ -20,8 +20,8 @@ nself-admin is a **visual companion** to the nself CLI. It does NOT reimplement 
 | ------------ | ----------- | ------------------------------------------- |
 | v0.4.2       | v0.0.6      | Foundation, SSL UI, TypeScript fixes        |
 | v0.4.4       | v0.0.7      | Admin integration, deployment features      |
-| v0.4.4       | v0.0.8      | Database, backup, restore UI                |
-| v0.4.5-0.4.9 | v0.0.9      | Mock data, scale, cloud providers, k8s prep |
+| **v0.4.8**   | **v0.0.8**  | **Plugin system UI + Database operations**  |
+| v0.4.9       | v0.0.9      | QA, polish, cloud providers, k8s prep       |
 | v0.5.0       | v0.1.0      | Production-ready stable release             |
 
 ---
@@ -175,10 +175,60 @@ nself logs --env=production  # View prod logs
 
 ---
 
-## v0.0.8 - Database, Backup & Restore UI
+## v0.0.8 - Plugin System & Database Operations
 
-**Goal**: Complete database management and backup/restore interface
-**Aligns with**: nself CLI v0.4.4
+**Goal**: Plugin management UI + Complete database operations
+**Aligns with**: nself CLI v0.4.8 (Plugin System Release)
+
+### Plugin Management (NEW - Major Feature)
+
+#### Plugin Dashboard (`/plugins`)
+
+- [ ] Installed plugins grid with status indicators
+- [ ] Available plugins browser with categories
+- [ ] Plugin search and filtering
+- [ ] Quick install/remove actions
+- [ ] Plugin health overview
+
+#### Plugin Installation Flow
+
+- [ ] Install modal with version selection
+- [ ] Required environment variables form
+- [ ] Schema creation preview
+- [ ] Real-time installation progress
+- [ ] Post-install verification
+
+#### Plugin Detail Pages (`/plugins/[name]`)
+
+- [ ] Plugin overview and configuration
+- [ ] Schema tab with table viewer
+- [ ] Sync controls and history
+- [ ] Webhook event monitoring
+- [ ] Plugin-specific actions
+
+#### Stripe Plugin UI (`/plugins/stripe`)
+
+- [ ] Revenue overview (MRR, ARR)
+- [ ] Customer list with search
+- [ ] Subscription management
+- [ ] Invoice viewer
+- [ ] Webhook event log
+
+#### GitHub Plugin UI (`/plugins/github`)
+
+- [ ] Repository overview
+- [ ] Issues and PRs dashboard
+- [ ] CI/CD status (Actions)
+- [ ] Activity feed
+
+#### Shopify Plugin UI (`/plugins/shopify`)
+
+- [ ] Store overview
+- [ ] Product catalog viewer
+- [ ] Order management
+- [ ] Inventory status
+
+### Database Operations
 
 ### Backup Management
 
@@ -278,28 +328,53 @@ nself logs --env=production  # View prod logs
 ### API Routes
 
 ```
-GET  /api/backups                - List backups
-POST /api/backups/create         - Create backup
-POST /api/backups/restore        - Restore backup
-GET  /api/backups/download/:id   - Download backup
-DELETE /api/backups/:id          - Delete backup
+# Plugin Management
+GET  /api/plugins                     - List all plugins
+GET  /api/plugins/available           - Available from registry
+GET  /api/plugins/installed           - Installed only
+POST /api/plugins/install             - Install plugin
+POST /api/plugins/remove              - Remove plugin
+GET  /api/plugins/updates             - Check for updates
+POST /api/plugins/update              - Update plugin(s)
+GET  /api/plugins/[name]              - Plugin details
+GET  /api/plugins/[name]/status       - Plugin status
+PUT  /api/plugins/[name]/config       - Update config
+POST /api/plugins/[name]/sync         - Trigger sync
+POST /api/plugins/[name]/action       - Execute action
+GET  /api/plugins/[name]/webhooks     - Webhook events
 
-GET  /api/database/schema        - Get schema info
-POST /api/database/query         - Execute SQL
-GET  /api/database/migrations    - List migrations
-POST /api/database/migrate       - Run migrations
+# Database Operations
+GET  /api/backups                     - List backups
+POST /api/backups/create              - Create backup
+POST /api/backups/restore             - Restore backup
+GET  /api/backups/download/:id        - Download backup
+DELETE /api/backups/:id               - Delete backup
 
-GET  /api/hasura/metadata        - Get Hasura metadata
-POST /api/hasura/metadata/apply  - Apply metadata
+GET  /api/database/schema             - Get schema info
+POST /api/database/query              - Execute SQL
+GET  /api/database/migrations         - List migrations
+POST /api/database/migrate            - Run migrations
+
+GET  /api/hasura/metadata             - Get Hasura metadata
+POST /api/hasura/metadata/apply       - Apply metadata
 ```
 
 ### CLI Commands Executed
 
 ```bash
-nself backup create              # Create backup
-nself backup list                # List backups
-nself backup restore <id>        # Restore backup
-nself db migrate                 # Run migrations
+# Plugin commands
+nself plugin list                # List plugins
+nself plugin install <name>      # Install plugin
+nself plugin remove <name>       # Remove plugin
+nself plugin status <name>       # Plugin status
+nself plugin <name> sync         # Sync plugin data
+nself plugin <name> <action>     # Execute plugin action
+
+# Database commands
+nself db backup create           # Create backup
+nself db backup list             # List backups
+nself db restore <file>          # Restore backup
+nself db migrate up              # Run migrations
 nself db seed                    # Seed database
 nself db console                 # Open psql
 ```
@@ -729,10 +804,14 @@ async function compareEnvironments(): Promise<EnvDiff[]> {
 
 ### v0.0.8
 
+- [ ] Plugin install/remove/update flows work
+- [ ] All 3 launch plugins have dedicated UI
+- [ ] Stripe revenue dashboard functional
+- [ ] Webhook event monitoring works
 - [ ] Backup/restore fully functional
-- [ ] SQL console with history
-- [ ] Hasura integration embedded
+- [ ] SQL console with Monaco editor
 - [ ] Migration management complete
+- [ ] Schema browser displays all tables
 
 ### v0.0.9
 
@@ -761,9 +840,11 @@ async function compareEnvironments(): Promise<EnvDiff[]> {
 
 ### v0.0.8 requires
 
-- nself CLI v0.4.4 with backup/restore commands
+- nself CLI v0.4.8 with plugin system
 - Monaco editor for SQL console
 - Hasura metadata API access
+- Plugin registry connectivity
+- Recharts for revenue dashboards
 
 ### v0.0.9 requires
 

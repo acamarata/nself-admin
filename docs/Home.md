@@ -25,6 +25,7 @@
 | **Intelligent Wizard**   | 6-step configuration with smart defaults and validation |
 | **Real-Time Monitoring** | Live metrics, logs, and health checks for all services  |
 | **Docker-First Design**  | Runs in a container with zero footprint on your host    |
+| **Plugin System**        | Extend with Stripe, GitHub, Shopify integrations        |
 | **40+ Templates**        | Pre-configured for Node.js, Python, Go, Rust, and more  |
 | **Multi-Environment**    | Manage dev, staging, and production configs             |
 
@@ -44,6 +45,14 @@
 - **[Service Configuration](Service-Configuration)** - Configure all services
 - **[Database Management](Database-Management)** - PostgreSQL operations
 - **[Monitoring](Monitoring)** - Metrics and alerting
+
+### Plugin System (NEW in v0.0.8)
+
+- **[Plugins Overview](Plugins)** - Complete plugin documentation
+- **[Stripe Plugin](Plugins#stripe-plugin)** - Payment processing integration
+- **[GitHub Plugin](Plugins#github-plugin)** - Repository and DevOps data
+- **[Shopify Plugin](Plugins#shopify-plugin)** - E-commerce integration
+- **[Webhook Integration](Plugins#webhook-integration)** - Real-time event handling
 
 ### Reference
 

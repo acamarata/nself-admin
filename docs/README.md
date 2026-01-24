@@ -24,6 +24,15 @@ Welcome to the nself Admin documentation! This comprehensive guide will help you
 - **[Database Management](Database-Management.md)** - Working with databases
 - **[Environment Variables](ENVIRONMENT_VARIABLES.md)** - Configuration reference
 
+### Plugin System (NEW in v0.0.8)
+
+- **[Plugins Overview](Plugins.md)** - Complete plugin documentation
+- **[Stripe Plugin](Plugins.md#stripe-plugin)** - Payment processing integration
+- **[GitHub Plugin](Plugins.md#github-plugin)** - Repository and DevOps data
+- **[Shopify Plugin](Plugins.md#shopify-plugin)** - E-commerce integration
+- **[Webhook Integration](Plugins.md#webhook-integration)** - Real-time event handling
+- **[Plugin Development](Plugins.md#plugin-development)** - Create custom plugins
+
 ### Advanced Usage
 
 - **[Production Deployment](Production-Deployment.md)** - Deploy to production
@@ -87,6 +96,7 @@ Welcome to the nself Admin documentation! This comprehensive guide will help you
 | 🎯 **Setup Wizard**    | Complete wizard guide      | [Init Wizard](Init-Wizard-Guide.md)   |
 | 📊 **Dashboard**       | Using the dashboard        | [Dashboard](Dashboard-Overview.md)    |
 | 🔧 **Services**        | Managing services          | [Services](Service-Configuration.md)  |
+| 🧩 **Plugins**         | Third-party integrations   | [Plugins](Plugins.md)                 |
 | 🗄️ **Database**        | Database operations        | [Database](Database-Management.md)    |
 | 🏗️ **Architecture**    | System design              | [Architecture](ARCHITECTURE.md)       |
 | 📡 **API**             | REST API reference         | [API Docs](API.md)                    |
@@ -112,6 +122,14 @@ Welcome to the nself Admin documentation! This comprehensive guide will help you
 - **Optional Services**: Redis, Storage, Search, Monitoring, Email
 - **Custom Services**: Add your own backend services
 - **Frontend Apps**: Configure multiple frontend applications
+
+### 🧩 Plugin System (NEW)
+
+- **Stripe Integration**: Sync customers, subscriptions, invoices, payments
+- **GitHub Integration**: Sync repositories, issues, PRs, Actions, deployments
+- **Shopify Integration**: Sync products, orders, customers, inventory
+- **Webhook Handlers**: Real-time event processing with signature verification
+- **GraphQL Ready**: Query plugin data via Hasura GraphQL immediately
 
 ### 📊 Monitoring & Management
 

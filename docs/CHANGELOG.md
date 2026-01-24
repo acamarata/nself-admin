@@ -5,6 +5,76 @@ All notable changes to nself-admin will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - v0.0.8
+
+### Planned
+
+- **Plugin Management UI** (Aligns with nself CLI v0.4.8)
+  - Plugin dashboard (`/plugins`) with installed/available plugins grid
+  - Plugin installation wizard with environment variable configuration
+  - Plugin configuration management
+  - Plugin-specific detail pages (`/plugins/[name]`)
+  - Webhook event monitoring and retry
+  - Plugin sync controls and history
+  - Plugin health indicators
+
+- **Stripe Plugin UI** (`/plugins/stripe`)
+  - Revenue dashboard (MRR, ARR, key metrics)
+  - Customer management interface with search
+  - Subscription viewer with status filters
+  - Invoice management and PDF download
+  - Payment methods viewer
+  - Webhook event log with filtering
+
+- **GitHub Plugin UI** (`/plugins/github`)
+  - Repository overview and sync status
+  - Issues and Pull Requests dashboard
+  - CI/CD status (GitHub Actions runs)
+  - Commit history and releases
+  - Activity feed
+
+- **Shopify Plugin UI** (`/plugins/shopify`)
+  - Store overview and metrics
+  - Product catalog viewer with variants
+  - Order management with status filters
+  - Customer list
+  - Inventory status
+
+- **Enhanced Database UI**
+  - Backup creation wizard with type selection
+  - Backup list with download/delete actions
+  - Backup restore workflow with confirmation
+  - Scheduled backups with visual cron editor
+  - Migration management (run, rollback, create)
+  - Schema browser with table visualization
+  - Monaco-based SQL console with syntax highlighting
+  - Query history (persisted) and saved queries
+  - Query results export (CSV, JSON)
+  - Query explain/analyze support
+
+### API Routes
+
+- `GET/POST /api/plugins/*` - Plugin management endpoints
+- `GET/POST /api/plugins/[name]/*` - Plugin-specific endpoints
+- `GET/POST /api/database/backups/*` - Backup management
+- `GET/POST /api/database/migrations/*` - Migration management
+- `GET/POST /api/database/schema/*` - Schema browser
+
+### Dependencies
+
+- `@monaco-editor/react` - SQL editor
+- `recharts` - Revenue charts
+- `cronstrue` - Cron to human readable
+
+### Technical
+
+- Aligns with nself CLI v0.4.8 (Plugin System Release)
+- New plugin command wrapping infrastructure
+- Enhanced database command support
+- Plugin registry integration
+
+---
+
 ## [0.0.7] - 2026-01-23
 
 ### Added
