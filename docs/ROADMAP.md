@@ -16,17 +16,70 @@ nself-admin is a **visual companion** to the nself CLI. It does NOT reimplement 
 
 ## Version Alignment
 
-| nself CLI  | nself-admin | Focus                                      |
-| ---------- | ----------- | ------------------------------------------ |
-| v0.4.2     | v0.0.6      | Foundation, SSL UI, TypeScript fixes       |
-| v0.4.4     | v0.0.7      | Admin integration, deployment features     |
-| **v0.4.8** | **v0.0.8**  | **Plugin system UI + Database operations** |
-| v0.4.9     | v0.0.9      | QA, polish, cloud providers, k8s prep      |
-| v0.5.0     | v0.1.0      | Production-ready stable release            |
+| nself CLI  | nself-admin | Focus                                      | Status |
+| ---------- | ----------- | ------------------------------------------ | ------ |
+| v0.4.2     | v0.0.6      | Foundation, SSL UI, TypeScript fixes       | ✅ Released |
+| v0.4.4     | v0.0.7      | Admin integration, deployment features     | ✅ Released |
+| v0.4.8     | v0.0.8      | Plugin system UI + Database operations     | ✅ Released |
+| **v0.4.8** | **v0.2.0**  | **Foundation & CLI alignment**             | ✅ Released |
+| **v0.4.8** | **v0.3.0**  | **Auth & Security expansion**              | ✅ Released |
+| **v0.4.8** | **v0.4.0**  | **Services expansion**                     | ✅ Released |
+| v0.5.0     | v0.5.0      | Production-ready stable release            | 🎯 Next |
+
+**Note**: Starting from v0.2.0, nself-admin adopted semantic versioning matching the nself CLI major.minor scheme.
 
 ---
 
-## Current State (v0.0.8) ✅ COMPLETE
+## Released Versions
+
+### v0.4.0 - Services Expansion ✅ RELEASED
+**Release Date**: January 31, 2026
+**GitHub**: https://github.com/acamarata/nself-admin/releases/tag/v0.4.0
+**Docker**: `docker pull acamarata/nself-admin:0.4.0`
+**Stats**: 45 files, +6,387 lines
+
+9 new service management pages with 36 API routes:
+- Service Scaffold Wizard (40+ templates across 10 languages)
+- Storage Management (file browser, upload, bucket config)
+- Email Service (template editor, test send, delivery status)
+- Search Engine (MeiliSearch, Typesense, ElasticSearch)
+- Cache Management (Redis stats, flush, CLI console)
+- Functions Service (deploy, invoke, log viewer)
+- MLflow Integration (experiment tracking, model registry)
+- Real-Time WebSocket (channel management, live events)
+- Service Discovery (search and admin endpoints)
+
+### v0.3.0 - Auth & Security ✅ RELEASED
+**Release Date**: January 31, 2026
+**GitHub**: https://github.com/acamarata/nself-admin/releases/tag/v0.3.0
+**Docker**: `docker pull acamarata/nself-admin:0.3.0`
+**Stats**: 39 files, +6,470 lines
+
+8 new auth/security features with 29 API routes:
+- OAuth Provider Management (8 providers)
+- MFA Setup (TOTP/SMS, backup codes)
+- Role-Based Access Control
+- Device Management (register, trust, revoke)
+- Security Scanning (quick/full scans)
+- Rate Limiting Configuration
+- Webhook Management (CRUD, test, logs)
+- Audit Trail Viewer
+
+### v0.2.0 - Foundation & CLI Alignment ✅ RELEASED
+**Release Date**: January 31, 2026
+**GitHub**: https://github.com/acamarata/nself-admin/releases/tag/v0.2.0
+**Docker**: `docker pull acamarata/nself-admin:0.2.0`
+**Stats**: 25 files
+
+Complete config management system:
+- Environment variable editor (multi-env tabs)
+- Secrets CRUD with validation
+- Vault integration
+- Config sync/export/import
+- Navigation restructure (12 sections)
+- CLI command reference (2340 lines)
+
+### v0.0.8 - Baseline ✅ COMPLETE
 
 ### What's Done
 
@@ -56,817 +109,88 @@ nself-admin is a **visual companion** to the nself CLI. It does NOT reimplement 
 
 ---
 
-## v0.0.7 - Multi-Environment Deployment UI
+## v0.5.0 - Production-Ready Stable Release 🎯 NEXT
 
-**Goal**: Visual deployment management for local → staging → production flow
-**Aligns with**: nself CLI v0.4.3
-
-### Environment Management
-
-#### Environment Selector
-
-- [ ] Environment dropdown in header (Local / Staging / Production)
-- [ ] Visual indicator of current environment (color-coded)
-- [ ] Environment status badges (running, stopped, unreachable)
-- [ ] Quick environment info tooltip (domain, server, last deploy)
-
-#### Environment Configuration
-
-- [ ] Side-by-side .env comparison (local vs staging vs prod)
-- [ ] Visual diff highlighting for env differences
-- [ ] "Sync" button to copy values between environments
-- [ ] Secret masking with reveal toggle
-- [ ] Environment-specific variable validation
-
-### Access Control & Authentication
-
-#### Server Access Detection
-
-- [ ] Auto-detect SSH keys on local machine (`~/.ssh/`)
-- [ ] Show which environments user has access to
-- [ ] Visual lock icon for inaccessible environments
-- [ ] "Request Access" flow for team members
-
-#### Credential Management
-
-- [ ] Secure credential storage in LokiJS (encrypted)
-- [ ] SSH key selection for each environment
-- [ ] Username/password fallback option
-- [ ] SSH key passphrase handling
-- [ ] Credential testing ("Test Connection" button)
-
-```typescript
-// Credential types supported
-interface ServerCredentials {
-  type: 'ssh-key' | 'password' | 'ssh-agent'
-  host: string
-  port: number
-  username: string
-  // For ssh-key
-  privateKeyPath?: string
-  passphrase?: string
-  // For password
-  password?: string
-}
-```
-
-#### Access Levels
-
-- [ ] Owner: Full access to all environments
-- [ ] Developer: Local + Staging access
-- [ ] Viewer: Read-only dashboard access
-- [ ] Store access level per user in database
-
-### Deployment Flow UI
-
-#### Deployment Dashboard (`/deploy`)
-
-- [ ] Three-column layout: Local | Staging | Production
-- [ ] Each column shows:
-  - Current version/commit
-  - Last deploy timestamp
-  - Health status
-  - Quick actions (deploy, rollback, logs)
-- [ ] Deployment history timeline
-
-#### Deploy Actions
-
-- [ ] "Deploy to Staging" button (from local)
-- [ ] "Promote to Production" button (from staging)
-- [ ] Pre-deploy checklist (build passes, tests pass, etc.)
-- [ ] Deploy confirmation modal with diff preview
-- [ ] Real-time deploy progress streaming
-
-#### Rollback Support
-
-- [ ] List of previous deployments per environment
-- [ ] One-click rollback to any previous version
-- [ ] Rollback confirmation with impact warning
-- [ ] Post-rollback health check
-
-### Server Management
-
-#### Server List (`/servers`)
-
-- [ ] List all connected servers
-- [ ] Server health indicators (CPU, memory, disk)
-- [ ] SSH connection status
-- [ ] Quick actions (connect, restart services, view logs)
-
-#### Server Details
-
-- [ ] Resource usage graphs
-- [ ] Running containers list
-- [ ] Network configuration
-- [ ] SSL certificate status
-
-### API Routes
-
-```
-POST /api/deploy/staging     - Deploy to staging
-POST /api/deploy/production  - Deploy to production
-POST /api/deploy/rollback    - Rollback deployment
-GET  /api/servers            - List connected servers
-POST /api/servers/test       - Test server connection
-GET  /api/credentials        - Get stored credentials (masked)
-POST /api/credentials        - Store credentials
-GET  /api/environments/diff  - Compare environments
-```
-
-### CLI Commands Executed
-
-```bash
-nself deploy staging         # Deploy to staging
-nself deploy production      # Deploy to production
-nself deploy rollback        # Rollback last deploy
-nself status --env=staging   # Check staging status
-nself logs --env=production  # View prod logs
-```
-
----
-
-## v0.0.8 - Plugin System & Database Operations
-
-**Goal**: Plugin management UI + Complete database operations
-**Aligns with**: nself CLI v0.4.8 (Plugin System Release)
-
-### Plugin Management (NEW - Major Feature)
-
-#### Plugin Dashboard (`/plugins`)
-
-- [ ] Installed plugins grid with status indicators
-- [ ] Available plugins browser with categories
-- [ ] Plugin search and filtering
-- [ ] Quick install/remove actions
-- [ ] Plugin health overview
-
-#### Plugin Installation Flow
-
-- [ ] Install modal with version selection
-- [ ] Required environment variables form
-- [ ] Schema creation preview
-- [ ] Real-time installation progress
-- [ ] Post-install verification
-
-#### Plugin Detail Pages (`/plugins/[name]`)
-
-- [ ] Plugin overview and configuration
-- [ ] Schema tab with table viewer
-- [ ] Sync controls and history
-- [ ] Webhook event monitoring
-- [ ] Plugin-specific actions
-
-#### Stripe Plugin UI (`/plugins/stripe`)
-
-- [ ] Revenue overview (MRR, ARR)
-- [ ] Customer list with search
-- [ ] Subscription management
-- [ ] Invoice viewer
-- [ ] Webhook event log
-
-#### GitHub Plugin UI (`/plugins/github`)
-
-- [ ] Repository overview
-- [ ] Issues and PRs dashboard
-- [ ] CI/CD status (Actions)
-- [ ] Activity feed
-
-#### Shopify Plugin UI (`/plugins/shopify`)
-
-- [ ] Store overview
-- [ ] Product catalog viewer
-- [ ] Order management
-- [ ] Inventory status
-
-### Database Operations
-
-### Backup Management
-
-#### Backup Dashboard (`/backups`)
-
-- [ ] List all backups with timestamps
-- [ ] Backup size and type (full, incremental)
-- [ ] Environment indicator (local, staging, prod)
-- [ ] Download backup button
-- [ ] Delete backup (with confirmation)
-
-#### Create Backup
-
-- [ ] "Create Backup" button with options:
-  - Full backup (database + files)
-  - Database only
-  - Files only (uploads, etc.)
-- [ ] Backup naming/tagging
-- [ ] Backup progress indicator
-- [ ] Post-backup verification
-
-#### Scheduled Backups
-
-- [ ] Visual cron schedule editor
-- [ ] Backup retention policy configuration
-- [ ] Email notifications on backup failure
-- [ ] Backup schedule per environment
-
-#### Restore Operations
-
-- [ ] Select backup to restore
-- [ ] Target environment selector
-- [ ] Pre-restore warnings:
-  - "This will overwrite current data"
-  - "Restore to staging first recommended"
-- [ ] Restore progress with detailed steps
-- [ ] Post-restore health check
-
-### Database Tools
-
-#### Schema Browser (`/database/schema`)
-
-- [ ] Visual table list with row counts
-- [ ] Table details (columns, types, constraints)
-- [ ] Relationship visualization (foreign keys)
-- [ ] Index information
-- [ ] Quick actions (view data, export)
-
-#### SQL Console (`/database/console`)
-
-- [ ] Monaco editor for SQL
-- [ ] Query history (persisted)
-- [ ] Saved queries library
-- [ ] Query execution with results table
-- [ ] Export results (CSV, JSON)
-- [ ] Query explain/analyze
-
-#### Migration Management
-
-- [ ] List applied migrations
-- [ ] Pending migrations indicator
-- [ ] Run migration button
-- [ ] Migration rollback (with confirmation)
-- [ ] Migration diff preview
-
-### Hasura Integration
-
-#### Hasura Console Embed
-
-- [ ] Embedded Hasura console iframe
-- [ ] Quick link to external console
-- [ ] Metadata sync status
-
-#### Quick Actions
-
-- [ ] Track/untrack table
-- [ ] Add relationship
-- [ ] Create permission
-- [ ] Export metadata
-- [ ] Apply metadata from file
-
-### Data Management
-
-#### Seed Data
-
-- [ ] List available seed files
-- [ ] Run seed with environment selection
-- [ ] Seed preview (what will be inserted)
-- [ ] Custom seed file upload
-
-#### Data Export/Import
-
-- [ ] Export table to CSV/JSON
-- [ ] Import data from file
-- [ ] Bulk operations with preview
-
-### API Routes
-
-```
-# Plugin Management
-GET  /api/plugins                     - List all plugins
-GET  /api/plugins/available           - Available from registry
-GET  /api/plugins/installed           - Installed only
-POST /api/plugins/install             - Install plugin
-POST /api/plugins/remove              - Remove plugin
-GET  /api/plugins/updates             - Check for updates
-POST /api/plugins/update              - Update plugin(s)
-GET  /api/plugins/[name]              - Plugin details
-GET  /api/plugins/[name]/status       - Plugin status
-PUT  /api/plugins/[name]/config       - Update config
-POST /api/plugins/[name]/sync         - Trigger sync
-POST /api/plugins/[name]/action       - Execute action
-GET  /api/plugins/[name]/webhooks     - Webhook events
-
-# Database Operations
-GET  /api/backups                     - List backups
-POST /api/backups/create              - Create backup
-POST /api/backups/restore             - Restore backup
-GET  /api/backups/download/:id        - Download backup
-DELETE /api/backups/:id               - Delete backup
-
-GET  /api/database/schema             - Get schema info
-POST /api/database/query              - Execute SQL
-GET  /api/database/migrations         - List migrations
-POST /api/database/migrate            - Run migrations
-
-GET  /api/hasura/metadata             - Get Hasura metadata
-POST /api/hasura/metadata/apply       - Apply metadata
-```
-
-### CLI Commands Executed
-
-```bash
-# Plugin commands
-nself plugin list                # List plugins
-nself plugin install <name>      # Install plugin
-nself plugin remove <name>       # Remove plugin
-nself plugin status <name>       # Plugin status
-nself plugin <name> sync         # Sync plugin data
-nself plugin <name> <action>     # Execute plugin action
-
-# Database commands
-nself db backup create           # Create backup
-nself db backup list             # List backups
-nself db restore <file>          # Restore backup
-nself db migrate up              # Run migrations
-nself db seed                    # Seed database
-nself db console                 # Open psql
-```
-
----
-
-## v0.0.9 - Scale, Cloud Providers & Kubernetes Prep
-
-**Goal**: Support for multiple deployment targets, scaling, and k8s preparation
-**Aligns with**: nself CLI v0.4.5 - v0.4.9
-
-### Mock Data & Seeding (v0.4.5 alignment)
-
-#### Auto-Generated Mock Data
-
-- [ ] Schema-aware mock data generation
-- [ ] Environment-specific data rules:
-  - Local: Full mock data
-  - Staging: Mock data + test users
-  - Production: Real data only
-- [ ] Seed user management UI
-- [ ] Custom seed templates
-
-#### Initial User Seeding
-
-- [ ] Visual user seed editor
-- [ ] Role assignment for seed users
-- [ ] Password generation options
-- [ ] Seed preview before apply
-
-### Scaling & Performance (v0.4.6 alignment)
-
-#### Resource Monitoring
-
-- [ ] Per-service resource graphs
-- [ ] Historical performance data
-- [ ] Bottleneck identification
-- [ ] Scaling recommendations
-
-#### Scaling Controls
-
-- [ ] Service replica slider
-- [ ] Resource limit configuration
-- [ ] Auto-scaling rules (future)
-- [ ] Load balancing visualization
-
-#### Migration Tools
-
-- [ ] Data migration wizard
-- [ ] Cross-environment migration
-- [ ] Migration validation
-- [ ] Rollback on failure
-
-### Cloud Provider Support (v0.4.7 alignment)
-
-#### Provider Configuration
-
-- [ ] Provider selector:
-  - Direct VPS (IP address)
-  - AWS
-  - Google Cloud (GCP)
-  - Microsoft Azure
-  - DigitalOcean
-  - Linode
-  - Hetzner
-- [ ] Provider credential storage
-- [ ] Provider-specific options
-
-#### VPS Direct Deploy
-
-- [ ] IP address configuration
-- [ ] SSH key management
-- [ ] Firewall configuration hints
-- [ ] SSL certificate automation
-
-#### Cloud Provider Deploy
-
-- [ ] AWS: EC2 instance selection, VPC config
-- [ ] GCP: Compute Engine options
-- [ ] Azure: VM configuration
-- [ ] DO: Droplet selection
-- [ ] Credential validation per provider
-
-### Kubernetes Preparation (v0.4.8 alignment)
-
-#### K8s Dashboard
-
-- [ ] Cluster connection configuration
-- [ ] Namespace management
-- [ ] Pod status visualization
-- [ ] Service health monitoring
-
-#### K8s Deployment
-
-- [ ] Helm chart configuration UI
-- [ ] Values.yaml editor
-- [ ] Deployment preview
-- [ ] Rollout status
-
-#### K8s Resources
-
-- [ ] ConfigMap management
-- [ ] Secret management
-- [ ] Ingress configuration
-- [ ] Persistent volume status
-
-### Monitoring Polish (v0.4.9 alignment)
-
-#### Enhanced Dashboards
-
-- [ ] Custom dashboard builder
-- [ ] Metric selection UI
-- [ ] Alert threshold configuration
-- [ ] Dashboard sharing/export
-
-#### Log Aggregation
-
-- [ ] Multi-service log view
-- [ ] Log search with regex
-- [ ] Log level filtering
-- [ ] Log export (last N hours)
-
-#### Alerting
-
-- [ ] Alert rule creation UI
-- [ ] Notification channel config (email, Slack, webhook)
-- [ ] Alert history
-- [ ] Alert acknowledgment
-
-### API Routes
-
-```
-# Mock Data
-POST /api/seed/generate          - Generate mock data
-POST /api/seed/users             - Seed initial users
-GET  /api/seed/templates         - List seed templates
-
-# Scaling
-GET  /api/scale/metrics          - Get scaling metrics
-POST /api/scale/replicas         - Set replica count
-GET  /api/scale/recommendations  - Get scaling advice
-
-# Cloud Providers
-GET  /api/providers              - List configured providers
-POST /api/providers/configure    - Configure provider
-POST /api/providers/validate     - Validate credentials
-POST /api/providers/deploy       - Deploy to provider
-
-# Kubernetes
-GET  /api/k8s/clusters           - List clusters
-GET  /api/k8s/namespaces         - List namespaces
-GET  /api/k8s/pods               - List pods
-POST /api/k8s/deploy             - Deploy to k8s
-```
-
-### CLI Commands Executed
-
-```bash
-# Mock data
-nself seed generate              # Generate mock data
-nself seed users                 # Seed users
-
-# Scaling
-nself scale api --replicas=3     # Scale service
-nself metrics                    # View metrics
-
-# Cloud providers
-nself deploy aws                 # Deploy to AWS
-nself deploy gcp                 # Deploy to GCP
-nself deploy do                  # Deploy to DigitalOcean
-
-# Kubernetes
-nself k8s deploy                 # Deploy to k8s
-nself k8s status                 # K8s cluster status
-```
-
----
-
-## v0.1.0 - Production-Ready Stable Release
-
-**Goal**: Polished, stable release ready for public use
+**Goal**: Polish, stability, and production-ready features
+**Target**: Q1 2026
 **Aligns with**: nself CLI v0.5.0
 
-### Stability & Polish
+### Focus Areas
 
-#### Bug Fixes
+1. **Multi-Environment Support**
+   - Environment selector (Local / Staging / Production)
+   - Side-by-side .env comparison with visual diffs
+   - SSH key auto-detection and management
+   - Secure credential storage
+   - Deploy/rollback flows with confirmations
 
-- [ ] Address all known issues from v0.0.7-0.0.9
-- [ ] Edge case handling
-- [ ] Error message improvements
-- [ ] Loading state consistency
+2. **Enhanced Monitoring**
+   - Real-time metrics dashboards
+   - Alert configuration UI
+   - Log aggregation and search
+   - Performance profiling tools
+   - Resource usage graphs
 
-#### Performance
+3. **Testing & Quality**
+   - Unit test coverage > 80%
+   - E2E tests for critical flows
+   - Accessibility audit (WCAG 2.1)
+   - Performance optimization
+   - Bundle size reduction
 
-- [ ] Bundle size optimization
-- [ ] Code splitting for large pages
-- [ ] API response caching
-- [ ] Lazy loading for dashboards
+4. **User Experience Polish**
+   - Mobile responsiveness
+   - Dark mode improvements
+   - Loading state consistency
+   - Error message clarity
+   - Contextual help panels
 
-#### Testing
+5. **Enterprise Features**
+   - Multi-user support (role-based access)
+   - Audit logging
+   - Session management
+   - API key authentication
+   - Compliance helpers
 
-- [ ] Unit test coverage > 80%
-- [ ] E2E tests for critical flows
-- [ ] Integration tests for API routes
-- [ ] Accessibility audit (WCAG 2.1)
+6. **Documentation**
+   - Complete API documentation
+   - Deployment guides
+   - Migration guides
+   - Troubleshooting guides
+   - Video tutorials
 
-### User Experience
+### Deprecated Roadmap Sections
 
-#### Onboarding
+The following sections from the original roadmap (v0.0.7, v0.0.8, v0.0.9) have been archived. Many features were completed in v0.2.0-v0.4.0.
 
-- [ ] First-time setup wizard
-- [ ] Feature tour/tooltips
-- [ ] Contextual help
-- [ ] Documentation links
-
-#### Mobile Responsiveness
-
-- [ ] Tablet-optimized layouts
-- [ ] Mobile dashboard view
-- [ ] Touch-friendly controls
-- [ ] Responsive navigation
-
-#### Dark Mode
-
-- [ ] System preference detection
-- [ ] Manual toggle
-- [ ] Consistent theming
-- [ ] High contrast option
-
-### Documentation
-
-#### In-App Help
-
-- [ ] Contextual help panels
-- [ ] Command reference
-- [ ] Troubleshooting guides
-- [ ] Video tutorials (links)
-
-#### Release Documentation
-
-- [ ] Complete changelog
-- [ ] Migration guide from v0.0.x
-- [ ] API documentation
-- [ ] Deployment guide
-
-### Security Hardening
-
-#### Authentication
-
-- [ ] Session management improvements
-- [ ] Brute-force protection
-- [ ] 2FA support (TOTP)
-- [ ] API key authentication option
-
-#### Authorization
-
-- [ ] Role-based access control (RBAC)
-- [ ] Environment-specific permissions
-- [ ] Audit logging
-- [ ] Session revocation
-
-### Enterprise Readiness
-
-#### Multi-User Support
-
-- [ ] User management UI
-- [ ] Invite system
-- [ ] Role assignment
-- [ ] Activity feed
-
-#### Compliance
-
-- [ ] Audit log export
-- [ ] Data retention policies
-- [ ] GDPR compliance helpers
-- [ ] SOC2 preparation notes
+Refer to git history or the full archived roadmap for details on the old v0.0.x versioning scheme.
 
 ---
 
-## Technical Architecture Notes
-
-### Access Control Model
-
-```typescript
-// User access levels
-enum AccessLevel {
-  OWNER = 'owner', // Full access everywhere
-  DEVELOPER = 'developer', // Local + Staging
-  VIEWER = 'viewer', // Read-only
-}
-
-// Environment access
-interface EnvironmentAccess {
-  environment: 'local' | 'staging' | 'production'
-  hasSSHKey: boolean
-  hasCredentials: boolean
-  canDeploy: boolean
-  canViewLogs: boolean
-  canModifyConfig: boolean
-}
-
-// Determine access at runtime
-async function checkAccess(
-  userId: string,
-  env: string,
-): Promise<EnvironmentAccess> {
-  const user = await getUser(userId)
-  const sshKeys = await detectSSHKeys() // Check ~/.ssh/
-  const credentials = await getStoredCredentials(userId, env)
-
-  return {
-    environment: env,
-    hasSSHKey: sshKeys.some((k) => k.matchesServer(env)),
-    hasCredentials: !!credentials,
-    canDeploy: user.level !== 'viewer' && (hasSSHKey || hasCredentials),
-    canViewLogs: true,
-    canModifyConfig: user.level === 'owner',
-  }
-}
-```
-
-### SSH Key Detection
-
-```typescript
-// Auto-detect SSH keys
-async function detectSSHKeys(): Promise<SSHKey[]> {
-  const sshDir = path.join(os.homedir(), '.ssh')
-  const files = await fs.readdir(sshDir)
-
-  const keys: SSHKey[] = []
-  for (const file of files) {
-    if (file.endsWith('.pub')) continue // Skip public keys
-    if (['config', 'known_hosts', 'authorized_keys'].includes(file)) continue
-
-    const keyPath = path.join(sshDir, file)
-    const pubKeyPath = `${keyPath}.pub`
-
-    if (
-      await fs
-        .access(pubKeyPath)
-        .then(() => true)
-        .catch(() => false)
-    ) {
-      keys.push({
-        name: file,
-        privatePath: keyPath,
-        publicPath: pubKeyPath,
-        fingerprint: await getFingerprint(pubKeyPath),
-      })
-    }
-  }
-
-  return keys
-}
-```
-
-### Credential Storage
-
-```typescript
-// Encrypted credential storage in LokiJS
-interface StoredCredential {
-  id: string
-  userId: string
-  environment: string
-  type: 'ssh-key' | 'password'
-  encryptedData: string // AES-256 encrypted
-  createdAt: Date
-  lastUsed: Date
-}
-
-// Encryption using app-level secret
-const ENCRYPTION_KEY =
-  process.env.CREDENTIAL_ENCRYPTION_KEY || deriveFromAdminPassword()
-```
-
-### Environment Diff
-
-```typescript
-// Compare environment configurations
-interface EnvDiff {
-  key: string
-  local?: string
-  staging?: string
-  production?: string
-  status: 'same' | 'different' | 'missing'
-}
-
-async function compareEnvironments(): Promise<EnvDiff[]> {
-  const local = await parseEnvFile('.env.dev')
-  const staging = await parseEnvFile('.env.staging')
-  const production = await parseEnvFile('.env.prod')
-
-  const allKeys = new Set([
-    ...Object.keys(local),
-    ...Object.keys(staging),
-    ...Object.keys(production),
-  ])
-
-  return Array.from(allKeys).map((key) => ({
-    key,
-    local: maskIfSecret(key, local[key]),
-    staging: maskIfSecret(key, staging[key]),
-    production: maskIfSecret(key, production[key]),
-    status: determineStatus(local[key], staging[key], production[key]),
-  }))
-}
-```
-
----
-
-## Release Cadence
-
-- **Patch releases** (0.0.x.y): Bug fixes, as needed
-- **Minor releases** (0.0.x): Feature releases, every 2-4 weeks
-- **Major alignment** (0.1.0): When nself CLI releases v0.5.0
-
----
-
-## Success Metrics
-
-### v0.0.7
-
-- [ ] Deploy to staging in < 3 clicks
-- [ ] Credential storage working securely
-- [ ] SSH key auto-detection functional
-- [ ] Environment diff visualization complete
-
-### v0.0.8
-
-- [ ] Plugin install/remove/update flows work
-- [ ] All 3 launch plugins have dedicated UI
-- [ ] Stripe revenue dashboard functional
-- [ ] Webhook event monitoring works
-- [ ] Backup/restore fully functional
-- [ ] SQL console with Monaco editor
-- [ ] Migration management complete
-- [ ] Schema browser displays all tables
-
-### v0.0.9
-
-- [ ] All cloud providers supported
-- [ ] Kubernetes deployment working
-- [ ] Mock data generation automatic
-- [ ] Monitoring dashboards polished
-
-### v0.1.0
+## Success Metrics for v0.5.0
 
 - [ ] Zero critical bugs
 - [ ] Test coverage > 80%
-- [ ] Mobile responsive
-- [ ] Documentation complete
+- [ ] Mobile responsive on all pages
+- [ ] Documentation complete (deployment, API, migration)
 - [ ] Security audit passed
+- [ ] Multi-user support functional
+- [ ] Environment switching works (local/staging/prod)
+- [ ] Performance: sub-1s page loads
 
 ---
 
-## Dependencies
+## Release Timeline
 
-### v0.0.7 requires
-
-- nself CLI v0.4.3 with `nself deploy` commands
-- SSH2 library for connection testing
-- Crypto for credential encryption
-
-### v0.0.8 requires
-
-- nself CLI v0.4.8 with plugin system
-- Monaco editor for SQL console
-- Hasura metadata API access
-- Plugin registry connectivity
-- Recharts for revenue dashboards
-
-### v0.0.9 requires
-
-- nself CLI v0.4.5-0.4.9 features
-- Cloud provider SDKs (optional, for validation)
-- Kubernetes client library
-
-### v0.1.0 requires
-
-- All previous versions stable
-- Complete CLI v0.5.0 feature set
+| Version | Release Date | Status |
+|---------|-------------|--------|
+| v0.0.8  | Jan 2026 | ✅ Released (baseline) |
+| v0.2.0  | Jan 31, 2026 | ✅ Released |
+| v0.3.0  | Jan 31, 2026 | ✅ Released |
+| v0.4.0  | Jan 31, 2026 | ✅ Released |
+| v0.5.0  | Q1 2026 | 🎯 Next Target |
 
 ---
 
-_This roadmap aligns with the nself CLI roadmap. Updates will be made as CLI features are finalized._
+_This roadmap aligns with the nself CLI roadmap. The nself-admin UI is a wrapper that executes nself CLI commands - every feature depends on corresponding CLI support._
+
