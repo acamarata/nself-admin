@@ -1,0 +1,33 @@
+import { executeNselfCommand } from '@/lib/nselfCLI'
+import { NextResponse } from 'next/server'
+
+export async function GET() {
+  try {
+    const result = await executeNselfCommand('service', ['cache', 'stats'])
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to fetch cache stats',
+          details: result.error || result.stderr || 'Unknown error',
+        },
+        { status: 500 },
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: { output: result.stdout?.trim() },
+    })
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch cache stats',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
+    )
+  }
+}

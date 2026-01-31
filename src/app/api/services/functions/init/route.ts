@@ -1,0 +1,37 @@
+import { executeNselfCommand } from '@/lib/nselfCLI'
+import { NextResponse } from 'next/server'
+
+/**
+ * POST /api/services/functions/init
+ * Initializes the functions service via nself service functions init
+ */
+export async function POST() {
+  try {
+    const result = await executeNselfCommand('service', ['functions', 'init'])
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to initialize functions service',
+          details: result.error || result.stderr || 'Unknown error',
+        },
+        { status: 500 },
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: { output: result.stdout?.trim() },
+    })
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to initialize functions service',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
+    )
+  }
+}
