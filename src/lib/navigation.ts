@@ -204,12 +204,14 @@ export const navigation: Array<NavGroup> = [
         title: 'Rate Limits',
         href: '/auth/rate-limits',
         icon: 'gauge',
+        badge: { text: 'NEW', color: 'emerald' },
         description: 'API rate limiting',
       },
       {
         title: 'Webhooks',
         href: '/auth/webhooks',
         icon: 'webhook',
+        badge: { text: 'NEW', color: 'emerald' },
         description: 'Auth webhooks',
       },
       {

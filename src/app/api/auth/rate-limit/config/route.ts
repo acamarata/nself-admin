@@ -1,0 +1,37 @@
+import { executeNselfCommand } from '@/lib/nselfCLI'
+import { NextResponse } from 'next/server'
+
+/**
+ * GET /api/auth/rate-limit/config
+ * Returns current rate limit configuration via nself auth rate-limit config
+ */
+export async function GET() {
+  try {
+    const result = await executeNselfCommand('auth', ['rate-limit', 'config'])
+
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to fetch rate limit configuration',
+          details: result.error || result.stderr || 'Unknown error',
+        },
+        { status: 500 },
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: { output: result.stdout?.trim() },
+    })
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to fetch rate limit configuration',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
+    )
+  }
+}
