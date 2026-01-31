@@ -34,6 +34,7 @@ export async function executeNselfCommand(
   try {
     // Validate command
     const allowedCommands = [
+      // Core lifecycle
       'init',
       'build',
       'start',
@@ -42,22 +43,44 @@ export async function executeNselfCommand(
       'status',
       'logs',
       'doctor',
+      // Data management
       'backup',
       'restore',
-      'monitor',
-      'config',
       'db',
+      // Configuration & environment
+      'config',
+      'secrets',
+      'ssl',
+      'apply',
+      'export',
+      // Deployment & infrastructure
       'deploy',
+      'scale',
+      'infra',
+      // Monitoring & health
+      'monitor',
+      'health',
+      'metrics',
+      'perf',
+      // Service & container management
+      'service',
+      'exec',
+      // Multi-tenancy & auth
+      'tenant',
+      'auth',
+      // Developer tools
+      'dev',
+      'plugin',
+      'bench',
+      'completion',
+      // Audit & history
+      'history',
+      'audit',
+      // Info & utility
       'update',
       'version',
       'help',
       'urls',
-      'apply',
-      'secrets',
-      'ssl',
-      'export',
-      'scale',
-      'healthcheck',
     ]
 
     if (!allowedCommands.includes(command)) {
@@ -109,7 +132,14 @@ export function streamNselfCommand(
   onClose?: (code: number) => void,
 ): () => void {
   // Validate command
-  const allowedCommands = ['logs', 'monitor', 'watch', 'tail']
+  const allowedCommands = [
+    'logs',
+    'monitor',
+    'watch',
+    'tail',
+    'health',
+    'metrics',
+  ]
 
   if (!allowedCommands.includes(command)) {
     throw new Error(`Invalid streaming command: ${command}`)
@@ -318,9 +348,9 @@ export async function nselfScale(
   return executeNselfCommand('scale', [service, String(replicas)])
 }
 
-export async function nselfHealthcheck(service?: string): Promise<CLIResult> {
+export async function nselfHealth(service?: string): Promise<CLIResult> {
   const args = service ? [service] : ['--all']
-  return executeNselfCommand('healthcheck', args)
+  return executeNselfCommand('health', args)
 }
 
 // Deployment commands

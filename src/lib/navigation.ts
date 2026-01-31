@@ -1,26 +1,30 @@
+export interface NavLink {
+  title: string
+  href: string
+  icon?: string
+  badge?: string | { text: string; color: string }
+  description?: string
+  external?: boolean
+  disabled?: boolean
+  status?: 'running' | 'stopped' | 'error' | 'healthy' | 'unhealthy'
+  submenu?: Array<{
+    label?: string
+    href?: string
+    status?: 'running' | 'stopped' | 'error'
+    separator?: boolean
+    external?: boolean
+  }>
+}
+
 export interface NavGroup {
   title: string
   collapsed?: boolean
   position?: 'top' | 'bottom'
-  links: Array<{
-    title: string
-    href: string
-    icon?: string
-    badge?: string | { text: string; color: string }
-    description?: string
-    external?: boolean
-    status?: 'running' | 'stopped' | 'error' | 'healthy' | 'unhealthy'
-    submenu?: Array<{
-      label?: string
-      href?: string
-      status?: 'running' | 'stopped' | 'error'
-      separator?: boolean
-      external?: boolean
-    }>
-  }>
+  links: Array<NavLink>
 }
 
 export const navigation: Array<NavGroup> = [
+  // ── Overview ──────────────────────────────────────────────
   {
     title: 'Overview',
     links: [
@@ -42,35 +46,24 @@ export const navigation: Array<NavGroup> = [
         ],
       },
       {
-        title: 'Database',
-        href: '/database',
-        icon: 'database',
-        description: 'Database management tools',
+        title: 'Configuration',
+        href: '/config',
+        icon: 'settings',
+        description: 'System configuration',
         submenu: [
-          { label: 'Overview', href: '/database' },
-          { label: 'SQL Console', href: '/database/sql' },
-          { label: 'Schema', href: '/database/schema' },
-          { label: 'Migrations', href: '/database/migrations' },
-          { label: 'Seeds', href: '/database/seeds' },
-          { label: 'Backup', href: '/database/backup' },
-          { label: 'Restore', href: '/database/restore' },
-          { label: 'Inspect', href: '/database/inspect' },
-          { label: 'Types', href: '/database/types' },
-          { label: 'Mock Data', href: '/database/mock' },
-        ],
-      },
-      {
-        title: 'Monitor',
-        href: '/monitor',
-        icon: 'activity',
-        description: 'System monitoring and alerts',
-        submenu: [
-          { label: 'Overview', href: '/monitor' },
-          { label: 'Grafana', href: '/monitor/grafana' },
-          { label: 'Alerts', href: '/monitor/alerts' },
-          { label: 'Metrics', href: '/monitor/metrics' },
-          { label: 'Logs', href: '/monitor/logs' },
-          { label: 'Traces', href: '/monitor/traces' },
+          { label: 'Environment', href: '/config/env' },
+          { label: 'Secrets', href: '/config/secrets' },
+          { label: 'Vault', href: '/config/vault' },
+          { label: 'SSL/TLS', href: '/config/ssl' },
+          { label: 'CORS', href: '/config/cors' },
+          { label: 'Rate Limits', href: '/config/rate-limits' },
+          { label: 'Email', href: '/config/email' },
+          { label: 'Docker', href: '/config/docker' },
+          { label: 'Validate', href: '/config/validate' },
+          { separator: true },
+          { label: 'Sync', href: '/config/sync' },
+          { label: 'Export', href: '/config/export' },
+          { label: 'Import', href: '/config/import' },
         ],
       },
       {
@@ -81,238 +74,43 @@ export const navigation: Array<NavGroup> = [
       },
     ],
   },
+  // ── Data ──────────────────────────────────────────────────
   {
-    title: 'Plugins',
+    title: 'Data',
     links: [
       {
-        title: 'Plugins',
-        href: '/plugins',
-        icon: 'plug',
-        badge: { text: 'NEW', color: 'emerald' },
-        description: 'Third-party integrations',
+        title: 'Database',
+        href: '/database',
+        icon: 'database',
+        description: 'Database management tools',
         submenu: [
-          { label: 'Installed', href: '/plugins' },
-          { label: 'Marketplace', href: '/plugins/marketplace' },
+          { label: 'Overview', href: '/database' },
+          { label: 'SQL Console', href: '/database/sql' },
+          { label: 'Schema', href: '/database/schema' },
+          { label: 'Migrations', href: '/database/migrations' },
+          { label: 'Seeds', href: '/database/seed' },
+          { label: 'Backup', href: '/database/backup' },
+          { label: 'Restore', href: '/database/restore' },
+          { label: 'Inspect', href: '/database/inspect' },
+          { label: 'Types', href: '/database/types' },
+          { label: 'Mock Data', href: '/database/mock' },
         ],
       },
       {
-        title: 'Stripe',
-        href: '/plugins/stripe',
-        icon: 'credit-card',
-        description: 'Payment processing',
-        submenu: [
-          { label: 'Dashboard', href: '/plugins/stripe' },
-          { label: 'Customers', href: '/plugins/stripe/customers' },
-          { label: 'Subscriptions', href: '/plugins/stripe/subscriptions' },
-          { label: 'Invoices', href: '/plugins/stripe/invoices' },
-          { label: 'Products', href: '/plugins/stripe/products' },
-          { label: 'Webhooks', href: '/plugins/stripe/webhooks' },
-        ],
+        title: 'Storage',
+        href: '/stack/minio',
+        icon: 'hard-drive',
+        description: 'Object storage (MinIO)',
       },
       {
-        title: 'GitHub',
-        href: '/plugins/github',
-        icon: 'github',
-        description: 'DevOps integration',
-        submenu: [
-          { label: 'Dashboard', href: '/plugins/github' },
-          { label: 'Repositories', href: '/plugins/github/repos' },
-          { label: 'Issues', href: '/plugins/github/issues' },
-          { label: 'Pull Requests', href: '/plugins/github/prs' },
-          { label: 'Actions', href: '/plugins/github/actions' },
-        ],
-      },
-      {
-        title: 'Shopify',
-        href: '/plugins/shopify',
-        icon: 'shopping-cart',
-        description: 'E-commerce sync',
-        submenu: [
-          { label: 'Dashboard', href: '/plugins/shopify' },
-          { label: 'Products', href: '/plugins/shopify/products' },
-          { label: 'Orders', href: '/plugins/shopify/orders' },
-          { label: 'Customers', href: '/plugins/shopify/customers' },
-          { label: 'Inventory', href: '/plugins/shopify/inventory' },
-        ],
+        title: 'Cache',
+        href: '/stack/redis',
+        icon: 'zap',
+        description: 'Cache service (Redis)',
       },
     ],
   },
-  {
-    title: 'Infrastructure',
-    links: [
-      {
-        title: 'Cloud',
-        href: '/cloud',
-        icon: 'cloud',
-        badge: { text: 'NEW', color: 'emerald' },
-        description: 'Cloud infrastructure',
-        submenu: [
-          { label: 'Overview', href: '/cloud' },
-          { label: 'Providers', href: '/cloud/providers' },
-          { label: 'Servers', href: '/cloud/servers' },
-          { label: 'Costs', href: '/cloud/costs' },
-        ],
-      },
-      {
-        title: 'Kubernetes',
-        href: '/k8s',
-        icon: 'ship',
-        badge: { text: 'NEW', color: 'emerald' },
-        description: 'K8s management',
-        submenu: [
-          { label: 'Overview', href: '/k8s' },
-          { label: 'Clusters', href: '/k8s/clusters' },
-          { label: 'Deployments', href: '/k8s/deploy' },
-          { label: 'Namespaces', href: '/k8s/namespaces' },
-          { label: 'Logs', href: '/k8s/logs' },
-          { label: 'Scale', href: '/k8s/scale' },
-        ],
-      },
-      {
-        title: 'Helm',
-        href: '/helm',
-        icon: 'anchor',
-        badge: { text: 'NEW', color: 'emerald' },
-        description: 'Helm charts',
-        submenu: [
-          { label: 'Releases', href: '/helm' },
-          { label: 'Install', href: '/helm/install' },
-          { label: 'Values', href: '/helm/values' },
-          { label: 'Repositories', href: '/helm/repos' },
-        ],
-      },
-    ],
-  },
-  {
-    title: 'Performance',
-    links: [
-      {
-        title: 'Performance',
-        href: '/performance',
-        icon: 'gauge',
-        badge: { text: 'NEW', color: 'emerald' },
-        description: 'System performance',
-        submenu: [
-          { label: 'Overview', href: '/performance' },
-          { label: 'Profile', href: '/performance/profile' },
-          { label: 'Slow Queries', href: '/performance/queries' },
-          { label: 'Suggestions', href: '/performance/suggest' },
-        ],
-      },
-      {
-        title: 'Benchmark',
-        href: '/benchmark',
-        icon: 'timer',
-        description: 'Benchmarking tools',
-        submenu: [
-          { label: 'Overview', href: '/benchmark' },
-          { label: 'Run', href: '/benchmark/run' },
-          { label: 'Baseline', href: '/benchmark/baseline' },
-          { label: 'Compare', href: '/benchmark/compare' },
-        ],
-      },
-      {
-        title: 'Scale',
-        href: '/scale',
-        icon: 'maximize',
-        description: 'Service scaling',
-        submenu: [
-          { label: 'Overview', href: '/scale' },
-          { label: 'Autoscaling', href: '/scale/auto' },
-        ],
-      },
-    ],
-  },
-  {
-    title: 'Deployment',
-    links: [
-      {
-        title: 'Environments',
-        href: '/environments',
-        icon: 'layers',
-        description: 'Environment management',
-        submenu: [
-          { label: 'Overview', href: '/environments' },
-          { label: 'Local', href: '/environments/local' },
-          { label: 'Staging', href: '/environments/staging' },
-          { label: 'Production', href: '/environments/production' },
-          { label: 'Compare', href: '/environments/diff' },
-        ],
-      },
-      {
-        title: 'Deploy',
-        href: '/deploy',
-        icon: 'rocket',
-        description: 'Deployment management',
-        submenu: [
-          { label: 'Overview', href: '/deploy' },
-          { label: 'Preview', href: '/deploy/preview' },
-          { label: 'Canary', href: '/deploy/canary' },
-          { label: 'Blue-Green', href: '/deploy/blue-green' },
-          { label: 'Rollback', href: '/deploy/rollback' },
-        ],
-      },
-      {
-        title: 'Sync',
-        href: '/sync',
-        icon: 'refresh-cw',
-        description: 'Data synchronization',
-        submenu: [
-          { label: 'Overview', href: '/sync' },
-          { label: 'History', href: '/sync/history' },
-        ],
-      },
-      {
-        title: 'History',
-        href: '/history',
-        icon: 'clock',
-        description: 'Operation history',
-        submenu: [
-          { label: 'All', href: '/history' },
-          { label: 'Deployments', href: '/history/deployments' },
-          { label: 'Migrations', href: '/history/migrations' },
-          { label: 'Commands', href: '/history/commands' },
-        ],
-      },
-    ],
-  },
-  {
-    title: 'Config',
-    links: [
-      {
-        title: 'Configuration',
-        href: '/config',
-        icon: 'settings',
-        description: 'System configuration',
-        submenu: [
-          { label: 'Environment', href: '/config/env' },
-          { label: 'Secrets', href: '/config/secrets' },
-          { label: 'SSL/TLS', href: '/config/ssl' },
-          { label: 'CORS', href: '/config/cors' },
-          { label: 'Rate Limits', href: '/config/rate-limits' },
-          { label: 'Email', href: '/config/email' },
-          { label: 'Docker', href: '/config/docker' },
-          { label: 'Validate', href: '/config/validate' },
-        ],
-      },
-      {
-        title: 'Frontend',
-        href: '/frontend',
-        icon: 'layout',
-        description: 'Frontend apps',
-        submenu: [
-          { label: 'All Apps', href: '/frontend' },
-          { label: 'Add App', href: '/frontend/add' },
-        ],
-      },
-      {
-        title: 'CI/CD',
-        href: '/cicd',
-        icon: 'git-merge',
-        description: 'CI/CD pipelines',
-      },
-    ],
-  },
+  // ── Core Stack ────────────────────────────────────────────
   {
     title: 'Core Stack',
     collapsed: true,
@@ -367,8 +165,334 @@ export const navigation: Array<NavGroup> = [
       },
     ],
   },
+  // ── Auth & Security ───────────────────────────────────────
   {
-    title: 'Tools',
+    title: 'Auth & Security',
+    collapsed: true,
+    links: [
+      {
+        title: 'OAuth Providers',
+        href: '/auth/oauth',
+        icon: 'key',
+        description: 'OAuth providers',
+      },
+      {
+        title: 'MFA Setup',
+        href: '/auth/mfa',
+        icon: 'smartphone',
+        description: 'Multi-factor authentication',
+      },
+      {
+        title: 'Roles',
+        href: '/auth/roles',
+        icon: 'users',
+        description: 'User roles and permissions',
+      },
+      {
+        title: 'Devices',
+        href: '/auth/devices',
+        icon: 'monitor',
+        description: 'Device management',
+      },
+      {
+        title: 'Security',
+        href: '/auth/security',
+        icon: 'shield-check',
+        description: 'Security settings',
+      },
+      {
+        title: 'Rate Limits',
+        href: '/auth/rate-limits',
+        icon: 'gauge',
+        description: 'API rate limiting',
+      },
+      {
+        title: 'Webhooks',
+        href: '/auth/webhooks',
+        icon: 'webhook',
+        description: 'Auth webhooks',
+      },
+      {
+        title: 'Audit Log',
+        href: '/audit',
+        icon: 'scroll-text',
+        description: 'Authentication audit log',
+      },
+    ],
+  },
+  // ── Tenants ───────────────────────────────────────────────
+  {
+    title: 'Tenants',
+    collapsed: true,
+    links: [
+      {
+        title: 'Tenants List',
+        href: '/tenants',
+        icon: 'building',
+        badge: { text: 'Soon', color: 'zinc' },
+        disabled: true,
+        description: 'Multi-tenant management',
+      },
+    ],
+  },
+  // ── Deployment ────────────────────────────────────────────
+  {
+    title: 'Deployment',
+    links: [
+      {
+        title: 'Environments',
+        href: '/environments',
+        icon: 'layers',
+        description: 'Environment management',
+        submenu: [
+          { label: 'Overview', href: '/environments' },
+          { label: 'Local', href: '/environments/local' },
+          { label: 'Staging', href: '/environments/staging' },
+          { label: 'Production', href: '/environments/production' },
+          { label: 'Compare', href: '/environments/diff' },
+        ],
+      },
+      {
+        title: 'Deploy',
+        href: '/deploy',
+        icon: 'rocket',
+        description: 'Deployment management',
+        submenu: [
+          { label: 'Overview', href: '/deploy' },
+          { label: 'Preview', href: '/deploy/preview' },
+          { label: 'Canary', href: '/deploy/canary' },
+          { label: 'Blue-Green', href: '/deploy/blue-green' },
+          { label: 'Rollback', href: '/deploy/rollback' },
+        ],
+      },
+      {
+        title: 'CI/CD',
+        href: '/cicd',
+        icon: 'git-merge',
+        description: 'CI/CD pipelines',
+      },
+      {
+        title: 'Sync',
+        href: '/sync',
+        icon: 'refresh-cw',
+        description: 'Data synchronization',
+        submenu: [
+          { label: 'Overview', href: '/sync' },
+          { label: 'History', href: '/sync/history' },
+        ],
+      },
+      {
+        title: 'History',
+        href: '/history',
+        icon: 'clock',
+        description: 'Operation history',
+        submenu: [
+          { label: 'All', href: '/history' },
+          { label: 'Deployments', href: '/history/deployments' },
+          { label: 'Migrations', href: '/history/migrations' },
+          { label: 'Commands', href: '/history/commands' },
+        ],
+      },
+    ],
+  },
+  // ── Monitoring ────────────────────────────────────────────
+  {
+    title: 'Monitoring',
+    links: [
+      {
+        title: 'Metrics',
+        href: '/monitor/metrics',
+        icon: 'activity',
+        description: 'System metrics',
+      },
+      {
+        title: 'Alerts',
+        href: '/monitor/alerts',
+        icon: 'bell',
+        description: 'Alert management',
+      },
+      {
+        title: 'Grafana',
+        href: '/monitor/grafana',
+        icon: 'bar-chart',
+        description: 'Grafana dashboards',
+      },
+      {
+        title: 'Logs',
+        href: '/monitor/logs',
+        icon: 'file-text',
+        description: 'Log viewer',
+      },
+      {
+        title: 'Traces',
+        href: '/monitor/traces',
+        icon: 'git-branch',
+        description: 'Distributed tracing',
+      },
+    ],
+  },
+  // ── Infrastructure ────────────────────────────────────────
+  {
+    title: 'Infrastructure',
+    collapsed: true,
+    links: [
+      {
+        title: 'Providers',
+        href: '/cloud/providers',
+        icon: 'cloud',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'Cloud providers',
+      },
+      {
+        title: 'Servers',
+        href: '/cloud/servers',
+        icon: 'server',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'Server management',
+      },
+      {
+        title: 'Kubernetes',
+        href: '/k8s',
+        icon: 'ship',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'K8s management',
+        submenu: [
+          { label: 'Overview', href: '/k8s' },
+          { label: 'Clusters', href: '/k8s/clusters' },
+          { label: 'Deployments', href: '/k8s/deploy' },
+          { label: 'Namespaces', href: '/k8s/namespaces' },
+          { label: 'Logs', href: '/k8s/logs' },
+          { label: 'Scale', href: '/k8s/scale' },
+        ],
+      },
+      {
+        title: 'Helm',
+        href: '/helm',
+        icon: 'anchor',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'Helm charts',
+        submenu: [
+          { label: 'Releases', href: '/helm' },
+          { label: 'Install', href: '/helm/install' },
+          { label: 'Values', href: '/helm/values' },
+          { label: 'Repositories', href: '/helm/repos' },
+        ],
+      },
+      {
+        title: 'Cost Analysis',
+        href: '/cloud/costs',
+        icon: 'dollar-sign',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'Cloud cost tracking',
+      },
+    ],
+  },
+  // ── Performance ───────────────────────────────────────────
+  {
+    title: 'Performance',
+    collapsed: true,
+    links: [
+      {
+        title: 'Profile',
+        href: '/performance/profile',
+        icon: 'gauge',
+        badge: { text: 'Soon', color: 'zinc' },
+        disabled: true,
+        description: 'Performance profiling',
+      },
+      {
+        title: 'Benchmark',
+        href: '/benchmark',
+        icon: 'timer',
+        description: 'Benchmarking tools',
+        submenu: [
+          { label: 'Overview', href: '/benchmark' },
+          { label: 'Run', href: '/benchmark/run' },
+          { label: 'Baseline', href: '/benchmark/baseline' },
+          { label: 'Compare', href: '/benchmark/compare' },
+        ],
+      },
+      {
+        title: 'Scale',
+        href: '/scale',
+        icon: 'maximize',
+        description: 'Service scaling',
+        submenu: [
+          { label: 'Overview', href: '/scale' },
+          { label: 'Autoscaling', href: '/scale/auto' },
+        ],
+      },
+      {
+        title: 'Optimize',
+        href: '/performance/optimize',
+        icon: 'zap',
+        badge: { text: 'Soon', color: 'zinc' },
+        disabled: true,
+        description: 'Optimization suggestions',
+      },
+    ],
+  },
+  // ── Plugins ───────────────────────────────────────────────
+  {
+    title: 'Plugins',
+    collapsed: true,
+    links: [
+      {
+        title: 'Plugins',
+        href: '/plugins',
+        icon: 'plug',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'Third-party integrations',
+        submenu: [
+          { label: 'Installed', href: '/plugins' },
+          { label: 'Marketplace', href: '/plugins/marketplace' },
+        ],
+      },
+      {
+        title: 'Stripe',
+        href: '/plugins/stripe',
+        icon: 'credit-card',
+        description: 'Payment processing',
+        submenu: [
+          { label: 'Dashboard', href: '/plugins/stripe' },
+          { label: 'Customers', href: '/plugins/stripe/customers' },
+          { label: 'Subscriptions', href: '/plugins/stripe/subscriptions' },
+          { label: 'Invoices', href: '/plugins/stripe/invoices' },
+          { label: 'Products', href: '/plugins/stripe/products' },
+          { label: 'Webhooks', href: '/plugins/stripe/webhooks' },
+        ],
+      },
+      {
+        title: 'GitHub',
+        href: '/plugins/github',
+        icon: 'github',
+        description: 'DevOps integration',
+        submenu: [
+          { label: 'Dashboard', href: '/plugins/github' },
+          { label: 'Repositories', href: '/plugins/github/repos' },
+          { label: 'Issues', href: '/plugins/github/issues' },
+          { label: 'Pull Requests', href: '/plugins/github/prs' },
+          { label: 'Actions', href: '/plugins/github/actions' },
+        ],
+      },
+      {
+        title: 'Shopify',
+        href: '/plugins/shopify',
+        icon: 'shopping-cart',
+        description: 'E-commerce sync',
+        submenu: [
+          { label: 'Dashboard', href: '/plugins/shopify' },
+          { label: 'Products', href: '/plugins/shopify/products' },
+          { label: 'Orders', href: '/plugins/shopify/orders' },
+          { label: 'Customers', href: '/plugins/shopify/customers' },
+          { label: 'Inventory', href: '/plugins/shopify/inventory' },
+        ],
+      },
+    ],
+  },
+  // ── Dev Tools ─────────────────────────────────────────────
+  {
+    title: 'Dev Tools',
     collapsed: true,
     links: [
       {
@@ -390,10 +514,60 @@ export const navigation: Array<NavGroup> = [
         description: 'Web terminal',
       },
       {
-        title: 'Webhooks',
-        href: '/dev/webhooks',
-        icon: 'webhook',
-        description: 'Webhook management',
+        title: 'Frontend Apps',
+        href: '/frontend',
+        icon: 'layout',
+        description: 'Frontend apps',
+        submenu: [
+          { label: 'All Apps', href: '/frontend' },
+          { label: 'Add App', href: '/frontend/add' },
+        ],
+      },
+      {
+        title: 'CI/CD Gen',
+        href: '/dev/cicd-gen',
+        icon: 'git-merge',
+        badge: { text: 'Soon', color: 'zinc' },
+        disabled: true,
+        description: 'CI/CD pipeline generator',
+      },
+      {
+        title: 'SDK Gen',
+        href: '/dev/sdk-gen',
+        icon: 'package',
+        badge: { text: 'Soon', color: 'zinc' },
+        disabled: true,
+        description: 'SDK generator',
+      },
+      {
+        title: 'Docs Gen',
+        href: '/dev/docs-gen',
+        icon: 'file-text',
+        badge: { text: 'Soon', color: 'zinc' },
+        disabled: true,
+        description: 'Documentation generator',
+      },
+      {
+        title: 'Testing',
+        href: '/dev/testing',
+        icon: 'check-circle',
+        badge: { text: 'Soon', color: 'zinc' },
+        disabled: true,
+        description: 'Test runners',
+      },
+      {
+        title: 'White Label',
+        href: '/dev/white-label',
+        icon: 'palette',
+        badge: { text: 'Soon', color: 'zinc' },
+        disabled: true,
+        description: 'White label configuration',
+      },
+      {
+        title: 'Scaffolding',
+        href: '/dev/scaffold',
+        icon: 'package',
+        description: 'Code scaffolding',
       },
       {
         title: 'Type Generator',
@@ -402,13 +576,14 @@ export const navigation: Array<NavGroup> = [
         description: 'Generate TypeScript types',
       },
       {
-        title: 'Scaffolding',
-        href: '/dev/scaffold',
-        icon: 'package',
-        description: 'Code scaffolding',
+        title: 'Webhooks',
+        href: '/dev/webhooks',
+        icon: 'webhook',
+        description: 'Webhook management',
       },
     ],
   },
+  // ── System ────────────────────────────────────────────────
   {
     title: 'System',
     position: 'bottom',

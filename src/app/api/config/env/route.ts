@@ -1,3 +1,4 @@
+import { executeNselfCommand } from '@/lib/nselfCLI'
 import { getProjectPath } from '@/lib/paths'
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
@@ -472,24 +473,185 @@ export async function POST(request: NextRequest) {
         console.log(
           `Successfully wrote ${Object.keys(varsToSave).length} variables to ${envFile}`,
         )
-      } catch (writeError: any) {
+      } catch (writeError) {
+        const msg =
+          writeError instanceof Error
+            ? writeError.message
+            : 'Unknown write error'
         console.error('Failed to write environment file:', writeError)
         return NextResponse.json(
           {
             success: false,
-            error: `Failed to write environment file: ${writeError.message}`,
+            error: `Failed to write environment file: ${msg}`,
           },
           { status: 500 },
         )
       }
 
+      // Trigger nself build to regenerate configs from updated env files
+      let buildResult = null
+      try {
+        buildResult = await executeNselfCommand('build')
+      } catch (_buildError) {
+        // Build failure is non-fatal - file was saved successfully
+      }
+
       return NextResponse.json({
         success: true,
         message: `Environment file saved: ${environment}`,
+        buildTriggered: true,
+        buildSuccess: buildResult?.success ?? false,
+        buildOutput: buildResult?.stdout || buildResult?.stderr || '',
       })
     }
 
-    return NextResponse.json({ success: true })
+    // Action: add a single variable
+    if (action === 'add') {
+      if (!environment || !isValidEnvironment(environment)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid environment parameter' },
+          { status: 400 },
+        )
+      }
+
+      const { key, value } = body
+      if (!key || typeof key !== 'string') {
+        return NextResponse.json(
+          { success: false, error: 'Variable key is required' },
+          { status: 400 },
+        )
+      }
+
+      // Validate key format (env var naming convention)
+      if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Invalid variable name. Use only letters, numbers, and underscores.',
+          },
+          { status: 400 },
+        )
+      }
+
+      const backendPath = getProjectPath()
+      const envFileNames: Record<ValidEnvironment, string> = {
+        local: '.env.local',
+        dev: '.env.dev',
+        stage: '.env.stage',
+        prod: '.env.prod',
+        secrets: '.env.secrets',
+      }
+      const envFile = path.join(backendPath, envFileNames[environment])
+      const resolvedPath = path.resolve(envFile)
+      const resolvedBackend = path.resolve(backendPath)
+      if (!resolvedPath.startsWith(resolvedBackend)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid path' },
+          { status: 400 },
+        )
+      }
+
+      // Read existing file, append variable
+      let existingContent = ''
+      try {
+        existingContent = await fs.readFile(envFile, 'utf-8')
+      } catch {
+        // File doesn't exist yet, start fresh
+      }
+
+      const existingVars = parseEnvFile(existingContent)
+      existingVars[key] = value || ''
+
+      // Rebuild with categories
+      const varsToSave: Record<string, { value: string; category?: string }> =
+        {}
+      for (const [k, v] of Object.entries(existingVars)) {
+        varsToSave[k] = { value: v, category: getCategory(k) }
+      }
+      const content = formatEnvFile(varsToSave)
+
+      try {
+        await fs.mkdir(backendPath, { recursive: true })
+      } catch {
+        // Directory may already exist
+      }
+
+      await fs.writeFile(envFile, content, 'utf-8')
+
+      return NextResponse.json({
+        success: true,
+        message: `Variable ${key} added to ${environment}`,
+      })
+    }
+
+    // Action: delete a variable
+    if (action === 'delete') {
+      if (!environment || !isValidEnvironment(environment)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid environment parameter' },
+          { status: 400 },
+        )
+      }
+
+      const { key } = body
+      if (!key || typeof key !== 'string') {
+        return NextResponse.json(
+          { success: false, error: 'Variable key is required' },
+          { status: 400 },
+        )
+      }
+
+      const backendPath = getProjectPath()
+      const envFileNames: Record<ValidEnvironment, string> = {
+        local: '.env.local',
+        dev: '.env.dev',
+        stage: '.env.stage',
+        prod: '.env.prod',
+        secrets: '.env.secrets',
+      }
+      const envFile = path.join(backendPath, envFileNames[environment])
+      const resolvedPath = path.resolve(envFile)
+      const resolvedBackend = path.resolve(backendPath)
+      if (!resolvedPath.startsWith(resolvedBackend)) {
+        return NextResponse.json(
+          { success: false, error: 'Invalid path' },
+          { status: 400 },
+        )
+      }
+
+      let existingContent = ''
+      try {
+        existingContent = await fs.readFile(envFile, 'utf-8')
+      } catch {
+        return NextResponse.json(
+          { success: false, error: 'Environment file not found' },
+          { status: 404 },
+        )
+      }
+
+      const existingVars = parseEnvFile(existingContent)
+      delete existingVars[key]
+
+      // Rebuild file
+      const varsToSave: Record<string, { value: string; category?: string }> =
+        {}
+      for (const [k, v] of Object.entries(existingVars)) {
+        varsToSave[k] = { value: v, category: getCategory(k) }
+      }
+      const content = formatEnvFile(varsToSave)
+      await fs.writeFile(envFile, content, 'utf-8')
+
+      return NextResponse.json({
+        success: true,
+        message: `Variable ${key} deleted from ${environment}`,
+      })
+    }
+
+    return NextResponse.json({
+      success: false,
+      error: 'Unknown action',
+    })
   } catch (error) {
     console.error('Error in POST /api/config/env:', error)
     return NextResponse.json(

@@ -2,7 +2,7 @@
 
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
 import clsx from 'clsx'
-import { AnimatePresence, motion, useIsPresent } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -10,7 +10,11 @@ import { useEffect, useRef, useState } from 'react'
 import { useIsInsideMobileNavigation } from '@/components/MobileNavigation'
 import { useSectionStore } from '@/components/SectionProvider'
 import { Tag } from '@/components/Tag'
-import { navigation, type NavGroup } from '@/lib/navigation'
+import {
+  navigation,
+  type NavGroup,
+  type NavLink as NavLinkType,
+} from '@/lib/navigation'
 import { remToPx } from '@/lib/remToPx'
 import { CloseButton } from '@headlessui/react'
 
@@ -74,47 +78,24 @@ function NavLink({
   )
 }
 
-function _VisibleSectionHighlight({
-  group,
-  pathname,
-}: {
-  group: NavGroup
-  pathname: string
-}) {
-  let [sections, visibleSections] = useInitialValue(
-    [
-      useSectionStore((s) => s.sections),
-      useSectionStore((s) => s.visibleSections),
-    ],
-    useIsInsideMobileNavigation(),
-  )
-
-  let isPresent = useIsPresent()
-  let firstVisibleSectionIndex = Math.max(
-    0,
-    [{ id: '_top' }, ...sections].findIndex(
-      (section) => section.id === visibleSections[0],
-    ),
-  )
-  let itemHeight = remToPx(2)
-  let height = isPresent
-    ? Math.max(1, visibleSections.length) * itemHeight
-    : itemHeight
-  let activePageIndex = group.links.findIndex((link) => link.href === pathname)
-  let top =
-    activePageIndex !== -1
-      ? activePageIndex * itemHeight
-      : firstVisibleSectionIndex * itemHeight
+function DisabledNavItem({ link }: { link: NavLinkType }) {
+  const badgeText =
+    typeof link.badge === 'string'
+      ? link.badge
+      : link.badge
+        ? link.badge.text
+        : 'Soon'
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1, transition: { delay: 0.2 } }}
-      exit={{ opacity: 0 }}
-      className="absolute inset-x-0 top-0 bg-zinc-800/2.5 will-change-transform dark:bg-white/2.5"
-      style={{ borderRadius: 8, height, top }}
-    />
+    <span
+      className="flex cursor-not-allowed justify-between gap-2 py-1 pr-3 pl-4 text-sm text-zinc-400 select-none dark:text-zinc-600"
+      title={link.description}
+    >
+      <span className="truncate">{link.title}</span>
+      <span className="inline-flex items-center rounded-full bg-zinc-100 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-500">
+        {badgeText}
+      </span>
+    </span>
   )
 }
 
@@ -156,7 +137,9 @@ function NavigationGroup({
   )
 
   let isActiveGroup =
-    group.links.findIndex((link) => link.href === pathname) !== -1
+    group.links.findIndex(
+      (link) => link.href === pathname && !link.disabled,
+    ) !== -1
 
   // Store collapsed state in localStorage
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -220,37 +203,46 @@ function NavigationGroup({
                     layout="position"
                     className="relative"
                   >
-                    <NavLink href={link.href} active={link.href === pathname}>
-                      {link.title}
-                    </NavLink>
-                    <AnimatePresence mode="popLayout" initial={false}>
-                      {link.href === pathname && sections.length > 0 && (
-                        <motion.ul
-                          role="list"
-                          initial={{ opacity: 0 }}
-                          animate={{
-                            opacity: 1,
-                            transition: { delay: 0.1 },
-                          }}
-                          exit={{
-                            opacity: 0,
-                            transition: { duration: 0.15 },
-                          }}
+                    {link.disabled ? (
+                      <DisabledNavItem link={link} />
+                    ) : (
+                      <>
+                        <NavLink
+                          href={link.href}
+                          active={link.href === pathname}
                         >
-                          {sections.map((section) => (
-                            <li key={section.id}>
-                              <NavLink
-                                href={`${link.href}#${section.id}`}
-                                tag={section.tag}
-                                isAnchorLink
-                              >
-                                {section.title}
-                              </NavLink>
-                            </li>
-                          ))}
-                        </motion.ul>
-                      )}
-                    </AnimatePresence>
+                          {link.title}
+                        </NavLink>
+                        <AnimatePresence mode="popLayout" initial={false}>
+                          {link.href === pathname && sections.length > 0 && (
+                            <motion.ul
+                              role="list"
+                              initial={{ opacity: 0 }}
+                              animate={{
+                                opacity: 1,
+                                transition: { delay: 0.1 },
+                              }}
+                              exit={{
+                                opacity: 0,
+                                transition: { duration: 0.15 },
+                              }}
+                            >
+                              {sections.map((section) => (
+                                <li key={section.id}>
+                                  <NavLink
+                                    href={`${link.href}#${section.id}`}
+                                    tag={section.tag}
+                                    isAnchorLink
+                                  >
+                                    {section.title}
+                                  </NavLink>
+                                </li>
+                              ))}
+                            </motion.ul>
+                          )}
+                        </AnimatePresence>
+                      </>
+                    )}
                   </motion.li>
                 ))}
               </ul>
@@ -267,8 +259,7 @@ export function Navigation(props: React.ComponentPropsWithoutRef<'nav'>) {
     <nav {...props}>
       <ul role="list">
         <TopLevelNavItem href="/">Overview</TopLevelNavItem>
-        <TopLevelNavItem href="/docs">Documentation</TopLevelNavItem>
-        <TopLevelNavItem href="/support">Support</TopLevelNavItem>
+        <TopLevelNavItem href="/help">Documentation</TopLevelNavItem>
         {navigation.map((group, groupIndex) => (
           <NavigationGroup
             key={group.title}

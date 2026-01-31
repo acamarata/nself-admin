@@ -12,30 +12,43 @@ import {
   ChevronRight,
   Clock,
   Code,
+  Command,
+  Database,
   ExternalLink,
   FileText,
   Globe,
+  HardDrive,
   HelpCircle,
   Info,
   Keyboard,
   Loader2,
+  Lock,
   Mail,
   MessageCircle,
   MessageSquare,
   Monitor,
+  Package,
   Play,
+  Plug,
+  Rocket,
   Search,
   Send,
+  Server,
   Settings,
   Shield,
   Star,
+  Terminal,
   ThumbsDown,
   ThumbsUp,
+  Users,
   Video,
+  Wrench,
   XCircle,
   Zap,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+
+// ─── Shared Types & Data ────────────────────────────────────────────────────
 
 interface FAQItem {
   id: string
@@ -83,6 +96,22 @@ interface KeyboardShortcut {
   category: string
 }
 
+interface CLICommand {
+  command: string
+  description: string
+  uiPath?: string
+  uiLabel?: string
+}
+
+interface CLICommandGroup {
+  id: string
+  label: string
+  icon: React.ElementType
+  description: string
+  commandCount: number
+  commands: CLICommand[]
+}
+
 const CATEGORIES = [
   { id: 'getting-started', label: 'Getting Started', icon: Play },
   { id: 'configuration', label: 'Configuration', icon: Settings },
@@ -93,9 +122,1027 @@ const CATEGORIES = [
   { id: 'security', label: 'Security', icon: Shield },
 ]
 
+// ─── CLI Command Reference Data ─────────────────────────────────────────────
+
+const CLI_COMMAND_GROUPS: CLICommandGroup[] = [
+  {
+    id: 'core',
+    label: 'Core',
+    icon: Terminal,
+    description: 'Essential project lifecycle commands',
+    commandCount: 5,
+    commands: [
+      {
+        command: 'nself init',
+        description: 'Initialize a new nself project in the current directory',
+        uiPath: '/build',
+        uiLabel: 'Build Wizard',
+      },
+      {
+        command: 'nself build',
+        description:
+          'Generate configuration files and build Docker images from .env files',
+        uiPath: '/build',
+        uiLabel: 'Build Page',
+      },
+      {
+        command: 'nself start',
+        description: 'Start all project services via docker-compose',
+        uiPath: '/start',
+        uiLabel: 'Start Page',
+      },
+      {
+        command: 'nself stop',
+        description: 'Stop all running services gracefully',
+        uiPath: '/services',
+        uiLabel: 'Services',
+      },
+      {
+        command: 'nself restart',
+        description: 'Restart all services or a specific service by name',
+        uiPath: '/services',
+        uiLabel: 'Services',
+      },
+    ],
+  },
+  {
+    id: 'utilities',
+    label: 'Utilities',
+    icon: Wrench,
+    description: 'Status, logging, monitoring, and general-purpose tools',
+    commandCount: 15,
+    commands: [
+      {
+        command: 'nself status',
+        description: 'Show running status of all services and containers',
+        uiPath: '/',
+        uiLabel: 'Dashboard',
+      },
+      {
+        command: 'nself logs',
+        description:
+          'View and tail logs for all services or a specific service',
+        uiPath: '/system/logs',
+        uiLabel: 'Logs',
+      },
+      {
+        command: 'nself help',
+        description:
+          'Display help information for nself or a specific subcommand',
+        uiPath: '/help',
+        uiLabel: 'Help',
+      },
+      {
+        command: 'nself admin',
+        description:
+          'Launch the nAdmin web UI (this application) in a Docker container',
+      },
+      {
+        command: 'nself urls',
+        description:
+          'List all service URLs including admin panels and API endpoints',
+        uiPath: '/',
+        uiLabel: 'Dashboard',
+      },
+      {
+        command: 'nself exec',
+        description:
+          'Execute a command inside a running service container (e.g., nself exec postgres psql)',
+        uiPath: '/tools/terminal',
+        uiLabel: 'Terminal',
+      },
+      {
+        command: 'nself doctor',
+        description:
+          'Run diagnostic checks on the project (Docker, ports, configs, dependencies)',
+        uiPath: '/doctor',
+        uiLabel: 'Doctor',
+      },
+      {
+        command: 'nself monitor',
+        description:
+          'Open the monitoring dashboard with real-time service metrics',
+        uiPath: '/monitor',
+        uiLabel: 'Monitor',
+      },
+      {
+        command: 'nself health',
+        description:
+          'Check the health endpoints of all running services and report status',
+        uiPath: '/doctor',
+        uiLabel: 'Doctor',
+      },
+      {
+        command: 'nself version',
+        description:
+          'Display the installed nself CLI version and check for updates',
+        uiPath: '/system/updates',
+        uiLabel: 'Updates',
+      },
+      {
+        command: 'nself update',
+        description:
+          'Update the nself CLI, nAdmin, or both to the latest version',
+        uiPath: '/system/updates',
+        uiLabel: 'Updates',
+      },
+      {
+        command: 'nself completion',
+        description: 'Generate shell completion scripts for bash, zsh, or fish',
+      },
+      {
+        command: 'nself metrics',
+        description:
+          'Display resource usage metrics (CPU, memory, disk) for all services',
+        uiPath: '/system/resources',
+        uiLabel: 'Resources',
+      },
+      {
+        command: 'nself history',
+        description:
+          'Show the history of CLI commands executed in this project',
+      },
+      {
+        command: 'nself audit',
+        description:
+          'Run a security and configuration audit on the project setup',
+        uiPath: '/system/security',
+        uiLabel: 'Security',
+      },
+    ],
+  },
+  {
+    id: 'database',
+    label: 'Database',
+    icon: Database,
+    description: 'Database management, migrations, seeding, and backups',
+    commandCount: 11,
+    commands: [
+      {
+        command: 'nself db migrate',
+        description: 'Run pending database migrations to update the schema',
+        uiPath: '/database/migrate',
+        uiLabel: 'Migrate',
+      },
+      {
+        command: 'nself db schema',
+        description: 'View or export the current database schema',
+        uiPath: '/database/schema',
+        uiLabel: 'Schema',
+      },
+      {
+        command: 'nself db seed',
+        description: 'Seed the database with initial or sample data',
+        uiPath: '/database/seed',
+        uiLabel: 'Seed',
+      },
+      {
+        command: 'nself db mock',
+        description: 'Generate mock/fake data for development and testing',
+      },
+      {
+        command: 'nself db backup',
+        description: 'Create a full database backup (SQL dump with timestamp)',
+        uiPath: '/database/backup',
+        uiLabel: 'Backup',
+      },
+      {
+        command: 'nself db restore',
+        description: 'Restore the database from a backup file',
+        uiPath: '/database/restore',
+        uiLabel: 'Restore',
+      },
+      {
+        command: 'nself db shell',
+        description: 'Open an interactive database shell (psql for Postgres)',
+        uiPath: '/tools/database',
+        uiLabel: 'DB Tools',
+      },
+      {
+        command: 'nself db query',
+        description: 'Execute a SQL query directly and display results',
+        uiPath: '/tools/database',
+        uiLabel: 'DB Tools',
+      },
+      {
+        command: 'nself db types',
+        description: 'Generate TypeScript types from the database schema',
+      },
+      {
+        command: 'nself db inspect',
+        description:
+          'Inspect tables, columns, indexes, and relationships in the database',
+        uiPath: '/database/analyze',
+        uiLabel: 'Analyze',
+      },
+      {
+        command: 'nself db data',
+        description: 'Browse and manage data in database tables',
+        uiPath: '/database',
+        uiLabel: 'Database',
+      },
+    ],
+  },
+  {
+    id: 'tenant',
+    label: 'Multi-Tenancy',
+    icon: Users,
+    description:
+      'Tenant lifecycle, members, settings, billing, branding, and more',
+    commandCount: 50,
+    commands: [
+      {
+        command: 'nself tenant init',
+        description: 'Initialize multi-tenancy support in the project',
+      },
+      {
+        command: 'nself tenant create',
+        description: 'Create a new tenant with name, slug, and plan',
+      },
+      {
+        command: 'nself tenant list',
+        description: 'List all tenants with status and plan info',
+      },
+      {
+        command: 'nself tenant show <id>',
+        description: 'Show detailed information about a specific tenant',
+      },
+      {
+        command: 'nself tenant suspend <id>',
+        description: 'Suspend a tenant (disables access, preserves data)',
+      },
+      {
+        command: 'nself tenant activate <id>',
+        description: 'Reactivate a suspended tenant',
+      },
+      {
+        command: 'nself tenant delete <id>',
+        description: 'Permanently delete a tenant and all its data',
+      },
+      {
+        command: 'nself tenant member add',
+        description: 'Add a member to a tenant with a specified role',
+      },
+      {
+        command: 'nself tenant member remove',
+        description: 'Remove a member from a tenant',
+      },
+      {
+        command: 'nself tenant member list',
+        description: 'List all members of a tenant',
+      },
+      {
+        command: 'nself tenant setting get',
+        description: 'Get a tenant-specific configuration value',
+      },
+      {
+        command: 'nself tenant setting set',
+        description: 'Set a tenant-specific configuration value',
+      },
+      {
+        command: 'nself tenant billing status',
+        description: 'View billing status and subscription details',
+      },
+      {
+        command: 'nself tenant billing plan',
+        description: 'Change the billing plan for a tenant',
+      },
+      {
+        command: 'nself tenant org create',
+        description: 'Create an organization within a tenant',
+      },
+      {
+        command: 'nself tenant org list',
+        description: 'List organizations in a tenant',
+      },
+      {
+        command: 'nself tenant branding set',
+        description: 'Set branding (logo, colors, name) for a tenant',
+      },
+      {
+        command: 'nself tenant branding reset',
+        description: 'Reset tenant branding to defaults',
+      },
+      {
+        command: 'nself tenant domains add',
+        description: 'Add a custom domain to a tenant',
+      },
+      {
+        command: 'nself tenant domains remove',
+        description: 'Remove a custom domain from a tenant',
+      },
+      {
+        command: 'nself tenant domains verify',
+        description: 'Verify DNS configuration for a custom domain',
+      },
+      {
+        command: 'nself tenant email template',
+        description: 'Manage tenant-specific email templates',
+      },
+      {
+        command: 'nself tenant email send',
+        description: 'Send a test email from a tenant context',
+      },
+      {
+        command: 'nself tenant themes set',
+        description: 'Apply a UI theme to a tenant',
+      },
+      {
+        command: 'nself tenant themes list',
+        description: 'List available themes for tenants',
+      },
+    ],
+  },
+  {
+    id: 'deploy',
+    label: 'Deployment',
+    icon: Rocket,
+    description:
+      'Staging, production, preview, canary, blue-green deployments, and rollbacks',
+    commandCount: 23,
+    commands: [
+      {
+        command: 'nself deploy staging',
+        description: 'Deploy the current build to the staging environment',
+        uiPath: '/deployment/staging',
+        uiLabel: 'Staging',
+      },
+      {
+        command: 'nself deploy production',
+        description: 'Deploy the current build to production',
+        uiPath: '/deployment/production',
+        uiLabel: 'Production',
+      },
+      {
+        command: 'nself deploy preview',
+        description: 'Create a temporary preview deployment for testing',
+      },
+      {
+        command: 'nself deploy canary',
+        description:
+          'Deploy to a canary group (small % of traffic) before full rollout',
+      },
+      {
+        command: 'nself deploy blue-green',
+        description:
+          'Perform a blue-green deployment with zero-downtime switchover',
+      },
+      {
+        command: 'nself deploy rollback',
+        description: 'Roll back to the previous deployment version',
+      },
+      {
+        command: 'nself deploy upgrade',
+        description: 'Upgrade services to a new version with migration support',
+      },
+      {
+        command: 'nself deploy status',
+        description: 'Show the current deployment status across environments',
+        uiPath: '/deployment/environments',
+        uiLabel: 'Environments',
+      },
+      {
+        command: 'nself deploy config',
+        description: 'View or edit deployment configuration',
+        uiPath: '/deployment/setup',
+        uiLabel: 'Setup',
+      },
+      {
+        command: 'nself deploy logs',
+        description: 'View deployment logs for a specific environment',
+      },
+      {
+        command: 'nself deploy history',
+        description: 'Show deployment history with versions and timestamps',
+      },
+      {
+        command: 'nself deploy check',
+        description: 'Pre-deployment checks (health, config, dependencies)',
+      },
+      {
+        command: 'nself deploy provision',
+        description: 'Provision infrastructure for a new environment',
+      },
+      {
+        command: 'nself deploy server',
+        description: 'Manage deployment target servers (add, remove, list)',
+      },
+      {
+        command: 'nself deploy sync',
+        description: 'Sync configuration between environments',
+        uiPath: '/deployment/sync',
+        uiLabel: 'Sync',
+      },
+    ],
+  },
+  {
+    id: 'infra',
+    label: 'Infrastructure',
+    icon: Server,
+    description: 'Cloud providers, Kubernetes, and Helm chart management',
+    commandCount: 38,
+    commands: [
+      {
+        command: 'nself infra provider list',
+        description: 'List supported cloud providers (AWS, GCP, Azure, DO)',
+      },
+      {
+        command: 'nself infra provider add',
+        description: 'Add and configure a cloud provider with credentials',
+      },
+      {
+        command: 'nself infra provider remove',
+        description: 'Remove a configured cloud provider',
+      },
+      {
+        command: 'nself infra provider status',
+        description: 'Check connectivity and status of configured providers',
+      },
+      {
+        command: 'nself infra k8s init',
+        description: 'Initialize Kubernetes configuration for the project',
+      },
+      {
+        command: 'nself infra k8s deploy',
+        description: 'Deploy services to a Kubernetes cluster',
+      },
+      {
+        command: 'nself infra k8s status',
+        description: 'Show status of Kubernetes pods and services',
+      },
+      {
+        command: 'nself infra k8s scale',
+        description: 'Scale Kubernetes deployments up or down',
+      },
+      {
+        command: 'nself infra k8s logs',
+        description: 'View logs from Kubernetes pods',
+      },
+      {
+        command: 'nself infra k8s exec',
+        description: 'Execute a command in a Kubernetes pod',
+      },
+      {
+        command: 'nself infra helm install',
+        description: 'Install a Helm chart into the cluster',
+      },
+      {
+        command: 'nself infra helm upgrade',
+        description: 'Upgrade an existing Helm release',
+      },
+      {
+        command: 'nself infra helm rollback',
+        description: 'Roll back a Helm release to a previous revision',
+      },
+      {
+        command: 'nself infra helm list',
+        description: 'List installed Helm releases',
+      },
+      {
+        command: 'nself infra helm values',
+        description: 'Show or edit Helm chart values',
+      },
+    ],
+  },
+  {
+    id: 'service',
+    label: 'Services',
+    icon: Package,
+    description:
+      'Service lifecycle, scaffolding, storage, email, cache, and more',
+    commandCount: 43,
+    commands: [
+      {
+        command: 'nself service list',
+        description: 'List all available and enabled services',
+        uiPath: '/services',
+        uiLabel: 'Services',
+      },
+      {
+        command: 'nself service enable <name>',
+        description: 'Enable a service in the project configuration',
+        uiPath: '/services',
+        uiLabel: 'Services',
+      },
+      {
+        command: 'nself service disable <name>',
+        description: 'Disable a service (stops and removes from config)',
+        uiPath: '/services',
+        uiLabel: 'Services',
+      },
+      {
+        command: 'nself service status <name>',
+        description: 'Show detailed status of a specific service',
+        uiPath: '/services',
+        uiLabel: 'Services',
+      },
+      {
+        command: 'nself service restart <name>',
+        description: 'Restart a specific service container',
+        uiPath: '/services',
+        uiLabel: 'Services',
+      },
+      {
+        command: 'nself service logs <name>',
+        description: 'View logs for a specific service',
+        uiPath: '/system/logs',
+        uiLabel: 'Logs',
+      },
+      {
+        command: 'nself service init',
+        description: 'Initialize a new custom service from a template',
+      },
+      {
+        command: 'nself service scaffold',
+        description:
+          'Scaffold boilerplate for a new service (routes, models, tests)',
+      },
+      {
+        command: 'nself service wizard',
+        description: 'Interactive wizard to configure and add a new service',
+      },
+      {
+        command: 'nself service search',
+        description: 'Search the service registry for available services',
+      },
+      {
+        command: 'nself service admin <name>',
+        description:
+          'Open the admin panel for a service (e.g., Hasura console)',
+      },
+      {
+        command: 'nself service storage upload',
+        description: 'Upload a file to the storage service (MinIO/S3)',
+        uiPath: '/services/minio',
+        uiLabel: 'MinIO',
+      },
+      {
+        command: 'nself service storage list',
+        description: 'List files in a storage bucket',
+        uiPath: '/services/minio',
+        uiLabel: 'MinIO',
+      },
+      {
+        command: 'nself service email send',
+        description: 'Send a test email through the configured email service',
+        uiPath: '/services/mailpit',
+        uiLabel: 'Mailpit',
+      },
+      {
+        command: 'nself service email template',
+        description: 'Manage email templates',
+      },
+      {
+        command: 'nself service cache flush',
+        description: 'Flush the Redis cache',
+        uiPath: '/services/redis',
+        uiLabel: 'Redis',
+      },
+      {
+        command: 'nself service cache stats',
+        description: 'Show Redis cache statistics (memory, hit ratio, keys)',
+        uiPath: '/services/redis',
+        uiLabel: 'Redis',
+      },
+      {
+        command: 'nself service functions deploy',
+        description: 'Deploy serverless functions',
+        uiPath: '/services/functions',
+        uiLabel: 'Functions',
+      },
+      {
+        command: 'nself service functions list',
+        description: 'List deployed serverless functions',
+        uiPath: '/services/functions',
+        uiLabel: 'Functions',
+      },
+      {
+        command: 'nself service realtime status',
+        description: 'Show status of real-time subscriptions and connections',
+      },
+    ],
+  },
+  {
+    id: 'config',
+    label: 'Configuration',
+    icon: Settings,
+    description:
+      'Environment files, secrets, vault integration, and config sync',
+    commandCount: 20,
+    commands: [
+      {
+        command: 'nself config show',
+        description: 'Display the current project configuration',
+        uiPath: '/config',
+        uiLabel: 'Config',
+      },
+      {
+        command: 'nself config edit',
+        description: 'Open the configuration file in your default editor',
+        uiPath: '/config',
+        uiLabel: 'Config',
+      },
+      {
+        command: 'nself config validate',
+        description: 'Validate configuration files for errors and warnings',
+        uiPath: '/doctor',
+        uiLabel: 'Doctor',
+      },
+      {
+        command: 'nself config export',
+        description: 'Export configuration as JSON or YAML',
+      },
+      {
+        command: 'nself config import',
+        description: 'Import configuration from a file',
+      },
+      {
+        command: 'nself config sync',
+        description: 'Sync configuration between local and remote environments',
+        uiPath: '/deployment/sync',
+        uiLabel: 'Sync',
+      },
+      {
+        command: 'nself config env list',
+        description: 'List all environment files and their variables',
+        uiPath: '/config',
+        uiLabel: 'Config',
+      },
+      {
+        command: 'nself config env get <key>',
+        description: 'Get the value of a specific environment variable',
+      },
+      {
+        command: 'nself config env set <key> <value>',
+        description: 'Set an environment variable in the specified env file',
+      },
+      {
+        command: 'nself config secrets generate',
+        description: 'Generate secure secrets for the current environment',
+        uiPath: '/deployment/secrets',
+        uiLabel: 'Secrets',
+      },
+      {
+        command: 'nself config secrets sync',
+        description: 'Sync secrets from the server to local gitignored file',
+        uiPath: '/deployment/secrets',
+        uiLabel: 'Secrets',
+      },
+      {
+        command: 'nself config secrets rotate',
+        description: 'Rotate secrets (generate new values and update services)',
+        uiPath: '/deployment/secrets',
+        uiLabel: 'Secrets',
+      },
+      {
+        command: 'nself config vault init',
+        description: 'Initialize HashiCorp Vault integration',
+      },
+      {
+        command: 'nself config vault sync',
+        description: 'Sync secrets between local config and Vault',
+      },
+    ],
+  },
+  {
+    id: 'auth',
+    label: 'Auth & Security',
+    icon: Lock,
+    description:
+      'Authentication, MFA, roles, OAuth, SSL, rate limiting, and webhooks',
+    commandCount: 38,
+    commands: [
+      {
+        command: 'nself auth login',
+        description: 'Authenticate with the nself service',
+      },
+      {
+        command: 'nself auth logout',
+        description: 'Log out and clear stored credentials',
+      },
+      {
+        command: 'nself auth status',
+        description: 'Show current authentication status and session info',
+      },
+      {
+        command: 'nself auth mfa enable',
+        description: 'Enable multi-factor authentication',
+      },
+      {
+        command: 'nself auth mfa disable',
+        description: 'Disable multi-factor authentication',
+      },
+      {
+        command: 'nself auth mfa verify',
+        description: 'Verify an MFA code',
+      },
+      {
+        command: 'nself auth roles list',
+        description: 'List all defined roles and their permissions',
+      },
+      {
+        command: 'nself auth roles create',
+        description: 'Create a new role with specified permissions',
+      },
+      {
+        command: 'nself auth roles assign',
+        description: 'Assign a role to a user',
+      },
+      {
+        command: 'nself auth devices list',
+        description: 'List authorized devices and sessions',
+      },
+      {
+        command: 'nself auth devices revoke',
+        description: 'Revoke access for a specific device or session',
+      },
+      {
+        command: 'nself auth oauth add',
+        description: 'Add an OAuth provider (Google, GitHub, etc.)',
+      },
+      {
+        command: 'nself auth oauth remove',
+        description: 'Remove an OAuth provider',
+      },
+      {
+        command: 'nself auth oauth list',
+        description: 'List configured OAuth providers',
+      },
+      {
+        command: 'nself auth security audit',
+        description: 'Run a security audit on authentication configuration',
+        uiPath: '/system/security',
+        uiLabel: 'Security',
+      },
+      {
+        command: 'nself auth ssl generate',
+        description: 'Generate SSL certificates (self-signed or via mkcert)',
+        uiPath: '/config',
+        uiLabel: 'Config (SSL)',
+      },
+      {
+        command: 'nself auth ssl trust',
+        description: 'Trust the generated SSL certificate in the system store',
+        uiPath: '/config',
+        uiLabel: 'Config (SSL)',
+      },
+      {
+        command: 'nself auth ssl letsencrypt',
+        description: "Obtain and configure a Let's Encrypt SSL certificate",
+        uiPath: '/config',
+        uiLabel: 'Config (SSL)',
+      },
+      {
+        command: 'nself auth rate-limit set',
+        description: 'Configure rate limiting rules for API endpoints',
+      },
+      {
+        command: 'nself auth rate-limit status',
+        description: 'Show current rate limiting configuration and stats',
+      },
+      {
+        command: 'nself auth webhooks add',
+        description: 'Register a new webhook endpoint',
+        uiPath: '/tools/webhooks',
+        uiLabel: 'Webhooks',
+      },
+      {
+        command: 'nself auth webhooks list',
+        description: 'List all configured webhooks',
+        uiPath: '/tools/webhooks',
+        uiLabel: 'Webhooks',
+      },
+      {
+        command: 'nself auth webhooks test',
+        description: 'Send a test payload to a webhook endpoint',
+        uiPath: '/tools/webhooks',
+        uiLabel: 'Webhooks',
+      },
+    ],
+  },
+  {
+    id: 'perf',
+    label: 'Performance',
+    icon: Zap,
+    description: 'Profiling, benchmarking, scaling, and optimization',
+    commandCount: 5,
+    commands: [
+      {
+        command: 'nself perf profile',
+        description:
+          'Profile service performance and generate a flamegraph report',
+        uiPath: '/system/performance',
+        uiLabel: 'Performance',
+      },
+      {
+        command: 'nself perf bench',
+        description:
+          'Run benchmarks against API endpoints and report throughput/latency',
+        uiPath: '/system/performance',
+        uiLabel: 'Performance',
+      },
+      {
+        command: 'nself perf scale',
+        description: 'Scale service replicas up or down for load testing',
+      },
+      {
+        command: 'nself perf migrate',
+        description:
+          'Migrate to a more performant configuration (e.g., connection pooling)',
+      },
+      {
+        command: 'nself perf optimize',
+        description: 'Analyze and apply recommended performance optimizations',
+        uiPath: '/system/performance',
+        uiLabel: 'Performance',
+      },
+    ],
+  },
+  {
+    id: 'backup',
+    label: 'Backup',
+    icon: HardDrive,
+    description: 'Full project backups, restores, and cleanup',
+    commandCount: 6,
+    commands: [
+      {
+        command: 'nself backup create',
+        description: 'Create a full project backup (database, files, config)',
+        uiPath: '/backups',
+        uiLabel: 'Backups',
+      },
+      {
+        command: 'nself backup restore',
+        description: 'Restore a project from a backup archive',
+        uiPath: '/backups',
+        uiLabel: 'Backups',
+      },
+      {
+        command: 'nself backup list',
+        description: 'List all available backups with size and date',
+        uiPath: '/backups',
+        uiLabel: 'Backups',
+      },
+      {
+        command: 'nself backup rollback',
+        description: 'Roll back the entire project to a previous backup state',
+        uiPath: '/backups',
+        uiLabel: 'Backups',
+      },
+      {
+        command: 'nself backup reset',
+        description: 'Reset the project to a clean state (removes all data)',
+      },
+      {
+        command: 'nself backup clean',
+        description: 'Remove old backups beyond the retention policy',
+        uiPath: '/backups',
+        uiLabel: 'Backups',
+      },
+    ],
+  },
+  {
+    id: 'dev',
+    label: 'Dev Tools',
+    icon: Code,
+    description:
+      'Frontend tooling, CI/CD, docs, SDK generation, testing, and more',
+    commandCount: 16,
+    commands: [
+      {
+        command: 'nself dev frontend init',
+        description: 'Initialize frontend tooling (Vite, Next.js, React, etc.)',
+      },
+      {
+        command: 'nself dev frontend build',
+        description: 'Build the frontend for production',
+      },
+      {
+        command: 'nself dev frontend dev',
+        description: 'Start the frontend development server with HMR',
+      },
+      {
+        command: 'nself dev ci init',
+        description:
+          'Generate CI/CD pipeline configuration (GitHub Actions, GitLab CI)',
+        uiPath: '/deployment/cicd',
+        uiLabel: 'CI/CD',
+      },
+      {
+        command: 'nself dev ci run',
+        description: 'Run the CI pipeline locally for testing',
+        uiPath: '/deployment/cicd',
+        uiLabel: 'CI/CD',
+      },
+      {
+        command: 'nself dev docs generate',
+        description: 'Auto-generate API documentation from schema and routes',
+        uiPath: '/tools/documentation',
+        uiLabel: 'Docs',
+      },
+      {
+        command: 'nself dev docs serve',
+        description: 'Serve documentation locally with live reload',
+        uiPath: '/tools/documentation',
+        uiLabel: 'Docs',
+      },
+      {
+        command: 'nself dev whitelabel init',
+        description: 'Initialize white-label configuration for the project',
+      },
+      {
+        command: 'nself dev whitelabel build',
+        description: 'Build a white-labeled version of the application',
+      },
+      {
+        command: 'nself dev sdk generate',
+        description:
+          'Generate client SDKs (TypeScript, Python, Go) from the API schema',
+      },
+      {
+        command: 'nself dev test run',
+        description: 'Run the test suite for the project',
+        uiPath: '/tools/testing',
+        uiLabel: 'Testing',
+      },
+      {
+        command: 'nself dev test watch',
+        description: 'Run tests in watch mode during development',
+        uiPath: '/tools/testing',
+        uiLabel: 'Testing',
+      },
+      {
+        command: 'nself dev mock server',
+        description: 'Start a mock API server for frontend development',
+      },
+      {
+        command: 'nself dev mock data',
+        description: 'Generate mock data for development and testing',
+      },
+      {
+        command: 'nself dev migrate create',
+        description: 'Create a new database migration file',
+        uiPath: '/database/migrate',
+        uiLabel: 'Migrate',
+      },
+      {
+        command: 'nself dev migrate status',
+        description: 'Show pending and applied migration status',
+        uiPath: '/database/migrate',
+        uiLabel: 'Migrate',
+      },
+    ],
+  },
+  {
+    id: 'plugin',
+    label: 'Plugins',
+    icon: Plug,
+    description: 'Discover, install, manage, and create plugins',
+    commandCount: 8,
+    commands: [
+      {
+        command: 'nself plugin list',
+        description: 'List all installed plugins and their status',
+      },
+      {
+        command: 'nself plugin install <name>',
+        description: 'Install a plugin from the registry',
+      },
+      {
+        command: 'nself plugin remove <name>',
+        description: 'Uninstall a plugin and clean up its resources',
+      },
+      {
+        command: 'nself plugin update <name>',
+        description: 'Update a specific plugin to the latest version',
+      },
+      {
+        command: 'nself plugin updates',
+        description: 'Check all plugins for available updates',
+      },
+      {
+        command: 'nself plugin refresh',
+        description: 'Refresh the plugin registry cache',
+      },
+      {
+        command: 'nself plugin status <name>',
+        description: 'Show detailed status and config for a plugin',
+      },
+      {
+        command: 'nself plugin create',
+        description: 'Scaffold a new plugin project from a template',
+      },
+    ],
+  },
+]
+
+// ─── Existing Sections (preserved) ──────────────────────────────────────────
+
 function SearchSection() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchResults, setSearchResults] = useState<
+    Array<{ title: string; description: string; category: string }>
+  >([])
   const [searching, setSearching] = useState(false)
 
   const handleSearch = async () => {
@@ -129,7 +1176,7 @@ function SearchSection() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             placeholder="Search documentation, tutorials, FAQ..."
             className="w-full rounded-lg border border-zinc-200 bg-white py-3 pr-4 pl-10 dark:border-zinc-700 dark:bg-zinc-900"
           />
@@ -793,8 +1840,8 @@ function SystemStatusSection() {
     lastUpdated: new Date().toISOString(),
   })
 
-  const getStatusConfig = (status: string) => {
-    switch (status) {
+  const getStatusConfig = (statusVal: string) => {
+    switch (statusVal) {
       case 'operational':
         return {
           color: 'text-green-600 dark:text-green-400',
@@ -942,45 +1989,279 @@ function KeyboardShortcutsSection() {
       </h2>
 
       <div className="space-y-6">
-        {Object.entries(groupedShortcuts).map(([category, shortcuts]) => (
-          <div key={category}>
-            <h3 className="mb-3 font-medium text-zinc-900 dark:text-white">
-              {category}
-            </h3>
-            <div className="space-y-2">
-              {shortcuts.map((shortcut, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between py-2"
-                >
-                  <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                    {shortcut.description}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    {shortcut.keys.map((key, keyIndex) => (
-                      <span key={keyIndex} className="flex items-center gap-1">
-                        <kbd className="rounded border bg-zinc-100 px-2 py-1 font-mono text-xs text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300">
-                          {key}
-                        </kbd>
-                        {keyIndex < shortcut.keys.length - 1 && (
-                          <span className="text-zinc-400">+</span>
-                        )}
-                      </span>
-                    ))}
+        {Object.entries(groupedShortcuts).map(
+          ([category, categoryShortcuts]) => (
+            <div key={category}>
+              <h3 className="mb-3 font-medium text-zinc-900 dark:text-white">
+                {category}
+              </h3>
+              <div className="space-y-2">
+                {categoryShortcuts.map((shortcut, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-2"
+                  >
+                    <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                      {shortcut.description}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {shortcut.keys.map((key, keyIndex) => (
+                        <span
+                          key={keyIndex}
+                          className="flex items-center gap-1"
+                        >
+                          <kbd className="rounded border bg-zinc-100 px-2 py-1 font-mono text-xs text-zinc-700 dark:bg-zinc-700 dark:text-zinc-300">
+                            {key}
+                          </kbd>
+                          {keyIndex < shortcut.keys.length - 1 && (
+                            <span className="text-zinc-400">+</span>
+                          )}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ),
+        )}
       </div>
     </div>
   )
 }
 
+// ─── CLI Command Reference Section ──────────────────────────────────────────
+
+function CLIReferenceSection() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+
+  const totalCommands = CLI_COMMAND_GROUPS.reduce(
+    (sum, group) => sum + group.commands.length,
+    0,
+  )
+
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery.trim()) return CLI_COMMAND_GROUPS
+
+    const query = searchQuery.toLowerCase()
+    return CLI_COMMAND_GROUPS.map((group) => ({
+      ...group,
+      commands: group.commands.filter(
+        (cmd) =>
+          cmd.command.toLowerCase().includes(query) ||
+          cmd.description.toLowerCase().includes(query) ||
+          (cmd.uiLabel && cmd.uiLabel.toLowerCase().includes(query)),
+      ),
+    })).filter((group) => group.commands.length > 0)
+  }, [searchQuery])
+
+  const filteredCommandCount = filteredGroups.reduce(
+    (sum, group) => sum + group.commands.length,
+    0,
+  )
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupId)) {
+        next.delete(groupId)
+      } else {
+        next.add(groupId)
+      }
+      return next
+    })
+  }
+
+  const expandAll = () => {
+    setExpandedGroups(new Set(filteredGroups.map((g) => g.id)))
+  }
+
+  const collapseAll = () => {
+    setExpandedGroups(new Set())
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header stats */}
+      <div className="rounded-lg border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 text-xl font-semibold text-zinc-900 dark:text-white">
+              <Command className="h-5 w-5 text-blue-500" />
+              nself CLI Command Reference
+            </h2>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              {totalCommands} commands across {CLI_COMMAND_GROUPS.length}{' '}
+              categories. Every UI action in nAdmin maps to a CLI command.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={expandAll}
+              className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            >
+              Expand All
+            </button>
+            <button
+              onClick={collapseAll}
+              className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            >
+              Collapse All
+            </button>
+          </div>
+        </div>
+
+        {/* Search input */}
+        <div className="relative">
+          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Filter commands... (e.g. backup, deploy, db migrate)"
+            className="w-full rounded-lg border border-zinc-200 bg-zinc-50 py-3 pr-4 pl-10 text-sm transition-colors focus:border-blue-300 focus:bg-white focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-blue-700 dark:focus:bg-zinc-800"
+          />
+          {searchQuery && (
+            <div className="absolute top-1/2 right-3 -translate-y-1/2">
+              <span className="text-xs text-zinc-500">
+                {filteredCommandCount} result
+                {filteredCommandCount !== 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Command groups */}
+      {filteredGroups.length === 0 ? (
+        <div className="rounded-lg border border-zinc-200 bg-white p-12 text-center shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
+          <Search className="mx-auto mb-3 h-8 w-8 text-zinc-400" />
+          <p className="text-zinc-600 dark:text-zinc-400">
+            No commands match &ldquo;{searchQuery}&rdquo;
+          </p>
+          <button
+            onClick={() => setSearchQuery('')}
+            className="mt-2 text-sm text-blue-600 hover:underline dark:text-blue-400"
+          >
+            Clear search
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredGroups.map((group) => {
+            const Icon = group.icon
+            const isExpanded = expandedGroups.has(group.id)
+
+            return (
+              <div
+                key={group.id}
+                className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800"
+              >
+                {/* Group header (collapsible) */}
+                <button
+                  onClick={() => toggleGroup(group.id)}
+                  className="flex w-full items-center gap-4 px-6 py-4 text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                >
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                    <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-zinc-900 dark:text-white">
+                        {group.label}
+                      </h3>
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400">
+                        {group.commands.length}
+                        {searchQuery &&
+                          group.commands.length !== group.commandCount &&
+                          ` / ${group.commandCount}`}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+                      {group.description}
+                    </p>
+                  </div>
+                  {isExpanded ? (
+                    <ChevronDown className="h-5 w-5 flex-shrink-0 text-zinc-400" />
+                  ) : (
+                    <ChevronRight className="h-5 w-5 flex-shrink-0 text-zinc-400" />
+                  )}
+                </button>
+
+                {/* Command list */}
+                {isExpanded && (
+                  <div className="border-t border-zinc-200 dark:border-zinc-700">
+                    <div className="divide-y divide-zinc-100 dark:divide-zinc-700/50">
+                      {group.commands.map((cmd, index) => (
+                        <div
+                          key={index}
+                          className="flex flex-col gap-2 px-6 py-3 sm:flex-row sm:items-center sm:gap-4"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <code className="rounded bg-zinc-100 px-2 py-1 font-mono text-sm font-medium text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+                              {cmd.command}
+                            </code>
+                            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                              {cmd.description}
+                            </p>
+                          </div>
+                          <div className="flex-shrink-0">
+                            {cmd.uiPath ? (
+                              <a
+                                href={cmd.uiPath}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                {cmd.uiLabel}
+                              </a>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500">
+                                <Clock className="h-3 w-3" />
+                                Coming Soon
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Footer note */}
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/10">
+        <div className="flex gap-3">
+          <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+          <div className="text-sm text-blue-800 dark:text-blue-300">
+            <p className="font-medium">
+              nAdmin is a UI wrapper for the nself CLI
+            </p>
+            <p className="mt-1 text-blue-700 dark:text-blue-400">
+              Every action in this admin panel executes the corresponding{' '}
+              <code className="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-xs dark:bg-blue-900/30">
+                nself
+              </code>{' '}
+              CLI command under the hood. You can always use the CLI directly
+              for automation, scripting, or when the UI page is not yet
+              available.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Page ──────────────────────────────────────────────────────────────
+
 export default function HelpPage() {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'docs' | 'faq' | 'contact'
+    'overview' | 'cli' | 'docs' | 'faq' | 'contact'
   >('overview')
 
   return (
@@ -1003,6 +2284,7 @@ export default function HelpPage() {
         <div className="mb-8 flex w-fit items-center gap-2 rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
           {[
             { id: 'overview', label: 'Overview', icon: Info },
+            { id: 'cli', label: 'CLI Reference', icon: Terminal },
             { id: 'docs', label: 'Documentation', icon: Book },
             { id: 'faq', label: 'FAQ', icon: HelpCircle },
             { id: 'contact', label: 'Contact Support', icon: MessageCircle },
@@ -1011,7 +2293,11 @@ export default function HelpPage() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() =>
+                  setActiveTab(
+                    tab.id as 'overview' | 'cli' | 'docs' | 'faq' | 'contact',
+                  )
+                }
                 className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === tab.id
                     ? 'bg-blue-500 text-white'
@@ -1043,6 +2329,7 @@ export default function HelpPage() {
           </div>
         )}
 
+        {activeTab === 'cli' && <CLIReferenceSection />}
         {activeTab === 'docs' && <DocumentationSection />}
         {activeTab === 'faq' && <FAQSection />}
         {activeTab === 'contact' && <SupportContactSection />}

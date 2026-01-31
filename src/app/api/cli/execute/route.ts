@@ -1,11 +1,10 @@
 import { getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
-import { exec, execFile } from 'child_process'
+import { execFile } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
 import { z } from 'zod'
 
-const _execAsync = promisify(exec) // Reserved for future use
 const execFileAsync = promisify(execFile)
 
 // Define allowed nself subcommands and their valid arguments
@@ -13,7 +12,7 @@ const ALLOWED_NSELF_COMMANDS: Record<
   string,
   { args?: string[]; options?: string[] }
 > = {
-  // Core commands
+  // Core lifecycle commands
   init: { options: ['--template', '--force', '--full'] },
   build: { options: ['--clean', '--verbose', '--force', '--debug'] },
   start: {
@@ -38,21 +37,53 @@ const ALLOWED_NSELF_COMMANDS: Record<
   trust: { options: ['--install', '--uninstall'] },
   // Environment management
   env: { args: ['action', 'name'], options: ['--file', '--force'] },
+  config: { args: ['action'], options: ['--json', '--verbose'] },
+  secrets: { args: ['action'], options: ['--env', '--force', '--rotate'] },
+  apply: { options: ['--config', '--force', '--dry-run'] },
+  export: { options: ['--format', '--output'] },
   // Cleanup commands
   clean: { options: ['--volumes', '--images', '--all', '--force'] },
   reset: { options: ['--force', '--keep-data', '--keep-volumes'] },
-  // Execution and deployment
+  // Service & container management
+  service: { args: ['action', 'name'], options: ['--json', '--verbose'] },
   exec: { args: ['service', 'command'], options: ['--user', '--workdir'] },
+  scale: { args: ['service', 'replicas'], options: ['--timeout'] },
+  // Deployment & infrastructure
   deploy: { args: ['target'], options: ['--dry-run', '--force', '--rolling'] },
   staging: { args: ['action'], options: ['--force', '--seed', '--sync'] },
   prod: { args: ['action'], options: ['--force', '--verbose', '--dry-run'] },
+  infra: { args: ['action'], options: ['--json', '--verbose', '--provider'] },
+  // Monitoring & health
+  health: { args: ['service'], options: ['--all', '--json', '--verbose'] },
+  metrics: { args: ['action'], options: ['--json', '--profile', '--verbose'] },
+  perf: {
+    args: ['action'],
+    options: ['--json', '--verbose', '--profile', '--duration'],
+  },
+  bench: {
+    args: ['action'],
+    options: ['--json', '--duration', '--connections', '--compare'],
+  },
+  // Multi-tenancy & auth
+  tenant: { args: ['action', 'name'], options: ['--json', '--force'] },
+  auth: { args: ['action'], options: ['--json', '--force', '--provider'] },
+  // Developer tools
+  dev: { args: ['action'], options: ['--verbose', '--watch'] },
+  plugin: {
+    args: ['action', 'name'],
+    options: ['--json', '--force', '--version'],
+  },
+  completion: { args: ['shell'], options: ['--install'] },
+  // Audit & history
+  history: { args: ['action'], options: ['--json', '--limit', '--since'] },
+  audit: { args: ['action'], options: ['--json', '--verbose', '--fix'] },
   // Update command
   update: { options: ['--check', '--cli', '--admin', '--restart', '--force'] },
   // Info commands
   help: { args: ['command'] },
   version: { options: ['--short', '--json'] },
   // Database commands
-  db: { args: ['action'], options: ['--force', '--verbose'] },
+  db: { args: ['action'], options: ['--force', '--verbose', '--json'] },
 }
 
 // Schema for command validation
