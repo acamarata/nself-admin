@@ -4,14 +4,14 @@ import { ListSkeleton } from '@/components/skeletons'
 import { Card } from '@/components/ui/card'
 import { PageContent } from '@/components/ui/page-content'
 import { PageHeader } from '@/components/ui/page-header'
-import { helpArticles } from '@/data/help-content'
+import { helpArticlesArray, type HelpArticle } from '@/data/help-content'
 import { Clock, Rocket } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
 function DeploymentHelpContent() {
-  const deploymentArticles = helpArticles.filter(
-    (a) => a.category === 'deployment',
+  const deploymentArticles = helpArticlesArray.filter(
+    (a: HelpArticle) => a.category === 'deployment',
   )
 
   return (

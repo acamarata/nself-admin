@@ -4,13 +4,15 @@ import { ListSkeleton } from '@/components/skeletons'
 import { Card } from '@/components/ui/card'
 import { PageContent } from '@/components/ui/page-content'
 import { PageHeader } from '@/components/ui/page-header'
-import { helpArticles } from '@/data/help-content'
+import { helpArticlesArray, type HelpArticle } from '@/data/help-content'
 import { Clock, Code } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 
 function APIHelpContent() {
-  const apiArticles = helpArticles.filter((a) => a.category === 'api')
+  const apiArticles = helpArticlesArray.filter(
+    (a: HelpArticle) => a.category === 'api',
+  )
 
   return (
     <>

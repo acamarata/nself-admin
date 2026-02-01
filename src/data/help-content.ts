@@ -76,6 +76,9 @@ export const helpCategories = [
   'Services',
 ]
 
+// Array version for filtering/mapping operations
+export const helpArticlesArray: HelpArticle[] = Object.values(helpArticles)
+
 // Search index for help articles
 export const helpSearchIndex = Object.values(helpArticles).map((article) => ({
   id: article.id,

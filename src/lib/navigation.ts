@@ -283,18 +283,30 @@ export const navigation: Array<NavGroup> = [
       },
     ],
   },
-  // ── Tenants ───────────────────────────────────────────────
+  // ── Multi-Tenancy ─────────────────────────────────────────
   {
-    title: 'Tenants',
+    title: 'Multi-Tenancy',
     collapsed: true,
     links: [
       {
-        title: 'Tenants List',
-        href: '/tenants',
+        title: 'Tenants',
+        href: '/tenant',
+        icon: 'building-2',
+        description: 'Tenant management',
+        submenu: [
+          { label: 'All Tenants', href: '/tenant' },
+          { label: 'Create Tenant', href: '/tenant/create' },
+        ],
+      },
+      {
+        title: 'Organizations',
+        href: '/org',
         icon: 'building',
-        badge: { text: 'Soon', color: 'zinc' },
-        disabled: true,
-        description: 'Multi-tenant management',
+        description: 'Organization management',
+        submenu: [
+          { label: 'All Organizations', href: '/org' },
+          { label: 'Create Organization', href: '/org/create' },
+        ],
       },
     ],
   },

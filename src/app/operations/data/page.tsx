@@ -1,16 +1,11 @@
 'use client'
 
-import { Suspense } from 'react'
-import { TableSkeleton } from '@/components/skeletons'
 import { PageTemplate } from '@/components/PageTemplate'
+import { TableSkeleton } from '@/components/skeletons'
+import { Suspense } from 'react'
 
 function Content() {
-  return (
-    <PageTemplate 
-     
-      description="Import and export data"
-    />
-  )
+  return <PageTemplate description="Import and export data" />
 }
 export default function Page() {
   return (

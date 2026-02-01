@@ -1,5 +1,14 @@
-import { helpArticles, helpSearchIndex } from '@/data/help-content'
+import {
+  helpArticlesArray,
+  helpSearchIndex,
+  type HelpArticle,
+} from '@/data/help-content'
 import { NextRequest, NextResponse } from 'next/server'
+
+interface SearchResult extends HelpArticle {
+  relevance: number
+  highlight: string
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,8 +27,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Search using FlexSearch
-    let results = helpSearchIndex.search(query, limit * 2)
+    // Search using simple text matching on searchIndex
+    const lowerQuery = query.toLowerCase()
+    let results = helpSearchIndex.filter(
+      (article) =>
+        article.title.toLowerCase().includes(lowerQuery) ||
+        article.content.toLowerCase().includes(lowerQuery) ||
+        article.tags.some((tag) => tag.toLowerCase().includes(lowerQuery)),
+    )
 
     // Filter by category if specified
     if (category) {
@@ -30,22 +45,19 @@ export async function GET(request: NextRequest) {
     results = results.slice(0, limit)
 
     // Calculate relevance scores and add highlights
-    const enhancedResults = results.map((article) => {
-      const titleMatch = article.title
-        .toLowerCase()
-        .includes(query.toLowerCase())
-      const descMatch = article.description
-        .toLowerCase()
-        .includes(query.toLowerCase())
+    const enhancedResults: SearchResult[] = results.map((article) => {
+      const fullArticle = helpArticlesArray.find((a) => a.id === article.id)
+      const titleMatch = article.title.toLowerCase().includes(lowerQuery)
 
-      let relevance = article.popularity
+      let relevance = 0
       if (titleMatch) relevance += 50
-      if (descMatch) relevance += 25
+      if (article.content.toLowerCase().includes(lowerQuery)) relevance += 25
 
       return {
         ...article,
+        content: fullArticle?.content || article.content,
         relevance,
-        highlight: getHighlight(article.content, query),
+        highlight: getHighlight(fullArticle?.content || article.content, query),
       }
     })
 
@@ -53,7 +65,7 @@ export async function GET(request: NextRequest) {
     enhancedResults.sort((a, b) => b.relevance - a.relevance)
 
     // Generate "Did you mean?" suggestions
-    const suggestions = generateSuggestions(query, results)
+    const suggestions = generateSuggestions(query, enhancedResults)
 
     return NextResponse.json({
       success: true,
@@ -93,7 +105,7 @@ function getHighlight(content: string, query: string, length = 200): string {
   return highlight
 }
 
-function generateSuggestions(query: string, results: unknown[]): string[] {
+function generateSuggestions(query: string, results: SearchResult[]): string[] {
   if (results.length > 0) return []
 
   const commonMisspellings: Record<string, string> = {
@@ -116,15 +128,15 @@ function generateSuggestions(query: string, results: unknown[]): string[] {
   }
 
   // Check for partial matches in article titles
-  const partialMatches = helpArticles
-    .filter((article) => {
+  const partialMatches = helpArticlesArray
+    .filter((article: HelpArticle) => {
       const title = article.title.toLowerCase()
       const words = lowerQuery.split(' ')
       return words.some((word) => title.includes(word))
     })
     .slice(0, 3)
 
-  partialMatches.forEach((article) => {
+  partialMatches.forEach((article: HelpArticle) => {
     const title = article.title.toLowerCase()
     if (!suggestions.includes(title)) {
       suggestions.push(title)

@@ -1,8 +1,7 @@
 'use client'
 
-import { Suspense } from 'react'
-import { TableSkeleton } from '@/components/skeletons'
 import { PageTemplate } from '@/components/PageTemplate'
+import { TableSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -57,7 +56,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 type ExportFormat = 'csv' | 'json'
 
@@ -88,12 +87,30 @@ const SAMPLE_TABLES: TableInfo[] = [
   {
     name: 'users',
     rowCount: 1250,
-    columns: ['id', 'email', 'name', 'password_hash', 'avatar_url', 'role', 'created_at', 'updated_at'],
+    columns: [
+      'id',
+      'email',
+      'name',
+      'password_hash',
+      'avatar_url',
+      'role',
+      'created_at',
+      'updated_at',
+    ],
   },
   {
     name: 'posts',
     rowCount: 3420,
-    columns: ['id', 'title', 'content', 'user_id', 'status', 'published_at', 'created_at', 'updated_at'],
+    columns: [
+      'id',
+      'title',
+      'content',
+      'user_id',
+      'status',
+      'published_at',
+      'created_at',
+      'updated_at',
+    ],
   },
   {
     name: 'comments',
@@ -103,21 +120,67 @@ const SAMPLE_TABLES: TableInfo[] = [
   {
     name: 'sessions',
     rowCount: 450,
-    columns: ['id', 'user_id', 'token', 'ip_address', 'user_agent', 'expires_at', 'created_at'],
+    columns: [
+      'id',
+      'user_id',
+      'token',
+      'ip_address',
+      'user_agent',
+      'expires_at',
+      'created_at',
+    ],
   },
   {
     name: 'audit_logs',
     rowCount: 15200,
-    columns: ['id', 'user_id', 'action', 'entity_type', 'entity_id', 'ip_address', 'created_at'],
+    columns: [
+      'id',
+      'user_id',
+      'action',
+      'entity_type',
+      'entity_id',
+      'ip_address',
+      'created_at',
+    ],
   },
 ]
 
 const SAMPLE_PII_FIELDS: PIIField[] = [
-  { table: 'users', column: 'email', type: 'email', sampleValue: 'john.doe@example.com', selected: true },
-  { table: 'users', column: 'name', type: 'name', sampleValue: 'John Doe', selected: true },
-  { table: 'sessions', column: 'ip_address', type: 'ip', sampleValue: '192.168.1.100', selected: true },
-  { table: 'sessions', column: 'user_agent', type: 'custom', sampleValue: 'Mozilla/5.0 (Macintosh...)', selected: false },
-  { table: 'audit_logs', column: 'ip_address', type: 'ip', sampleValue: '10.0.0.50', selected: true },
+  {
+    table: 'users',
+    column: 'email',
+    type: 'email',
+    sampleValue: 'john.doe@example.com',
+    selected: true,
+  },
+  {
+    table: 'users',
+    column: 'name',
+    type: 'name',
+    sampleValue: 'John Doe',
+    selected: true,
+  },
+  {
+    table: 'sessions',
+    column: 'ip_address',
+    type: 'ip',
+    sampleValue: '192.168.1.100',
+    selected: true,
+  },
+  {
+    table: 'sessions',
+    column: 'user_agent',
+    type: 'custom',
+    sampleValue: 'Mozilla/5.0 (Macintosh...)',
+    selected: false,
+  },
+  {
+    table: 'audit_logs',
+    column: 'ip_address',
+    type: 'ip',
+    sampleValue: '10.0.0.50',
+    selected: true,
+  },
 ]
 
 function DatabaseDataContent() {
@@ -156,18 +219,22 @@ function DatabaseDataContent() {
       await new Promise((resolve) => setTimeout(resolve, 1500))
 
       const table = SAMPLE_TABLES.find((t) => t.name === selectedExportTable)
-      const rowCount = exportLimit ? Math.min(parseInt(exportLimit), table?.rowCount || 0) : table?.rowCount || 0
+      const rowCount = exportLimit
+        ? Math.min(parseInt(exportLimit), table?.rowCount || 0)
+        : table?.rowCount || 0
 
       setExportOutput(
         `Exporting ${selectedExportTable} to ${exportFormat.toUpperCase()}...\n\n` +
-        `Rows exported: ${rowCount.toLocaleString()}\n` +
-        `File size: ${(rowCount * 0.5).toFixed(1)} KB\n` +
-        `Output: ./exports/${selectedExportTable}_${new Date().toISOString().split('T')[0]}.${exportFormat}\n\n` +
-        `Export completed successfully!`
+          `Rows exported: ${rowCount.toLocaleString()}\n` +
+          `File size: ${(rowCount * 0.5).toFixed(1)} KB\n` +
+          `Output: ./exports/${selectedExportTable}_${new Date().toISOString().split('T')[0]}.${exportFormat}\n\n` +
+          `Export completed successfully!`,
       )
 
       // Simulate download
-      const blob = new Blob(['Sample export data'], { type: exportFormat === 'csv' ? 'text/csv' : 'application/json' })
+      const blob = new Blob(['Sample export data'], {
+        type: exportFormat === 'csv' ? 'text/csv' : 'application/json',
+      })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -181,26 +248,44 @@ function DatabaseDataContent() {
     }
   }
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setImportFile(file)
+  const handleFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (file) {
+        setImportFile(file)
 
-      // Simulate parsing preview
-      const format = file.name.endsWith('.json') ? 'json' : 'csv'
-      setImportPreview({
-        fileName: file.name,
-        format,
-        rowCount: 150,
-        columns: ['id', 'name', 'email', 'created_at'],
-        sampleRows: [
-          { id: '1', name: 'Alice Smith', email: 'alice@example.com', created_at: '2024-01-15' },
-          { id: '2', name: 'Bob Johnson', email: 'bob@example.com', created_at: '2024-01-16' },
-          { id: '3', name: 'Carol White', email: 'carol@example.com', created_at: '2024-01-17' },
-        ],
-      })
-    }
-  }, [])
+        // Simulate parsing preview
+        const format = file.name.endsWith('.json') ? 'json' : 'csv'
+        setImportPreview({
+          fileName: file.name,
+          format,
+          rowCount: 150,
+          columns: ['id', 'name', 'email', 'created_at'],
+          sampleRows: [
+            {
+              id: '1',
+              name: 'Alice Smith',
+              email: 'alice@example.com',
+              created_at: '2024-01-15',
+            },
+            {
+              id: '2',
+              name: 'Bob Johnson',
+              email: 'bob@example.com',
+              created_at: '2024-01-16',
+            },
+            {
+              id: '3',
+              name: 'Carol White',
+              email: 'carol@example.com',
+              created_at: '2024-01-17',
+            },
+          ],
+        })
+      }
+    },
+    [],
+  )
 
   const handleImport = async () => {
     if (!importFile || !selectedImportTable) return
@@ -214,11 +299,11 @@ function DatabaseDataContent() {
 
       setImportOutput(
         `Importing ${importFile.name} into ${selectedImportTable}...\n\n` +
-        `Rows parsed: ${importPreview?.rowCount || 0}\n` +
-        `Rows inserted: ${importPreview?.rowCount || 0}\n` +
-        `Rows skipped: 0\n` +
-        `Errors: 0\n\n` +
-        `Import completed successfully!`
+          `Rows parsed: ${importPreview?.rowCount || 0}\n` +
+          `Rows inserted: ${importPreview?.rowCount || 0}\n` +
+          `Rows skipped: 0\n` +
+          `Errors: 0\n\n` +
+          `Import completed successfully!`,
       )
 
       setImportFile(null)
@@ -240,10 +325,10 @@ function DatabaseDataContent() {
 
       setAnonymizeOutput(
         `Scanning database for PII fields...\n\n` +
-        `Tables scanned: ${SAMPLE_TABLES.length}\n` +
-        `Columns analyzed: ${SAMPLE_TABLES.reduce((acc, t) => acc + t.columns.length, 0)}\n` +
-        `PII fields detected: ${SAMPLE_PII_FIELDS.length}\n\n` +
-        `Scan completed. Review detected fields below.`
+          `Tables scanned: ${SAMPLE_TABLES.length}\n` +
+          `Columns analyzed: ${SAMPLE_TABLES.reduce((acc, t) => acc + t.columns.length, 0)}\n` +
+          `PII fields detected: ${SAMPLE_PII_FIELDS.length}\n\n` +
+          `Scan completed. Review detected fields below.`,
       )
 
       setPiiFields(SAMPLE_PII_FIELDS)
@@ -267,18 +352,25 @@ function DatabaseDataContent() {
         const field = selectedFields[i]
         await new Promise((resolve) => setTimeout(resolve, 800))
         setAnonymizeProgress(((i + 1) / selectedFields.length) * 100)
-        setAnonymizeOutput((prev) =>
-          prev + `Anonymizing ${field.table}.${field.column}... done\n`
+        setAnonymizeOutput(
+          (prev) =>
+            prev + `Anonymizing ${field.table}.${field.column}... done\n`,
         )
       }
 
-      setAnonymizeOutput((prev) =>
-        prev + `\nAnonymization completed!\n` +
-        `Fields processed: ${selectedFields.length}\n` +
-        `Records updated: ${selectedFields.length * 500} (estimated)`
+      setAnonymizeOutput(
+        (prev) =>
+          prev +
+          `\nAnonymization completed!\n` +
+          `Fields processed: ${selectedFields.length}\n` +
+          `Records updated: ${selectedFields.length * 500} (estimated)`,
       )
     } catch (error) {
-      setAnonymizeOutput((prev) => prev + `\nError: ${error instanceof Error ? error.message : 'Anonymization failed'}`)
+      setAnonymizeOutput(
+        (prev) =>
+          prev +
+          `\nError: ${error instanceof Error ? error.message : 'Anonymization failed'}`,
+      )
     } finally {
       setIsAnonymizing(false)
       setAnonymizeProgress(0)
@@ -288,8 +380,8 @@ function DatabaseDataContent() {
   const togglePIIField = (index: number) => {
     setPiiFields((prev) =>
       prev.map((field, i) =>
-        i === index ? { ...field, selected: !field.selected } : field
-      )
+        i === index ? { ...field, selected: !field.selected } : field,
+      ),
     )
   }
 
@@ -455,7 +547,11 @@ function DatabaseDataContent() {
                       <span>Command:</span>
                     </div>
                     <div className="mt-2">
-                      $ nself db export{selectedExportTable ? ` --table=${selectedExportTable}` : ''} --format={exportFormat}
+                      $ nself db export
+                      {selectedExportTable
+                        ? ` --table=${selectedExportTable}`
+                        : ''}{' '}
+                      --format={exportFormat}
                       {exportLimit && ` --limit=${exportLimit}`}
                     </div>
                   </div>
@@ -536,7 +632,9 @@ function DatabaseDataContent() {
                           ) : (
                             <FileJson className="h-5 w-5 text-blue-500" />
                           )}
-                          <span className="font-medium">{importPreview.fileName}</span>
+                          <span className="font-medium">
+                            {importPreview.fileName}
+                          </span>
                         </div>
                         <Button
                           variant="outline"
@@ -577,7 +675,9 @@ function DatabaseDataContent() {
                   {/* Import Button */}
                   <Button
                     onClick={handleImport}
-                    disabled={!importFile || !selectedImportTable || isImporting}
+                    disabled={
+                      !importFile || !selectedImportTable || isImporting
+                    }
                     className="w-full"
                     size="lg"
                   >
@@ -601,8 +701,11 @@ function DatabaseDataContent() {
                       <span>Command:</span>
                     </div>
                     <div className="mt-2">
-                      $ nself db import{importFile ? ` --file="${importFile.name}"` : ''}
-                      {selectedImportTable ? ` --table=${selectedImportTable}` : ''}
+                      $ nself db import
+                      {importFile ? ` --file="${importFile.name}"` : ''}
+                      {selectedImportTable
+                        ? ` --table=${selectedImportTable}`
+                        : ''}
                     </div>
                   </div>
                 </CardContent>
@@ -647,7 +750,9 @@ function DatabaseDataContent() {
                 {importPreview && (
                   <div className="mt-6 space-y-4">
                     <div className="flex items-center gap-4 text-sm">
-                      <Badge variant="outline">{importPreview.format.toUpperCase()}</Badge>
+                      <Badge variant="outline">
+                        {importPreview.format.toUpperCase()}
+                      </Badge>
                       <span>{importPreview.rowCount} rows</span>
                       <span>{importPreview.columns.length} columns</span>
                     </div>
@@ -664,7 +769,10 @@ function DatabaseDataContent() {
                           {importPreview.sampleRows.map((row, i) => (
                             <TableRow key={i}>
                               {importPreview.columns.map((col) => (
-                                <TableCell key={col} className="font-mono text-xs">
+                                <TableCell
+                                  key={col}
+                                  className="font-mono text-xs"
+                                >
                                   {row[col]}
                                 </TableCell>
                               ))}
@@ -674,7 +782,8 @@ function DatabaseDataContent() {
                       </Table>
                     </ScrollArea>
                     <p className="text-xs text-zinc-500">
-                      Showing first {importPreview.sampleRows.length} of {importPreview.rowCount} rows
+                      Showing first {importPreview.sampleRows.length} of{' '}
+                      {importPreview.rowCount} rows
                     </p>
                   </div>
                 )}
@@ -688,10 +797,13 @@ function DatabaseDataContent() {
               {/* Warning Alert */}
               <Alert className="border-amber-500/50 bg-amber-500/10">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                <AlertTitle className="text-amber-500">Caution: Destructive Operation</AlertTitle>
+                <AlertTitle className="text-amber-500">
+                  Caution: Destructive Operation
+                </AlertTitle>
                 <AlertDescription>
-                  Anonymization permanently modifies data. This should only be used on non-production
-                  databases or before sharing data for development/testing purposes.
+                  Anonymization permanently modifies data. This should only be
+                  used on non-production databases or before sharing data for
+                  development/testing purposes.
                 </AlertDescription>
               </Alert>
 
@@ -745,17 +857,23 @@ function DatabaseDataContent() {
                                 <TableCell>
                                   <Checkbox
                                     checked={field.selected}
-                                    onCheckedChange={() => togglePIIField(index)}
+                                    onCheckedChange={() =>
+                                      togglePIIField(index)
+                                    }
                                   />
                                 </TableCell>
                                 <TableCell>
                                   <div className="font-mono text-xs">
-                                    <span className="text-zinc-500">{field.table}.</span>
+                                    <span className="text-zinc-500">
+                                      {field.table}.
+                                    </span>
                                     {field.column}
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <Badge className={getPIITypeBadge(field.type)}>
+                                  <Badge
+                                    className={getPIITypeBadge(field.type)}
+                                  >
                                     {field.type}
                                   </Badge>
                                 </TableCell>
@@ -774,7 +892,11 @@ function DatabaseDataContent() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setPiiFields((prev) => prev.map((f) => ({ ...f, selected: true })))}
+                        onClick={() =>
+                          setPiiFields((prev) =>
+                            prev.map((f) => ({ ...f, selected: true })),
+                          )
+                        }
                       >
                         <Eye className="mr-2 h-4 w-4" />
                         Select All
@@ -782,7 +904,11 @@ function DatabaseDataContent() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setPiiFields((prev) => prev.map((f) => ({ ...f, selected: false })))}
+                        onClick={() =>
+                          setPiiFields((prev) =>
+                            prev.map((f) => ({ ...f, selected: false })),
+                          )
+                        }
                       >
                         <EyeOff className="mr-2 h-4 w-4" />
                         Deselect All
@@ -803,7 +929,10 @@ function DatabaseDataContent() {
                     {/* Anonymize Button */}
                     <Button
                       onClick={handleAnonymize}
-                      disabled={piiFields.filter((f) => f.selected).length === 0 || isAnonymizing}
+                      disabled={
+                        piiFields.filter((f) => f.selected).length === 0 ||
+                        isAnonymizing
+                      }
                       className="w-full bg-purple-600 hover:bg-purple-700"
                       size="lg"
                     >
@@ -815,7 +944,8 @@ function DatabaseDataContent() {
                       ) : (
                         <>
                           <Shield className="mr-2 h-4 w-4" />
-                          Anonymize Selected Fields ({piiFields.filter((f) => f.selected).length})
+                          Anonymize Selected Fields (
+                          {piiFields.filter((f) => f.selected).length})
                         </>
                       )}
                     </Button>
@@ -828,9 +958,11 @@ function DatabaseDataContent() {
                       </div>
                       <div className="mt-2">
                         $ nself db anonymize
-                        {piiFields.filter((f) => f.selected).length > 0 && (
-                          ` --fields="${piiFields.filter((f) => f.selected).map((f) => `${f.table}.${f.column}`).join(',')}"`
-                        )}
+                        {piiFields.filter((f) => f.selected).length > 0 &&
+                          ` --fields="${piiFields
+                            .filter((f) => f.selected)
+                            .map((f) => `${f.table}.${f.column}`)
+                            .join(',')}"`}
                       </div>
                     </div>
                   </CardContent>
@@ -874,37 +1006,49 @@ function DatabaseDataContent() {
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
                     <div className="rounded-lg border p-3 dark:border-zinc-700">
-                      <Badge className="mb-2 bg-blue-500/10 text-blue-500">email</Badge>
+                      <Badge className="mb-2 bg-blue-500/10 text-blue-500">
+                        email
+                      </Badge>
                       <p className="text-xs text-zinc-500">
                         user@domain.com to user_abc123@example.com
                       </p>
                     </div>
                     <div className="rounded-lg border p-3 dark:border-zinc-700">
-                      <Badge className="mb-2 bg-purple-500/10 text-purple-500">name</Badge>
+                      <Badge className="mb-2 bg-purple-500/10 text-purple-500">
+                        name
+                      </Badge>
                       <p className="text-xs text-zinc-500">
                         Real names to fake names using Faker
                       </p>
                     </div>
                     <div className="rounded-lg border p-3 dark:border-zinc-700">
-                      <Badge className="mb-2 bg-green-500/10 text-green-500">phone</Badge>
+                      <Badge className="mb-2 bg-green-500/10 text-green-500">
+                        phone
+                      </Badge>
                       <p className="text-xs text-zinc-500">
                         Replace with (555) 000-XXXX format
                       </p>
                     </div>
                     <div className="rounded-lg border p-3 dark:border-zinc-700">
-                      <Badge className="mb-2 bg-orange-500/10 text-orange-500">address</Badge>
+                      <Badge className="mb-2 bg-orange-500/10 text-orange-500">
+                        address
+                      </Badge>
                       <p className="text-xs text-zinc-500">
                         Replace with generic addresses
                       </p>
                     </div>
                     <div className="rounded-lg border p-3 dark:border-zinc-700">
-                      <Badge className="mb-2 bg-red-500/10 text-red-500">ssn</Badge>
+                      <Badge className="mb-2 bg-red-500/10 text-red-500">
+                        ssn
+                      </Badge>
                       <p className="text-xs text-zinc-500">
                         Replace with XXX-XX-XXXX format
                       </p>
                     </div>
                     <div className="rounded-lg border p-3 dark:border-zinc-700">
-                      <Badge className="mb-2 bg-cyan-500/10 text-cyan-500">ip</Badge>
+                      <Badge className="mb-2 bg-cyan-500/10 text-cyan-500">
+                        ip
+                      </Badge>
                       <p className="text-xs text-zinc-500">
                         Replace with 10.0.0.X or 192.168.X.X
                       </p>

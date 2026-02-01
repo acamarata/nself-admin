@@ -20,6 +20,26 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: 'v0.6.0',
+    date: '2026-02-01',
+    type: 'minor',
+    features: [
+      'Complete multi-tenancy support with tenant management',
+      'Organization management with teams and roles',
+      'Role-based access control with permission matrix',
+      'Tenant branding (logos, colors, themes)',
+      'Custom domain management with SSL generation',
+      'Email template customization per tenant',
+      'Quota management and usage tracking',
+      'Audit logging for tenant operations',
+    ],
+    fixes: [
+      'Fixed unused variable warnings in new components',
+      'Improved TypeScript types for tenant/org entities',
+      'Better error handling in API routes',
+    ],
+  },
+  {
     version: 'v0.5.0',
     date: '2026-02-15',
     type: 'minor',

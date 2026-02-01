@@ -1,6 +1,6 @@
 {
   "name": "nself-admin",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": false,
   "description": "Web-based administration interface for nself CLI backend stack",
   "license": "SEE LICENSE IN LICENSE",

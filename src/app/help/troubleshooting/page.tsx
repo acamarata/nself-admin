@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { PageContent } from '@/components/ui/page-content'
 import { PageHeader } from '@/components/ui/page-header'
-import { helpArticles } from '@/data/help-content'
+import { helpArticlesArray, type HelpArticle } from '@/data/help-content'
 import { AlertCircle, Clock, Search, Terminal } from 'lucide-react'
 import Link from 'next/link'
 import * as React from 'react'
@@ -135,8 +135,8 @@ function TroubleshootingContent() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [selectedSeverity, setSelectedSeverity] = React.useState<string>('all')
 
-  const troubleshootingArticles = helpArticles.filter(
-    (a) => a.category === 'troubleshooting',
+  const troubleshootingArticles = helpArticlesArray.filter(
+    (a: HelpArticle) => a.category === 'troubleshooting',
   )
 
   const filteredIssues = commonIssues.filter((issue) => {

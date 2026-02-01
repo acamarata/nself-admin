@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { CodeEditor } from '@/components/ui/code-editor'
 import { PageContent } from '@/components/ui/page-content'
 import { PageHeader } from '@/components/ui/page-header'
-import { helpArticles } from '@/data/help-content'
+import { helpArticlesArray, type HelpArticle } from '@/data/help-content'
 import { ArrowLeft, Clock, ThumbsDown, ThumbsUp } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -17,7 +17,7 @@ function HelpArticleContent({ id }: { id: string }) {
   const [feedbackGiven, setFeedbackGiven] = React.useState(false)
   const [helpful, setHelpful] = React.useState<boolean | null>(null)
 
-  const article = helpArticles.find((a) => a.id === id)
+  const article = helpArticlesArray.find((a: HelpArticle) => a.id === id)
 
   if (!article) {
     notFound()
@@ -97,8 +97,11 @@ function HelpArticleContent({ id }: { id: string }) {
   }
 
   // Get related articles
-  const relatedArticles = helpArticles
-    .filter((a) => a.category === article.category && a.id !== article.id)
+  const relatedArticles = helpArticlesArray
+    .filter(
+      (a: HelpArticle) =>
+        a.category === article.category && a.id !== article.id,
+    )
     .slice(0, 3)
 
   return (
@@ -125,7 +128,7 @@ function HelpArticleContent({ id }: { id: string }) {
               </div>
               <span>Updated {article.updatedAt}</span>
               <div className="flex flex-wrap gap-1">
-                {article.tags.map((tag) => (
+                {(article.tags || []).map((tag: string) => (
                   <Badge key={tag} variant="secondary">
                     {tag}
                   </Badge>

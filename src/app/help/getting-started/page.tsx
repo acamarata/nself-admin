@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { PageContent } from '@/components/ui/page-content'
 import { PageHeader } from '@/components/ui/page-header'
-import { helpArticles } from '@/data/help-content'
+import { helpArticlesArray, type HelpArticle } from '@/data/help-content'
 import { Check, ChevronRight, Clock } from 'lucide-react'
 import Link from 'next/link'
 import * as React from 'react'
@@ -54,8 +54,8 @@ function GettingStartedContent() {
     },
   ])
 
-  const getStartedArticles = helpArticles.filter(
-    (a) => a.category === 'getting-started',
+  const getStartedArticles = helpArticlesArray.filter(
+    (a: HelpArticle) => a.category === 'getting-started',
   )
 
   const markStepComplete = (stepId: number) => {
