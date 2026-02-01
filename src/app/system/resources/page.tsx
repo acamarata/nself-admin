@@ -2,6 +2,8 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
+import { MobileDataCard } from '@/components/ui/responsive-table'
 import {
   Activity,
   AlertCircle,
@@ -20,7 +22,7 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface SystemMetrics {
   cpu: {
@@ -411,7 +413,8 @@ function ProcessManager({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Desktop: Table */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full">
           <thead className="bg-zinc-50 dark:bg-zinc-900/50">
             <tr>
@@ -521,6 +524,53 @@ function ProcessManager({
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile: Cards */}
+      <div className="space-y-3 md:hidden">
+        {filteredProcesses.map((process) => (
+          <MobileDataCard
+            key={process.pid}
+            title={process.name}
+            subtitle={`PID: ${process.pid} | User: ${process.user}`}
+            data={[
+              { label: 'CPU', value: `${process.cpuUsage.toFixed(1)}%` },
+              {
+                label: 'Memory',
+                value: `${(process.memoryUsage / 1024 ** 2).toFixed(1)} MB`,
+              },
+              { label: 'Runtime', value: formatUptime(process.runtime) },
+              { label: 'Status', value: process.status },
+            ]}
+            status={{
+              text: process.status,
+              color:
+                process.status === 'running'
+                  ? 'green'
+                  : process.status === 'sleeping'
+                    ? 'blue'
+                    : 'zinc',
+            }}
+            actions={
+              <>
+                <button
+                  onClick={() => onProcessAction('restart', process.pid)}
+                  className="flex items-center gap-2 rounded bg-zinc-100 px-4 py-2 text-sm hover:bg-zinc-200 dark:bg-zinc-700 dark:hover:bg-zinc-600"
+                >
+                  <RotateCw className="h-4 w-4" />
+                  Restart
+                </button>
+                <button
+                  onClick={() => onProcessAction('kill', process.pid)}
+                  className="flex items-center gap-2 rounded bg-red-100 px-4 py-2 text-sm text-red-600 hover:bg-red-200 dark:bg-red-900/20 dark:hover:bg-red-900/30"
+                >
+                  <X className="h-4 w-4" />
+                  Kill
+                </button>
+              </>
+            }
+          />
+        ))}
       </div>
     </div>
   )
@@ -720,7 +770,7 @@ function ResourceAlerts({
   )
 }
 
-export default function SystemResourcesPage() {
+function SystemResourcesContent() {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null)
   const [alerts, setAlerts] = useState<ResourceAlert[]>([])
   const [loading, setLoading] = useState(true)
@@ -1234,5 +1284,13 @@ export default function SystemResourcesPage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function SystemResourcesPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <SystemResourcesContent />
+    </Suspense>
   )
 }

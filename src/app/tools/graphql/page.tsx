@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { CodeEditorSkeleton } from '@/components/skeletons'
 import {
   Activity,
   Box,
@@ -22,7 +23,7 @@ import {
   Type,
   Upload,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
 interface GraphQLQuery {
   id: string
@@ -659,7 +660,7 @@ function QueryResult({
   )
 }
 
-export default function GraphQLToolsPage() {
+function GraphQLToolsContent() {
   const [queries, setQueries] = useState<GraphQLQuery[]>(mockQueries)
   const [activeQueryId, setActiveQueryId] = useState<string>('1')
   const [activeTab, setActiveTab] = useState<'query' | 'schema'>('query')
@@ -882,9 +883,9 @@ export default function GraphQLToolsPage() {
         </div>
 
         {activeTab === 'query' && (
-          <div className="flex gap-6">
+          <div className="flex flex-col gap-6 lg:flex-row">
             {/* Query List */}
-            <div className="w-80">
+            <div className="w-full lg:w-80">
               <div className="mb-4">
                 <h2 className="mb-3 font-semibold text-zinc-900 dark:text-white">
                   Saved Queries
@@ -1018,9 +1019,9 @@ export default function GraphQLToolsPage() {
         )}
 
         {activeTab === 'schema' && (
-          <div className="flex gap-6">
+          <div className="flex flex-col gap-6 lg:flex-row">
             {/* Schema Explorer */}
-            <div className="w-80">
+            <div className="w-full lg:w-80">
               <div className="mb-4 border-b border-zinc-200 dark:border-zinc-700">
                 <nav className="flex">
                   <button
@@ -1141,5 +1142,13 @@ export default function GraphQLToolsPage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function GraphQLToolsPage() {
+  return (
+    <Suspense fallback={<CodeEditorSkeleton />}>
+      <GraphQLToolsContent />
+    </Suspense>
   )
 }
