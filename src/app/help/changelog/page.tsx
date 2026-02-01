@@ -20,6 +20,27 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: 'v0.7.0',
+    date: '2026-02-01',
+    type: 'minor',
+    features: [
+      'Real-time notification system with preferences management',
+      'Activity feed with timeline view and filtering',
+      'Custom dashboards with drag-and-drop widgets',
+      'Report builder with scheduling and multiple export formats',
+      'API key management with usage tracking and rate limiting',
+      'Workflow automation with visual editor and action templates',
+      '12 built-in widget templates (metrics, charts, tables)',
+      '6 report templates (usage, performance, security, etc.)',
+      '10 workflow action templates for common operations',
+    ],
+    fixes: [
+      'Improved real-time updates across all pages',
+      'Better error handling for async operations',
+      'Enhanced TypeScript types for new features',
+    ],
+  },
+  {
     version: 'v0.6.0',
     date: '2026-02-01',
     type: 'minor',

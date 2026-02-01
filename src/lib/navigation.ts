@@ -276,6 +276,17 @@ export const navigation: Array<NavGroup> = [
         description: 'Auth webhooks',
       },
       {
+        title: 'API Keys',
+        href: '/settings/api-keys',
+        icon: 'key',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'API key management',
+        submenu: [
+          { label: 'All Keys', href: '/settings/api-keys' },
+          { label: 'Create Key', href: '/settings/api-keys/new' },
+        ],
+      },
+      {
         title: 'Audit Log',
         href: '/audit',
         icon: 'scroll-text',
@@ -381,6 +392,13 @@ export const navigation: Array<NavGroup> = [
         description: 'System metrics',
       },
       {
+        title: 'Activity Feed',
+        href: '/activity',
+        icon: 'activity',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'Real-time activity tracking',
+      },
+      {
         title: 'Alerts',
         href: '/monitor/alerts',
         icon: 'bell',
@@ -403,6 +421,46 @@ export const navigation: Array<NavGroup> = [
         href: '/monitor/traces',
         icon: 'git-branch',
         description: 'Distributed tracing',
+      },
+    ],
+  },
+  // ── Analytics & Automation ─────────────────────────────────
+  {
+    title: 'Analytics & Automation',
+    collapsed: true,
+    links: [
+      {
+        title: 'Dashboards',
+        href: '/dashboards',
+        icon: 'layout-dashboard',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'Custom analytics dashboards',
+        submenu: [
+          { label: 'All Dashboards', href: '/dashboards' },
+          { label: 'Create Dashboard', href: '/dashboards/new' },
+        ],
+      },
+      {
+        title: 'Reports',
+        href: '/reports',
+        icon: 'file-bar-chart',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'Generate and schedule reports',
+        submenu: [
+          { label: 'Templates', href: '/reports' },
+          { label: 'Executions', href: '/reports/executions' },
+        ],
+      },
+      {
+        title: 'Workflows',
+        href: '/workflows',
+        icon: 'workflow',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'Automated workflow management',
+        submenu: [
+          { label: 'All Workflows', href: '/workflows' },
+          { label: 'Create Workflow', href: '/workflows/new' },
+        ],
       },
     ],
   },
@@ -663,6 +721,17 @@ export const navigation: Array<NavGroup> = [
     title: 'System',
     position: 'bottom',
     links: [
+      {
+        title: 'Notifications',
+        href: '/notifications',
+        icon: 'bell',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'System notifications',
+        submenu: [
+          { label: 'All Notifications', href: '/notifications' },
+          { label: 'Settings', href: '/notifications/settings' },
+        ],
+      },
       {
         title: 'URLs',
         href: '/system/urls',
