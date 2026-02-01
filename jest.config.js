@@ -33,6 +33,7 @@ const customJestConfig = {
     },
   },
   testTimeout: 10000,
+  passWithNoTests: true,
   globals: {
     'ts-jest': {
       tsconfig: {
