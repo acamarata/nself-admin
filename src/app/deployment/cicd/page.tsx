@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import {
   Activity,
   AlertCircle,
@@ -31,7 +32,7 @@ import {
   Webhook,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface Pipeline {
   id: string
@@ -498,7 +499,7 @@ function WebhookManagement({
   )
 }
 
-export default function DeploymentCICDPage() {
+function DeploymentCICDContent() {
   const [pipelines, setPipelines] = useState<Pipeline[]>([])
   const [deployments, setDeployments] = useState<Deployment[]>([])
   const [webhooks, setWebhooks] = useState<WebhookConfig[]>([])
@@ -866,5 +867,13 @@ export default function DeploymentCICDPage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function DeploymentCICDPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <DeploymentCICDContent />
+    </Suspense>
   )
 }

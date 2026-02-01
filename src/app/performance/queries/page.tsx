@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { TableSkeleton } from '@/components/skeletons'
 import {
   AlertTriangle,
   ArrowLeft,
@@ -12,7 +13,7 @@ import {
   Zap,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface SlowQuery {
   id: string
@@ -26,7 +27,7 @@ interface SlowQuery {
   shared_blks_read: number
 }
 
-export default function QueriesPage() {
+function QueriesContent() {
   const [loading, setLoading] = useState(true)
   const [queries, setQueries] = useState<SlowQuery[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -421,5 +422,13 @@ export default function QueriesPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function QueriesPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <QueriesContent />
+    </Suspense>
   )
 }

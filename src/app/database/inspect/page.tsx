@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { FormSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,7 +30,7 @@ import {
   Table2,
   Zap,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface TableSize {
   name: string
@@ -86,7 +87,7 @@ interface DatabaseOverview {
   cacheHitRatio: number
 }
 
-export default function DatabaseInspectPage() {
+function DatabaseInspectContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
@@ -901,5 +902,13 @@ export default function DatabaseInspectPage() {
         </Tabs>
       </div>
     </PageTemplate>
+  )
+}
+
+export default function DatabaseInspectPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <DatabaseInspectContent />
+    </Suspense>
   )
 }

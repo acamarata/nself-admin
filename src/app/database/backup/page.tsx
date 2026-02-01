@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { TableSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -39,7 +40,7 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -52,7 +53,7 @@ interface BackupFormData {
   excludeTables: string[]
 }
 
-export default function DatabaseBackupPage() {
+function DatabaseBackupContent() {
   const {
     data: backupData,
     error,
@@ -621,5 +622,13 @@ export default function DatabaseBackupPage() {
         )}
       </div>
     </PageTemplate>
+  )
+}
+
+export default function DatabaseBackupPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <DatabaseBackupContent />
+    </Suspense>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { MarketplacePlugin, PluginCategory } from '@/types/plugins'
 import {
   AlertCircle,
@@ -17,7 +18,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -154,7 +155,7 @@ function MarketplaceCard({
   )
 }
 
-export default function MarketplacePage() {
+function MarketplaceContent() {
   const searchParams = useSearchParams()
   const installParam = searchParams.get('install')
 
@@ -162,6 +163,7 @@ export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState<
     PluginCategory | 'all'
   >('all')
+  const [sortBy, setSortBy] = useState<'popular' | 'recent' | 'name'>('popular')
   const [installing, setInstalling] = useState<string | null>(null)
 
   const {
@@ -206,7 +208,7 @@ export default function MarketplacePage() {
 
   const installedPluginNames = installedData?.plugins.map((p) => p.name) || []
 
-  const filteredPlugins =
+  let filteredPlugins =
     marketplaceData?.plugins.filter((plugin) => {
       const matchesSearch =
         plugin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -218,6 +220,17 @@ export default function MarketplacePage() {
         selectedCategory === 'all' || plugin.category === selectedCategory
       return matchesSearch && matchesCategory
     }) || []
+
+  // Apply sorting
+  filteredPlugins = [...filteredPlugins].sort((a, b) => {
+    if (sortBy === 'popular') {
+      return b.downloads - a.downloads
+    } else if (sortBy === 'recent') {
+      return b.version.localeCompare(a.version)
+    } else {
+      return a.name.localeCompare(b.name)
+    }
+  })
 
   if (marketplaceLoading) {
     return (
@@ -333,6 +346,18 @@ export default function MarketplacePage() {
               </option>
             ))}
           </select>
+
+          <select
+            value={sortBy}
+            onChange={(e) =>
+              setSortBy(e.target.value as 'popular' | 'recent' | 'name')
+            }
+            className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+          >
+            <option value="popular">Popular</option>
+            <option value="recent">Recent</option>
+            <option value="name">Name</option>
+          </select>
         </div>
       </div>
 
@@ -368,5 +393,13 @@ export default function MarketplacePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <MarketplaceContent />
+    </Suspense>
   )
 }

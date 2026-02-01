@@ -1,0 +1,147 @@
+name: Dependency Audit
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+jobs:
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Run pnpm audit
+        id: audit
+        continue-on-error: true
+        run: |
+          pnpm audit --json > audit-results.json || true
+          cat audit-results.json
+
+      - name: Parse audit results
+        id: parse
+        run: |
+          if [ -f audit-results.json ]; then
+            critical=$(jq '.metadata.vulnerabilities.critical // 0' audit-results.json)
+            high=$(jq '.metadata.vulnerabilities.high // 0' audit-results.json)
+            moderate=$(jq '.metadata.vulnerabilities.moderate // 0' audit-results.json)
+            low=$(jq '.metadata.vulnerabilities.low // 0' audit-results.json)
+
+            echo "critical=$critical" >> $GITHUB_OUTPUT
+            echo "high=$high" >> $GITHUB_OUTPUT
+            echo "moderate=$moderate" >> $GITHUB_OUTPUT
+            echo "low=$low" >> $GITHUB_OUTPUT
+
+            total=$((critical + high + moderate + low))
+            echo "total=$total" >> $GITHUB_OUTPUT
+          else
+            echo "No audit results found"
+            echo "total=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create or update issue
+        if: steps.parse.outputs.total > 0
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const critical = ${{ steps.parse.outputs.critical }};
+            const high = ${{ steps.parse.outputs.high }};
+            const moderate = ${{ steps.parse.outputs.moderate }};
+            const low = ${{ steps.parse.outputs.low }};
+            const total = ${{ steps.parse.outputs.total }};
+
+            const title = `Security: ${total} vulnerabilities found in dependencies`;
+            const body = `## Dependency Security Audit
+
+            **Total vulnerabilities:** ${total}
+
+            | Severity | Count |
+            |----------|-------|
+            | Critical | ${critical} |
+            | High | ${high} |
+            | Moderate | ${moderate} |
+            | Low | ${low} |
+
+            ### Next Steps
+            1. Review the vulnerabilities: \`pnpm audit\`
+            2. Update dependencies: \`pnpm update\`
+            3. Check for breaking changes
+            4. Run tests: \`pnpm test\`
+            5. Create PR with fixes
+
+            ### Automated Report
+            This issue was automatically created by the dependency audit workflow.
+            Run date: ${new Date().toISOString()}
+
+            ### Manual Fix
+            \`\`\`bash
+            pnpm audit --fix
+            pnpm test
+            git commit -am "fix: update dependencies to address security vulnerabilities"
+            \`\`\`
+            `;
+
+            // Check if issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['security', 'dependencies'],
+              state: 'open'
+            });
+
+            const existingIssue = issues.data.find(issue =>
+              issue.title.includes('vulnerabilities found')
+            );
+
+            if (existingIssue) {
+              // Update existing issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: body
+              });
+
+              // Add comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: `Updated: ${total} vulnerabilities found (Critical: ${critical}, High: ${high})`
+              });
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['security', 'dependencies', 'automated']
+              });
+            }
+
+      - name: Fail on critical vulnerabilities
+        if: steps.parse.outputs.critical > 0
+        run: |
+          echo "::error::Found ${{ steps.parse.outputs.critical }} critical vulnerabilities"
+          exit 1

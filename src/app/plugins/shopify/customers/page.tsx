@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { ShopifyCustomer } from '@/types/shopify'
 import {
   AlertCircle,
@@ -19,7 +20,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -144,7 +145,7 @@ function CustomerRow({ customer }: { customer: ShopifyCustomer }) {
   )
 }
 
-export default function ShopifyCustomersPage() {
+function ShopifyCustomersContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [stateFilter, setStateFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
@@ -357,5 +358,13 @@ export default function ShopifyCustomersPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ShopifyCustomersPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <ShopifyCustomersContent />
+    </Suspense>
   )
 }

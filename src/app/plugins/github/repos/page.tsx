@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { GitHubRepo } from '@/types/github'
 import {
   AlertCircle,
@@ -17,7 +18,7 @@ import {
   Star,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -113,7 +114,7 @@ function RepoCard({ repo }: { repo: GitHubRepo }) {
   )
 }
 
-export default function GitHubReposPage() {
+function GitHubReposContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const pageSize = 12
@@ -275,5 +276,13 @@ export default function GitHubReposPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function GitHubReposPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <GitHubReposContent />
+    </Suspense>
   )
 }

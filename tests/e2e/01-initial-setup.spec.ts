@@ -1,0 +1,79 @@
+import { expect, test } from './fixtures'
+import { clearAppState, TEST_PASSWORD } from './helpers'
+
+test.describe('Initial Setup Flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await clearAppState(page)
+  })
+
+  test('should complete first-time password setup', async ({ loginPage }) => {
+    await loginPage.goto()
+    await loginPage.expectSetupMode()
+
+    // Setup password
+    await loginPage.setupPassword(TEST_PASSWORD)
+
+    // Should redirect after successful setup
+    await loginPage.expectLoginSuccess()
+  })
+
+  test('should login with newly created password', async ({ loginPage }) => {
+    await loginPage.goto()
+
+    // Should show login form (not setup)
+    await expect(loginPage.passwordInput).toBeVisible()
+    await expect(loginPage.submitButton).toBeVisible()
+
+    // Login with password
+    await loginPage.login(TEST_PASSWORD)
+    await loginPage.expectLoginSuccess()
+  })
+
+  test('should navigate to dashboard after login', async ({
+    loginPage,
+    dashboardPage,
+  }) => {
+    await loginPage.goto()
+    await loginPage.login(TEST_PASSWORD)
+
+    // Should be on dashboard or initial setup page
+    await dashboardPage.expectDashboardLoaded()
+  })
+
+  test('should show password setup on mobile', async ({ loginPage, page }) => {
+    // Test mobile viewport
+    await page.setViewportSize({ width: 375, height: 667 })
+    await loginPage.goto()
+
+    await loginPage.expectSetupMode()
+    await expect(loginPage.passwordInput).toBeVisible()
+    await expect(loginPage.submitButton).toBeVisible()
+  })
+
+  test('should validate password requirements', async ({ loginPage, page }) => {
+    await loginPage.goto()
+
+    // Try weak password
+    await loginPage.passwordInput.fill('123')
+    await loginPage.submitButton.click()
+
+    // Should show error for weak password
+    await expect(page.locator('[role="alert"]')).toBeVisible()
+  })
+
+  test('should have accessible form elements', async ({ loginPage, page }) => {
+    await loginPage.goto()
+
+    // Check ARIA labels
+    const passwordLabel =
+      await loginPage.passwordInput.getAttribute('aria-label')
+    expect(passwordLabel).toBeTruthy()
+
+    // Test keyboard navigation
+    await page.keyboard.press('Tab')
+    await expect(loginPage.passwordInput).toBeFocused()
+
+    await page.keyboard.press('Tab')
+    await expect(loginPage.submitButton).toBeFocused()
+  })
+})

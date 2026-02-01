@@ -14,19 +14,32 @@ const customJestConfig = {
   },
   testMatch: ['**/__tests__/**/*.test.ts?(x)', '**/*.test.ts?(x)'],
   collectCoverageFrom: [
-    'src/lib/**/*.{ts,tsx}',
-    '!src/lib/**/*.d.ts',
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/**/__tests__/**',
+    '!src/types/**',
     '!**/node_modules/**',
+    '!src/app/layout.tsx',
+    '!src/app/**/layout.tsx',
+    '!src/app/**/loading.tsx',
+    '!src/app/not-found.tsx',
   ],
-  // Coverage thresholds - increase as more tests are added
-  // coverageThreshold: {
-  //   global: {
-  //     branches: 50,
-  //     functions: 50,
-  //     lines: 50,
-  //     statements: 50,
-  //   },
-  // },
+  coverageThreshold: {
+    global: {
+      branches: 10,
+      functions: 10,
+      lines: 10,
+      statements: 10,
+    },
+  },
+  testTimeout: 10000,
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        jsx: 'react',
+      },
+    },
+  },
 }
 
 module.exports = createJestConfig(customJestConfig)

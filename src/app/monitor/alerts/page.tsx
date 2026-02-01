@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import type { Alert, AlertRule } from '@/types/performance'
 import {
   AlertCircle,
@@ -16,9 +17,9 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function AlertsPage() {
+function AlertsContent() {
   const [loading, setLoading] = useState(true)
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [rules, setRules] = useState<AlertRule[]>([])
@@ -497,5 +498,13 @@ export default function AlertsPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function AlertsPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <AlertsContent />
+    </Suspense>
   )
 }

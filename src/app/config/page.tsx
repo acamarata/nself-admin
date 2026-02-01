@@ -2,9 +2,10 @@
 
 import { Button } from '@/components/Button'
 import { PageShell } from '@/components/PageShell'
+import { FormSkeleton } from '@/components/skeletons'
 import { useAsyncData } from '@/hooks/useAsyncData'
 import * as Icons from '@/lib/icons'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
 interface EnvVariable {
   key: string
@@ -16,7 +17,7 @@ interface EnvVariable {
   hasChanges?: boolean
 }
 
-export default function ConfigPage() {
+function ConfigContent() {
   const [saving, setSaving] = useState(false)
   const [environment, setEnvironment] = useState('local')
   const [variables, setVariables] = useState<EnvVariable[]>([])
@@ -56,8 +57,8 @@ export default function ConfigPage() {
         } else {
           throw new Error(data.error || 'Failed to fetch variables')
         }
-      } catch (error: any) {
-        if (error.name === 'AbortError') {
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
           throw new Error('Request timed out. Please try again.')
         }
         throw error
@@ -429,5 +430,13 @@ export default function ConfigPage() {
         )}
       </div>
     </PageShell>
+  )
+}
+
+export default function ConfigPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <ConfigContent />
+    </Suspense>
   )
 }

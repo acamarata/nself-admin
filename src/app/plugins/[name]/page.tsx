@@ -1,5 +1,6 @@
 'use client'
 
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import type {
   Plugin,
   PluginConfig,
@@ -28,7 +29,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -131,7 +132,7 @@ function TableInfoRow({ table }: { table: PluginTableInfo }) {
   )
 }
 
-export default function PluginDetailPage() {
+function PluginDetailContent() {
   const params = useParams()
   const pluginName = params.name as string
 
@@ -598,5 +599,13 @@ export default function PluginDetailPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function PluginDetailPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <PluginDetailContent />
+    </Suspense>
   )
 }

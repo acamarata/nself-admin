@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import {
   ArrowLeft,
   BarChart3,
@@ -10,7 +11,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface GrafanaStatus {
   running: boolean
@@ -20,7 +21,7 @@ interface GrafanaStatus {
   dataSources: { name: string; type: string; status: 'ok' | 'error' }[]
 }
 
-export default function GrafanaPage() {
+function GrafanaContent() {
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState<GrafanaStatus | null>(null)
 
@@ -247,5 +248,13 @@ export default function GrafanaPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function GrafanaPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <GrafanaContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { CodeEditorSkeleton } from '@/components/skeletons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,7 +33,7 @@ import {
   X,
   XCircle,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 
 interface QueryResult {
   columns: string[]
@@ -71,7 +72,7 @@ interface QueryTab {
   database: string
 }
 
-export default function SQLConsolePage() {
+function SQLConsoleContent() {
   const [activeTab, setActiveTab] = useState<string>('tab-1')
   const [tabs, setTabs] = useState<QueryTab[]>([
     {
@@ -661,5 +662,13 @@ export default function SQLConsolePage() {
         </Card>
       </div>
     </PageTemplate>
+  )
+}
+
+export default function SQLConsolePage() {
+  return (
+    <Suspense fallback={<CodeEditorSkeleton />}>
+      <SQLConsoleContent />
+    </Suspense>
   )
 }

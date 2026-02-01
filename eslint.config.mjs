@@ -1,9 +1,11 @@
 import js from "@eslint/js";
 import typescript from "@typescript-eslint/eslint-plugin";
 import typescriptParser from "@typescript-eslint/parser";
+import security from "eslint-plugin-security";
 
 export default [
   js.configs.recommended,
+  security.configs.recommended,
   {
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
@@ -59,6 +61,7 @@ export default [
     },
     plugins: {
       "@typescript-eslint": typescript,
+      "security": security,
     },
     rules: {
       // TypeScript handles these better
@@ -84,6 +87,20 @@ export default [
       // Disable missing react-hooks rules (not configured in flat config)
       "react-hooks/exhaustive-deps": "off",
       "react-hooks/rules-of-hooks": "off",
+
+      // Security rules
+      "security/detect-object-injection": "warn", // Too many false positives in TypeScript
+      "security/detect-non-literal-fs-filename": "warn", // We use validated paths
+      "security/detect-non-literal-require": "warn",
+      "security/detect-unsafe-regex": "warn", // Too many false positives for safe regex patterns
+      "security/detect-buffer-noassert": "error",
+      "security/detect-child-process": "warn", // We use execFile safely
+      "security/detect-disable-mustache-escape": "error",
+      "security/detect-eval-with-expression": "error",
+      "security/detect-no-csrf-before-method-override": "error",
+      "security/detect-non-literal-regexp": "warn",
+      "security/detect-possible-timing-attacks": "warn",
+      "security/detect-pseudoRandomBytes": "error",
     },
   },
   {

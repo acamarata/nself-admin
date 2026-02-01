@@ -1,17 +1,19 @@
 // Using Web Crypto API instead of Node crypto for edge runtime compatibility
 import { NextRequest, NextResponse } from 'next/server'
+import { getSessionInfo } from './auth-db'
 
 const CSRF_TOKEN_LENGTH = 32
 const CSRF_COOKIE_NAME = 'nself-csrf'
 const CSRF_HEADER_NAME = 'x-csrf-token'
 
 // Allowed origins for requests (local development and production)
+
 const ALLOWED_ORIGIN_PATTERNS = [
   /^https?:\/\/localhost(:\d+)?$/,
   /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
   /^https?:\/\/0\.0\.0\.0(:\d+)?$/,
-  /^https?:\/\/[^/]+\.localhost(:\d+)?$/,
-  /^https?:\/\/[^/]+\.local(:\d+)?$/,
+  /^https?:\/\/[\w-]+\.localhost(:\d+)?$/,
+  /^https?:\/\/[\w-]+\.local(:\d+)?$/,
   /^https?:\/\/admin\.local\.nself\.org(:\d+)?$/,
 ]
 
@@ -43,9 +45,68 @@ export function setCSRFCookie(response: NextResponse, token?: string): string {
 }
 
 /**
- * Validate CSRF token from request
+ * Validate CSRF token from request (session-based)
  */
-export function validateCSRFToken(request: NextRequest): boolean {
+export async function validateCSRFToken(
+  request: NextRequest,
+  sessionToken?: string,
+): Promise<boolean> {
+  // Skip CSRF check for GET and HEAD requests
+  if (['GET', 'HEAD'].includes(request.method)) {
+    return true
+  }
+
+  // Get token from header
+  const headerToken = request.headers.get(CSRF_HEADER_NAME)
+
+  if (!headerToken) {
+    return false
+  }
+
+  // If session token provided, validate against session's CSRF token
+  if (sessionToken) {
+    const session = await getSessionInfo(sessionToken)
+    if (!session) {
+      return false
+    }
+
+    // Constant time comparison to prevent timing attacks
+    if (session.csrfToken.length !== headerToken.length) {
+      return false
+    }
+
+    let result = 0
+    for (let i = 0; i < session.csrfToken.length; i++) {
+      result |= session.csrfToken.charCodeAt(i) ^ headerToken.charCodeAt(i)
+    }
+
+    return result === 0
+  }
+
+  // Otherwise validate against cookie (fallback for non-session requests)
+  const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value
+
+  if (!cookieToken) {
+    return false
+  }
+
+  // Constant time comparison to prevent timing attacks
+  if (cookieToken.length !== headerToken.length) {
+    return false
+  }
+
+  let result = 0
+  for (let i = 0; i < cookieToken.length; i++) {
+    result |= cookieToken.charCodeAt(i) ^ headerToken.charCodeAt(i)
+  }
+
+  return result === 0
+}
+
+/**
+ * Validate CSRF token from request (non-async version for backward compatibility)
+ */
+export function validateCSRFTokenSync(request: NextRequest): boolean {
   // Skip CSRF check for GET and HEAD requests
   if (['GET', 'HEAD'].includes(request.method)) {
     return true
@@ -58,7 +119,7 @@ export function validateCSRFToken(request: NextRequest): boolean {
     return false
   }
 
-  // Get token from header or body
+  // Get token from header
   const headerToken = request.headers.get(CSRF_HEADER_NAME)
 
   // Constant time comparison to prevent timing attacks

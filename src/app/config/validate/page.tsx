@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import {
   AlertTriangle,
   CheckCircle,
@@ -13,7 +14,7 @@ import {
   Shield,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface ValidationCheck {
   name: string
@@ -222,7 +223,7 @@ function CategoryGroup({
   )
 }
 
-export default function ConfigValidatePage() {
+function ConfigValidateContent() {
   const [loading, setLoading] = useState(false)
   const [validationData, setValidationData] = useState<ValidationData | null>(
     null,
@@ -419,5 +420,13 @@ export default function ConfigValidatePage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function ConfigValidatePage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <ConfigValidateContent />
+    </Suspense>
   )
 }

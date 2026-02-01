@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { FormSkeleton } from '@/components/skeletons'
 import {
   AlertCircle,
   CheckCircle,
@@ -13,7 +14,7 @@ import {
   ShieldCheck,
   Unlock,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface VaultStatus {
   connected: boolean
@@ -24,7 +25,7 @@ interface VaultStatus {
   raw?: string
 }
 
-export default function VaultPage() {
+function VaultContent() {
   const [status, setStatus] = useState<VaultStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [initializing, setInitializing] = useState(false)
@@ -485,5 +486,13 @@ export default function VaultPage() {
         </div>
       </div>
     </PageTemplate>
+  )
+}
+
+export default function VaultPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <VaultContent />
+    </Suspense>
   )
 }

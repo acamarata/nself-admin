@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { TableSkeleton } from '@/components/skeletons'
 import {
   CheckCircle,
   ChevronDown,
@@ -15,7 +16,7 @@ import {
   Users,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface RoleItem {
   name: string
@@ -91,7 +92,7 @@ function parseRolesOutput(raw: string): RoleItem[] {
   return roles
 }
 
-export default function RolesPage() {
+function RolesContent() {
   const [roles, setRoles] = useState<RoleItem[]>([])
   const [loading, setLoading] = useState(false)
   const [output, setOutput] = useState('')
@@ -748,5 +749,13 @@ export default function RolesPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function RolesPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <RolesContent />
+    </Suspense>
   )
 }

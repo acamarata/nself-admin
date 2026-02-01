@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import type { PreviewEnvironment } from '@/types/deployment'
 import {
   ArrowLeft,
@@ -12,9 +13,9 @@ import {
   Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function PreviewDeployPage() {
+function PreviewDeployContent() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [previews, setPreviews] = useState<PreviewEnvironment[]>([])
@@ -346,5 +347,13 @@ export default function PreviewDeployPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function PreviewDeployPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <PreviewDeployContent />
+    </Suspense>
   )
 }

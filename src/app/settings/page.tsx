@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import {
   Bell,
   CheckCircle,
@@ -24,7 +25,7 @@ import {
   User,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 interface APIToken {
   id: string
@@ -798,6 +799,21 @@ function SecuritySettingsSection() {
           </p>
         </div>
 
+        {/* Active Sessions */}
+        <div>
+          <h4 className="mb-2 font-medium">Active Sessions</h4>
+          <p className="mb-4 text-sm text-zinc-600 dark:text-zinc-400">
+            View and manage your active login sessions across devices
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => (window.location.href = '/settings/sessions')}
+          >
+            <Smartphone className="mr-2 h-4 w-4" />
+            View Active Sessions
+          </Button>
+        </div>
+
         {/* IP Allowlist */}
         <div>
           <h4 className="mb-4 font-medium">IP Allowlist</h4>
@@ -1201,7 +1217,7 @@ function ExportImportSection() {
   )
 }
 
-export default function SettingsPage() {
+function SettingsContent() {
   return (
     <>
       <HeroPattern />
@@ -1228,5 +1244,13 @@ export default function SettingsPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <SettingsContent />
+    </Suspense>
   )
 }

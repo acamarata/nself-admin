@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { EnvironmentInfo } from '@/types/deployment'
 import {
   ArrowRight,
@@ -13,9 +14,9 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function EnvironmentsPage() {
+function EnvironmentsContent() {
   const [loading, setLoading] = useState(true)
   const [environments, setEnvironments] = useState<EnvironmentInfo[]>([])
 
@@ -311,5 +312,13 @@ export default function EnvironmentsPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function EnvironmentsPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <EnvironmentsContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import type { Deployment, RollbackInfo } from '@/types/deployment'
 import {
   AlertTriangle,
@@ -12,9 +13,9 @@ import {
   RotateCcw,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function RollbackPage() {
+function RollbackContent() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [deployments, setDeployments] = useState<Deployment[]>([])
@@ -325,5 +326,13 @@ export default function RollbackPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function RollbackPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <RollbackContent />
+    </Suspense>
   )
 }

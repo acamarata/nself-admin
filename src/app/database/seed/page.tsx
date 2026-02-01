@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { FormSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -27,7 +28,7 @@ import {
   Terminal,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface SeedResult {
   success: boolean
@@ -37,7 +38,7 @@ interface SeedResult {
   type?: string
 }
 
-export default function DatabaseSeedPage() {
+function DatabaseSeedContent() {
   const [isSeeding, setIsSeeding] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [isLoadingSeeds, setIsLoadingSeeds] = useState(true)
@@ -579,5 +580,13 @@ export default function DatabaseSeedPage() {
         )}
       </div>
     </PageTemplate>
+  )
+}
+
+export default function DatabaseSeedPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <DatabaseSeedContent />
+    </Suspense>
   )
 }

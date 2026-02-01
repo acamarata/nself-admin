@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import {
   Activity,
   AlertCircle,
@@ -27,7 +28,7 @@ import {
   Webhook,
   Zap,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 interface HasuraStats {
   version: string
@@ -1097,7 +1098,7 @@ function QueryMetrics({ metrics }: { metrics: QueryMetric[] }) {
   )
 }
 
-export default function HasuraPage() {
+function HasuraContent() {
   const [activeTab, setActiveTab] = useState('console')
 
   // Mock data
@@ -1416,5 +1417,13 @@ export default function HasuraPage() {
         {activeTab === 'metrics' && <QueryMetrics metrics={queryMetrics} />}
       </div>
     </>
+  )
+}
+
+export default function HasuraPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <HasuraContent />
+    </Suspense>
   )
 }

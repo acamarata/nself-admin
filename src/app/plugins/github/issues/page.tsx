@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { GitHubIssue } from '@/types/github'
 import {
   AlertCircle,
@@ -17,7 +18,7 @@ import {
   User,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -104,7 +105,7 @@ function IssueRow({ issue }: { issue: GitHubIssue }) {
   )
 }
 
-export default function GitHubIssuesPage() {
+function GitHubIssuesContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [stateFilter, setStateFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
@@ -114,7 +115,7 @@ export default function GitHubIssuesPage() {
     issues: GitHubIssue[]
     total: number
   }>(
-    `/api/plugins/github/issues?page=${page}&pageSize=${pageSize}&search=${searchQuery}&state=${stateFilter}`,
+    `/api/plugins/github/issues?page=${page}&pageSize=${pageSize}&search=${searchQuery}&filter=${stateFilter}`,
     fetcher,
     { refreshInterval: 60000 },
   )
@@ -306,5 +307,13 @@ export default function GitHubIssuesPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function GitHubIssuesPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <GitHubIssuesContent />
+    </Suspense>
   )
 }

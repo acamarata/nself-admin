@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { GitHubWorkflowRun } from '@/types/github'
 import {
   AlertCircle,
@@ -19,7 +20,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -158,17 +159,17 @@ function WorkflowRunRow({ run }: { run: GitHubWorkflowRun }) {
   )
 }
 
-export default function GitHubActionsPage() {
+function GitHubActionsContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
   const pageSize = 20
 
   const { data, error, isLoading, mutate } = useSWR<{
-    workflowRuns: GitHubWorkflowRun[]
+    runs: GitHubWorkflowRun[]
     total: number
   }>(
-    `/api/plugins/github/actions?page=${page}&pageSize=${pageSize}&search=${searchQuery}&status=${statusFilter}`,
+    `/api/plugins/github/actions?page=${page}&pageSize=${pageSize}&filter=${statusFilter}`,
     fetcher,
     { refreshInterval: 30000 },
   )
@@ -178,7 +179,7 @@ export default function GitHubActionsPage() {
     mutate()
   }
 
-  const runs = data?.workflowRuns || []
+  const runs = data?.runs || []
   const total = data?.total || 0
   const totalPages = Math.ceil(total / pageSize)
 
@@ -363,5 +364,13 @@ export default function GitHubActionsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function GitHubActionsPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <GitHubActionsContent />
+    </Suspense>
   )
 }

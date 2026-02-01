@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { TableSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -37,7 +38,7 @@ import {
   Search,
   Table2,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface Column {
   name: string
@@ -74,7 +75,7 @@ interface TableInfo {
   foreignKeys: ForeignKey[]
 }
 
-export default function DatabaseSchemaPage() {
+function DatabaseSchemaContent() {
   const [isLoading, setIsLoading] = useState(true)
   const [isExporting, setIsExporting] = useState(false)
   const [tables, setTables] = useState<TableInfo[]>([])
@@ -928,5 +929,13 @@ export default function DatabaseSchemaPage() {
         </Sheet>
       </div>
     </PageTemplate>
+  )
+}
+
+export default function DatabaseSchemaPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <DatabaseSchemaContent />
+    </Suspense>
   )
 }

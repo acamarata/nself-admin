@@ -1,11 +1,12 @@
 'use client'
 
+import { FormSkeleton } from '@/components/skeletons'
 import { safeNavigate } from '@/lib/routing'
 import { CheckCircle, Folder, Hammer } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
-export default function InitPage() {
+function InitContent() {
   const router = useRouter()
   const [status, setStatus] = useState<
     'checking' | 'initializing' | 'ready' | 'built'
@@ -121,5 +122,13 @@ export default function InitPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function InitPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <InitContent />
+    </Suspense>
   )
 }

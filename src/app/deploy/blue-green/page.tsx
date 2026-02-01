@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import type { BlueGreenDeployment } from '@/types/deployment'
 import {
   ArrowLeft,
@@ -10,9 +11,9 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function BlueGreenDeployPage() {
+function BlueGreenDeployContent() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [deployment, setDeployment] = useState<BlueGreenDeployment | null>(null)
@@ -327,5 +328,13 @@ export default function BlueGreenDeployPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function BlueGreenDeployPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <BlueGreenDeployContent />
+    </Suspense>
   )
 }

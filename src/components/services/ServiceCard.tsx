@@ -41,6 +41,20 @@ function getServiceUrl(container: Container): string | null {
   return `http://localhost:${primaryPort.public}`
 }
 
+// Get uptime string from created timestamp
+function getUptimeString(created: number, state: string): string | null {
+  if (state !== 'running') return null
+  const now = Date.now() / 1000
+  const uptimeSeconds = now - created
+  const days = Math.floor(uptimeSeconds / 86400)
+  const hours = Math.floor((uptimeSeconds % 86400) / 3600)
+  const minutes = Math.floor((uptimeSeconds % 3600) / 60)
+
+  if (days > 0) return `${days}d ${hours}h ${minutes}m`
+  if (hours > 0) return `${hours}h ${minutes}m`
+  return `${minutes}m`
+}
+
 export function ServiceCard({
   container,
   onAction,
@@ -67,6 +81,7 @@ export function ServiceCard({
   const primaryPort = container.ports?.find(
     (p: { private: number; public: number; type: string }) => p.public,
   )
+  const uptime = getUptimeString(container.created, container.state)
 
   return (
     <div className="rounded-lg bg-white p-4 shadow-sm ring-1 ring-zinc-200 transition-all hover:ring-blue-400 dark:bg-zinc-800 dark:ring-zinc-700 dark:hover:ring-blue-600">
@@ -84,12 +99,20 @@ export function ServiceCard({
                 <span
                   className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium ${healthColor}`}
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-current"
+                    aria-hidden="true"
+                  />
+                  <span className="sr-only">Service status: </span>
                   {healthText}
                 </span>
-                <span className="text-xs text-zinc-500">
-                  {new Date(container.created * 1000).toLocaleDateString()}
-                </span>
+                {uptime && (
+                  <span className="flex items-center gap-1 text-xs text-zinc-500">
+                    <Icons.Clock className="h-3 w-3" aria-hidden="true" />
+                    <span className="sr-only">Uptime: </span>
+                    {uptime}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -97,36 +120,47 @@ export function ServiceCard({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowDetails(!showDetails)}
+              aria-expanded={showDetails}
+              aria-label={`${showDetails ? 'Hide' : 'Show'} details for ${displayName}`}
               className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700"
             >
               {showDetails ? (
-                <Icons.ChevronDown className="h-4 w-4" />
+                <Icons.ChevronDown className="h-4 w-4" aria-hidden="true" />
               ) : (
-                <Icons.ChevronRight className="h-4 w-4" />
+                <Icons.ChevronRight className="h-4 w-4" aria-hidden="true" />
               )}
             </button>
             <div className="relative">
               <button
                 onClick={() => setShowMenu(!showMenu)}
+                aria-expanded={showMenu}
+                aria-label={`Open menu for ${displayName}`}
+                aria-haspopup="menu"
                 className="rounded p-1 hover:bg-zinc-100 dark:hover:bg-zinc-700"
               >
-                <Icons.MoreVertical className="h-4 w-4" />
+                <Icons.MoreVertical className="h-4 w-4" aria-hidden="true" />
               </button>
               {showMenu && (
                 <>
                   <div
                     className="fixed inset-0 z-10"
                     onClick={() => setShowMenu(false)}
+                    aria-hidden="true"
                   />
-                  <div className="absolute right-0 z-20 mt-1 w-48 rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                  <div
+                    className="absolute right-0 z-20 mt-1 w-48 rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800"
+                    role="menu"
+                    aria-label={`Actions for ${displayName}`}
+                  >
                     <button
                       onClick={() => {
                         onAction('logs', container.id)
                         setShowMenu(false)
                       }}
+                      role="menuitem"
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700"
                     >
-                      <Icons.FileText className="h-4 w-4" />
+                      <Icons.FileText className="h-4 w-4" aria-hidden="true" />
                       View Logs
                     </button>
                     <button
@@ -134,9 +168,10 @@ export function ServiceCard({
                         onAction('inspect', container.id)
                         setShowMenu(false)
                       }}
+                      role="menuitem"
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700"
                     >
-                      <Icons.Eye className="h-4 w-4" />
+                      <Icons.Eye className="h-4 w-4" aria-hidden="true" />
                       Inspect
                     </button>
                     <button
@@ -144,20 +179,25 @@ export function ServiceCard({
                         onAction('terminal', container.id)
                         setShowMenu(false)
                       }}
+                      role="menuitem"
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700"
                     >
-                      <Icons.Terminal className="h-4 w-4" />
+                      <Icons.Terminal className="h-4 w-4" aria-hidden="true" />
                       Terminal
                     </button>
-                    <hr className="my-1 border-zinc-200 dark:border-zinc-700" />
+                    <hr
+                      className="my-1 border-zinc-200 dark:border-zinc-700"
+                      aria-hidden="true"
+                    />
                     <button
                       onClick={() => {
                         onAction('remove', container.id)
                         setShowMenu(false)
                       }}
+                      role="menuitem"
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                     >
-                      <Icons.Trash2 className="h-4 w-4" />
+                      <Icons.Trash2 className="h-4 w-4" aria-hidden="true" />
                       Remove
                     </button>
                   </div>
@@ -180,20 +220,20 @@ export function ServiceCard({
 
       {/* Resource Usage */}
       {container.stats && (
-        <div className="mb-3 grid grid-cols-3 gap-2">
+        <div className="mb-3 grid grid-cols-2 gap-2">
           <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/50">
             <div className="mb-1 flex items-center justify-between">
-              <span className="flex items-center gap-0.5 text-[10px] text-zinc-500">
-                <Icons.Cpu className="h-2.5 w-2.5" />
+              <span className="flex items-center gap-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                <Icons.Cpu className="h-3 w-3" />
                 CPU
               </span>
-              <span className="text-[10px] font-medium">
-                {container.stats.cpu.percentage.toFixed(0)}%
+              <span className="text-[10px] font-semibold text-zinc-900 dark:text-white">
+                {container.stats.cpu.percentage.toFixed(1)}%
               </span>
             </div>
-            <div className="h-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+            <div className="h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
               <div
-                className={`h-full transition-all ${
+                className={`h-full transition-all duration-300 ${
                   container.stats.cpu.percentage > 80
                     ? 'bg-red-500'
                     : container.stats.cpu.percentage > 50
@@ -209,20 +249,20 @@ export function ServiceCard({
 
           <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/50">
             <div className="mb-1 flex items-center justify-between">
-              <span className="flex items-center gap-0.5 text-[10px] text-zinc-500">
-                <Icons.MemoryStick className="h-2.5 w-2.5" />
-                RAM
+              <span className="flex items-center gap-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                <Icons.MemoryStick className="h-3 w-3" />
+                Memory
               </span>
-              <span className="text-[10px] font-medium">
+              <span className="text-[10px] font-semibold text-zinc-900 dark:text-white">
                 {(container.stats.memory.usage / (1024 * 1024 * 1024)).toFixed(
                   1,
                 )}
-                G
+                GB
               </span>
             </div>
-            <div className="h-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+            <div className="h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
               <div
-                className={`h-full transition-all ${
+                className={`h-full transition-all duration-300 ${
                   container.stats.memory.percentage > 80
                     ? 'bg-red-500'
                     : container.stats.memory.percentage > 50
@@ -235,74 +275,30 @@ export function ServiceCard({
               />
             </div>
           </div>
-
-          <div className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-800/50">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="flex items-center gap-0.5 text-[10px] text-zinc-500">
-                <Icons.HardDrive className="h-2.5 w-2.5" />
-                Disk
-              </span>
-              <span className="text-[10px] font-medium">
-                {(() => {
-                  if (container.stats?.disk?.used) {
-                    const gb = container.stats.disk.used / (1024 * 1024 * 1024)
-                    return gb >= 1
-                      ? `${gb.toFixed(1)}G`
-                      : `${(container.stats.disk.used / (1024 * 1024)).toFixed(0)}M`
-                  }
-                  const mb =
-                    (container.stats.blockIO.read +
-                      container.stats.blockIO.write) /
-                    (1024 * 1024)
-                  return mb >= 1024
-                    ? `${(mb / 1024).toFixed(1)}G`
-                    : `${mb.toFixed(0)}M`
-                })()}
-              </span>
-            </div>
-            <div className="h-1 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
-              <div
-                className={`h-full transition-all ${
-                  container.stats?.disk?.percentage
-                    ? container.stats.disk.percentage > 80
-                      ? 'bg-red-500'
-                      : container.stats.disk.percentage > 50
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
-                    : 'bg-blue-500'
-                }`}
-                style={{
-                  width: container.stats?.disk?.percentage
-                    ? `${Math.min(container.stats.disk.percentage, 100)}%`
-                    : '0%',
-                }}
-              />
-            </div>
-          </div>
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {serviceUrl ? (
             <a
               href={serviceUrl}
               target="_blank"
-              className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+              title={`Open ${serviceUrl}`}
             >
               <Icons.Globe className="h-3 w-3" />:{primaryPort?.public}
               <Icons.ExternalLink className="h-2.5 w-2.5" />
             </a>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+            <span
+              className="inline-flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+              title="No public ports exposed"
+            >
               <Icons.Lock className="h-3 w-3" />
               Internal
-            </span>
-          )}
-          {container.ports && container.ports.length > 1 && (
-            <span className="text-xs text-zinc-500">
-              +{container.ports.length - 1}
             </span>
           )}
         </div>
@@ -312,23 +308,38 @@ export function ServiceCard({
             <>
               <button
                 onClick={() => onAction('restart', container.id)}
+                aria-label={`Restart ${displayName}`}
                 className="group rounded-md bg-zinc-50 p-1.5 transition-all hover:bg-yellow-50 dark:bg-zinc-800 dark:hover:bg-yellow-900/20"
+                title="Restart service"
               >
-                <Icons.RotateCw className="h-3.5 w-3.5 text-zinc-600 transition-colors group-hover:text-yellow-600 dark:text-zinc-400 dark:group-hover:text-yellow-400" />
+                <Icons.RotateCw
+                  className="h-3.5 w-3.5 text-zinc-600 transition-colors group-hover:text-yellow-600 dark:text-zinc-400 dark:group-hover:text-yellow-400"
+                  aria-hidden="true"
+                />
               </button>
               <button
                 onClick={() => onAction('stop', container.id)}
+                aria-label={`Stop ${displayName}`}
                 className="group rounded-md bg-zinc-50 p-1.5 transition-all hover:bg-red-50 dark:bg-zinc-800 dark:hover:bg-red-900/20"
+                title="Stop service"
               >
-                <Icons.Square className="h-3.5 w-3.5 text-zinc-600 transition-colors group-hover:text-red-600 dark:text-zinc-400 dark:group-hover:text-red-400" />
+                <Icons.Square
+                  className="h-3.5 w-3.5 text-zinc-600 transition-colors group-hover:text-red-600 dark:text-zinc-400 dark:group-hover:text-red-400"
+                  aria-hidden="true"
+                />
               </button>
             </>
           ) : (
             <button
               onClick={() => onAction('start', container.id)}
+              aria-label={`Start ${displayName}`}
               className="group rounded-md bg-zinc-50 p-1.5 transition-all hover:bg-green-50 dark:bg-zinc-800 dark:hover:bg-green-900/20"
+              title="Start service"
             >
-              <Icons.Play className="h-3.5 w-3.5 text-zinc-600 transition-colors group-hover:text-green-600 dark:text-zinc-400 dark:group-hover:text-green-400" />
+              <Icons.Play
+                className="h-3.5 w-3.5 text-zinc-600 transition-colors group-hover:text-green-600 dark:text-zinc-400 dark:group-hover:text-green-400"
+                aria-hidden="true"
+              />
             </button>
           )}
         </div>

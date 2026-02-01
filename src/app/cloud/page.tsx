@@ -1,5 +1,6 @@
 'use client'
 
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { CloudProvider, CloudServer } from '@/types/cloud'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import {
@@ -15,7 +16,7 @@ import {
   Server,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -90,7 +91,7 @@ function MetricCard({
   )
 }
 
-export default function CloudPage() {
+function CloudContent() {
   const [_refreshing, setRefreshing] = useState(false)
 
   const { data, error, isLoading, mutate } = useSWR<{
@@ -367,5 +368,13 @@ export default function CloudPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function CloudPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <CloudContent />
+    </Suspense>
   )
 }

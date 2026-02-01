@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { TableSkeleton } from '@/components/skeletons'
 import type { Environment, EnvironmentDiff } from '@/types/deployment'
 import {
   ArrowLeft,
@@ -13,9 +14,9 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function EnvironmentDiffPage() {
+function EnvironmentDiffContent() {
   const [loading, setLoading] = useState(true)
   const [comparing, setComparing] = useState(false)
   const [sourceEnv, setSourceEnv] = useState<Environment>('staging')
@@ -455,5 +456,13 @@ export default function EnvironmentDiffPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function EnvironmentDiffPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <EnvironmentDiffContent />
+    </Suspense>
   )
 }

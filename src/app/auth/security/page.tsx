@@ -1,6 +1,7 @@
 'use client'
 
 import { PageShell } from '@/components/PageShell'
+import { FormSkeleton } from '@/components/skeletons'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -34,7 +35,7 @@ import {
   Terminal,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -158,7 +159,7 @@ function getProgressColor(score: number): string {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function SecurityPage() {
+function SecurityContent() {
   const [findings, setFindings] = useState<Finding[]>([])
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([])
   const [scanning, setScanning] = useState(false)
@@ -575,5 +576,13 @@ export default function SecurityPage() {
         </Card>
       </div>
     </PageShell>
+  )
+}
+
+export default function SecurityPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <SecurityContent />
+    </Suspense>
   )
 }

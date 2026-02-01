@@ -1,5 +1,6 @@
 import { execFile, spawn } from 'child_process'
 import { promisify } from 'util'
+import { getErrorMessage } from './errors/utils'
 import { findNselfPathSync, getEnhancedPath } from './nself-path'
 import { getProjectPath } from './paths'
 
@@ -110,13 +111,19 @@ export async function executeNselfCommand(
       stderr: stderr.toString(),
       exitCode: 0,
     }
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as {
+      stdout?: Buffer
+      stderr?: Buffer
+      code?: number
+      message?: string
+    }
     return {
       success: false,
-      stdout: error.stdout?.toString(),
-      stderr: error.stderr?.toString(),
-      exitCode: error.code,
-      error: error.message,
+      stdout: err.stdout?.toString(),
+      stderr: err.stderr?.toString(),
+      exitCode: err.code,
+      error: getErrorMessage(error),
     }
   }
 }
@@ -265,8 +272,12 @@ export async function nselfDbReset(options?: {
   return executeNselfCommand('db', args)
 }
 
-export async function nselfDbConsole(): Promise<CLIResult> {
-  return executeNselfCommand('db', ['console'])
+/**
+ * Execute a SQL query against the database
+ * Note: Interactive console is not supported in exec context
+ */
+export async function executeDbQuery(sql: string): Promise<CLIResult> {
+  return executeNselfCommand('db', ['query', '--sql', sql])
 }
 
 export async function nselfDbAnalyze(): Promise<CLIResult> {

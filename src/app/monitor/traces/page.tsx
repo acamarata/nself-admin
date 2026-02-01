@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import {
   ArrowLeft,
   ChevronDown,
@@ -10,7 +11,7 @@ import {
   Search,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface Span {
   id: string
@@ -33,7 +34,7 @@ interface Trace {
   spans: Span[]
 }
 
-export default function TracesPage() {
+function TracesContent() {
   const [loading, setLoading] = useState(true)
   const [traces, setTraces] = useState<Trace[]>([])
   const [selectedTrace, setSelectedTrace] = useState<Trace | null>(null)
@@ -382,5 +383,13 @@ export default function TracesPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function TracesPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <TracesContent />
+    </Suspense>
   )
 }

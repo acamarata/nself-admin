@@ -1,5 +1,6 @@
 'use client'
 
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { CloudServer } from '@/types/cloud'
 import {
   AlertCircle,
@@ -21,7 +22,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -94,7 +95,7 @@ const mockServers: CloudServer[] = [
   },
 ]
 
-export default function ServersPage() {
+function ServersContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [selectedServers, setSelectedServers] = useState<string[]>([])
@@ -472,5 +473,13 @@ export default function ServersPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ServersPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <ServersContent />
+    </Suspense>
   )
 }

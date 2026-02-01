@@ -1,5 +1,6 @@
 'use client'
 
+import { ChartSkeleton } from '@/components/skeletons'
 import type { K8sDeployment, K8sPod } from '@/types/k8s'
 import {
   AlertCircle,
@@ -15,7 +16,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -192,7 +193,7 @@ const statusColors: Record<string, string> = {
   Unknown: 'bg-zinc-700 text-zinc-400',
 }
 
-export default function K8sStatusPage() {
+function K8sStatusContent() {
   const [activeTab, setActiveTab] = useState<'deployments' | 'pods'>(
     'deployments',
   )
@@ -552,5 +553,13 @@ export default function K8sStatusPage() {
         </>
       )}
     </div>
+  )
+}
+
+export default function K8sStatusPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <K8sStatusContent />
+    </Suspense>
   )
 }

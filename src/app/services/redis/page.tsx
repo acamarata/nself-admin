@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import {
   Activity,
   AlertCircle,
@@ -33,7 +34,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 
 interface RedisKey {
   name: string
@@ -724,7 +725,7 @@ function ConfigurationEditor() {
   )
 }
 
-export default function RedisPage() {
+function RedisContent() {
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedKey, setSelectedKey] = useState<RedisKey | null>(null)
   const [_loading, _setLoading] = useState(false)
@@ -1069,5 +1070,13 @@ export default function RedisPage() {
         {activeTab === 'config' && <ConfigurationEditor />}
       </div>
     </>
+  )
+}
+
+export default function RedisPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <RedisContent />
+    </Suspense>
   )
 }

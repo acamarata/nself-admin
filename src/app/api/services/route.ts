@@ -1,4 +1,5 @@
 import { getDockerSocketPath, getProjectPath } from '@/lib/paths'
+import { emitServiceStatus } from '@/lib/websocket/emitters'
 import { exec } from 'child_process'
 import Docker from 'dockerode'
 import { NextRequest, NextResponse } from 'next/server'
@@ -408,7 +409,27 @@ async function controlService(serviceName: string, operation: string) {
         )
     }
 
+    // Emit status update before operation
+    emitServiceStatus({
+      service: serviceName,
+      status: operation === 'start' ? 'starting' : 'stopping',
+      timestamp: new Date().toISOString(),
+    })
+
     const { stdout, stderr } = await execAsync(command)
+
+    // Emit status update after operation
+    const newStatus =
+      operation === 'start'
+        ? 'running'
+        : operation === 'stop'
+          ? 'stopped'
+          : 'running'
+    emitServiceStatus({
+      service: serviceName,
+      status: newStatus,
+      timestamp: new Date().toISOString(),
+    })
 
     return NextResponse.json({
       success: true,
@@ -421,6 +442,13 @@ async function controlService(serviceName: string, operation: string) {
       },
     })
   } catch (error) {
+    // Emit error status
+    emitServiceStatus({
+      service: serviceName,
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+    })
+
     return NextResponse.json(
       {
         success: false,

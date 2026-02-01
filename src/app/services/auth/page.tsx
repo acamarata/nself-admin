@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import {
   Activity,
   AlertCircle,
@@ -36,7 +37,7 @@ import {
   Users,
   XCircle,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 interface AuthStats {
   totalUsers: number
@@ -1545,7 +1546,7 @@ function SecuritySettings({ settings }: { settings: SecuritySetting[] }) {
   )
 }
 
-export default function AuthPage() {
+function AuthContent() {
   const [activeTab, setActiveTab] = useState('users')
 
   // Mock data
@@ -2035,5 +2036,13 @@ export default function AuthPage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <AuthContent />
+    </Suspense>
   )
 }

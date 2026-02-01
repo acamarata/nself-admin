@@ -1,6 +1,7 @@
 'use client'
 
 import { PageShell } from '@/components/PageShell'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,7 +29,7 @@ import {
   WifiOff,
   Zap,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -171,7 +172,7 @@ function ChannelRow({ channel }: { channel: Channel }) {
 // Main Page Component
 // ---------------------------------------------------------------------------
 
-export default function RealtimePage() {
+function RealtimeContent() {
   const [loading, setLoading] = useState(false)
   const [initLoading, setInitLoading] = useState(false)
   const [testLoading, setTestLoading] = useState(false)
@@ -737,5 +738,13 @@ export default function RealtimePage() {
         </CardContent>
       </Card>
     </PageShell>
+  )
+}
+
+export default function RealtimePage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <RealtimeContent />
+    </Suspense>
   )
 }

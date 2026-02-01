@@ -1,5 +1,6 @@
 'use client'
 
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { GitHubStats } from '@/types/github'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import {
@@ -17,7 +18,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -124,7 +125,7 @@ function QuickLinkCard({
   )
 }
 
-export default function GitHubDashboardPage() {
+function GitHubDashboardContent() {
   const [syncing, setSyncing] = useState(false)
 
   const { data, error, isLoading, mutate } = useSWR<{
@@ -353,5 +354,13 @@ export default function GitHubDashboardPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function GitHubDashboardPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <GitHubDashboardContent />
+    </Suspense>
   )
 }

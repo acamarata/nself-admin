@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import type { CanaryDeployment } from '@/types/deployment'
 import {
   AlertTriangle,
@@ -11,9 +12,9 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function CanaryDeployPage() {
+function CanaryDeployContent() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [canary, setCanary] = useState<CanaryDeployment | null>(null)
@@ -425,5 +426,13 @@ export default function CanaryDeployPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function CanaryDeployPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <CanaryDeployContent />
+    </Suspense>
   )
 }

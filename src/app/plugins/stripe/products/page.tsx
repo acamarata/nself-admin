@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { StripePrice, StripeProduct } from '@/types/stripe'
 import {
   AlertCircle,
@@ -15,7 +16,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -131,7 +132,7 @@ function ProductCard({
   )
 }
 
-export default function StripeProductsPage() {
+function StripeProductsContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const pageSize = 12
@@ -297,5 +298,13 @@ export default function StripeProductsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function StripeProductsPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <StripeProductsContent />
+    </Suspense>
   )
 }

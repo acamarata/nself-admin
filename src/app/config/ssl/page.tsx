@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { FormSkeleton } from '@/components/skeletons'
 import {
   AlertCircle,
   CheckCircle,
@@ -15,7 +16,7 @@ import {
   ShieldCheck,
   Terminal,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface SSLStatus {
   mode: 'none' | 'local' | 'letsencrypt'
@@ -41,7 +42,7 @@ interface LetsEncryptStatus {
   autoRenewal: boolean
 }
 
-export default function SSLConfigPage() {
+function SSLConfigContent() {
   const [sslStatus, setSslStatus] = useState<SSLStatus | null>(null)
   const [letsEncryptStatus, setLetsEncryptStatus] =
     useState<LetsEncryptStatus | null>(null)
@@ -615,5 +616,13 @@ export default function SSLConfigPage() {
         </div>
       </div>
     </PageTemplate>
+  )
+}
+
+export default function SSLConfigPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <SSLConfigContent />
+    </Suspense>
   )
 }

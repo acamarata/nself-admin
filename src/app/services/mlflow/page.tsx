@@ -1,6 +1,7 @@
 'use client'
 
 import { PageShell } from '@/components/PageShell'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -20,13 +21,13 @@ import {
   Terminal,
   Zap,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Main Page Component
 // ---------------------------------------------------------------------------
 
-export default function MLflowPage() {
+function MLflowContent() {
   // General state
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -359,5 +360,13 @@ export default function MLflowPage() {
         </CardContent>
       </Card>
     </PageShell>
+  )
+}
+
+export default function MLflowPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <MLflowContent />
+    </Suspense>
   )
 }

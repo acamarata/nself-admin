@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { TableSkeleton } from '@/components/skeletons'
 import type { HistoryEntry } from '@/types/deployment'
 import {
   Activity,
@@ -18,9 +19,9 @@ import {
   User,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function HistoryPage() {
+function HistoryContent() {
   const [loading, setLoading] = useState(true)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [filterType, setFilterType] = useState<string>('all')
@@ -403,5 +404,13 @@ export default function HistoryPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function HistoryPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <HistoryContent />
+    </Suspense>
   )
 }

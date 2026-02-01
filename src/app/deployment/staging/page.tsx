@@ -1,7 +1,8 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
-import { useCallback, useEffect, useState } from 'react'
+import { FormSkeleton } from '@/components/skeletons'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface StagingStatus {
   configured: boolean
@@ -21,7 +22,7 @@ interface ActionResult {
   error?: string
 }
 
-export default function StagingPage() {
+function StagingContent() {
   const [status, setStatus] = useState<StagingStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -668,5 +669,13 @@ export default function StagingPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function StagingPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <StagingContent />
+    </Suspense>
   )
 }

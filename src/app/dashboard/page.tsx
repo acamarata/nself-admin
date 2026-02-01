@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { DashboardSkeleton } from '@/components/skeletons'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import {
   AlertCircle,
@@ -16,7 +17,7 @@ import {
   Shield,
   Zap,
 } from 'lucide-react'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 
 // Import from central data store
 import { getDataCollectionService } from '@/services/DataCollectionService'
@@ -213,7 +214,7 @@ function ServiceCard({
   )
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   // Get data from central store
   const docker = useDockerMetrics()
   const system = useSystemMetrics()
@@ -256,30 +257,7 @@ export default function DashboardPage() {
 
   // If no data yet, show loading state
   if (!hasData && !error) {
-    return (
-      <>
-        <HeroPattern />
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-zinc-900 dark:text-white">
-              Dashboard
-            </h1>
-            <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-              System overview and metrics
-            </p>
-          </div>
-
-          <div className="flex h-64 items-center justify-center">
-            <div className="text-center">
-              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600 dark:border-blue-400"></div>
-              <p className="text-zinc-600 dark:text-zinc-400">
-                Loading metrics...
-              </p>
-            </div>
-          </div>
-        </div>
-      </>
-    )
+    return <DashboardSkeleton />
   }
 
   // Show error state if disconnected
@@ -602,5 +580,13 @@ export default function DashboardPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent />
+    </Suspense>
   )
 }

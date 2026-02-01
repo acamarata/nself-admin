@@ -1,5 +1,6 @@
 'use client'
 
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,7 +30,7 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
 interface ServiceHealth {
   name: string
@@ -56,7 +57,7 @@ interface HealthMatrix {
   timestamp: string
 }
 
-export default function ServiceHealthPage() {
+function ServiceHealthContent() {
   const [healthMatrix, setHealthMatrix] = useState<HealthMatrix | null>(null)
   const [selectedService, setSelectedService] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -646,5 +647,13 @@ export default function ServiceHealthPage() {
         </TabsContent>
       </Tabs>
     </div>
+  )
+}
+
+export default function ServiceHealthPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <ServiceHealthContent />
+    </Suspense>
   )
 }

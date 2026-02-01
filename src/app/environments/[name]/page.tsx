@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import type { EnvironmentConfig, EnvironmentInfo } from '@/types/deployment'
 import {
   Activity,
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface ServiceStatus {
   name: string
@@ -27,7 +28,7 @@ interface ServiceStatus {
   memory: number
 }
 
-export default function EnvironmentDetailPage() {
+function EnvironmentDetailContent() {
   const params = useParams()
   const envName = params.name as string
 
@@ -437,5 +438,13 @@ export default function EnvironmentDetailPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function EnvironmentDetailPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <EnvironmentDetailContent />
+    </Suspense>
   )
 }

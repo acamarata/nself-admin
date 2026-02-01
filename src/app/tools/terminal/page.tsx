@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { CodeEditorSkeleton } from '@/components/skeletons'
 import {
   Activity,
   AlertCircle,
@@ -15,7 +16,7 @@ import {
   Terminal as TerminalIcon,
   X,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 
 interface TerminalSession {
   id: string
@@ -496,7 +497,7 @@ function SystemStats({ systemInfo }: { systemInfo: SystemInfo }) {
   )
 }
 
-export default function TerminalPage() {
+function TerminalContent() {
   const [sessions, setSessions] = useState<TerminalSession[]>(mockSessions)
   const [outputs, setOutputs] = useState<TerminalOutput[]>(mockOutputs)
   const [activeSessionId, setActiveSessionId] = useState<string>('1')
@@ -793,5 +794,13 @@ Use 'man <command>' for more information.`
         </div>
       </div>
     </>
+  )
+}
+
+export default function TerminalPage() {
+  return (
+    <Suspense fallback={<CodeEditorSkeleton />}>
+      <TerminalContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { FormSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,17 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { toast } from '@/lib/toast'
 import {
   ArrowRight,
-  CheckCircle,
   Clock,
   Loader2,
   RefreshCw,
   Settings,
   Terminal,
-  XCircle,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 const ENVIRONMENTS = [
   { value: 'local', label: 'Local', description: 'Local development' },
@@ -37,13 +37,13 @@ const ENVIRONMENTS = [
   { value: 'prod', label: 'Prod', description: 'Production environment' },
 ]
 
-export default function ConfigSyncPage() {
+function ConfigSyncContent() {
   const [source, setSource] = useState('local')
   const [target, setTarget] = useState('dev')
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastOutput, setLastOutput] = useState('')
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null)
-  const [syncSuccess, setSyncSuccess] = useState<boolean | null>(null)
+  const [_syncSuccess, setSyncSuccess] = useState<boolean | null>(null)
 
   const runSync = async () => {
     if (source === target) {
@@ -71,12 +71,16 @@ export default function ConfigSyncPage() {
 
       if (data.success) {
         setLastSyncTime(new Date().toISOString())
+        toast.success('Configuration synced successfully')
+      } else {
+        toast.error('Sync failed', { description: output })
       }
     } catch (error) {
-      setLastOutput(
-        error instanceof Error ? error.message : 'Sync request failed',
-      )
+      const message =
+        error instanceof Error ? error.message : 'Sync request failed'
+      setLastOutput(message)
       setSyncSuccess(false)
+      toast.error(message)
     } finally {
       setIsSyncing(false)
     }
@@ -269,28 +273,15 @@ export default function ConfigSyncPage() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Success/Error Indicator */}
-        {syncSuccess !== null && lastOutput && (
-          <div
-            className={`fixed right-4 bottom-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-white shadow-lg ${
-              syncSuccess ? 'bg-emerald-600' : 'bg-red-600'
-            }`}
-          >
-            {syncSuccess ? (
-              <>
-                <CheckCircle className="h-4 w-4" />
-                Config synced successfully
-              </>
-            ) : (
-              <>
-                <XCircle className="h-4 w-4" />
-                Sync failed
-              </>
-            )}
-          </div>
-        )}
       </div>
     </PageTemplate>
+  )
+}
+
+export default function ConfigSyncPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <ConfigSyncContent />
+    </Suspense>
   )
 }

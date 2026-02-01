@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,7 +30,7 @@ import {
   Terminal,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 // -- Types --
 
@@ -126,7 +127,7 @@ function CommandPreview({ command }: { command: string }) {
 
 // -- Main Component --
 
-export default function OAuthManagementPage() {
+function OAuthManagementContent() {
   const [providers, setProviders] = useState<ProviderInfo[]>(
     PROVIDERS.map((p) => ({
       ...p,
@@ -813,5 +814,13 @@ export default function OAuthManagementPage() {
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+export default function OAuthManagementPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <OAuthManagementContent />
+    </Suspense>
   )
 }

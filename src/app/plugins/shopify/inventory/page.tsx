@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { ShopifyInventoryLevel } from '@/types/shopify'
 import {
   AlertCircle,
@@ -18,7 +19,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -117,7 +118,7 @@ function InventoryRow({ level }: { level: ShopifyInventoryLevel }) {
   )
 }
 
-export default function ShopifyInventoryPage() {
+function ShopifyInventoryContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [stockFilter, setStockFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
@@ -368,5 +369,13 @@ export default function ShopifyInventoryPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ShopifyInventoryPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <ShopifyInventoryContent />
+    </Suspense>
   )
 }

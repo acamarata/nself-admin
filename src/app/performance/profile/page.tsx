@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import type { DatabaseProfile, PerformanceProfile } from '@/types/performance'
 import {
   ArrowLeft,
@@ -14,9 +15,9 @@ import {
   Server,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function ProfilePage() {
+function ProfileContent() {
   const [loading, setLoading] = useState(true)
   const [isRunning, setIsRunning] = useState(false)
   const [profile, setProfile] = useState<PerformanceProfile | null>(null)
@@ -497,5 +498,13 @@ export default function ProfilePage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <ProfileContent />
+    </Suspense>
   )
 }

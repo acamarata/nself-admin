@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { K8sCluster } from '@/types/k8s'
 import {
   ArrowLeft,
@@ -14,7 +15,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -56,7 +57,7 @@ const mockClusters: K8sCluster[] = [
   },
 ]
 
-export default function K8sClustersPage() {
+function K8sClustersContent() {
   const [switching, setSwitching] = useState<string | null>(null)
 
   const { data, isLoading, mutate } = useSWR<{ clusters: K8sCluster[] }>(
@@ -334,5 +335,13 @@ export default function K8sClustersPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function K8sClustersPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <K8sClustersContent />
+    </Suspense>
   )
 }

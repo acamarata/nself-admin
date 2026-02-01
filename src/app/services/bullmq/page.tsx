@@ -1,7 +1,17 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
+import { Suspense } from 'react'
+
+function Content() {
+  return <PageTemplate description="Manage BullMQ job queues and workers" />
+}
 
 export default function Page() {
-  return <PageTemplate description="Manage BullMQ job queues and workers" />
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <Content />
+    </Suspense>
+  )
 }

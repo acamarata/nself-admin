@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { GitHubPullRequest } from '@/types/github'
 import {
   AlertCircle,
@@ -19,7 +20,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -155,17 +156,17 @@ function PRRow({ pr }: { pr: GitHubPullRequest }) {
   )
 }
 
-export default function GitHubPRsPage() {
+function GitHubPRsContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [stateFilter, setStateFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
   const pageSize = 20
 
   const { data, error, isLoading, mutate } = useSWR<{
-    pullRequests: GitHubPullRequest[]
+    prs: GitHubPullRequest[]
     total: number
   }>(
-    `/api/plugins/github/prs?page=${page}&pageSize=${pageSize}&search=${searchQuery}&state=${stateFilter}`,
+    `/api/plugins/github/prs?page=${page}&pageSize=${pageSize}&search=${searchQuery}&filter=${stateFilter}`,
     fetcher,
     { refreshInterval: 60000 },
   )
@@ -175,7 +176,7 @@ export default function GitHubPRsPage() {
     mutate()
   }
 
-  const prs = data?.pullRequests || []
+  const prs = data?.prs || []
   const total = data?.total || 0
   const totalPages = Math.ceil(total / pageSize)
 
@@ -358,5 +359,13 @@ export default function GitHubPRsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function GitHubPRsPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <GitHubPRsContent />
+    </Suspense>
   )
 }

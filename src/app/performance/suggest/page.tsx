@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import type { OptimizationSuggestion } from '@/types/performance'
 import {
   AlertTriangle,
@@ -18,9 +19,9 @@ import {
   Zap,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function SuggestPage() {
+function SuggestContent() {
   const [loading, setLoading] = useState(true)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [suggestions, setSuggestions] = useState<OptimizationSuggestion[]>([])
@@ -461,5 +462,13 @@ export default function SuggestPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function SuggestPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <SuggestContent />
+    </Suspense>
   )
 }

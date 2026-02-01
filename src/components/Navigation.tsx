@@ -49,13 +49,20 @@ function NavLink({
   tag,
   active = false,
   isAnchorLink = false,
+  badge,
+  status,
 }: {
   href: string
   children: React.ReactNode
   tag?: string
   active?: boolean
   isAnchorLink?: boolean
+  badge?: string | { text: string; color: string }
+  status?: 'running' | 'stopped' | 'error' | 'healthy' | 'unhealthy'
 }) {
+  const badgeText = typeof badge === 'string' ? badge : badge?.text
+  const badgeColor = typeof badge === 'string' ? 'zinc' : badge?.color || 'zinc'
+
   return (
     <Link
       href={href}
@@ -68,11 +75,47 @@ function NavLink({
           : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white',
       )}
     >
-      <span className="truncate">{children}</span>
+      <span className="flex items-center gap-2 truncate">
+        {status && (
+          <>
+            <span className="sr-only">
+              {status === 'running' || status === 'healthy'
+                ? 'Running'
+                : status === 'stopped'
+                  ? 'Stopped'
+                  : 'Error'}
+            </span>
+            <span
+              aria-hidden="true"
+              className={clsx('h-1.5 w-1.5 rounded-full', {
+                'bg-green-500': status === 'running' || status === 'healthy',
+                'bg-zinc-400': status === 'stopped',
+                'bg-red-500': status === 'error' || status === 'unhealthy',
+              })}
+            />
+          </>
+        )}
+        {children}
+      </span>
       {tag && (
         <Tag variant="small" color="zinc">
           {tag}
         </Tag>
+      )}
+      {badgeText && !tag && (
+        <span
+          className={clsx(
+            'inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+            {
+              'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400':
+                badgeColor === 'emerald',
+              'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-500':
+                badgeColor === 'zinc',
+            },
+          )}
+        >
+          {badgeText}
+        </span>
       )}
     </Link>
   )
@@ -170,13 +213,15 @@ function NavigationGroup({
     <li className={clsx('relative mt-6', className)}>
       <button
         onClick={toggleCollapsed}
+        aria-expanded={!isCollapsed}
+        aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${group.title} section`}
         className="flex w-full items-center justify-between text-sm font-semibold text-zinc-900 transition-colors hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
       >
         <span>{group.title}</span>
         {isCollapsed ? (
-          <ChevronRightIcon className="h-4 w-4" />
+          <ChevronRightIcon className="h-4 w-4" aria-hidden="true" />
         ) : (
-          <ChevronDownIcon className="h-4 w-4" />
+          <ChevronDownIcon className="h-4 w-4" aria-hidden="true" />
         )}
       </button>
       <AnimatePresence initial={!isInsideMobileNavigation}>
@@ -210,6 +255,8 @@ function NavigationGroup({
                         <NavLink
                           href={link.href}
                           active={link.href === pathname}
+                          badge={link.badge}
+                          status={link.status}
                         >
                           {link.title}
                         </NavLink>
@@ -256,7 +303,7 @@ function NavigationGroup({
 
 export function Navigation(props: React.ComponentPropsWithoutRef<'nav'>) {
   return (
-    <nav {...props}>
+    <nav {...props} aria-label="Main navigation">
       <ul role="list">
         <TopLevelNavItem href="/">Overview</TopLevelNavItem>
         <TopLevelNavItem href="/help">Documentation</TopLevelNavItem>

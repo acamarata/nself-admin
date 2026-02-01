@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { FrontendApp } from '@/types/deployment'
 import {
   Activity,
@@ -15,9 +16,9 @@ import {
   Zap,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function FrontendPage() {
+function FrontendContent() {
   const [loading, setLoading] = useState(true)
   const [apps, setApps] = useState<FrontendApp[]>([])
 
@@ -345,5 +346,13 @@ export default function FrontendPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function FrontendPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <FrontendContent />
+    </Suspense>
   )
 }

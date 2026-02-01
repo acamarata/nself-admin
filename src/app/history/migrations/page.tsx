@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { TableSkeleton } from '@/components/skeletons'
 import {
   AlertTriangle,
   ArrowDown,
@@ -18,7 +19,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface Migration {
   id: string
@@ -33,7 +34,7 @@ interface Migration {
   changes?: string[]
 }
 
-export default function MigrationHistoryPage() {
+function MigrationHistoryContent() {
   const [loading, setLoading] = useState(true)
   const [migrations, setMigrations] = useState<Migration[]>([])
   const [filterStatus, setFilterStatus] = useState<string>('all')
@@ -460,5 +461,13 @@ export default function MigrationHistoryPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function MigrationHistoryPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <MigrationHistoryContent />
+    </Suspense>
   )
 }

@@ -13,7 +13,7 @@ import {
 
 interface AuthContextType {
   isAuthenticated: boolean
-  login: (password: string) => Promise<boolean>
+  login: (password: string, rememberMe?: boolean) => Promise<boolean>
   logout: () => void
   checkAuth: () => Promise<void>
 }
@@ -62,13 +62,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const login = async (password: string): Promise<boolean> => {
+  const login = async (
+    password: string,
+    rememberMe: boolean = false,
+  ): Promise<boolean> => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // Include cookies
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, rememberMe }),
       })
 
       if (response.ok) {

@@ -1,6 +1,7 @@
 'use client'
 
 import { PageShell } from '@/components/PageShell'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -27,7 +28,7 @@ import {
   Settings,
   Terminal,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -65,7 +66,7 @@ const SEARCH_ENGINES = [
 // Component
 // ---------------------------------------------------------------------------
 
-export default function SearchEnginePage() {
+function SearchEngineContent() {
   const [selectedEngine, setSelectedEngine] = useState('meilisearch')
   const [testQuery, setTestQuery] = useState('')
   const [loading, setLoading] = useState(false)
@@ -410,5 +411,13 @@ export default function SearchEnginePage() {
         </Card>
       </div>
     </PageShell>
+  )
+}
+
+export default function SearchEnginePage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <SearchEngineContent />
+    </Suspense>
   )
 }

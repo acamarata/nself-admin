@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { CardGridSkeleton } from '@/components/skeletons'
 import {
   Activity,
   AlertCircle,
@@ -46,7 +47,7 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Suspense, useMemo, useState } from 'react'
 
 // ─── Shared Types & Data ────────────────────────────────────────────────────
 
@@ -2259,7 +2260,7 @@ function CLIReferenceSection() {
 
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
-export default function HelpPage() {
+function HelpContent() {
   const [activeTab, setActiveTab] = useState<
     'overview' | 'cli' | 'docs' | 'faq' | 'contact'
   >('overview')
@@ -2335,5 +2336,13 @@ export default function HelpPage() {
         {activeTab === 'contact' && <SupportContactSection />}
       </div>
     </>
+  )
+}
+
+export default function HelpPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <HelpContent />
+    </Suspense>
   )
 }

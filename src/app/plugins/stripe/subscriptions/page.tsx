@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { StripeSubscription } from '@/types/stripe'
 import {
   AlertCircle,
@@ -17,7 +18,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -122,7 +123,7 @@ function SubscriptionRow({
   )
 }
 
-export default function StripeSubscriptionsPage() {
+function StripeSubscriptionsContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
@@ -335,5 +336,13 @@ export default function StripeSubscriptionsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function StripeSubscriptionsPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <StripeSubscriptionsContent />
+    </Suspense>
   )
 }

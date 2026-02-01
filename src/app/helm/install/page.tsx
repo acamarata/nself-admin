@@ -1,5 +1,6 @@
 'use client'
 
+import { FormSkeleton } from '@/components/skeletons'
 import type { HelmChart, HelmRepo } from '@/types/k8s'
 import {
   AlertCircle,
@@ -12,7 +13,7 @@ import {
   Terminal,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -97,7 +98,7 @@ type InstallStep = {
   message?: string
 }
 
-export default function HelmInstallPage() {
+function HelmInstallContent() {
   const [selectedRepo, setSelectedRepo] = useState('')
   const [selectedChart, setSelectedChart] = useState<HelmChart | null>(null)
   const [releaseName, setReleaseName] = useState('')
@@ -487,5 +488,13 @@ export default function HelmInstallPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function HelmInstallPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <HelmInstallContent />
+    </Suspense>
   )
 }

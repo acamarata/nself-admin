@@ -1,5 +1,6 @@
 'use client'
 
+import { FormSkeleton } from '@/components/skeletons'
 import type { HelmRepo } from '@/types/k8s'
 import {
   ArrowLeft,
@@ -14,7 +15,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -112,7 +113,7 @@ const popularRepos = [
   },
 ]
 
-export default function HelmReposPage() {
+function HelmReposContent() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [newRepoName, setNewRepoName] = useState('')
   const [newRepoUrl, setNewRepoUrl] = useState('')
@@ -466,5 +467,13 @@ export default function HelmReposPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function HelmReposPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <HelmReposContent />
+    </Suspense>
   )
 }

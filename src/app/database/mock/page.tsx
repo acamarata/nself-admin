@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { FormSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,7 +30,7 @@ import {
   Terminal,
   Trash2,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface TableConfig {
   name: string
@@ -38,7 +39,7 @@ interface TableConfig {
   columns: { name: string; type: string }[]
 }
 
-export default function DatabaseMockPage() {
+function DatabaseMockContent() {
   const [isDevelopment, setIsDevelopment] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -604,5 +605,13 @@ export default function DatabaseMockPage() {
         )}
       </div>
     </PageTemplate>
+  )
+}
+
+export default function DatabaseMockPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <DatabaseMockContent />
+    </Suspense>
   )
 }

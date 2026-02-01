@@ -1,9 +1,10 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import { Activity, ArrowLeft, Play, RefreshCw, Search } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import {
   CartesianGrid,
   Line,
@@ -20,7 +21,7 @@ interface MetricSeries {
   values: { time: string; value: number }[]
 }
 
-export default function MetricsPage() {
+function MetricsContent() {
   const [loading, setLoading] = useState(true)
   const [queryLoading, setQueryLoading] = useState(false)
   const [query, setQuery] = useState('http_requests_total')
@@ -315,5 +316,13 @@ export default function MetricsPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function MetricsPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <MetricsContent />
+    </Suspense>
   )
 }

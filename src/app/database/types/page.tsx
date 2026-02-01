@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { TableSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,7 +27,7 @@ import {
   Settings,
   Terminal,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 type Language = 'typescript' | 'go' | 'python'
 
@@ -217,7 +218,7 @@ class Comment:
     created_at: datetime
 `
 
-export default function DatabaseTypesPage() {
+function DatabaseTypesContent() {
   const [language, setLanguage] = useState<Language>('typescript')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
@@ -541,5 +542,13 @@ export default function DatabaseTypesPage() {
         )}
       </div>
     </PageTemplate>
+  )
+}
+
+export default function DatabaseTypesPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <DatabaseTypesContent />
+    </Suspense>
   )
 }

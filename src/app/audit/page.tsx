@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { TableSkeleton } from '@/components/skeletons'
 import {
   AlertTriangle,
   CheckCircle,
@@ -14,7 +15,7 @@ import {
   Terminal,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -156,7 +157,7 @@ function ActionBadge({ action }: { action: string }) {
 
 // ── Component ──────────────────────────────────────────────────
 
-export default function AuditLogPage() {
+function AuditLogContent() {
   const [entries, setEntries] = useState<AuditEntry[]>([])
   const [rawOutput, setRawOutput] = useState<string>('')
   const [loading, setLoading] = useState(false)
@@ -577,5 +578,13 @@ export default function AuditLogPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function AuditLogPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <AuditLogContent />
+    </Suspense>
   )
 }

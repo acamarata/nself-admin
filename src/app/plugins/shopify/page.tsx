@@ -1,5 +1,6 @@
 'use client'
 
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { ShopifyStats } from '@/types/shopify'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import {
@@ -17,7 +18,7 @@ import {
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -157,7 +158,7 @@ function QuickLinkCard({
   )
 }
 
-export default function ShopifyDashboardPage() {
+function ShopifyDashboardContent() {
   const [syncing, setSyncing] = useState(false)
 
   const { data, error, isLoading, mutate } = useSWR<{
@@ -405,5 +406,13 @@ export default function ShopifyDashboardPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ShopifyDashboardPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <ShopifyDashboardContent />
+    </Suspense>
   )
 }

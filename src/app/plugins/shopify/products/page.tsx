@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { ShopifyProduct } from '@/types/shopify'
 import {
   AlertCircle,
@@ -18,7 +19,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -162,7 +163,7 @@ function ProductCard({ product }: { product: ShopifyProduct }) {
   )
 }
 
-export default function ShopifyProductsPage() {
+function ShopifyProductsContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
@@ -344,5 +345,13 @@ export default function ShopifyProductsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ShopifyProductsPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <ShopifyProductsContent />
+    </Suspense>
   )
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { FormSkeleton } from '@/components/skeletons'
 import type { K8sCluster, K8sNamespace } from '@/types/k8s'
 import {
   AlertCircle,
@@ -11,7 +12,7 @@ import {
   Terminal,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -42,7 +43,7 @@ type DeploymentStep = {
   message?: string
 }
 
-export default function K8sDeployPage() {
+function K8sDeployContent() {
   const [selectedNamespace, setSelectedNamespace] = useState('default')
   const [dryRun, setDryRun] = useState(true)
   const [deploying, setDeploying] = useState(false)
@@ -368,5 +369,13 @@ export default function K8sDeployPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function K8sDeployPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <K8sDeployContent />
+    </Suspense>
   )
 }

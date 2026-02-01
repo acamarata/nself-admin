@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import type { ServiceProfile, SystemProfile } from '@/types/performance'
 import {
   Activity,
@@ -16,7 +17,7 @@ import {
   Zap,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -35,7 +36,7 @@ interface MetricData {
   network: number
 }
 
-export default function PerformancePage() {
+function PerformanceContent() {
   const [loading, setLoading] = useState(true)
   const [isRunning, setIsRunning] = useState(false)
   const [autoRefresh, setAutoRefresh] = useState(true)
@@ -536,5 +537,13 @@ export default function PerformancePage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function PerformancePage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <PerformanceContent />
+    </Suspense>
   )
 }

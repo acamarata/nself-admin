@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import type { FrontendApp } from '@/types/deployment'
 import {
   Activity,
@@ -22,7 +23,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import {
   CartesianGrid,
   Line,
@@ -48,7 +49,7 @@ interface Deployment {
   duration: number
 }
 
-export default function FrontendDetailPage() {
+function FrontendDetailContent() {
   const params = useParams()
   const appName = params.name as string
 
@@ -523,5 +524,13 @@ export default function FrontendDetailPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function FrontendDetailPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <FrontendDetailContent />
+    </Suspense>
   )
 }

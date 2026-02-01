@@ -1,5 +1,6 @@
 'use client'
 
+import { FormSkeleton } from '@/components/skeletons'
 import type {
   CloudProvider,
   CloudRegion,
@@ -21,7 +22,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -248,7 +249,7 @@ const mockProviders: {
   },
 ]
 
-export default function CreateServerPage() {
+function CreateServerContent() {
   const router = useRouter()
 
   const [formData, setFormData] = useState({
@@ -751,5 +752,13 @@ export default function CreateServerPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function CreateServerPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <CreateServerContent />
+    </Suspense>
   )
 }

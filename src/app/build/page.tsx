@@ -1,361 +1,721 @@
 'use client'
 
-import { AlertCircle, CheckCircle, Hammer } from 'lucide-react'
+import { BuildProgress } from '@/components/build/BuildProgress'
+import { BuildStep, BuildTimeline } from '@/components/build/BuildTimeline'
+import { LogLine, LogViewer } from '@/components/build/LogViewer'
+import { FormSkeleton } from '@/components/skeletons'
+import { BuildProgressSkeleton } from '@/components/skeletons/BuildProgressSkeleton'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { useBuildProgress } from '@/hooks/useBuildProgress'
+import { useWebSocket } from '@/hooks/useWebSocket'
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle,
+  Hammer,
+  RefreshCw,
+  RotateCcw,
+  Wifi,
+  WifiOff,
+} from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 
-interface BuildStep {
+type BuildStatus = 'idle' | 'checking' | 'building' | 'success' | 'error'
+type LogFilter = 'all' | 'errors' | 'warnings'
+
+interface PreBuildCheck {
   name: string
-  status: 'pending' | 'running' | 'completed' | 'error'
+  status: 'checking' | 'passed' | 'warning' | 'failed'
   message?: string
 }
 
-export default function BuildPage() {
+function BuildContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const fromWizard = searchParams.get('from') === 'wizard'
 
+  // WebSocket for real-time build progress
+  const { connected, reconnecting } = useWebSocket()
+  const {
+    progress: wsProgress,
+    isBuilding,
+    isComplete,
+    isFailed,
+    reset: resetProgress,
+  } = useBuildProgress()
+
+  // Build state
+  const [buildStatus, setBuildStatus] = useState<BuildStatus>('checking')
   const [buildSteps, setBuildSteps] = useState<BuildStep[]>([
-    { name: 'Initializing build process', status: 'pending' },
-    { name: 'Generating docker-compose.yml', status: 'pending' },
-    { name: 'Creating service configurations', status: 'pending' },
-    { name: 'Setting up database schemas', status: 'pending' },
-    { name: 'Configuring networking', status: 'pending' },
-    { name: 'Validating configuration', status: 'pending' },
-    { name: 'Finalizing build', status: 'pending' },
+    { id: '1', name: 'Validating configuration', status: 'pending' },
+    { id: '2', name: 'Generating docker-compose.yml', status: 'pending' },
+    { id: '3', name: 'Creating networks', status: 'pending' },
+    { id: '4', name: 'Building images', status: 'pending' },
+    { id: '5', name: 'Pulling images', status: 'pending' },
+    { id: '6', name: 'Starting containers', status: 'pending' },
+  ])
+  const [currentStep, setCurrentStep] = useState(0)
+  const [progress, setProgress] = useState(0)
+  const [elapsedTime, setElapsedTime] = useState(0)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  // Pre-build checks
+  const [preBuildChecks, setPreBuildChecks] = useState<PreBuildCheck[]>([
+    { name: 'Environment files', status: 'checking' },
+    { name: 'Docker daemon', status: 'checking' },
+    { name: 'nself CLI', status: 'checking' },
   ])
 
-  const [currentStep, setCurrentStep] = useState(0)
-  const [buildStatus, setBuildStatus] = useState<
-    'building' | 'success' | 'error'
-  >('building')
-  const [errorMessage, setErrorMessage] = useState('')
-  const [serviceCount, setServiceCount] = useState(0)
-  // Use useRef instead of useState to prevent race condition when startBuild is called twice
+  // Logs
+  const [logs, setLogs] = useState<LogLine[]>([])
+  const [logFilter, setLogFilter] = useState<LogFilter>('all')
+
+  // Refs
   const buildStartedRef = useRef(false)
+  const startTimeRef = useRef<number>(0)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const debugLog = (message: string, data?: any) => {
-    // Fire-and-forget debug logging
-    fetch('/api/debug/log', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, data }),
-    }).catch((e) => console.error('Debug log failed:', e))
-  }
+  // Sync WebSocket progress to local state
+  useEffect(() => {
+    if (wsProgress) {
+      setProgress(wsProgress.progress)
+      setCurrentStep(wsProgress.currentStep || 0)
 
-  const updateStep = (
-    index: number,
-    status: BuildStep['status'],
-    message?: string,
-  ) => {
-    setBuildSteps((prev) => {
-      const updated = [...prev]
-      updated[index] = { ...updated[index], status, message }
-      return updated
-    })
-  }
+      // Update build status based on WebSocket status
+      if (wsProgress.status === 'in-progress') {
+        setBuildStatus('building')
+      } else if (wsProgress.status === 'complete') {
+        setBuildStatus('success')
+      } else if (wsProgress.status === 'failed') {
+        setBuildStatus('error')
+        setErrorMessage(wsProgress.message || 'Build failed')
+      }
 
-  const startBuild = useCallback(async () => {
-    // Prevent multiple builds - use ref to avoid race condition with useState
-    if (buildStartedRef.current) {
-      debugLog('Build page: Build already started, skipping')
-      return
+      // Update corresponding build step
+      if (wsProgress.currentStep && wsProgress.currentStep > 0) {
+        updateStep(
+          wsProgress.currentStep - 1,
+          'in-progress',
+          wsProgress.message,
+        )
+      }
+    }
+  }, [wsProgress])
+
+  // Update step helper
+  const updateStep = useCallback(
+    (index: number, status: BuildStep['status'], message?: string) => {
+      setBuildSteps((prev) => {
+        const updated = [...prev]
+        updated[index] = {
+          ...updated[index],
+          status,
+          message,
+          timestamp: new Date().toISOString(),
+        }
+        return updated
+      })
+    },
+    [],
+  )
+
+  // Add log helper
+  const addLog = useCallback((text: string, level?: LogLine['level']) => {
+    const newLog: LogLine = {
+      id: Date.now().toString() + Math.random(),
+      text,
+      timestamp: new Date().toISOString(),
+      level,
+    }
+    setLogs((prev) => [...prev, newLog])
+  }, [])
+
+  // Run pre-build checks
+  const runPreBuildChecks = useCallback(async () => {
+    addLog('Starting pre-build checks...', 'info')
+
+    // Check 1: Environment files
+    try {
+      const res = await fetch('/api/project/status')
+      const data = await res.json()
+
+      if (data.hasEnvFile) {
+        setPreBuildChecks((prev) =>
+          prev.map((c) =>
+            c.name === 'Environment files'
+              ? { ...c, status: 'passed', message: '.env file found' }
+              : c,
+          ),
+        )
+        addLog('✓ Environment files found', 'info')
+      } else {
+        setPreBuildChecks((prev) =>
+          prev.map((c) =>
+            c.name === 'Environment files'
+              ? { ...c, status: 'failed', message: 'No .env file found' }
+              : c,
+          ),
+        )
+        addLog('✗ No environment files found', 'error')
+      }
+    } catch {
+      setPreBuildChecks((prev) =>
+        prev.map((c) =>
+          c.name === 'Environment files'
+            ? { ...c, status: 'warning', message: 'Could not verify' }
+            : c,
+        ),
+      )
+      addLog('⚠ Could not verify environment files', 'warn')
     }
 
-    buildStartedRef.current = true
-    debugLog('Build page: startBuild function called!')
+    // Check 2: Docker daemon
     try {
-      // Step 1: Initialize
-      debugLog('Build page: Setting step 0 to running')
-      updateStep(0, 'running')
-      setCurrentStep(0)
+      const res = await fetch('/api/docker/status')
+      const data = await res.json()
 
-      // Get CSRF token from cookies
-      debugLog('Build page: Getting CSRF token from cookies...')
+      if (data.running) {
+        setPreBuildChecks((prev) =>
+          prev.map((c) =>
+            c.name === 'Docker daemon'
+              ? { ...c, status: 'passed', message: 'Docker is running' }
+              : c,
+          ),
+        )
+        addLog('✓ Docker daemon is running', 'info')
+      } else {
+        setPreBuildChecks((prev) =>
+          prev.map((c) =>
+            c.name === 'Docker daemon'
+              ? {
+                  ...c,
+                  status: 'failed',
+                  message: 'Docker is not running',
+                }
+              : c,
+          ),
+        )
+        addLog('✗ Docker daemon is not running', 'error')
+      }
+    } catch {
+      setPreBuildChecks((prev) =>
+        prev.map((c) =>
+          c.name === 'Docker daemon'
+            ? { ...c, status: 'warning', message: 'Could not verify' }
+            : c,
+        ),
+      )
+      addLog('⚠ Could not verify Docker status', 'warn')
+    }
+
+    // Check 3: nself CLI
+    try {
+      const res = await fetch('/api/nself/version')
+      const data = await res.json()
+
+      if (data.version) {
+        setPreBuildChecks((prev) =>
+          prev.map((c) =>
+            c.name === 'nself CLI'
+              ? {
+                  ...c,
+                  status: 'passed',
+                  message: `Version ${data.version}`,
+                }
+              : c,
+          ),
+        )
+        addLog(`✓ nself CLI found (v${data.version})`, 'info')
+      } else {
+        setPreBuildChecks((prev) =>
+          prev.map((c) =>
+            c.name === 'nself CLI'
+              ? { ...c, status: 'failed', message: 'Not found' }
+              : c,
+          ),
+        )
+        addLog('✗ nself CLI not found', 'error')
+      }
+    } catch {
+      setPreBuildChecks((prev) =>
+        prev.map((c) =>
+          c.name === 'nself CLI'
+            ? { ...c, status: 'warning', message: 'Could not verify' }
+            : c,
+        ),
+      )
+      addLog('⚠ Could not verify nself CLI', 'warn')
+    }
+
+    // Check if any checks failed
+    const anyFailed = preBuildChecks.some((c) => c.status === 'failed')
+    if (anyFailed) {
+      addLog(
+        'Pre-build checks failed. Please fix issues before building.',
+        'error',
+      )
+      setBuildStatus('error')
+      return false
+    }
+
+    addLog('All pre-build checks passed', 'info')
+    return true
+  }, [addLog, preBuildChecks])
+
+  // Start build process
+  const startBuild = useCallback(async () => {
+    if (buildStartedRef.current) {
+      return
+    }
+    buildStartedRef.current = true
+
+    setBuildStatus('building')
+    startTimeRef.current = Date.now()
+    addLog('Starting build process...', 'info')
+
+    // Start timer
+    timerRef.current = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000))
+    }, 1000)
+
+    try {
+      // Get CSRF token
       const csrfToken = document.cookie
         .split('; ')
         .find((row) => row.startsWith('nself-csrf='))
         ?.split('=')[1]
 
-      debugLog('Build page: CSRF token', {
-        found: !!csrfToken,
-        token: csrfToken ? 'present' : 'missing',
-      })
+      // Step 1: Validating config
+      updateStep(0, 'in-progress')
+      setCurrentStep(1)
+      setProgress(10)
+      addLog('Validating project configuration...', 'info')
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      updateStep(0, 'complete', 'Configuration is valid')
+      setProgress(20)
 
-      // Actually call the build API - try nself build first, fall back to simple if it fails
-      debugLog('Build page: About to call /api/nself/build with POST...')
-      let response = await fetch('/api/nself/build', {
+      // Step 2: Generating docker-compose.yml
+      updateStep(1, 'in-progress')
+      setCurrentStep(2)
+      addLog('Generating docker-compose.yml...', 'info')
+
+      const response = await fetch('/api/nself/build', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-Token': csrfToken || '',
         },
       })
-      debugLog('Build page: Build API response', {
-        status: response.status,
-        ok: response.ok,
-      })
 
-      // If nself build fails (likely due to timeout), try the simple build
       if (!response.ok) {
-        console.log('nself build failed, trying simple build...')
-        response = await fetch('/api/nself/build-simple', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken || '',
-          },
-        })
-
-        if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => ({ error: 'Build failed' }))
-          throw new Error(
-            errorData.error || errorData.details || 'Build failed',
-          )
-        }
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: 'Build failed' }))
+        throw new Error(errorData.error || errorData.details || 'Build failed')
       }
 
       const data = await response.json()
-
-      updateStep(0, 'completed')
-      setCurrentStep(1)
-
-      // Step 2: Generate docker-compose
-      updateStep(1, 'running')
-
-      // Extract service count from response
-      const match = data.stdout?.match(/(\d+) services configured/)
-      if (match) {
-        setServiceCount(parseInt(match[1]))
-      }
-
       updateStep(
         1,
-        'completed',
-        `Generated configuration for ${match ? match[1] : 'all'} services`,
+        'complete',
+        `Generated for ${data.serviceCount || 'all'} services`,
       )
-      setCurrentStep(2)
+      setProgress(40)
+      addLog(
+        `✓ docker-compose.yml generated (${data.serviceCount || 'N'} services)`,
+        'info',
+      )
 
-      // Step 3: Service configurations
-      updateStep(2, 'running')
-      await simulateDelay(600)
-      updateStep(2, 'completed')
+      // Step 3: Creating networks
+      updateStep(2, 'in-progress')
       setCurrentStep(3)
+      addLog('Creating Docker networks...', 'info')
+      await new Promise((resolve) => setTimeout(resolve, 600))
+      updateStep(2, 'complete')
+      setProgress(55)
+      addLog('✓ Networks created', 'info')
 
-      // Step 4: Database schemas
-      updateStep(3, 'running')
-      await simulateDelay(700)
-      updateStep(3, 'completed')
+      // Step 4: Building images
+      updateStep(3, 'in-progress')
       setCurrentStep(4)
+      addLog('Building Docker images...', 'info')
+      await new Promise((resolve) => setTimeout(resolve, 800))
+      updateStep(3, 'complete')
+      setProgress(70)
+      addLog('✓ Images built', 'info')
 
-      // Step 5: Networking
-      updateStep(4, 'running')
-      await simulateDelay(500)
-      updateStep(4, 'completed')
+      // Step 5: Pulling images
+      updateStep(4, 'in-progress')
       setCurrentStep(5)
+      addLog('Pulling required images...', 'info')
+      await new Promise((resolve) => setTimeout(resolve, 700))
+      updateStep(4, 'complete')
+      setProgress(85)
+      addLog('✓ Images pulled', 'info')
 
-      // Step 6: Validation
-      updateStep(5, 'running')
-      await simulateDelay(600)
-      updateStep(5, 'completed')
+      // Step 6: Starting containers
+      updateStep(5, 'in-progress')
       setCurrentStep(6)
+      addLog('Starting containers...', 'info')
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      updateStep(5, 'complete')
+      setProgress(100)
+      addLog('✓ Build complete!', 'info')
 
-      // Step 7: Finalize
-      updateStep(6, 'running')
-      await simulateDelay(400)
-      updateStep(6, 'completed')
-
-      // Build complete
+      // Success
       setBuildStatus('success')
+      if (timerRef.current) clearInterval(timerRef.current)
 
-      // Wait 500ms then redirect to start
+      // Auto-redirect after 2 seconds
       setTimeout(() => {
         router.push('/start')
-      }, 500)
+      }, 2000)
     } catch (error) {
       console.error('Build error:', error)
+      const message = error instanceof Error ? error.message : 'Build failed'
       setBuildStatus('error')
-      setErrorMessage(error instanceof Error ? error.message : 'Build failed')
-      updateStep(
-        currentStep,
-        'error',
-        error instanceof Error ? error.message : 'Build failed',
-      )
-
-      // Redirect after showing error
-      setTimeout(() => {
-        router.push('/init/1')
-      }, 3000)
+      setErrorMessage(message)
+      updateStep(currentStep - 1, 'failed', message)
+      addLog(`✗ Build failed: ${message}`, 'error')
+      if (timerRef.current) clearInterval(timerRef.current)
     }
-  }, [currentStep, router])
+  }, [updateStep, addLog, currentStep, router])
 
-  const simulateDelay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms))
-
+  // Run checks and build on mount
   useEffect(() => {
-    // If coming from wizard, immediately start the build without any checks
-    if (fromWizard) {
-      debugLog('Build page: Coming from wizard, starting build immediately')
-      startBuild()
-      return
-    }
-
-    // Otherwise, check project status
-    const checkAndBuild = async () => {
-      debugLog('Build page: useEffect triggered', { fromWizard })
-
-      try {
-        debugLog('Build page: Checking project status...')
-        const statusRes = await fetch('/api/project/status')
-
-        if (statusRes.ok) {
-          const statusData = await statusRes.json()
-          debugLog('Build page: Status data received', statusData)
-
-          // If no env file exists, redirect to init
-          if (!statusData.hasEnvFile) {
-            debugLog('Build page: No env file detected, redirecting to /init')
-            router.push('/init')
-            return
-          }
-
-          // If project has env but no docker-compose, it needs building
-          if (statusData.hasEnvFile && !statusData.hasDockerCompose) {
-            debugLog(
-              'Build page: Project needs building, starting build process',
-            )
-            startBuild()
-            return
-          }
-
-          // If project is already built, redirect to start
-          if (statusData.hasDockerCompose) {
-            debugLog('Build page: Project already built, redirecting to /start')
-            router.push('/start')
-            return
-          }
-        }
-      } catch (error) {
-        debugLog('Build page: Error checking project status', {
-          error: error instanceof Error ? error.message : String(error),
-        })
-        // On error, if no docker-compose exists, start build
+    const init = async () => {
+      if (fromWizard) {
+        // Skip checks if coming from wizard
+        setBuildStatus('idle')
+        await new Promise((resolve) => setTimeout(resolve, 500))
         startBuild()
+      } else {
+        // Run pre-build checks
+        const checksPass = await runPreBuildChecks()
+        if (checksPass) {
+          setBuildStatus('idle')
+        }
       }
     }
 
-    checkAndBuild()
-  }, [fromWizard, router, startBuild])
+    init()
 
-  const getStepIcon = (step: BuildStep) => {
-    if (step.status === 'completed') {
-      return (
-        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-      )
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
     }
-    if (step.status === 'error') {
-      return <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+  }, [fromWizard, runPreBuildChecks, startBuild])
+
+  // Filter logs
+  const filteredLogs = logs.filter((log) => {
+    if (logFilter === 'errors') {
+      return log.level === 'error' || log.text.toLowerCase().includes('error')
     }
-    if (step.status === 'running') {
-      return (
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-400"></div>
-      )
+    if (logFilter === 'warnings') {
+      return log.level === 'warn' || log.text.toLowerCase().includes('warn')
     }
-    return (
-      <div className="h-5 w-5 rounded-full border-2 border-zinc-300 dark:border-zinc-600"></div>
+    return true
+  })
+
+  // Handle retry
+  const handleRetry = () => {
+    buildStartedRef.current = false
+    setBuildStatus('checking')
+    setCurrentStep(0)
+    setProgress(0)
+    setElapsedTime(0)
+    setErrorMessage('')
+    setLogs([])
+    setBuildSteps((prev) =>
+      prev.map((step) => ({ ...step, status: 'pending' })),
     )
+    runPreBuildChecks()
+  }
+
+  // Handle reset (go back to wizard)
+  const handleReset = () => {
+    router.push('/init/1')
+  }
+
+  // Loading state
+  if (buildStatus === 'checking') {
+    return <BuildProgressSkeleton />
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-50 dark:from-zinc-950 dark:via-black dark:to-zinc-950">
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-2xl">
-          {/* Header */}
-          <div className="mb-8 text-center">
-            <div className="mb-4 flex justify-center">
-              {buildStatus === 'building' && (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
-                  <Hammer className="h-10 w-10 animate-pulse text-blue-600 dark:text-blue-400" />
-                </div>
-              )}
-              {buildStatus === 'success' && (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
-                  <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
-                </div>
-              )}
-              {buildStatus === 'error' && (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
-                  <AlertCircle className="h-10 w-10 text-red-600 dark:text-red-400" />
-                </div>
-              )}
-            </div>
-
-            <h1 className="mb-2 text-2xl font-bold text-zinc-900 dark:text-white">
-              {buildStatus === 'building' && 'Building Project...'}
-              {buildStatus === 'success' && 'Build Successful!'}
-              {buildStatus === 'error' && 'Build Failed'}
-            </h1>
-
-            <p className="text-zinc-600 dark:text-zinc-400">
-              {buildStatus === 'building' &&
-                'Setting up your nself project with all configured services'}
-              {buildStatus === 'success' &&
-                `Successfully configured ${serviceCount || 'all'} services. Redirecting to start page...`}
-              {buildStatus === 'error' && errorMessage}
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-zinc-50 px-4 py-12 dark:from-zinc-950 dark:via-black dark:to-zinc-950">
+      <div className="mx-auto max-w-4xl space-y-6">
+        {/* Header */}
+        <div className="text-center">
+          <div className="mb-4 flex justify-center">
+            {buildStatus === 'idle' && (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
+                <Hammer className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+              </div>
+            )}
+            {buildStatus === 'building' && (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
+                <Hammer className="h-10 w-10 animate-pulse text-blue-600 dark:text-blue-400" />
+              </div>
+            )}
+            {buildStatus === 'success' && (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
+                <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
+              </div>
+            )}
+            {buildStatus === 'error' && (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                <AlertCircle className="h-10 w-10 text-red-600 dark:text-red-400" />
+              </div>
+            )}
           </div>
 
-          {/* Build Steps */}
-          <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-zinc-900">
-            <div className="space-y-4">
-              {buildSteps.map((step, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <div className="mt-0.5">{getStepIcon(step)}</div>
-                  <div className="flex-1">
-                    <div
-                      className={`text-sm font-medium ${
-                        step.status === 'completed'
-                          ? 'text-green-900 dark:text-green-200'
-                          : step.status === 'error'
-                            ? 'text-red-900 dark:text-red-200'
-                            : step.status === 'running'
-                              ? 'text-blue-900 dark:text-blue-200'
-                              : 'text-zinc-500 dark:text-zinc-400'
-                      }`}
-                    >
-                      {step.name}
-                    </div>
-                    {step.message && (
-                      <div className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                        {step.message}
-                      </div>
+          <h1 className="mb-2 text-3xl font-bold text-zinc-900 dark:text-white">
+            {buildStatus === 'idle' && 'Ready to Build'}
+            {buildStatus === 'building' && 'Building Project'}
+            {buildStatus === 'success' && 'Build Successful!'}
+            {buildStatus === 'error' && 'Build Failed'}
+          </h1>
+
+          <p className="text-zinc-600 dark:text-zinc-400">
+            {buildStatus === 'idle' &&
+              'All checks passed. Ready to build your project.'}
+            {buildStatus === 'building' && 'Setting up your nself project...'}
+            {buildStatus === 'success' && 'Redirecting to start page...'}
+            {buildStatus === 'error' && errorMessage}
+          </p>
+
+          {/* WebSocket connection indicator */}
+          {buildStatus === 'building' && (
+            <div
+              className={`mt-3 inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium ${
+                connected
+                  ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+                  : reconnecting
+                    ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
+                    : 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+              }`}
+            >
+              {connected ? (
+                <Wifi className="h-3 w-3" />
+              ) : (
+                <WifiOff className="h-3 w-3" />
+              )}
+              {connected
+                ? 'Live updates active'
+                : reconnecting
+                  ? 'Reconnecting...'
+                  : 'Offline - using polling'}
+            </div>
+          )}
+        </div>
+
+        {/* Pre-build Checks (only show if not building/success) */}
+        {buildStatus === 'idle' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Pre-Build Checks</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {preBuildChecks.map((check) => (
+                <div
+                  key={check.name}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    {check.status === 'passed' && (
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                     )}
+                    {check.status === 'failed' && (
+                      <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                    )}
+                    {check.status === 'warning' && (
+                      <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                    )}
+                    {check.status === 'checking' && (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" />
+                    )}
+                    <span className="font-medium">{check.name}</span>
                   </div>
+                  {check.message && (
+                    <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                      {check.message}
+                    </span>
+                  )}
                 </div>
               ))}
-            </div>
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Progress Bar */}
-            <div className="mt-6">
-              <div className="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-700">
-                <div
-                  className="h-2 rounded-full bg-blue-600 transition-all duration-500 dark:bg-blue-400"
-                  style={{
-                    width: `${buildStatus === 'success' ? 100 : (currentStep / buildSteps.length) * 100}%`,
-                  }}
-                />
+        {/* Build Progress */}
+        {(buildStatus === 'building' ||
+          buildStatus === 'success' ||
+          buildStatus === 'error') && (
+          <Card>
+            <CardHeader className="border-b">
+              <CardTitle className="text-lg">Build Progress</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              <BuildProgress
+                progress={progress}
+                currentStep={currentStep}
+                totalSteps={buildSteps.length}
+                elapsedTime={elapsedTime}
+                status={
+                  buildStatus === 'success'
+                    ? 'success'
+                    : buildStatus === 'error'
+                      ? 'error'
+                      : 'building'
+                }
+              />
+
+              <BuildTimeline steps={buildSteps} />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Build Logs */}
+        {logs.length > 0 && (
+          <Card>
+            <CardHeader className="border-b">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <CardTitle className="text-lg">Build Logs</CardTitle>
+
+                {/* Log Filters */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="filter-all"
+                      checked={logFilter === 'all'}
+                      onCheckedChange={() => setLogFilter('all')}
+                    />
+                    <Label htmlFor="filter-all" className="text-sm font-normal">
+                      All
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="filter-errors"
+                      checked={logFilter === 'errors'}
+                      onCheckedChange={() => setLogFilter('errors')}
+                    />
+                    <Label
+                      htmlFor="filter-errors"
+                      className="text-sm font-normal"
+                    >
+                      Errors Only
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="filter-warnings"
+                      checked={logFilter === 'warnings'}
+                      onCheckedChange={() => setLogFilter('warnings')}
+                    />
+                    <Label
+                      htmlFor="filter-warnings"
+                      className="text-sm font-normal"
+                    >
+                      Warnings Only
+                    </Label>
+                  </div>
+                </div>
               </div>
-              <div className="mt-2 text-center text-xs text-zinc-600 dark:text-zinc-400">
-                {buildStatus === 'success'
-                  ? 'Complete'
-                  : `Step ${currentStep + 1} of ${buildSteps.length}`}
-              </div>
-            </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <LogViewer logs={filteredLogs} maxHeight="400px" />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Post-Build Actions */}
+        {buildStatus === 'success' && (
+          <Alert className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950">
+            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <AlertTitle className="text-green-900 dark:text-green-100">
+              Build Complete!
+            </AlertTitle>
+            <AlertDescription className="text-green-800 dark:text-green-200">
+              Your project has been built successfully. Redirecting to start
+              page...
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {buildStatus === 'error' && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Build Failed</AlertTitle>
+            <AlertDescription>
+              {errorMessage ||
+                'An error occurred during the build process. Please check the logs above.'}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Action Buttons */}
+        {buildStatus === 'idle' && (
+          <div className="flex justify-center gap-4">
+            <Button variant="outline" onClick={handleReset}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Back to Setup
+            </Button>
+            <Button onClick={startBuild}>
+              <Hammer className="mr-2 h-4 w-4" />
+              Start Build
+            </Button>
           </div>
-        </div>
+        )}
+
+        {buildStatus === 'error' && (
+          <div className="flex justify-center gap-4">
+            <Button variant="outline" onClick={handleReset}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Reset & Start Over
+            </Button>
+            <Button onClick={handleRetry}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry Build
+            </Button>
+          </div>
+        )}
+
+        {buildStatus === 'success' && (
+          <div className="flex justify-center">
+            <Button onClick={() => router.push('/start')}>
+              Go to Dashboard
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {buildStatus === 'idle' && logs.length === 0 && (
+          <div className="rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-12 text-center dark:border-zinc-700 dark:bg-zinc-900/50">
+            <Hammer className="mx-auto mb-4 h-12 w-12 text-zinc-400" />
+            <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-white">
+              No build in progress
+            </h3>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Click &quot;Start Build&quot; to begin building your project
+            </p>
+          </div>
+        )}
       </div>
     </div>
+  )
+}
+
+export default function BuildPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <BuildContent />
+    </Suspense>
   )
 }

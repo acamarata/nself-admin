@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import {
   ArrowLeft,
   Bell,
@@ -12,7 +13,7 @@ import {
   Settings,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface MonitoringConfig {
   prometheus: {
@@ -37,7 +38,7 @@ interface MonitoringConfig {
   }
 }
 
-export default function MonitorConfigPage() {
+function MonitorConfigContent() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -418,5 +419,13 @@ export default function MonitorConfigPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function MonitorConfigPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <MonitorConfigContent />
+    </Suspense>
   )
 }

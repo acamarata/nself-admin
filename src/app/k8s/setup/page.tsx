@@ -1,5 +1,6 @@
 'use client'
 
+import { FormSkeleton } from '@/components/skeletons'
 import type { K8sPlatform } from '@/types/k8s'
 import {
   AlertCircle,
@@ -12,7 +13,7 @@ import {
   Terminal,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 const platforms: {
   id: K8sPlatform
@@ -76,7 +77,7 @@ const platforms: {
   },
 ]
 
-export default function K8sSetupPage() {
+function K8sSetupContent() {
   const [step, setStep] = useState<
     'platform' | 'connect' | 'verify' | 'complete'
   >('platform')
@@ -448,5 +449,13 @@ export default function K8sSetupPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function K8sSetupPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <K8sSetupContent />
+    </Suspense>
   )
 }

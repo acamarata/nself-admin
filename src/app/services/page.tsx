@@ -2,12 +2,13 @@
 
 import { Button } from '@/components/Button'
 import { DataSection, PageShell } from '@/components/PageShell'
+import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
 import * as Icons from '@/lib/icons'
 import type { ContainerStats } from '@/services/collectors/DockerAPICollector'
 import { useProjectStore } from '@/stores/projectStore'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import dynamic from 'next/dynamic'
-import { useCallback, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 
 // Dynamic imports for heavy components
 const ServiceCard = dynamic(
@@ -1007,9 +1008,15 @@ function TreeView({
   )
 }
 
-export default function ServicesPage() {
+function ServicesContent() {
   // Read from store - instant, never blocks
   const storeContainers = useProjectStore((state) => state.containerStats)
+  const isLoadingContainers = useProjectStore(
+    (state) => state.isLoadingContainers,
+  )
+  const fetchContainerStats = useProjectStore(
+    (state) => state.fetchContainerStats,
+  )
   const containers = useMemo(
     () => storeContainers || ([] as Container[]),
     [storeContainers],
@@ -1020,6 +1027,16 @@ export default function ServicesPage() {
   const [filter, setFilter] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedContainers, setSelectedContainers] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState<'default' | 'name' | 'status' | 'cpu'>(
+    'default',
+  )
+
+  // Fetch container stats on mount and set up auto-refresh
+  useEffect(() => {
+    fetchContainerStats()
+    const interval = setInterval(fetchContainerStats, 3000) // Refresh every 3s
+    return () => clearInterval(interval)
+  }, [fetchContainerStats])
 
   const handleContainerAction = async (action: string, containerId: string) => {
     try {
@@ -1100,17 +1117,48 @@ export default function ServicesPage() {
     return filtered
   }, [containers, filter, searchQuery])
 
-  // Apply default sorting
+  // Apply sorting
   const sortedContainers = useMemo(() => {
-    return applyDefaultSort(filteredContainers)
-  }, [filteredContainers])
+    if (sortBy === 'default') {
+      return applyDefaultSort(filteredContainers)
+    }
+
+    return [...filteredContainers].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return getServiceDisplayName(a).localeCompare(
+            getServiceDisplayName(b),
+          )
+        case 'status':
+          return (a.state || '').localeCompare(b.state || '')
+        case 'cpu':
+          return (b.stats?.cpu.percentage || 0) - (a.stats?.cpu.percentage || 0)
+        default:
+          return 0
+      }
+    })
+  }, [filteredContainers, sortBy])
 
   const handleViewModeChange = (mode: 'grid' | 'list' | 'tree') => {
     setViewMode(mode)
   }
 
   const handleRefresh = () => {
-    // Could emit an event to background service if needed
+    fetchContainerStats()
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedContainers.length === sortedContainers.length) {
+      setSelectedContainers([])
+    } else {
+      setSelectedContainers(sortedContainers.map((c) => c.id))
+    }
+  }
+
+  const toggleSelectContainer = (id: string) => {
+    setSelectedContainers((prev) =>
+      prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id],
+    )
   }
 
   const stats = useMemo(() => {
@@ -1201,133 +1249,203 @@ export default function ServicesPage() {
 
       {/* Controls Bar */}
       <div className="mb-8">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          {/* Search and Filter */}
-          <div className="flex flex-1 items-center gap-2">
-            <div className="relative max-w-md flex-1">
-              <Icons.Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-              <input
-                type="text"
-                placeholder="Search services..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-zinc-200 bg-white py-2 pr-4 pl-10 dark:border-zinc-700 dark:bg-zinc-800"
-              />
-            </div>
-
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="rounded-lg border border-zinc-200 bg-white px-4 py-2 dark:border-zinc-700 dark:bg-zinc-800"
-            >
-              <option value="all">All Services</option>
-              <option value="running">Running</option>
-              <option value="stopped">Stopped</option>
-              <option value="stack">Stack</option>
-              <option value="services">Custom Services</option>
-              <option value="healthy">Healthy</option>
-              <option value="unhealthy">Unhealthy</option>
-            </select>
+        {/* Top row: Search, Filters, Sort */}
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          {/* Search */}
+          <div className="relative max-w-md min-w-[200px] flex-1">
+            <Icons.Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search services..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-zinc-200 bg-white py-2 pr-4 pl-10 text-sm transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:focus:border-blue-400"
+            />
           </div>
 
-          {/* View Mode and Actions */}
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={handleRefresh}
-              variant="outline"
-              className="flex items-center gap-2"
+          {/* Status Filter */}
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:focus:border-blue-400"
+          >
+            <option value="all">All Services</option>
+            <option value="running">Running Only</option>
+            <option value="stopped">Stopped Only</option>
+            <option value="healthy">Healthy Only</option>
+            <option value="unhealthy">Unhealthy Only</option>
+            <option value="stack">Stack Services</option>
+            <option value="services">Custom Services</option>
+          </select>
+
+          {/* Sort */}
+          <select
+            value={sortBy}
+            onChange={(e) =>
+              setSortBy(e.target.value as 'default' | 'name' | 'status' | 'cpu')
+            }
+            className="rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:focus:border-blue-400"
+          >
+            <option value="default">Sort: Default</option>
+            <option value="name">Sort: Name</option>
+            <option value="status">Sort: Status</option>
+            <option value="cpu">Sort: CPU Usage</option>
+          </select>
+
+          {/* Spacer */}
+          <div className="min-w-[100px] flex-1" />
+
+          {/* Refresh Button */}
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            className="flex items-center gap-2"
+            disabled={isLoadingContainers}
+          >
+            <Icons.RefreshCw
+              className={`h-4 w-4 ${isLoadingContainers ? 'animate-spin' : ''}`}
+            />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
+            <button
+              onClick={() => handleViewModeChange('grid')}
+              className={`rounded p-2 transition-colors ${viewMode === 'grid' ? 'bg-blue-500 text-white' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
+              title="Grid view"
             >
-              <Icons.RefreshCw className="h-4 w-4" />
-              Refresh
-            </Button>
-
-            <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
-              <button
-                onClick={() => handleViewModeChange('grid')}
-                className={`rounded p-2 ${viewMode === 'grid' ? 'bg-blue-500 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
-              >
-                <Icons.LayoutGrid className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => handleViewModeChange('list')}
-                className={`rounded p-2 ${viewMode === 'list' ? 'bg-blue-500 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
-              >
-                <Icons.List className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => handleViewModeChange('tree')}
-                className={`rounded p-2 ${viewMode === 'tree' ? 'bg-blue-500 text-white' : 'text-zinc-600 dark:text-zinc-400'}`}
-              >
-                <Icons.TreePine className="h-4 w-4" />
-              </button>
-            </div>
-
-            {selectedContainers.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  {selectedContainers.length} selected
-                </span>
-                <Button
-                  onClick={() => handleBulkAction('start')}
-                  variant="outline"
-                  className="text-xs"
-                >
-                  Start All
-                </Button>
-                <Button
-                  onClick={() => handleBulkAction('stop')}
-                  variant="outline"
-                  className="text-xs"
-                >
-                  Stop All
-                </Button>
-                <Button
-                  onClick={() => handleBulkAction('restart')}
-                  variant="outline"
-                  className="text-xs"
-                >
-                  Restart All
-                </Button>
-              </div>
-            )}
+              <Icons.LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => handleViewModeChange('list')}
+              className={`rounded p-2 transition-colors ${viewMode === 'list' ? 'bg-blue-500 text-white' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
+              title="List view"
+            >
+              <Icons.List className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => handleViewModeChange('tree')}
+              className={`rounded p-2 transition-colors ${viewMode === 'tree' ? 'bg-blue-500 text-white' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700'}`}
+              title="Tree view"
+            >
+              <Icons.TreePine className="h-4 w-4" />
+            </button>
           </div>
         </div>
+
+        {/* Bulk Actions Bar (when items selected) */}
+        {selectedContainers.length > 0 && (
+          <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleSelectAll}
+                className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                {selectedContainers.length === sortedContainers.length
+                  ? 'Deselect All'
+                  : 'Select All'}
+              </button>
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                {selectedContainers.length} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => handleBulkAction('start')}
+                variant="outline"
+                className="text-xs"
+              >
+                <Icons.Play className="mr-1 h-3 w-3" />
+                Start All
+              </Button>
+              <Button
+                onClick={() => handleBulkAction('stop')}
+                variant="outline"
+                className="text-xs"
+              >
+                <Icons.Square className="mr-1 h-3 w-3" />
+                Stop All
+              </Button>
+              <Button
+                onClick={() => handleBulkAction('restart')}
+                variant="outline"
+                className="text-xs"
+              >
+                <Icons.RefreshCw className="mr-1 h-3 w-3" />
+                Restart All
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Content View */}
-      <DataSection loading={false}>
-        {viewMode === 'grid' && (
+      <DataSection loading={isLoadingContainers && containers.length === 0}>
+        {isLoadingContainers && containers.length === 0 ? (
+          <CardGridSkeleton cards={8} columns={4} />
+        ) : sortedContainers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 py-16 dark:border-zinc-700 dark:bg-zinc-800/50">
+            <Icons.Server className="mb-4 h-16 w-16 text-zinc-400" />
+            <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-white">
+              {searchQuery || filter !== 'all'
+                ? 'No services match your filters'
+                : 'No services found'}
+            </h3>
+            <p className="mb-6 max-w-md text-center text-sm text-zinc-600 dark:text-zinc-400">
+              {searchQuery || filter !== 'all' ? (
+                'Try adjusting your search or filter criteria'
+              ) : (
+                <>
+                  Run{' '}
+                  <code className="rounded bg-zinc-200 px-1 dark:bg-zinc-700">
+                    nself init
+                  </code>{' '}
+                  to set up your project and start services
+                </>
+              )}
+            </p>
+            {searchQuery || filter !== 'all' ? (
+              <Button
+                onClick={() => {
+                  setSearchQuery('')
+                  setFilter('all')
+                }}
+                variant="outline"
+              >
+                Clear Filters
+              </Button>
+            ) : null}
+          </div>
+        ) : viewMode === 'grid' ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {sortedContainers.length > 0 ? (
-              sortedContainers.map((container) => (
+            {sortedContainers.map((container) => (
+              <div key={container.id} className="relative">
+                {/* Selection Checkbox */}
+                <div className="absolute top-2 left-2 z-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedContainers.includes(container.id)}
+                    onChange={() => toggleSelectContainer(container.id)}
+                    className="h-4 w-4 rounded border-zinc-300 text-blue-600 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-zinc-600 dark:bg-zinc-800"
+                  />
+                </div>
                 <ServiceCard
-                  key={container.id}
                   container={container}
                   onAction={handleContainerAction}
                   getServiceIcon={getServiceIcon}
                   getHealthColor={getHealthColor}
                   getHealthText={getHealthText}
                 />
-              ))
-            ) : (
-              <div className="col-span-full py-12 text-center">
-                <Icons.Server className="mx-auto mb-4 h-12 w-12 text-zinc-400" />
-                <p className="text-zinc-600 dark:text-zinc-400">
-                  No services found
-                </p>
               </div>
-            )}
+            ))}
           </div>
-        )}
-
-        {viewMode === 'list' && (
+        ) : viewMode === 'list' ? (
           <EnhancedListView
             containers={sortedContainers}
             onAction={handleContainerAction}
           />
-        )}
-
-        {viewMode === 'tree' && (
+        ) : (
           <TreeView
             containers={sortedContainers}
             onAction={handleContainerAction}
@@ -1335,5 +1453,13 @@ export default function ServicesPage() {
         )}
       </DataSection>
     </PageShell>
+  )
+}
+
+export default function ServicesPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <ServicesContent />
+    </Suspense>
   )
 }

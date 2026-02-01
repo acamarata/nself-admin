@@ -1,6 +1,7 @@
 'use client'
 
 import { PageShell } from '@/components/PageShell'
+import { FormSkeleton } from '@/components/skeletons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,7 +14,7 @@ import {
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Gauge, Loader2, RefreshCw, RotateCcw, Terminal } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -71,7 +72,7 @@ const ENDPOINT_CATEGORIES: EndpointCategory[] = [
 // Main Page Component
 // ---------------------------------------------------------------------------
 
-export default function RateLimitsPage() {
+function RateLimitsContent() {
   const [loading, setLoading] = useState(false)
   const [configOutput, setConfigOutput] = useState<string | null>(null)
   const [statusOutput, setStatusOutput] = useState<string | null>(null)
@@ -362,5 +363,13 @@ export default function RateLimitsPage() {
         </CardContent>
       </Card>
     </PageShell>
+  )
+}
+
+export default function RateLimitsPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <RateLimitsContent />
+    </Suspense>
   )
 }

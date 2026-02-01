@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import type { BenchmarkResult } from '@/types/performance'
 import {
   AlertCircle,
@@ -14,7 +15,7 @@ import {
   Settings,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 type BenchmarkTarget = 'api' | 'database' | 'full'
 
@@ -26,7 +27,7 @@ interface BenchmarkConfig {
   endpoint?: string
 }
 
-export default function RunBenchmarkPage() {
+function RunBenchmarkContent() {
   const [isRunning, setIsRunning] = useState(false)
   const [progress, setProgress] = useState(0)
   const [phase, setPhase] = useState<
@@ -425,5 +426,13 @@ export default function RunBenchmarkPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function RunBenchmarkPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <RunBenchmarkContent />
+    </Suspense>
   )
 }

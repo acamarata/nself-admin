@@ -1,5 +1,6 @@
 'use client'
 
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { K8sCluster, K8sDeployment, K8sPod } from '@/types/k8s'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import {
@@ -17,7 +18,7 @@ import {
   Terminal,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -237,7 +238,7 @@ const mockPods: K8sPod[] = [
   },
 ]
 
-export default function K8sPage() {
+function K8sContent() {
   const [_refreshing, setRefreshing] = useState(false)
 
   const {
@@ -629,5 +630,13 @@ export default function K8sPage() {
         </>
       )}
     </div>
+  )
+}
+
+export default function K8sPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <K8sContent />
+    </Suspense>
   )
 }

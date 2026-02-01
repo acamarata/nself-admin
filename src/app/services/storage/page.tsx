@@ -1,6 +1,7 @@
 'use client'
 
 import { PageShell } from '@/components/PageShell'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -43,7 +44,7 @@ import {
   Upload,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -86,7 +87,7 @@ function getFileIcon(type: string) {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function StoragePage() {
+function StorageContent() {
   const [files, setFiles] = useState<StorageFile[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -748,5 +749,13 @@ export default function StoragePage() {
         </Card>
       </div>
     </PageShell>
+  )
+}
+
+export default function StoragePage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <StorageContent />
+    </Suspense>
   )
 }

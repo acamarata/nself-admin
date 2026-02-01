@@ -16,15 +16,15 @@ nself-admin is a **visual companion** to the nself CLI. It does NOT reimplement 
 
 ## Version Alignment
 
-| nself CLI  | nself-admin | Focus                                      | Status |
-| ---------- | ----------- | ------------------------------------------ | ------ |
-| v0.4.2     | v0.0.6      | Foundation, SSL UI, TypeScript fixes       | ✅ Released |
-| v0.4.4     | v0.0.7      | Admin integration, deployment features     | ✅ Released |
-| v0.4.8     | v0.0.8      | Plugin system UI + Database operations     | ✅ Released |
-| **v0.4.8** | **v0.2.0**  | **Foundation & CLI alignment**             | ✅ Released |
-| **v0.4.8** | **v0.3.0**  | **Auth & Security expansion**              | ✅ Released |
-| **v0.4.8** | **v0.4.0**  | **Services expansion**                     | ✅ Released |
-| v0.5.0     | v0.5.0      | Production-ready stable release            | 🎯 Next |
+| nself CLI  | nself-admin | Focus                                  | Status      |
+| ---------- | ----------- | -------------------------------------- | ----------- |
+| v0.4.2     | v0.0.6      | Foundation, SSL UI, TypeScript fixes   | ✅ Released |
+| v0.4.4     | v0.0.7      | Admin integration, deployment features | ✅ Released |
+| v0.4.8     | v0.0.8      | Plugin system UI + Database operations | ✅ Released |
+| **v0.4.8** | **v0.2.0**  | **Foundation & CLI alignment**         | ✅ Released |
+| **v0.4.8** | **v0.3.0**  | **Auth & Security expansion**          | ✅ Released |
+| **v0.4.8** | **v0.4.0**  | **Services expansion**                 | ✅ Released |
+| v0.5.0     | v0.5.0      | Production-ready stable release        | 🎯 Next     |
 
 **Note**: Starting from v0.2.0, nself-admin adopted semantic versioning matching the nself CLI major.minor scheme.
 
@@ -33,12 +33,14 @@ nself-admin is a **visual companion** to the nself CLI. It does NOT reimplement 
 ## Released Versions
 
 ### v0.4.0 - Services Expansion ✅ RELEASED
+
 **Release Date**: January 31, 2026
 **GitHub**: https://github.com/acamarata/nself-admin/releases/tag/v0.4.0
 **Docker**: `docker pull acamarata/nself-admin:0.4.0`
 **Stats**: 45 files, +6,387 lines
 
 9 new service management pages with 36 API routes:
+
 - Service Scaffold Wizard (40+ templates across 10 languages)
 - Storage Management (file browser, upload, bucket config)
 - Email Service (template editor, test send, delivery status)
@@ -50,12 +52,14 @@ nself-admin is a **visual companion** to the nself CLI. It does NOT reimplement 
 - Service Discovery (search and admin endpoints)
 
 ### v0.3.0 - Auth & Security ✅ RELEASED
+
 **Release Date**: January 31, 2026
 **GitHub**: https://github.com/acamarata/nself-admin/releases/tag/v0.3.0
 **Docker**: `docker pull acamarata/nself-admin:0.3.0`
 **Stats**: 39 files, +6,470 lines
 
 8 new auth/security features with 29 API routes:
+
 - OAuth Provider Management (8 providers)
 - MFA Setup (TOTP/SMS, backup codes)
 - Role-Based Access Control
@@ -66,12 +70,14 @@ nself-admin is a **visual companion** to the nself CLI. It does NOT reimplement 
 - Audit Trail Viewer
 
 ### v0.2.0 - Foundation & CLI Alignment ✅ RELEASED
+
 **Release Date**: January 31, 2026
 **GitHub**: https://github.com/acamarata/nself-admin/releases/tag/v0.2.0
 **Docker**: `docker pull acamarata/nself-admin:0.2.0`
 **Stats**: 25 files
 
 Complete config management system:
+
 - Environment variable editor (multi-env tabs)
 - Secrets CRUD with validation
 - Vault integration
@@ -182,15 +188,14 @@ Refer to git history or the full archived roadmap for details on the old v0.0.x 
 
 ## Release Timeline
 
-| Version | Release Date | Status |
-|---------|-------------|--------|
-| v0.0.8  | Jan 2026 | ✅ Released (baseline) |
-| v0.2.0  | Jan 31, 2026 | ✅ Released |
-| v0.3.0  | Jan 31, 2026 | ✅ Released |
-| v0.4.0  | Jan 31, 2026 | ✅ Released |
-| v0.5.0  | Q1 2026 | 🎯 Next Target |
+| Version | Release Date | Status                 |
+| ------- | ------------ | ---------------------- |
+| v0.0.8  | Jan 2026     | ✅ Released (baseline) |
+| v0.2.0  | Jan 31, 2026 | ✅ Released            |
+| v0.3.0  | Jan 31, 2026 | ✅ Released            |
+| v0.4.0  | Jan 31, 2026 | ✅ Released            |
+| v0.5.0  | Q1 2026      | 🎯 Next Target         |
 
 ---
 
 _This roadmap aligns with the nself CLI roadmap. The nself-admin UI is a wrapper that executes nself CLI commands - every feature depends on corresponding CLI support._
-

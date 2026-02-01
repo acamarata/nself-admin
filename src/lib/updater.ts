@@ -1,5 +1,6 @@
 import { execFile } from 'child_process'
 import { promisify } from 'util'
+import { getErrorMessage } from './errors/utils'
 
 const execFileAsync = promisify(execFile)
 
@@ -236,13 +237,13 @@ class AutoUpdater {
         progress: 100,
         message: `Successfully updated to version ${targetVersion}`,
       }
-    } catch (error: any) {
+    } catch (error) {
       this.isUpdating = false
       return {
         updating: false,
         progress: 0,
         message: 'Update failed',
-        error: error.message,
+        error: getErrorMessage(error),
       }
     }
   }

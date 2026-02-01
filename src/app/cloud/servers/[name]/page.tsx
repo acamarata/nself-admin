@@ -1,5 +1,6 @@
 'use client'
 
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import type { CloudServer, ServerMetrics } from '@/types/cloud'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import {
@@ -23,7 +24,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { use, useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -142,13 +143,8 @@ const statusColors: Record<string, string> = {
   unknown: 'bg-zinc-700 text-zinc-500',
 }
 
-export default function ServerDetailPage({
-  params,
-}: {
-  params: Promise<{ name: string }>
-}) {
-  const resolvedParams = use(params)
-  const serverName = resolvedParams.name
+function ServerDetailContent({ name }: { name: string }) {
+  const serverName = name
 
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<
@@ -545,5 +541,18 @@ export default function ServerDetailPage({
         </div>
       )}
     </div>
+  )
+}
+
+export default async function ServerDetailPage({
+  params,
+}: {
+  params: Promise<{ name: string }>
+}) {
+  const { name } = await params
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <ServerDetailContent name={name} />
+    </Suspense>
   )
 }

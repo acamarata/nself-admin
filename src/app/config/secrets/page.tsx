@@ -1,10 +1,55 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { FormSkeleton } from '@/components/skeletons'
 import {
-  AlertCircle,
-  CheckCircle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { toast } from '@/lib/toast'
+import {
   Copy,
+  Download,
+  Edit2,
   Eye,
   EyeOff,
   Key,
@@ -13,32 +58,32 @@ import {
   RotateCcw,
   Search,
   Trash2,
-  X,
+  Zap,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface Secret {
   key: string
   value: string
   masked: boolean
+  createdAt?: string
+  lastUsed?: string
 }
 
-export default function SecretsPage() {
+function SecretsContent() {
   const [secrets, setSecrets] = useState<Secret[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEnv, setSelectedEnv] = useState('')
 
-  // Add secret form
-  const [showAddForm, setShowAddForm] = useState(false)
+  // Add secret dialog
+  const [showAddDialog, setShowAddDialog] = useState(false)
   const [newKey, setNewKey] = useState('')
   const [newValue, setNewValue] = useState('')
   const [adding, setAdding] = useState(false)
 
-  // Edit inline
-  const [editingKey, setEditingKey] = useState<string | null>(null)
+  // Edit secret dialog
+  const [editDialogKey, setEditDialogKey] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -51,21 +96,15 @@ export default function SecretsPage() {
 
   // Delete confirmation
   const [deletingKey, setDeletingKey] = useState<string | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [deleteDialogKey, setDeleteDialogKey] = useState<string | null>(null)
 
   // Bulk operations
   const [rotatingAll, setRotatingAll] = useState(false)
   const [rotatingKey, setRotatingKey] = useState<string | null>(null)
 
-  const clearMessages = () => {
-    setError(null)
-    setSuccessMessage(null)
-  }
-
   const fetchSecrets = useCallback(async () => {
     try {
       setLoading(true)
-      clearMessages()
 
       const params = new URLSearchParams()
       if (selectedEnv) params.set('env', selectedEnv)
@@ -79,7 +118,7 @@ export default function SecretsPage() {
         setSecrets([])
       }
     } catch (_err) {
-      setError('Failed to load secrets')
+      toast.error('Failed to load secrets')
       setSecrets([])
     } finally {
       setLoading(false)
@@ -90,21 +129,12 @@ export default function SecretsPage() {
     fetchSecrets()
   }, [fetchSecrets])
 
-  // Auto-clear success messages
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => setSuccessMessage(null), 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [successMessage])
-
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newKey || !newValue) return
 
     try {
       setAdding(true)
-      clearMessages()
 
       const res = await fetch('/api/config/secrets', {
         method: 'POST',
@@ -118,33 +148,36 @@ export default function SecretsPage() {
       const data = await res.json()
 
       if (data.success) {
-        setSuccessMessage(`Secret '${newKey}' added successfully`)
+        toast.success('Secret added successfully', {
+          description: `Secret '${newKey}' has been added`,
+        })
         setNewKey('')
         setNewValue('')
-        setShowAddForm(false)
+        setShowAddDialog(false)
         await fetchSecrets()
       } else {
-        setError(data.details || data.error || 'Failed to add secret')
+        toast.error('Failed to add secret', {
+          description: data.details || data.error,
+        })
       }
     } catch (_err) {
-      setError('Failed to add secret')
+      toast.error('Failed to add secret')
     } finally {
       setAdding(false)
     }
   }
 
-  const handleEdit = async (key: string) => {
-    if (!editValue) return
+  const handleEdit = async () => {
+    if (!editDialogKey || !editValue) return
 
     try {
       setSaving(true)
-      clearMessages()
 
       const res = await fetch('/api/config/secrets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          key,
+          key: editDialogKey,
           value: editValue,
           env: selectedEnv || undefined,
         }),
@@ -152,26 +185,29 @@ export default function SecretsPage() {
       const data = await res.json()
 
       if (data.success) {
-        setSuccessMessage(`Secret '${key}' updated successfully`)
-        setEditingKey(null)
+        toast.success('Secret updated successfully', {
+          description: `Secret '${editDialogKey}' has been updated`,
+        })
+        setEditDialogKey(null)
         setEditValue('')
-        // Clear revealed value for this key
         setRevealedKeys((prev) => {
           const next = new Set(prev)
-          next.delete(key)
+          next.delete(editDialogKey)
           return next
         })
         setRevealedValues((prev) => {
           const next = { ...prev }
-          delete next[key]
+          delete next[editDialogKey]
           return next
         })
         await fetchSecrets()
       } else {
-        setError(data.details || data.error || 'Failed to update secret')
+        toast.error('Failed to update secret', {
+          description: data.details || data.error,
+        })
       }
     } catch (_err) {
-      setError('Failed to update secret')
+      toast.error('Failed to update secret')
     } finally {
       setSaving(false)
     }
@@ -180,7 +216,6 @@ export default function SecretsPage() {
   const handleDelete = async (key: string) => {
     try {
       setDeletingKey(key)
-      clearMessages()
 
       const res = await fetch(
         `/api/config/secrets/${encodeURIComponent(key)}`,
@@ -191,14 +226,18 @@ export default function SecretsPage() {
       const data = await res.json()
 
       if (data.success) {
-        setSuccessMessage(`Secret '${key}' deleted successfully`)
-        setConfirmDelete(null)
+        toast.success('Secret deleted successfully', {
+          description: `Secret '${key}' has been deleted`,
+        })
+        setDeleteDialogKey(null)
         await fetchSecrets()
       } else {
-        setError(data.details || data.error || 'Failed to delete secret')
+        toast.error('Failed to delete secret', {
+          description: data.details || data.error,
+        })
       }
     } catch (_err) {
-      setError('Failed to delete secret')
+      toast.error('Failed to delete secret')
     } finally {
       setDeletingKey(null)
     }
@@ -224,10 +263,12 @@ export default function SecretsPage() {
         setRevealedKeys((prev) => new Set(prev).add(key))
         setRevealedValues((prev) => ({ ...prev, [key]: data.data.value }))
       } else {
-        setError(data.error || 'Failed to reveal secret')
+        toast.error('Failed to reveal secret', {
+          description: data.error,
+        })
       }
     } catch (_err) {
-      setError('Failed to reveal secret')
+      toast.error('Failed to reveal secret')
     } finally {
       setRevealingKey(null)
     }
@@ -240,7 +281,6 @@ export default function SecretsPage() {
       } else {
         setRotatingAll(true)
       }
-      clearMessages()
 
       const res = await fetch('/api/config/secrets/rotate', {
         method: 'POST',
@@ -253,20 +293,21 @@ export default function SecretsPage() {
       const data = await res.json()
 
       if (data.success) {
-        setSuccessMessage(
-          key
-            ? `Secret '${key}' rotated successfully`
-            : 'All secrets rotated successfully',
-        )
-        // Clear all revealed values
+        toast.success('Secret rotated successfully', {
+          description: key
+            ? `Secret '${key}' has been rotated`
+            : 'All secrets have been rotated',
+        })
         setRevealedKeys(new Set())
         setRevealedValues({})
         await fetchSecrets()
       } else {
-        setError(data.details || data.error || 'Failed to rotate secrets')
+        toast.error('Failed to rotate secrets', {
+          description: data.details || data.error,
+        })
       }
     } catch (_err) {
-      setError('Failed to rotate secrets')
+      toast.error('Failed to rotate secrets')
     } finally {
       setRotatingKey(null)
       setRotatingAll(false)
@@ -276,9 +317,9 @@ export default function SecretsPage() {
   const handleCopy = async (value: string) => {
     try {
       await navigator.clipboard.writeText(value)
-      setSuccessMessage('Copied to clipboard')
+      toast.success('Copied to clipboard')
     } catch (_err) {
-      setError('Failed to copy to clipboard')
+      toast.error('Failed to copy to clipboard')
     }
   }
 
@@ -291,7 +332,17 @@ export default function SecretsPage() {
     a.download = `secrets-keys${selectedEnv ? `-${selectedEnv}` : ''}.txt`
     a.click()
     URL.revokeObjectURL(url)
-    setSuccessMessage('Keys list exported')
+    toast.success('Keys list exported')
+  }
+
+  const generateRandomSecret = () => {
+    const chars =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*'
+    let result = ''
+    for (let i = 0; i < 32; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return result
   }
 
   const filteredSecrets = secrets.filter((s) =>
@@ -304,433 +355,455 @@ export default function SecretsPage() {
       description="Manage application secrets securely"
     >
       <div className="space-y-6">
-        {/* Status Messages */}
-        {error && (
-          <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
-            <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
-            <div className="flex-1 text-sm whitespace-pre-wrap text-red-800 dark:text-red-200">
-              {error}
-            </div>
-            <button
-              onClick={() => setError(null)}
-              className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
-            <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
-            <div className="text-sm text-green-800 dark:text-green-200">
-              {successMessage}
-            </div>
-          </div>
-        )}
-
         {/* Toolbar */}
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search */}
-            <div className="relative min-w-[200px] flex-1">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search secrets..."
-                className="w-full rounded-lg border border-zinc-300 bg-white py-2 pr-3 pl-9 text-sm text-zinc-900 transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
-              />
-            </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Search */}
+              <div className="relative min-w-[200px] flex-1">
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <Input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search secrets..."
+                  className="pl-9"
+                />
+              </div>
 
-            {/* Environment Filter */}
-            <select
-              value={selectedEnv}
-              onChange={(e) => setSelectedEnv(e.target.value)}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
-            >
-              <option value="">All Environments</option>
-              <option value="local">Local</option>
-              <option value="dev">Development</option>
-              <option value="stage">Staging</option>
-              <option value="prod">Production</option>
-            </select>
+              {/* Environment Filter */}
+              <Select value={selectedEnv} onValueChange={setSelectedEnv}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="All Environments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Environments</SelectItem>
+                  <SelectItem value="local">Local</SelectItem>
+                  <SelectItem value="dev">Development</SelectItem>
+                  <SelectItem value="stage">Staging</SelectItem>
+                  <SelectItem value="prod">Production</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Actions */}
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4" />
-              Add Secret
-            </button>
+              {/* Actions */}
+              <Button onClick={() => setShowAddDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Secret
+              </Button>
 
-            <button
-              onClick={fetchSecrets}
-              disabled={loading}
-              className="flex items-center gap-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}
-              />
-              Refresh
-            </button>
-          </div>
-        </div>
-
-        {/* Add Secret Form */}
-        {showAddForm && (
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-6 shadow-sm dark:border-blue-800 dark:bg-blue-900/20">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-white">
-                <Plus className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                Add New Secret
-              </h3>
-              <button
-                onClick={() => {
-                  setShowAddForm(false)
-                  setNewKey('')
-                  setNewValue('')
-                }}
-                className="text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+              <Button
+                variant="outline"
+                onClick={fetchSecrets}
+                disabled={loading}
               >
-                <X className="h-5 w-5" />
-              </button>
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+                />
+                Refresh
+              </Button>
             </div>
+          </CardContent>
+        </Card>
 
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Key
-                  </label>
-                  <input
-                    type="text"
-                    value={newKey}
-                    onChange={(e) =>
-                      setNewKey(
-                        e.target.value.toUpperCase().replace(/\s/g, '_'),
-                      )
-                    }
-                    placeholder="DATABASE_PASSWORD"
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm text-zinc-900 transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
-                  />
-                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                    Letters, numbers, underscores, and hyphens only
-                  </p>
-                </div>
+        {/* Secrets Table */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Key className="text-primary h-5 w-5" />
+                <CardTitle>
+                  Secrets{' '}
+                  <span className="text-muted-foreground ml-2 text-sm font-normal">
+                    ({filteredSecrets.length})
+                  </span>
+                </CardTitle>
+              </div>
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Value
-                  </label>
-                  <input
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportKeys}
+                  disabled={secrets.length === 0}
+                >
+                  <Download className="mr-2 h-3 w-3" />
+                  Export Keys
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleRotate()}
+                  disabled={rotatingAll || secrets.length === 0}
+                >
+                  {rotatingAll ? (
+                    <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                  ) : (
+                    <RotateCcw className="mr-2 h-3 w-3" />
+                  )}
+                  Rotate All
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="text-primary h-6 w-6 animate-spin" />
+              </div>
+            ) : filteredSecrets.length === 0 ? (
+              <div className="py-12 text-center">
+                <Key className="text-muted-foreground mx-auto mb-3 h-8 w-8" />
+                <p className="text-muted-foreground text-sm">
+                  {searchQuery
+                    ? 'No secrets match your search'
+                    : 'No secrets found. Add your first secret'}
+                </p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Key</TableHead>
+                    <TableHead>Value</TableHead>
+                    <TableHead className="w-[200px] text-right">
+                      Actions
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSecrets.map((secret) => (
+                    <TableRow key={secret.key}>
+                      <TableCell className="font-mono font-medium">
+                        {secret.key}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground font-mono text-sm">
+                        {revealedKeys.has(secret.key)
+                          ? revealedValues[secret.key] || secret.value
+                          : '••••••••••••'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleReveal(secret.key)}
+                            disabled={revealingKey === secret.key}
+                            title={
+                              revealedKeys.has(secret.key) ? 'Hide' : 'Reveal'
+                            }
+                          >
+                            {revealingKey === secret.key ? (
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : revealedKeys.has(secret.key) ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+
+                          {revealedKeys.has(secret.key) && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                handleCopy(
+                                  revealedValues[secret.key] || secret.value,
+                                )
+                              }
+                              title="Copy value"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          )}
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setEditDialogKey(secret.key)
+                              setEditValue(
+                                revealedKeys.has(secret.key)
+                                  ? revealedValues[secret.key] || ''
+                                  : '',
+                              )
+                            }}
+                            title="Edit"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRotate(secret.key)}
+                            disabled={rotatingKey === secret.key}
+                            title="Rotate"
+                          >
+                            {rotatingKey === secret.key ? (
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-4 w-4" />
+                            )}
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteDialogKey(secret.key)}
+                            title="Delete"
+                          >
+                            <Trash2 className="text-destructive h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* CLI Reference */}
+        <Card>
+          <CardHeader>
+            <CardTitle>CLI Commands</CardTitle>
+            <CardDescription>Manage secrets via the nself CLI</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 font-mono text-sm">
+              <div className="flex items-start gap-3">
+                <code className="bg-muted inline-block min-w-[300px] rounded px-2 py-1 text-xs">
+                  nself config secrets list
+                </code>
+                <span className="text-muted-foreground">
+                  List all secret keys
+                </span>
+              </div>
+              <div className="flex items-start gap-3">
+                <code className="bg-muted inline-block min-w-[300px] rounded px-2 py-1 text-xs">
+                  nself config secrets get &lt;key&gt;
+                </code>
+                <span className="text-muted-foreground">
+                  Get a specific secret value
+                </span>
+              </div>
+              <div className="flex items-start gap-3">
+                <code className="bg-muted inline-block min-w-[300px] rounded px-2 py-1 text-xs">
+                  nself config secrets set &lt;key&gt; &lt;value&gt;
+                </code>
+                <span className="text-muted-foreground">
+                  Set or update a secret
+                </span>
+              </div>
+              <div className="flex items-start gap-3">
+                <code className="bg-muted inline-block min-w-[300px] rounded px-2 py-1 text-xs">
+                  nself config secrets delete &lt;key&gt;
+                </code>
+                <span className="text-muted-foreground">Remove a secret</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <code className="bg-muted inline-block min-w-[300px] rounded px-2 py-1 text-xs">
+                  nself config secrets rotate [key]
+                </code>
+                <span className="text-muted-foreground">
+                  Rotate one or all secrets
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Add Secret Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Secret</DialogTitle>
+            <DialogDescription>
+              Create a new secret with a key and value
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAdd}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="key">Key</Label>
+                <Input
+                  id="key"
+                  value={newKey}
+                  onChange={(e) =>
+                    setNewKey(e.target.value.toUpperCase().replace(/\s/g, '_'))
+                  }
+                  placeholder="DATABASE_PASSWORD"
+                  className="font-mono"
+                />
+                <p className="text-muted-foreground text-xs">
+                  Letters, numbers, underscores, and hyphens only
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="value">Value</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="value"
                     type="password"
                     value={newValue}
                     onChange={(e) => setNewValue(e.target.value)}
                     placeholder="Enter secret value"
-                    className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-zinc-600 dark:bg-zinc-700 dark:text-white"
                   />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setNewValue(generateRandomSecret())}
+                    title="Generate random secret"
+                  >
+                    <Zap className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  disabled={adding || !newKey || !newValue}
-                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {adding ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4" />
-                      Add Secret
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddForm(false)
-                    setNewKey('')
-                    setNewValue('')
-                  }}
-                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* Secrets Table */}
-        <div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-          <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-700">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-900 dark:text-white">
-              <Key className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              Secrets
-              <span className="ml-1 rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-normal text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400">
-                {filteredSecrets.length}
-              </span>
-            </h2>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleExportKeys}
-                disabled={secrets.length === 0}
-                className="flex items-center gap-1 rounded-lg border border-zinc-300 px-3 py-1.5 text-xs text-zinc-600 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowAddDialog(false)
+                  setNewKey('')
+                  setNewValue('')
+                }}
               >
-                <Copy className="h-3 w-3" />
-                Export Keys
-              </button>
-              <button
-                onClick={() => handleRotate()}
-                disabled={rotatingAll || secrets.length === 0}
-                className="flex items-center gap-1 rounded-lg border border-orange-300 bg-orange-50 px-3 py-1.5 text-xs text-orange-700 transition-colors hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-orange-700 dark:bg-orange-900/20 dark:text-orange-400 dark:hover:bg-orange-900/30"
-              >
-                {rotatingAll ? (
-                  <RefreshCw className="h-3 w-3 animate-spin" />
+                Cancel
+              </Button>
+              <Button type="submit" disabled={adding || !newKey || !newValue}>
+                {adding ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
                 ) : (
-                  <RotateCcw className="h-3 w-3" />
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Secret
+                  </>
                 )}
-                Rotate All
-              </button>
-            </div>
-          </div>
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <RefreshCw className="h-6 w-6 animate-spin text-blue-600 dark:text-blue-400" />
-            </div>
-          ) : filteredSecrets.length === 0 ? (
-            <div className="py-12 text-center">
-              <Key className="mx-auto mb-3 h-8 w-8 text-zinc-300 dark:text-zinc-600" />
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                {searchQuery
-                  ? 'No secrets match your search'
-                  : 'No secrets found. Add one to get started.'}
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
-              {filteredSecrets.map((secret) => (
-                <div
-                  key={secret.key}
-                  className="group flex items-center gap-4 px-6 py-3 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800"
+      {/* Edit Secret Dialog */}
+      <Dialog
+        open={editDialogKey !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditDialogKey(null)
+            setEditValue('')
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Secret</DialogTitle>
+            <DialogDescription>
+              Update the value for{' '}
+              <code className="font-mono">{editDialogKey}</code>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-value">New Value</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="edit-value"
+                  type="text"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  placeholder="Enter new secret value"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setEditValue(generateRandomSecret())}
+                  title="Generate random secret"
                 >
-                  {/* Key */}
-                  <div className="min-w-[200px] flex-shrink-0">
-                    <code className="rounded bg-zinc-100 px-2 py-1 font-mono text-sm text-zinc-900 dark:bg-zinc-700 dark:text-white">
-                      {secret.key}
-                    </code>
-                  </div>
-
-                  {/* Value */}
-                  <div className="flex-1">
-                    {editingKey === secret.key ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          autoFocus
-                          className="flex-1 rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-sm text-zinc-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-blue-600 dark:bg-zinc-700 dark:text-white"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleEdit(secret.key)
-                            if (e.key === 'Escape') {
-                              setEditingKey(null)
-                              setEditValue('')
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={() => handleEdit(secret.key)}
-                          disabled={saving || !editValue}
-                          className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-                        >
-                          {saving ? (
-                            <RefreshCw className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <CheckCircle className="h-3 w-3" />
-                          )}
-                          Save
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingKey(null)
-                            setEditValue('')
-                          }}
-                          className="rounded-lg px-2 py-1.5 text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="font-mono text-sm text-zinc-500 dark:text-zinc-400">
-                        {revealedKeys.has(secret.key)
-                          ? revealedValues[secret.key] || secret.value
-                          : '••••••••••••'}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  {editingKey !== secret.key && (
-                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      {/* Reveal / Hide */}
-                      <button
-                        onClick={() => handleReveal(secret.key)}
-                        disabled={revealingKey === secret.key}
-                        className="rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
-                        title={revealedKeys.has(secret.key) ? 'Hide' : 'Reveal'}
-                      >
-                        {revealingKey === secret.key ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        ) : revealedKeys.has(secret.key) ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                      </button>
-
-                      {/* Copy (only when revealed) */}
-                      {revealedKeys.has(secret.key) && (
-                        <button
-                          onClick={() =>
-                            handleCopy(
-                              revealedValues[secret.key] || secret.value,
-                            )
-                          }
-                          className="rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
-                          title="Copy value"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </button>
-                      )}
-
-                      {/* Edit */}
-                      <button
-                        onClick={() => {
-                          setEditingKey(secret.key)
-                          setEditValue(
-                            revealedKeys.has(secret.key)
-                              ? revealedValues[secret.key] || ''
-                              : '',
-                          )
-                        }}
-                        className="rounded-lg p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
-                        title="Edit"
-                      >
-                        <Key className="h-4 w-4" />
-                      </button>
-
-                      {/* Rotate */}
-                      <button
-                        onClick={() => handleRotate(secret.key)}
-                        disabled={rotatingKey === secret.key}
-                        className="rounded-lg p-1.5 text-orange-500 transition-colors hover:bg-orange-50 hover:text-orange-700 dark:text-orange-400 dark:hover:bg-orange-900/20 dark:hover:text-orange-300"
-                        title="Rotate"
-                      >
-                        {rotatingKey === secret.key ? (
-                          <RefreshCw className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <RotateCcw className="h-4 w-4" />
-                        )}
-                      </button>
-
-                      {/* Delete */}
-                      {confirmDelete === secret.key ? (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => handleDelete(secret.key)}
-                            disabled={deletingKey === secret.key}
-                            className="rounded-lg bg-red-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-                          >
-                            {deletingKey === secret.key ? (
-                              <RefreshCw className="h-3 w-3 animate-spin" />
-                            ) : (
-                              'Confirm'
-                            )}
-                          </button>
-                          <button
-                            onClick={() => setConfirmDelete(null)}
-                            className="rounded-lg px-2 py-1 text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setConfirmDelete(secret.key)}
-                          className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* CLI Reference */}
-        <div className="rounded-xl border border-zinc-200 bg-gradient-to-br from-zinc-50 to-white p-6 shadow-sm dark:border-zinc-700 dark:from-zinc-800 dark:to-zinc-900">
-          <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-white">
-            CLI Commands
-          </h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start gap-3">
-              <code className="inline-block min-w-[300px] rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-700">
-                nself config secrets list
-              </code>
-              <span className="text-zinc-600 dark:text-zinc-400">
-                List all secret keys
-              </span>
-            </div>
-            <div className="flex items-start gap-3">
-              <code className="inline-block min-w-[300px] rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-700">
-                nself config secrets get &lt;key&gt;
-              </code>
-              <span className="text-zinc-600 dark:text-zinc-400">
-                Get a specific secret value
-              </span>
-            </div>
-            <div className="flex items-start gap-3">
-              <code className="inline-block min-w-[300px] rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-700">
-                nself config secrets set &lt;key&gt; &lt;value&gt;
-              </code>
-              <span className="text-zinc-600 dark:text-zinc-400">
-                Set or update a secret
-              </span>
-            </div>
-            <div className="flex items-start gap-3">
-              <code className="inline-block min-w-[300px] rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-700">
-                nself config secrets delete &lt;key&gt;
-              </code>
-              <span className="text-zinc-600 dark:text-zinc-400">
-                Remove a secret
-              </span>
-            </div>
-            <div className="flex items-start gap-3">
-              <code className="inline-block min-w-[300px] rounded bg-zinc-100 px-2 py-1 font-mono text-xs dark:bg-zinc-700">
-                nself config secrets rotate [key]
-              </code>
-              <span className="text-zinc-600 dark:text-zinc-400">
-                Rotate one or all secrets
-              </span>
+                  <Zap className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditDialogKey(null)
+                setEditValue('')
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleEdit} disabled={saving || !editValue}>
+              {saving ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>Save Changes</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteDialogKey !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteDialogKey(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Secret</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the secret{' '}
+              <code className="font-mono">{deleteDialogKey}</code>? This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteDialogKey && handleDelete(deleteDialogKey)}
+              disabled={deletingKey !== null}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deletingKey === deleteDialogKey ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>Delete</>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageTemplate>
+  )
+}
+
+export default function SecretsPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <SecretsContent />
+    </Suspense>
   )
 }

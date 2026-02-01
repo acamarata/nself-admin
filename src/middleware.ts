@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { csrfErrorResponse, setCSRFCookie, validateCSRFToken } from './lib/csrf'
 
 // Define public routes that don't require authentication
 const PUBLIC_ROUTES = [
@@ -101,37 +100,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Check if it's a protected API route
-  if (PROTECTED_API_ROUTES.some((route) => pathname.startsWith(route))) {
-    // Validate CSRF token for state-changing requests
-    if (!validateCSRFToken(request)) {
-      return csrfErrorResponse()
-    }
-
-    // Add security headers
-    const response = NextResponse.next()
-    response.headers.set('X-Content-Type-Options', 'nosniff')
-    response.headers.set('X-Frame-Options', 'DENY')
-    response.headers.set('X-XSS-Protection', '1; mode=block')
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-    response.headers.set(
-      'Permissions-Policy',
-      'camera=(), microphone=(), geolocation=()',
-    )
-
-    // Ensure CSRF token is set
-    if (!request.cookies.get('nself-csrf')) {
-      setCSRFCookie(response)
-    }
-
-    return response
-  }
-
-  // For non-API routes, ensure CSRF token exists
+  // Add security headers for all requests
   const response = NextResponse.next()
-  if (!request.cookies.get('nself-csrf')) {
-    setCSRFCookie(response)
-  }
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-XSS-Protection', '1; mode=block')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=()',
+  )
 
   return response
 }

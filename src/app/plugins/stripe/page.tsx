@@ -1,5 +1,6 @@
 'use client'
 
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { StripeStats } from '@/types/stripe'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import {
@@ -8,6 +9,7 @@ import {
   ArrowUpRight,
   CreditCard,
   DollarSign,
+  ExternalLink,
   Package,
   Receipt,
   RefreshCw,
@@ -17,7 +19,7 @@ import {
   Webhook,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -152,7 +154,7 @@ function QuickLinkCard({
   )
 }
 
-export default function StripeDashboardPage() {
+function StripeDashboardContent() {
   const [syncing, setSyncing] = useState(false)
 
   const { data, error, isLoading, mutate } = useSWR<{
@@ -163,6 +165,18 @@ export default function StripeDashboardPage() {
       invoices: number
       products: number
     }
+    recentTransactions: Array<{
+      id: string
+      amount: number
+      currency: string
+      customer: string
+      status: string
+      created: string
+    }>
+    revenueChart: Array<{
+      month: string
+      revenue: number
+    }>
   }>('/api/plugins/stripe', fetcher, {
     refreshInterval: 60000,
   })
@@ -238,6 +252,8 @@ export default function StripeDashboardPage() {
     invoices: 0,
     products: 0,
   }
+  const recentTransactions = data?.recentTransactions || []
+  const revenueChart = data?.revenueChart || []
 
   return (
     <div className="space-y-8">
@@ -337,6 +353,97 @@ export default function StripeDashboardPage() {
         </div>
       </div>
 
+      {/* Revenue Chart */}
+      <div>
+        <h2 className="mb-4 text-lg font-semibold text-white">
+          Revenue Trend (Last 12 Months)
+        </h2>
+        <div className="rounded-xl border border-zinc-700/50 bg-zinc-800/50 p-6">
+          <div className="flex h-64 items-end justify-between gap-2">
+            {revenueChart.map((item, i) => {
+              const maxRevenue = Math.max(
+                ...revenueChart.map((r) => r.revenue),
+                1,
+              )
+              const height = (item.revenue / maxRevenue) * 100
+              return (
+                <div
+                  key={i}
+                  className="flex flex-1 flex-col items-center gap-2"
+                >
+                  <div className="relative w-full">
+                    <div
+                      className="w-full rounded-t-lg bg-gradient-to-t from-purple-600 to-purple-400 transition-all hover:from-purple-500 hover:to-purple-300"
+                      style={{ height: `${height}%`, minHeight: '8px' }}
+                    />
+                  </div>
+                  <span className="text-xs text-zinc-500">{item.month}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Transactions */}
+      <div>
+        <h2 className="mb-4 text-lg font-semibold text-white">
+          Recent Transactions
+        </h2>
+        <div className="rounded-xl border border-zinc-700/50 bg-zinc-800/50">
+          <table className="w-full">
+            <thead className="border-b border-zinc-700/50 bg-zinc-900/50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                  ID
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                  Customer
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                  Amount
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase">
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentTransactions.slice(0, 20).map((tx) => (
+                <tr key={tx.id} className="border-b border-zinc-700/50">
+                  <td className="px-4 py-3 font-mono text-sm text-zinc-400">
+                    {tx.id}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-zinc-300">
+                    {tx.customer}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-medium text-white">
+                    {formatCurrency(tx.amount, tx.currency)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs ${
+                        tx.status === 'succeeded'
+                          ? 'bg-emerald-500/20 text-emerald-400'
+                          : 'bg-zinc-500/20 text-zinc-400'
+                      }`}
+                    >
+                      {tx.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-zinc-400">
+                    {new Date(tx.created).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Quick Links */}
       <div>
         <h2 className="mb-4 text-lg font-semibold text-white">Quick Access</h2>
@@ -375,8 +482,33 @@ export default function StripeDashboardPage() {
             href="/plugins/stripe/webhooks"
             icon={Webhook}
           />
+          <a
+            href="https://dashboard.stripe.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center justify-between rounded-xl border border-zinc-700/50 bg-zinc-800/50 p-4 transition-all hover:border-purple-500/50 hover:bg-zinc-800"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-700/50">
+                <ExternalLink className="h-5 w-5 text-zinc-300" />
+              </div>
+              <div>
+                <h3 className="font-medium text-white">Stripe Dashboard</h3>
+                <p className="text-sm text-zinc-400">Open in Stripe.com</p>
+              </div>
+            </div>
+            <ArrowUpRight className="h-5 w-5 text-zinc-500 transition-colors group-hover:text-purple-400" />
+          </a>
         </div>
       </div>
     </div>
+  )
+}
+
+export default function StripeDashboardPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <StripeDashboardContent />
+    </Suspense>
   )
 }

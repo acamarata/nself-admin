@@ -1,6 +1,7 @@
 'use client'
 
 import { PageShell } from '@/components/PageShell'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -25,7 +26,7 @@ import {
   TestTube,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,7 +58,7 @@ function parseTemplatesFromOutput(output: string): EmailTemplate[] {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function EmailPage() {
+function EmailContent() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -571,5 +572,13 @@ export default function EmailPage() {
         </Card>
       </div>
     </PageShell>
+  )
+}
+
+export default function EmailPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <EmailContent />
+    </Suspense>
   )
 }

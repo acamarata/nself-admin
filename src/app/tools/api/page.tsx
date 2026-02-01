@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { CodeEditorSkeleton } from '@/components/skeletons'
 import {
   ChevronDown,
   ChevronRight,
@@ -26,7 +27,7 @@ import {
   Upload,
   X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
 interface ApiRequest {
   id: string
@@ -949,7 +950,7 @@ function EnvironmentManager({
   )
 }
 
-export default function ApiExplorerPage() {
+function ApiExplorerContent() {
   const [currentRequest, setCurrentRequest] = useState<ApiRequest>({
     id: '',
     name: 'Untitled Request',
@@ -1257,5 +1258,13 @@ export default function ApiExplorerPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function ApiExplorerPage() {
+  return (
+    <Suspense fallback={<CodeEditorSkeleton />}>
+      <ApiExplorerContent />
+    </Suspense>
   )
 }

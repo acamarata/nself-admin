@@ -1,8 +1,8 @@
 'use client'
 
-import { Button } from '@/components/Button'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { PageShell } from '@/components/PageShell'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -22,19 +22,28 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  Activity,
   AlertCircle,
   CheckCircle,
+  Clock,
   Database,
   Download,
+  HardDrive,
+  Loader2,
   Play,
   RefreshCw,
   Save,
+  Server,
   Settings,
   Terminal,
   TrendingUp,
-  Users,
+  Zap,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface DatabaseStats {
   version: string
@@ -47,7 +56,6 @@ interface DatabaseStats {
     active: number
     idle: number
     max: number
-    utilization: number
   }
   performance: {
     hitRatio: number
@@ -55,56 +63,35 @@ interface DatabaseStats {
     qps: number
     avgQueryTime: number
   }
-  replication: {
-    status: 'streaming' | 'lag' | 'broken'
-    lag: number
-    replicas: number
-  }
-  memory: {
-    used: string
-    total: string
-    utilization: number
-  }
 }
 
 interface QueryResult {
   columns: string[]
-  rows: any[]
+  rows: Record<string, any>[]
   rowCount: number
   executionTime: number
   error?: string
 }
 
 interface TableInfo {
-  id: string
   name: string
   schema: string
   rows: number
   size: string
   indexes: number
-  lastAccess: string
-  status: 'active' | 'inactive' | 'maintenance'
 }
 
-interface _DatabaseProcess {
-  pid: number
-  user: string
-  database: string
-  state: 'active' | 'idle' | 'blocked'
-  query: string
-  duration: string
-  clientAddr: string
-}
-
-interface _SlowQuery {
+interface BackupEntry {
   id: string
-  query: string
-  duration: number
-  calls: number
-  meanTime: number
-  totalTime: number
+  filename: string
+  size: string
   timestamp: string
+  status: 'completed' | 'failed' | 'in_progress'
 }
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
 
 export default function PostgreSQLPage() {
   const [stats, setStats] = useState<DatabaseStats | null>(null)
@@ -113,21 +100,21 @@ export default function PostgreSQLPage() {
   const [executing, setExecuting] = useState(false)
   const [selectedDatabase, setSelectedDatabase] = useState('postgres')
   const [tables, setTables] = useState<TableInfo[]>([])
-  const [activeTab, setActiveTab] = useState('query')
+  const [activeTab, setActiveTab] = useState('overview')
   const [loading, setLoading] = useState(true)
   const [slowQueries, setSlowQueries] = useState<any[]>([])
-  const [locks, setLocks] = useState<any[]>([])
+  const [backups, setBackups] = useState<BackupEntry[]>([])
+  const [creatingBackup, setCreatingBackup] = useState(false)
 
   useEffect(() => {
     fetchDatabaseStats()
     fetchTables()
     fetchSlowQueries()
-    fetchLocks()
-  }, [selectedDatabase])
+    fetchBackups()
+  }, [])
 
   const fetchDatabaseStats = async () => {
     try {
-      // Mock data - would fetch from API
       setStats({
         version: 'PostgreSQL 15.3',
         uptime: '7 days 14:23:45',
@@ -135,310 +122,295 @@ export default function PostgreSQLPage() {
         databases: 5,
         tables: 47,
         size: '1.2 GB',
-        connections: {
-          active: 8,
-          idle: 4,
-          max: 100,
-          utilization: 12,
-        },
+        connections: { active: 8, idle: 4, max: 100 },
         performance: {
           hitRatio: 98.7,
           cacheSize: '256 MB',
           qps: 150,
           avgQueryTime: 2.5,
         },
-        replication: {
-          status: 'streaming',
-          lag: 0.002,
-          replicas: 1,
-        },
-        memory: {
-          used: '512 MB',
-          total: '2 GB',
-          utilization: 25,
-        },
       })
-    } catch (_error) {
-      // Intentionally empty - stats load failure handled silently
     } finally {
       setLoading(false)
     }
   }
 
   const fetchTables = async () => {
-    try {
-      // Mock data
-      setTables([
-        {
-          id: '1',
-          name: 'users',
-          schema: 'public',
-          rows: 15234,
-          size: '12.5 MB',
-          indexes: 3,
-          lastAccess: '2 min ago',
-          status: 'active',
-        },
-        {
-          id: '2',
-          name: 'sessions',
-          schema: 'public',
-          rows: 45821,
-          size: '35.2 MB',
-          indexes: 2,
-          lastAccess: '1 min ago',
-          status: 'active',
-        },
-        {
-          id: '3',
-          name: 'products',
-          schema: 'public',
-          rows: 823,
-          size: '5.8 MB',
-          indexes: 4,
-          lastAccess: '15 min ago',
-          status: 'active',
-        },
-        {
-          id: '4',
-          name: 'orders',
-          schema: 'public',
-          rows: 9521,
-          size: '18.3 MB',
-          indexes: 5,
-          lastAccess: '5 min ago',
-          status: 'active',
-        },
-        {
-          id: '5',
-          name: 'auth_migrations',
-          schema: 'auth',
-          rows: 28,
-          size: '128 KB',
-          indexes: 1,
-          lastAccess: '2 hours ago',
-          status: 'inactive',
-        },
-      ])
-    } catch (error) {
-      console.warn('[PostgreSQL] Error fetching tables:', error)
-    }
+    setTables([
+      {
+        name: 'users',
+        schema: 'public',
+        rows: 15234,
+        size: '12.5 MB',
+        indexes: 3,
+      },
+      {
+        name: 'sessions',
+        schema: 'public',
+        rows: 45821,
+        size: '35.2 MB',
+        indexes: 2,
+      },
+    ])
   }
 
   const fetchSlowQueries = async () => {
-    try {
-      // Mock data
-      setSlowQueries([
-        {
-          query: 'SELECT * FROM users WHERE email LIKE "%@example.com"',
-          duration: '2.3s',
-          calls: 152,
-          meanTime: '1.8s',
-        },
-        {
-          query: 'SELECT COUNT(*) FROM orders JOIN products ON ...',
-          duration: '1.5s',
-          calls: 89,
-          meanTime: '1.2s',
-        },
-      ])
-    } catch (error) {
-      console.warn('[PostgreSQL] Error fetching slow queries:', error)
-    }
+    setSlowQueries([
+      {
+        query: 'SELECT * FROM users WHERE email LIKE "%@example.com"',
+        duration: '2.3s',
+        calls: 152,
+      },
+    ])
   }
 
-  const fetchLocks = async () => {
-    try {
-      // Mock data
-      setLocks([
-        {
-          pid: 12345,
-          user: 'app_user',
-          database: 'production',
-          relation: 'users',
-          mode: 'AccessShareLock',
-          granted: true,
-          duration: '00:00:12',
-        },
-      ])
-    } catch (error) {
-      console.warn('[PostgreSQL] Error fetching locks:', error)
-    }
+  const fetchBackups = async () => {
+    setBackups([
+      {
+        id: '1',
+        filename: 'backup_2024-01-20_14-30.sql.gz',
+        size: '245 MB',
+        timestamp: '2024-01-20 14:30:00',
+        status: 'completed',
+      },
+    ])
   }
 
   const executeQuery = async () => {
     if (!query.trim()) return
-
     setExecuting(true)
     setQueryResult(null)
 
     try {
-      // Simulate query execution
       await new Promise((resolve) => setTimeout(resolve, 500))
-
-      // Mock result
       setQueryResult({
-        columns: ['id', 'name', 'email', 'created_at'],
+        columns: ['id', 'name', 'email'],
         rows: [
-          {
-            id: 1,
-            name: 'John Doe',
-            email: 'john@example.com',
-            created_at: '2024-01-15',
-          },
-          {
-            id: 2,
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-            created_at: '2024-01-16',
-          },
-          {
-            id: 3,
-            name: 'Bob Johnson',
-            email: 'bob@example.com',
-            created_at: '2024-01-17',
-          },
+          { id: 1, name: 'John Doe', email: 'john@example.com' },
+          { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
         ],
-        rowCount: 3,
+        rowCount: 2,
         executionTime: 0.023,
       })
-    } catch (error: any) {
+    } catch (error) {
       setQueryResult({
         columns: [],
         rows: [],
         rowCount: 0,
         executionTime: 0,
-        error: error.message,
+        error: 'Query execution failed',
       })
     } finally {
       setExecuting(false)
     }
   }
 
-  const _formatBytes = (bytes: number) => {
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-    if (bytes === 0) return '0 B'
-    const i = Math.floor(Math.log(bytes) / Math.log(1024))
-    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + ' ' + sizes[i]
+  const createBackup = async () => {
+    setCreatingBackup(true)
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await fetchBackups()
+    setCreatingBackup(false)
   }
 
   if (loading) {
     return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
-      </div>
+      <PageShell title="PostgreSQL" loading={true}>
+        <div />
+      </PageShell>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="flex items-center gap-2 text-3xl font-bold">
-            <Database className="h-8 w-8" />
-            PostgreSQL
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Database management and query console
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Settings className="mr-1 h-4 w-4" />
-            Configure
-          </Button>
-          <Button variant="outline">
-            <Terminal className="mr-1 h-4 w-4" />
-            psql
-          </Button>
-          <Button onClick={fetchDatabaseStats}>
-            <RefreshCw className="mr-1 h-4 w-4" />
+    <PageShell
+      title="PostgreSQL"
+      description="Database management, query console, and performance metrics"
+      actions={
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchDatabaseStats}>
+            <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
+          <Button variant="outline" size="sm">
+            <Settings className="mr-2 h-4 w-4" />
+            Configure
+          </Button>
+          <Button variant="outline" size="sm">
+            <Terminal className="mr-2 h-4 w-4" />
+            psql
+          </Button>
         </div>
-      </div>
-
+      }
+    >
       {/* Stats Overview */}
       {stats && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Connections</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.connections.active}/{stats.connections.max}
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/30">
+                  <Activity className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Connections
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {stats.connections.active}/{stats.connections.max}
+                  </p>
+                  <Progress
+                    value={
+                      (stats.connections.active / stats.connections.max) * 100
+                    }
+                    className="mt-2"
+                  />
+                </div>
               </div>
-              <Progress
-                value={(stats.connections.active / stats.connections.max) * 100}
-                className="mt-2"
-              />
-              <p className="text-muted-foreground mt-1 text-xs">
-                {stats.connections.idle} idle
-              </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Cache Hit Ratio</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {stats.performance.hitRatio}%
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
+                  <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Cache Hit Ratio
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {stats.performance.hitRatio}%
+                  </p>
+                  <Progress
+                    value={stats.performance.hitRatio}
+                    className="mt-2"
+                  />
+                </div>
               </div>
-              <Progress value={stats.performance.hitRatio} className="mt-2" />
-              <p className="text-muted-foreground mt-1 text-xs">
-                Cache size: {stats.performance.cacheSize}
-              </p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Database Size</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.size}</div>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {stats.tables} tables
-              </p>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
+                  <HardDrive className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Database Size
+                  </p>
+                  <p className="text-2xl font-bold">{stats.size}</p>
+                  <p className="text-xs text-zinc-500">{stats.tables} tables</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Replication</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="text-lg font-bold capitalize">
-                  {stats.replication.status}
-                </span>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-amber-100 p-2 dark:bg-amber-900/30">
+                  <Server className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Status
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-lg font-bold capitalize">
+                      {stats.status}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <p className="text-muted-foreground mt-1 text-xs">
-                Lag: {stats.replication.lag}s • {stats.replication.replicas}{' '}
-                replicas
-              </p>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="query">Query Console</TabsTrigger>
-          <TabsTrigger value="tables">Tables</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="replication">Replication</TabsTrigger>
-          <TabsTrigger value="connections">Connections</TabsTrigger>
-          <TabsTrigger value="locks">Locks</TabsTrigger>
+          <TabsTrigger value="metrics">Metrics</TabsTrigger>
+          <TabsTrigger value="backups">Backups</TabsTrigger>
+          <TabsTrigger value="config">Configuration</TabsTrigger>
         </TabsList>
 
-        {/* Query Console */}
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-4 w-4" />
+                Connection Information
+              </CardTitle>
+              <CardDescription>
+                Database connection details and status
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-zinc-500">Version</p>
+                  <p className="font-medium">{stats?.version}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-500">Uptime</p>
+                  <p className="font-medium">{stats?.uptime}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-500">Host</p>
+                  <p className="font-mono text-sm">localhost:5432</p>
+                </div>
+                <div>
+                  <p className="text-sm text-zinc-500">Database</p>
+                  <p className="font-mono text-sm">{selectedDatabase}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-4 w-4" />
+                Database Tables
+              </CardTitle>
+              <CardDescription>
+                Tables in {selectedDatabase} database
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {tables.map((table) => (
+                  <div
+                    key={table.name}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Database className="h-4 w-4 text-zinc-400" />
+                      <div>
+                        <p className="font-medium">
+                          {table.schema}.{table.name}
+                        </p>
+                        <p className="text-sm text-zinc-500">
+                          {table.rows.toLocaleString()} rows • {table.size}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline">{table.indexes} indexes</Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Query Console Tab */}
         <TabsContent value="query" className="space-y-4">
           <Card>
             <CardHeader>
@@ -455,7 +427,6 @@ export default function PostgreSQLPage() {
                     <SelectItem value="postgres">postgres</SelectItem>
                     <SelectItem value="hasura">hasura</SelectItem>
                     <SelectItem value="auth">auth</SelectItem>
-                    <SelectItem value="storage">storage</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -470,47 +441,58 @@ export default function PostgreSQLPage() {
 
               <div className="flex gap-2">
                 <Button onClick={executeQuery} disabled={executing}>
-                  <Play className="mr-1 h-4 w-4" />
-                  {executing ? 'Executing...' : 'Execute'}
+                  {executing ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="mr-2 h-4 w-4" />
+                  )}
+                  Execute
                 </Button>
                 <Button variant="outline" onClick={() => setQuery('')}>
                   Clear
                 </Button>
                 <Button variant="outline">
-                  <Save className="mr-1 h-4 w-4" />
-                  Save Query
+                  <Save className="mr-2 h-4 w-4" />
+                  Save
                 </Button>
               </div>
 
               {queryResult && (
                 <div className="space-y-4">
                   {queryResult.error ? (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Query Error</AlertTitle>
-                      <AlertDescription>{queryResult.error}</AlertDescription>
-                    </Alert>
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                          Query Error
+                        </p>
+                      </div>
+                      <p className="mt-1 text-sm text-red-700">
+                        {queryResult.error}
+                      </p>
+                    </div>
                   ) : (
                     <>
                       <div className="flex items-center justify-between">
-                        <div className="text-muted-foreground text-sm">
+                        <div className="flex items-center gap-2 text-sm text-zinc-500">
+                          <Clock className="h-4 w-4" />
                           {queryResult.rowCount} rows •{' '}
                           {queryResult.executionTime}s
                         </div>
-                        <Button variant="outline">
-                          <Download className="mr-1 h-4 w-4" />
+                        <Button variant="outline" size="sm">
+                          <Download className="mr-2 h-4 w-4" />
                           Export
                         </Button>
                       </div>
 
-                      <ScrollArea className="h-96">
-                        <table className="w-full border">
-                          <thead>
-                            <tr className="bg-muted border-b">
+                      <ScrollArea className="h-96 rounded-lg border">
+                        <table className="w-full">
+                          <thead className="sticky top-0 bg-zinc-50 dark:bg-zinc-800">
+                            <tr className="border-b">
                               {queryResult.columns.map((col) => (
                                 <th
                                   key={col}
-                                  className="p-2 text-left font-medium"
+                                  className="p-2 text-left text-sm font-medium"
                                 >
                                   {col}
                                 </th>
@@ -519,7 +501,10 @@ export default function PostgreSQLPage() {
                           </thead>
                           <tbody>
                             {queryResult.rows.map((row, i) => (
-                              <tr key={i} className="hover:bg-accent border-b">
+                              <tr
+                                key={i}
+                                className="border-b hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+                              >
                                 {queryResult.columns.map((col) => (
                                   <td
                                     key={col}
@@ -541,37 +526,90 @@ export default function PostgreSQLPage() {
           </Card>
         </TabsContent>
 
-        {/* Tables */}
-        <TabsContent value="tables">
+        {/* Metrics Tab */}
+        <TabsContent value="metrics" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Database Tables</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Slow Queries
+              </CardTitle>
               <CardDescription>
-                Browse and manage database tables
+                Queries taking longer than 1 second
               </CardDescription>
             </CardHeader>
             <CardContent>
+              <div className="space-y-3">
+                {slowQueries.map((q, i) => (
+                  <div key={i} className="rounded-lg border p-3">
+                    <pre className="mb-2 overflow-x-auto font-mono text-sm">
+                      {q.query}
+                    </pre>
+                    <div className="flex gap-4 text-sm text-zinc-500">
+                      <span>Duration: {q.duration}</span>
+                      <span>Calls: {q.calls}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Backups Tab */}
+        <TabsContent value="backups" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <HardDrive className="h-4 w-4" />
+                    Database Backups
+                  </CardTitle>
+                  <CardDescription>
+                    Manage database backups and restore points
+                  </CardDescription>
+                </div>
+                <Button onClick={createBackup} disabled={creatingBackup}>
+                  {creatingBackup ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Create Backup
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-2">
-                {tables.map((table) => (
+                {backups.map((backup) => (
                   <div
-                    key={table.name}
-                    className="hover:bg-accent flex items-center justify-between rounded-lg border p-3"
+                    key={backup.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <Database className="text-muted-foreground h-4 w-4" />
+                      <HardDrive className="h-4 w-4 text-zinc-400" />
                       <div>
-                        <p className="font-medium">
-                          {table.schema}.{table.name}
-                        </p>
-                        <p className="text-muted-foreground text-sm">
-                          {table.rows.toLocaleString()} rows • {table.size}
+                        <p className="font-mono text-sm">{backup.filename}</p>
+                        <p className="text-xs text-zinc-500">
+                          {backup.timestamp} • {backup.size}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline">{table.indexes} indexes</Badge>
-                      <Button variant="outline">View</Button>
-                      <Button variant="outline">Query</Button>
+                      <Badge
+                        variant={
+                          backup.status === 'completed'
+                            ? 'default'
+                            : 'destructive'
+                        }
+                      >
+                        {backup.status}
+                      </Badge>
+                      <Button variant="outline" size="sm">
+                        <Download className="mr-2 h-4 w-4" />
+                        Restore
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -580,192 +618,34 @@ export default function PostgreSQLPage() {
           </Card>
         </TabsContent>
 
-        {/* Performance */}
-        <TabsContent value="performance">
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Slow Queries</CardTitle>
-                <CardDescription>
-                  Queries taking longer than 1 second
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {slowQueries.map((q, i) => (
-                    <div key={i} className="rounded-lg border p-3">
-                      <pre className="font-mono text-sm text-wrap">
-                        {q.query}
-                      </pre>
-                      <div className="text-muted-foreground mt-2 flex gap-4 text-sm">
-                        <span>Duration: {q.duration}</span>
-                        <span>Calls: {q.calls}</span>
-                        <span>Mean: {q.meanTime}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Query Performance Tuning</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <Alert>
-                    <TrendingUp className="h-4 w-4" />
-                    <AlertTitle>Optimization Suggestions</AlertTitle>
-                    <AlertDescription>
-                      Consider adding an index on users.email for faster lookups
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Replication */}
-        <TabsContent value="replication">
+        {/* Configuration Tab */}
+        <TabsContent value="config" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Replication Status</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                PostgreSQL Configuration
+              </CardTitle>
               <CardDescription>
-                Master-slave replication configuration
+                View database configuration (read-only for safety)
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="font-medium">
-                    Replication is active and healthy
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-muted-foreground text-sm">
-                      Primary Server
-                    </p>
-                    <p className="font-medium">postgres-master</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-sm">
-                      Replication Lag
-                    </p>
-                    <p className="font-medium">0.002 seconds</p>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-muted-foreground mb-2 text-sm">
-                    Replica Servers
-                  </p>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between rounded border p-2">
-                      <span>postgres-slave-1</span>
-                      <Badge className="bg-green-500">Streaming</Badge>
-                    </div>
-                  </div>
-                </div>
+              <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-900">
+                <pre className="overflow-x-auto text-sm">{`# PostgreSQL Configuration
+max_connections = 100
+shared_buffers = 128MB
+effective_cache_size = 4GB
+work_mem = 4MB`}</pre>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Connections */}
-        <TabsContent value="connections">
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Connections</CardTitle>
-              <CardDescription>
-                Current database connections and pools
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Alert className="mb-4">
-                <Users className="h-4 w-4" />
-                <AlertTitle>Connection Pool Status</AlertTitle>
-                <AlertDescription>
-                  {stats?.connections.active} active, {stats?.connections.idle}{' '}
-                  idle of {stats?.connections.max} max connections
-                </AlertDescription>
-              </Alert>
-
-              <div className="space-y-2">
-                <div className="grid grid-cols-5 gap-2 border-b p-2 text-sm font-medium">
-                  <span>PID</span>
-                  <span>User</span>
-                  <span>Database</span>
-                  <span>State</span>
-                  <span>Duration</span>
-                </div>
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="hover:bg-accent grid grid-cols-5 gap-2 rounded p-2 text-sm"
-                  >
-                    <span className="font-mono">1234{i}</span>
-                    <span>app_user</span>
-                    <span>postgres</span>
-                    <Badge variant="outline" className="w-fit">
-                      active
-                    </Badge>
-                    <span>00:02:15</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Locks */}
-        <TabsContent value="locks">
-          <Card>
-            <CardHeader>
-              <CardTitle>Database Locks</CardTitle>
-              <CardDescription>
-                Current lock status and blocking queries
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {locks.length === 0 ? (
-                <div className="text-muted-foreground py-8 text-center">
-                  No active locks detected
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {locks.map((lock, i) => (
-                    <div key={i} className="rounded-lg border p-3">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">PID:</span>{' '}
-                          {lock.pid}
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">User:</span>{' '}
-                          {lock.user}
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Table:</span>{' '}
-                          {lock.relation}
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Mode:</span>{' '}
-                          {lock.mode}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <p className="mt-3 text-sm text-zinc-500">
+                Configuration is read-only. Use <code>nself db config</code> to
+                modify settings.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageShell>
   )
 }

@@ -3,11 +3,16 @@ import crypto from 'crypto'
 import {
   addAuditLog,
   createSession,
+  refreshSession as dbRefreshSession,
   deleteSession,
   getAdminPasswordHash,
+  getAllSessions,
   getSession,
   hasAdminPassword,
+  revokeAllSessionsExcept,
+  revokeSession,
   setAdminPassword,
+  type SessionItem,
 } from './database'
 
 // Configuration
@@ -128,9 +133,15 @@ export async function verifyAdminLogin(password: string): Promise<boolean> {
 export async function createLoginSession(
   ip?: string,
   userAgent?: string,
+  rememberMe: boolean = false,
 ): Promise<string> {
-  const token = await createSession('admin', ip, userAgent)
-  await addAuditLog('login_success', { ip, userAgent }, true, 'admin')
+  const token = await createSession('admin', ip, userAgent, rememberMe)
+  await addAuditLog(
+    'login_success',
+    { ip, userAgent, rememberMe },
+    true,
+    'admin',
+  )
   return token
 }
 
@@ -156,6 +167,39 @@ export async function isDevMode(): Promise<boolean> {
   return process.env.NODE_ENV === 'development'
 }
 
+// Get all sessions for a user
+export async function getUserSessions(userId: string): Promise<SessionItem[]> {
+  return getAllSessions(userId)
+}
+
+// Refresh session (extend expiration)
+export async function refreshSession(
+  token: string,
+): Promise<SessionItem | null> {
+  return dbRefreshSession(token)
+}
+
+// Revoke a specific session
+export async function revokeUserSession(token: string): Promise<void> {
+  await revokeSession(token)
+  await addAuditLog('session_revoked', { token }, true)
+}
+
+// Revoke all sessions except current
+export async function revokeAllOtherSessions(
+  userId: string,
+  currentToken: string,
+): Promise<number> {
+  return revokeAllSessionsExcept(userId, currentToken)
+}
+
+// Get session info (including CSRF token)
+export async function getSessionInfo(
+  token: string,
+): Promise<SessionItem | null> {
+  return getSession(token)
+}
+
 // Legacy auth object for backwards compatibility with tests
 export const auth = {
   hasPassword: checkPasswordExists,
@@ -165,7 +209,8 @@ export const auth = {
     return true
   },
   validatePassword: verifyAdminLogin,
-  createSession: createLoginSession,
+  createSession: async (ip?: string, userAgent?: string) =>
+    createLoginSession(ip, userAgent, false),
   validateSession: async (token: string) => {
     const isValid = await validateSessionToken(token)
     return isValid ? { userId: 'admin', token } : null

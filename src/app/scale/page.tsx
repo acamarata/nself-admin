@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import type { ScalingConfig } from '@/types/performance'
 import {
   Activity,
@@ -16,9 +17,9 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function ScalePage() {
+function ScaleContent() {
   const [loading, setLoading] = useState(true)
   const [services, setServices] = useState<ScalingConfig[]>([])
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -426,5 +427,13 @@ export default function ScalePage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function ScalePage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <ScaleContent />
+    </Suspense>
   )
 }

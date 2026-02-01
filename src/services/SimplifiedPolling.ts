@@ -124,7 +124,7 @@ class SimplifiedPollingService {
           console.warn('[SimplifiedPolling] Error parsing status response:', e)
         }
       }
-    } catch (_error: any) {
+    } catch (_error) {
       // Silently ignore all errors to prevent console spam
       return
     }

@@ -8,10 +8,12 @@ RUN apk add --no-cache libc6-compat
 RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better layer caching
 COPY package.json pnpm-lock.yaml ./
-# Only install production dependencies for smaller image
-RUN pnpm install --prod --frozen-lockfile
+
+# Install all dependencies (needed for build)
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
 
 # Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -19,12 +21,16 @@ RUN apk add --no-cache libc6-compat
 RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 WORKDIR /app
 
-# Copy package files and install ALL dependencies for build
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
 
-# Copy source code
-COPY . .
+# Copy only necessary source files (improves cache invalidation)
+COPY src ./src
+COPY public ./public
+COPY next.config.mjs ./
+COPY tsconfig.json ./
+COPY postcss.config.js ./
 
 # Set build-time environment variables for standalone mode
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -33,6 +39,9 @@ ENV STANDALONE=true
 
 # Build the application in standalone mode
 RUN pnpm run build
+
+# Remove dev dependencies to reduce image size
+RUN pnpm prune --prod
 
 # Stage 3: Runner (minimal image)
 FROM node:20-alpine AS runner
@@ -82,6 +91,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# Copy graceful shutdown wrapper
+COPY --chown=nextjs:nodejs scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
 # Create necessary directories for project mount and database
 RUN mkdir -p /workspace /app/data \
     && chown -R nextjs:nodejs /workspace /app/data
@@ -92,7 +105,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME="0.0.0.0"
 # Port 3021 is the reserved port for nself-admin (not 3100, which is for Loki)
 ENV PORT=3021
-ENV ADMIN_VERSION=0.0.8
+ENV ADMIN_VERSION=0.5.0
 
 # Environment variables that can be set at runtime:
 # NSELF_PROJECT_PATH - Path to mounted project (default: /workspace)
@@ -102,7 +115,7 @@ ENV ADMIN_VERSION=0.0.8
 # Add labels for container metadata
 LABEL org.opencontainers.image.title="nself-admin"
 LABEL org.opencontainers.image.description="Web-based administration interface for nself CLI"
-LABEL org.opencontainers.image.version="0.0.8"
+LABEL org.opencontainers.image.version="0.5.0"
 LABEL org.opencontainers.image.vendor="nself.org"
 LABEL org.opencontainers.image.source="https://github.com/acamarata/nself-admin"
 LABEL org.opencontainers.image.licenses="Proprietary - Free for personal use, Commercial license required"
@@ -132,5 +145,9 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Expose port 3021 (reserved for nself-admin, distinct from Loki on 3100)
 EXPOSE 3021
 
-# Start the application using the standalone server
+# Use STOPSIGNAL for proper graceful shutdown
+STOPSIGNAL SIGTERM
+
+# Start the application using the entrypoint wrapper for graceful shutdown
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["node", "server.js"]

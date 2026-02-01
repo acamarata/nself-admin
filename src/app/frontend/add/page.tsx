@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import {
   AlertCircle,
   ArrowLeft,
@@ -17,7 +18,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 interface FormData {
   name: string
@@ -77,7 +78,7 @@ const defaultSettings: Record<
   static: { buildCommand: '', outputDirectory: '.', installCommand: '' },
 }
 
-export default function AddFrontendPage() {
+function AddFrontendContent() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState(1)
@@ -499,5 +500,13 @@ export default function AddFrontendPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function AddFrontendPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <AddFrontendContent />
+    </Suspense>
   )
 }

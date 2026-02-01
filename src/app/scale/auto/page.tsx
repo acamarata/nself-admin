@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import {
   Activity,
   ArrowLeft,
@@ -14,7 +15,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface AutoScalingSettings {
   service: string
@@ -27,7 +28,7 @@ interface AutoScalingSettings {
   scaleDownCooldown: number
 }
 
-export default function AutoScalingPage() {
+function AutoScalingContent() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
   const [settings, setSettings] = useState<AutoScalingSettings[]>([])
@@ -444,5 +445,13 @@ export default function AutoScalingPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function AutoScalingPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <AutoScalingContent />
+    </Suspense>
   )
 }

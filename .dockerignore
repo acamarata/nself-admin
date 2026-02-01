@@ -76,8 +76,9 @@ temp
 *.tmp
 *.log
 
-# Scripts not needed in production
-scripts
+# Scripts not needed in production (keep docker-entrypoint.sh)
+scripts/*
+!scripts/docker-entrypoint.sh
 test-build.sh
 
 # Backup and archive files

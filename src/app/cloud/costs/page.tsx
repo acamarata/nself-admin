@@ -1,5 +1,6 @@
 'use client'
 
+import { ChartSkeleton } from '@/components/skeletons'
 import type { CostComparison, ServerSize } from '@/types/cloud'
 import {
   ArrowUpDown,
@@ -14,7 +15,7 @@ import {
   Zap,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -261,7 +262,7 @@ const sizeLabels: Record<
   },
 }
 
-export default function CostsPage() {
+function CostsContent() {
   const [selectedSize, setSelectedSize] = useState<ServerSize>('medium')
   const [sortBy, setSortBy] = useState<'price' | 'provider'>('price')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
@@ -527,5 +528,13 @@ export default function CostsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CostsPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <CostsContent />
+    </Suspense>
   )
 }

@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { ListSkeleton } from '@/components/skeletons'
 import {
   Archive,
   CheckCircle,
@@ -25,7 +26,7 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 interface Backup {
   id: string
@@ -505,7 +506,7 @@ function JobCard({
   )
 }
 
-export default function BackupsPage() {
+function BackupsContent() {
   const [backups, _setBackups] = useState<Backup[]>(mockBackups)
   const [jobs, setJobs] = useState<BackupJob[]>(mockJobs)
   const [loading, setLoading] = useState(false)
@@ -869,5 +870,13 @@ export default function BackupsPage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function BackupsPage() {
+  return (
+    <Suspense fallback={<ListSkeleton />}>
+      <BackupsContent />
+    </Suspense>
   )
 }

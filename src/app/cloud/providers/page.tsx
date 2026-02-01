@@ -1,5 +1,6 @@
 'use client'
 
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { CloudProvider, CloudProviderCategory } from '@/types/cloud'
 import {
   AlertCircle,
@@ -11,7 +12,7 @@ import {
   Settings,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -364,7 +365,7 @@ const mockProviders: CloudProvider[] = [
   },
 ]
 
-export default function ProvidersPage() {
+function ProvidersContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<
     CloudProviderCategory | 'all'
@@ -601,5 +602,13 @@ function ProviderCard({ provider }: { provider: CloudProvider }) {
         </div>
       </div>
     </Link>
+  )
+}
+
+export default function ProvidersPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <ProvidersContent />
+    </Suspense>
   )
 }

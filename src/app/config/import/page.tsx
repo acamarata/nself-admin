@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { FormSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,7 +29,7 @@ import {
   Upload,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
+import { Suspense, useCallback, useRef, useState } from 'react'
 
 const ENVIRONMENTS = [
   { value: 'local', label: 'Local' },
@@ -42,7 +43,7 @@ const FORMATS = [
   { value: 'yaml', label: 'YAML' },
 ]
 
-export default function ConfigImportPage() {
+function ConfigImportContent() {
   const [environment, setEnvironment] = useState('local')
   const [format, setFormat] = useState('json')
   const [fileContent, setFileContent] = useState('')
@@ -426,5 +427,13 @@ export default function ConfigImportPage() {
         )}
       </div>
     </PageTemplate>
+  )
+}
+
+export default function ConfigImportPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <ConfigImportContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import type { BenchmarkBaseline } from '@/types/performance'
 import {
   ArrowLeft,
@@ -13,9 +14,9 @@ import {
   Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function BaselinePage() {
+function BaselineContent() {
   const [loading, setLoading] = useState(true)
   const [baselines, setBaselines] = useState<BenchmarkBaseline[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -420,5 +421,13 @@ export default function BaselinePage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function BaselinePage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <BaselineContent />
+    </Suspense>
   )
 }

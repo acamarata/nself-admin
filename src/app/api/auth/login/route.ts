@@ -2,8 +2,10 @@ import {
   checkPasswordExists,
   createLoginSession,
   logout as deleteSessionToken,
+  getSessionInfo,
   verifyAdminLogin,
 } from '@/lib/auth-db'
+import { setCSRFCookie } from '@/lib/csrf'
 import {
   clearRateLimit,
   getRateLimitInfo,
@@ -19,9 +21,24 @@ const loginSchema = z.object({
     .string()
     .min(1, 'Password is required')
     .max(256, 'Password too long'),
+  rememberMe: z.boolean().optional().default(false),
 })
 
 export async function POST(request: NextRequest) {
+  // Check for account lockout (excessive failed attempts)
+  const { isLockedOut } = await import('@/lib/rateLimiter')
+  if (isLockedOut(request)) {
+    return NextResponse.json(
+      {
+        success: false,
+        error:
+          'Account temporarily locked due to too many failed login attempts. Please try again in 1 hour.',
+        locked: true,
+      },
+      { status: 423 }, // 423 Locked
+    )
+  }
+
   // Check rate limiting
   if (isRateLimited(request, 'auth')) {
     const info = getRateLimitInfo(request, 'auth')
@@ -72,7 +89,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { password } = validation.data
+    const { password, rememberMe } = validation.data
 
     // Check if password is set
     const passwordExists = await checkPasswordExists()
@@ -102,12 +119,17 @@ export async function POST(request: NextRequest) {
       const userAgent = request.headers.get('user-agent') || undefined
 
       // Create session in database
-      const sessionToken = await createLoginSession(ip, userAgent)
+      const sessionToken = await createLoginSession(ip, userAgent, rememberMe)
+
+      // Calculate expiration based on rememberMe
+      const sessionDuration = rememberMe
+        ? 30 * 24 * 60 * 60 * 1000 // 30 days
+        : 7 * 24 * 60 * 60 * 1000 // 7 days
 
       // Create response with secure cookie
       const response = NextResponse.json({
         success: true,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        expiresAt: new Date(Date.now() + sessionDuration).toISOString(),
       })
 
       // Set httpOnly cookie for security
@@ -115,9 +137,15 @@ export async function POST(request: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60, // 7 days to match session duration
+        maxAge: sessionDuration / 1000, // Convert to seconds
         path: '/',
       })
+
+      // Set CSRF token cookie from session
+      const session = await getSessionInfo(sessionToken)
+      if (session) {
+        setCSRFCookie(response, session.csrfToken)
+      }
 
       return response
     }

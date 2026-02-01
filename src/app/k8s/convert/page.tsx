@@ -1,5 +1,6 @@
 'use client'
 
+import { FormSkeleton } from '@/components/skeletons'
 import type { K8sConvertOptions, K8sManifest } from '@/types/k8s'
 import {
   ArrowLeft,
@@ -13,7 +14,7 @@ import {
   Settings,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 // Mock converted manifests
 const mockManifests: K8sManifest[] = [
@@ -125,7 +126,7 @@ spec:
   },
 ]
 
-export default function K8sConvertPage() {
+function K8sConvertContent() {
   const [options, setOptions] = useState<K8sConvertOptions>({
     namespace: 'default',
     outputDir: './k8s',
@@ -462,5 +463,13 @@ export default function K8sConvertPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function K8sConvertPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <K8sConvertContent />
+    </Suspense>
   )
 }

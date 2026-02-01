@@ -1,5 +1,6 @@
 'use client'
 
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import type { CloudProvider, CloudRegion, CloudSize } from '@/types/cloud'
 import {
   AlertCircle,
@@ -16,7 +17,7 @@ import {
   TestTube,
 } from 'lucide-react'
 import Link from 'next/link'
-import { use, useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -93,13 +94,8 @@ const credentialFields: Record<
   ],
 }
 
-export default function ProviderConfigPage({
-  params,
-}: {
-  params: Promise<{ name: string }>
-}) {
-  const resolvedParams = use(params)
-  const providerName = resolvedParams.name
+function ProviderConfigContent({ name }: { name: string }) {
+  const providerName = name
 
   const [credentials, setCredentials] = useState<Record<string, string>>({})
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({})
@@ -496,5 +492,18 @@ export default function ProviderConfigPage({
         </div>
       </div>
     </div>
+  )
+}
+
+export default async function ProviderConfigPage({
+  params,
+}: {
+  params: Promise<{ name: string }>
+}) {
+  const { name } = await params
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <ProviderConfigContent name={name} />
+    </Suspense>
   )
 }

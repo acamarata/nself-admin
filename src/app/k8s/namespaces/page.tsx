@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { K8sNamespace } from '@/types/k8s'
 import {
   AlertCircle,
@@ -15,7 +16,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -76,7 +77,7 @@ const resourceCounts: Record<
   'kube-node-lease': { deployments: 0, pods: 0, services: 0 },
 }
 
-export default function K8sNamespacesPage() {
+function K8sNamespacesContent() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newNamespace, setNewNamespace] = useState('')
   const [creating, setCreating] = useState(false)
@@ -406,5 +407,13 @@ export default function K8sNamespacesPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function K8sNamespacesPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <K8sNamespacesContent />
+    </Suspense>
   )
 }

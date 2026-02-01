@@ -1,6 +1,7 @@
 'use client'
 
 import { PageShell } from '@/components/PageShell'
+import { TableSkeleton } from '@/components/skeletons'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -40,7 +41,7 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -88,7 +89,7 @@ function getDeviceIcon(type: string) {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function DevicesPage() {
+function DevicesContent() {
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -470,5 +471,13 @@ export default function DevicesPage() {
         </Card>
       </div>
     </PageShell>
+  )
+}
+
+export default function DevicesPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <DevicesContent />
+    </Suspense>
   )
 }

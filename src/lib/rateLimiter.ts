@@ -3,10 +3,15 @@ import { NextRequest } from 'next/server'
 interface RateLimitEntry {
   count: number
   resetTime: number
+  lockedUntil?: number // Account lockout timestamp
 }
 
 // In-memory store (use Redis in production)
 const rateLimitStore = new Map<string, RateLimitEntry>()
+
+// Account lockout after excessive failed attempts
+const LOCKOUT_THRESHOLD = 10 // Lock after 10 failed attempts
+const LOCKOUT_DURATION = 60 * 60 * 1000 // 1 hour lockout
 
 // Configuration
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
@@ -31,6 +36,42 @@ function getClientId(request: NextRequest): string {
 }
 
 /**
+ * Check if account is locked out
+ */
+export function isLockedOut(request: NextRequest): boolean {
+  const clientId = getClientId(request)
+  const key = `auth:${clientId}`
+  const entry = rateLimitStore.get(key)
+  const now = Date.now()
+
+  if (entry?.lockedUntil && entry.lockedUntil > now) {
+    return true
+  }
+
+  // Clear lockout if expired
+  if (entry?.lockedUntil && entry.lockedUntil <= now) {
+    delete entry.lockedUntil
+  }
+
+  return false
+}
+
+/**
+ * Lock account after excessive failed attempts
+ */
+export function lockAccount(request: NextRequest): void {
+  const clientId = getClientId(request)
+  const key = `auth:${clientId}`
+  const now = Date.now()
+  const entry = rateLimitStore.get(key)
+
+  if (entry && entry.count >= LOCKOUT_THRESHOLD) {
+    entry.lockedUntil = now + LOCKOUT_DURATION
+    rateLimitStore.set(key, entry)
+  }
+}
+
+/**
  * Check if request is rate limited
  */
 export function isRateLimited(
@@ -42,9 +83,17 @@ export function isRateLimited(
   const now = Date.now()
   const maxRequests = MAX_REQUESTS[type]
 
+  // Check for account lockout first
+  if (type === 'auth' && isLockedOut(request)) {
+    return true
+  }
+
   // Clean up old entries
   for (const [k, entry] of rateLimitStore.entries()) {
-    if (entry.resetTime < now) {
+    if (
+      entry.resetTime < now &&
+      (!entry.lockedUntil || entry.lockedUntil < now)
+    ) {
       rateLimitStore.delete(k)
     }
   }
@@ -65,12 +114,18 @@ export function isRateLimited(
     rateLimitStore.set(key, {
       count: 1,
       resetTime: now + RATE_LIMIT_WINDOW,
+      lockedUntil: entry.lockedUntil, // Preserve lockout
     })
     return false
   }
 
   // Increment count
   entry.count++
+
+  // Check if we should lock the account
+  if (type === 'auth' && entry.count >= LOCKOUT_THRESHOLD) {
+    lockAccount(request)
+  }
 
   // Check if limit exceeded
   if (entry.count > maxRequests) {

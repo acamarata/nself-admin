@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { ListSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -31,6 +32,7 @@ import {
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -378,7 +380,7 @@ function QuickActions({ onRefresh }: { onRefresh: () => void }) {
   )
 }
 
-export default function DatabasePage() {
+function DatabaseContent() {
   const {
     data: statusData,
     error: statusError,
@@ -511,5 +513,13 @@ export default function DatabasePage() {
         )}
       </div>
     </PageTemplate>
+  )
+}
+
+export default function DatabasePage() {
+  return (
+    <Suspense fallback={<ListSkeleton />}>
+      <DatabaseContent />
+    </Suspense>
   )
 }

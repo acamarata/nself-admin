@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { StripeWebhookEvent } from '@/types/stripe'
 import {
   AlertCircle,
@@ -16,7 +17,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -120,7 +121,7 @@ function WebhookEventRow({ event }: { event: StripeWebhookEvent }) {
   )
 }
 
-export default function StripeWebhooksPage() {
+function StripeWebhooksContent() {
   const [page, setPage] = useState(1)
   const pageSize = 20
 
@@ -315,5 +316,13 @@ export default function StripeWebhooksPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function StripeWebhooksPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <StripeWebhooksContent />
+    </Suspense>
   )
 }

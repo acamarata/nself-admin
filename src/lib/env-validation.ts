@@ -91,7 +91,7 @@ export function validateEnv(): EnvConfig {
 
     const env = envSchema.parse(process.env)
     return env as EnvConfig
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof z.ZodError) {
       const missingVars = error.issues.map((e) => e.path.join('.')).join(', ')
       console.error(`\n❌ Environment validation failed: ${missingVars}`)

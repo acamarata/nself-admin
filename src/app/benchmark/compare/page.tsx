@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import type {
   BenchmarkBaseline,
   BenchmarkComparison,
@@ -16,7 +17,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -28,7 +29,7 @@ import {
   YAxis,
 } from 'recharts'
 
-export default function ComparePage() {
+function CompareContent() {
   const [loading, setLoading] = useState(true)
   const [baselines, setBaselines] = useState<BenchmarkBaseline[]>([])
   const [selectedBaseline, setSelectedBaseline] = useState<string>('')
@@ -544,5 +545,13 @@ export default function ComparePage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <CompareContent />
+    </Suspense>
   )
 }

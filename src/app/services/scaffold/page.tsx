@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +14,7 @@ import {
   Terminal,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 // -- Types --
 
@@ -421,7 +422,7 @@ function CommandPreview({ command }: { command: string }) {
 
 // -- Main Component --
 
-export default function ServiceScaffoldPage() {
+function ServiceScaffoldContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateInfo | null>(
@@ -789,5 +790,13 @@ export default function ServiceScaffoldPage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function ServiceScaffoldPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <ServiceScaffoldContent />
+    </Suspense>
   )
 }

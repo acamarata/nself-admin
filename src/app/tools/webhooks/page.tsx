@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { ListSkeleton } from '@/components/skeletons'
 import {
   Activity,
   Bell,
@@ -26,7 +27,7 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 interface WebhookEndpoint {
   id: string
@@ -770,7 +771,7 @@ function PayloadTemplatesSection() {
   )
 }
 
-export default function WebhooksPage() {
+function WebhooksContent() {
   const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([
     {
       id: '1',
@@ -1112,5 +1113,13 @@ export default function WebhooksPage() {
         {activeTab === 'templates' && <PayloadTemplatesSection />}
       </div>
     </>
+  )
+}
+
+export default function WebhooksPage() {
+  return (
+    <Suspense fallback={<ListSkeleton />}>
+      <WebhooksContent />
+    </Suspense>
   )
 }

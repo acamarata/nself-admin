@@ -1,6 +1,7 @@
 'use client'
 
 import { PageShell } from '@/components/PageShell'
+import { ServiceDetailSkeleton } from '@/components/skeletons'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -20,7 +21,7 @@ import {
   Terminal,
   Trash2,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,7 +78,7 @@ function parseStatsFromOutput(output: string): CacheStats | null {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function CacheManagementPage() {
+function CacheManagementContent() {
   const [stats, setStats] = useState<CacheStats | null>(null)
   const [cliCommand, setCliCommand] = useState('')
   const [cliHistory, setCliHistory] = useState<
@@ -520,5 +521,13 @@ export default function CacheManagementPage() {
         </Card>
       </div>
     </PageShell>
+  )
+}
+
+export default function CacheManagementPage() {
+  return (
+    <Suspense fallback={<ServiceDetailSkeleton />}>
+      <CacheManagementContent />
+    </Suspense>
   )
 }

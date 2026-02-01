@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import type { BenchmarkBaseline, BenchmarkResult } from '@/types/performance'
 import {
   Activity,
@@ -12,7 +13,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -23,7 +24,7 @@ import {
   YAxis,
 } from 'recharts'
 
-export default function BenchmarkPage() {
+function BenchmarkContent() {
   const [loading, setLoading] = useState(true)
   const [results, setResults] = useState<BenchmarkResult[]>([])
   const [baselines, setBaselines] = useState<BenchmarkBaseline[]>([])
@@ -486,5 +487,13 @@ export default function BenchmarkPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function BenchmarkPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <BenchmarkContent />
+    </Suspense>
   )
 }

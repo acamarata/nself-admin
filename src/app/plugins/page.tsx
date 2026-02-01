@@ -1,5 +1,6 @@
 'use client'
 
+import { CardGridSkeleton } from '@/components/skeletons'
 import type { Plugin, PluginSyncStatus } from '@/types/plugins'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import {
@@ -12,12 +13,13 @@ import {
   Plug,
   Plus,
   RefreshCw,
+  Search,
   Settings,
   ShoppingCart,
   Zap,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -108,14 +110,20 @@ function PluginCard({
   plugin,
   syncStatus,
   onSync,
+  onDisable,
+  onRemove,
 }: {
   plugin: Plugin
   syncStatus?: PluginSyncStatus
   onSync: (name: string) => void
+  onDisable: (name: string) => void
+  onRemove: (name: string) => void
 }) {
+  const [showActions, setShowActions] = useState(false)
   const Icon = getPluginIcon(plugin.name)
   const isActive = plugin.status === 'installed'
   const isSyncing = syncStatus?.status === 'syncing'
+  const hasUpdate = plugin.status === 'update_available'
 
   const statusColors = {
     installed: 'bg-emerald-500/20 text-emerald-400',
@@ -141,15 +149,34 @@ function PluginCard({
             <Icon className="h-5 w-5 text-zinc-300" />
           </div>
           <div>
-            <h3 className="font-medium text-white capitalize">{plugin.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-white capitalize">
+                {plugin.name}
+              </h3>
+              {hasUpdate && (
+                <span className="rounded-full bg-yellow-500/20 px-1.5 py-0.5 text-xs text-yellow-400">
+                  Update
+                </span>
+              )}
+            </div>
             <p className="text-xs text-zinc-500">v{plugin.version}</p>
           </div>
         </div>
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs ${statusColors[plugin.status]}`}
-        >
-          {statusLabels[plugin.status]}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs ${statusColors[plugin.status]}`}
+          >
+            {statusLabels[plugin.status]}
+          </span>
+          {isActive && (
+            <button
+              onClick={() => setShowActions(!showActions)}
+              className="text-zinc-400 hover:text-white"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <p className="mb-4 line-clamp-2 text-sm text-zinc-400">
@@ -174,6 +201,33 @@ function PluginCard({
               </span>
             </div>
           )}
+        </div>
+      )}
+
+      {showActions && isActive && (
+        <div className="mb-4 flex flex-col gap-2 rounded-lg bg-zinc-900/50 p-3">
+          <button
+            onClick={() => {
+              onDisable(plugin.name)
+              setShowActions(false)
+            }}
+            className="flex items-center gap-2 text-sm text-zinc-400 hover:text-yellow-400"
+          >
+            <AlertCircle className="h-4 w-4" />
+            Disable Plugin
+          </button>
+          <button
+            onClick={() => {
+              if (confirm(`Remove ${plugin.name}? This cannot be undone.`)) {
+                onRemove(plugin.name)
+                setShowActions(false)
+              }
+            }}
+            className="flex items-center gap-2 text-sm text-zinc-400 hover:text-red-400"
+          >
+            <Zap className="h-4 w-4" />
+            Remove Plugin
+          </button>
         </div>
       )}
 
@@ -212,8 +266,11 @@ function PluginCard({
   )
 }
 
-export default function PluginsPage() {
+function PluginsContent() {
   const [_syncing, setSyncing] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filterActive, setFilterActive] = useState<'all' | 'active'>('all')
+  const [sortBy, setSortBy] = useState<'name' | 'date'>('date')
 
   const { data, error, isLoading, mutate } = useSWR<{
     plugins: Plugin[]
@@ -232,10 +289,55 @@ export default function PluginsPage() {
     }
   }
 
-  const plugins = data?.plugins || []
+  const handleDisable = async (pluginName: string) => {
+    try {
+      await fetch(`/api/plugins/${pluginName}/disable`, { method: 'POST' })
+      mutate()
+    } catch (_error) {
+      alert('Failed to disable plugin')
+    }
+  }
+
+  const handleRemove = async (pluginName: string) => {
+    try {
+      await fetch(`/api/plugins/${pluginName}`, { method: 'DELETE' })
+      mutate()
+    } catch (_error) {
+      alert('Failed to remove plugin')
+    }
+  }
+
+  let plugins = data?.plugins || []
   const syncStatuses = data?.syncStatuses || []
 
-  const installedCount = plugins.filter((p) => p.status === 'installed').length
+  // Apply filters
+  if (searchQuery) {
+    plugins = plugins.filter(
+      (p) =>
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchQuery.toLowerCase()),
+    )
+  }
+
+  if (filterActive === 'active') {
+    plugins = plugins.filter((p) => p.status === 'installed')
+  }
+
+  // Apply sorting
+  plugins = [...plugins].sort((a, b) => {
+    if (sortBy === 'name') {
+      return a.name.localeCompare(b.name)
+    } else {
+      // Sort by installedAt date
+      const dateA = a.installedAt ? new Date(a.installedAt).getTime() : 0
+      const dateB = b.installedAt ? new Date(b.installedAt).getTime() : 0
+      return dateB - dateA
+    }
+  })
+
+  const installedCount = (data?.plugins || []).filter(
+    (p) => p.status === 'installed',
+  ).length
   const activeCount = plugins.filter(
     (p) =>
       p.status === 'installed' &&
@@ -308,6 +410,44 @@ export default function PluginsPage() {
         </Link>
       </div>
 
+      {/* Search and Filters */}
+      {(data?.plugins || []).length > 0 && (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search plugins..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 py-2 pr-4 pl-10 text-white placeholder-zinc-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={filterActive}
+              onChange={(e) =>
+                setFilterActive(e.target.value as 'all' | 'active')
+              }
+              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+            >
+              <option value="all">All Plugins</option>
+              <option value="active">Active Only</option>
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'name' | 'date')}
+              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
+            >
+              <option value="date">Sort by Date</option>
+              <option value="name">Sort by Name</option>
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* Metrics */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
@@ -355,6 +495,8 @@ export default function PluginsPage() {
                 (s) => s.pluginName === plugin.name,
               )}
               onSync={handleSync}
+              onDisable={handleDisable}
+              onRemove={handleRemove}
             />
           ))}
         </div>
@@ -376,5 +518,13 @@ export default function PluginsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function PluginsPage() {
+  return (
+    <Suspense fallback={<CardGridSkeleton />}>
+      <PluginsContent />
+    </Suspense>
   )
 }

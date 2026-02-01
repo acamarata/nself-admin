@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import {
   AlertTriangle,
   CheckCircle,
@@ -16,11 +17,11 @@ import {
   Smartphone,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 type MfaStep = 'status' | 'enabling' | 'verify' | 'backup-codes' | 'disabling'
 
-export default function MfaPage() {
+function MfaContent() {
   const [step, setStep] = useState<MfaStep>('status')
   const [mfaEnabled, setMfaEnabled] = useState(false)
   const [method, setMethod] = useState<'totp' | 'sms'>('totp')
@@ -564,5 +565,13 @@ export default function MfaPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function MfaPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <MfaContent />
+    </Suspense>
   )
 }

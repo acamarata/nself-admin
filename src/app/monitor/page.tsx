@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/Button'
 import { HeroPattern } from '@/components/HeroPattern'
+import { ChartSkeleton } from '@/components/skeletons'
 import {
   Activity,
   AlertCircle,
@@ -19,7 +20,7 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -60,7 +61,7 @@ interface Service {
   lastCheck: string
 }
 
-export default function MonitorPage() {
+function MonitorContent() {
   const [_loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<
     'overview' | 'metrics' | 'alerts' | 'health'
@@ -668,5 +669,13 @@ export default function MonitorPage() {
         )}
       </div>
     </>
+  )
+}
+
+export default function MonitorPage() {
+  return (
+    <Suspense fallback={<ChartSkeleton />}>
+      <MonitorContent />
+    </Suspense>
   )
 }

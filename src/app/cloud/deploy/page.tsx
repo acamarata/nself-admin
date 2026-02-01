@@ -1,5 +1,6 @@
 'use client'
 
+import { FormSkeleton } from '@/components/skeletons'
 import type { CloudProvider, CloudServer } from '@/types/cloud'
 import {
   AlertCircle,
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -72,7 +73,7 @@ const mockServers: CloudServer[] = [
   },
 ]
 
-export default function QuickDeployPage() {
+function QuickDeployContent() {
   const router = useRouter()
   const [step, setStep] = useState<DeployStep>('provider')
   const [selectedProvider, setSelectedProvider] = useState<string>('')
@@ -585,5 +586,13 @@ export default function QuickDeployPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function QuickDeployPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <QuickDeployContent />
+    </Suspense>
   )
 }

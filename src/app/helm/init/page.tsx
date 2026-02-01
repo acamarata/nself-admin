@@ -1,5 +1,6 @@
 'use client'
 
+import { FormSkeleton } from '@/components/skeletons'
 import {
   ArrowLeft,
   CheckCircle,
@@ -12,7 +13,7 @@ import {
   Play,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 interface ChartFile {
   name: string
@@ -20,7 +21,7 @@ interface ChartFile {
   content: string
 }
 
-export default function HelmInitPage() {
+function HelmInitContent() {
   const [chartName, setChartName] = useState('nself')
   const [chartVersion, setChartVersion] = useState('0.1.0')
   const [appVersion, setAppVersion] = useState('1.0.0')
@@ -477,5 +478,13 @@ app.kubernetes.io/instance: {{ .Release.Name }}
         </div>
       )}
     </div>
+  )
+}
+
+export default function HelmInitPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <HelmInitContent />
+    </Suspense>
   )
 }

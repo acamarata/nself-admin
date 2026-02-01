@@ -46,9 +46,11 @@ export interface SessionItem {
   userId: string
   createdAt: Date
   expiresAt: Date
-  lastActivity?: Date
+  lastActive: Date
   ip?: string
   userAgent?: string
+  rememberMe: boolean
+  csrfToken: string
 }
 
 export interface ProjectCacheItem {
@@ -198,6 +200,7 @@ export async function createSession(
   userId: string,
   ip?: string,
   userAgent?: string,
+  rememberMe: boolean = false,
 ): Promise<string> {
   await initDatabase()
 
@@ -205,18 +208,29 @@ export async function createSession(
   const customDuration = await getConfig('SESSION_DURATION_HOURS')
   const durationHours = customDuration || SESSION_DURATION_HOURS
 
+  // Remember me extends session to 30 days
+  const sessionDuration = rememberMe
+    ? 30 * 24 * 60 * 60 * 1000
+    : durationHours * 60 * 60 * 1000
+
   const token = crypto.randomBytes(32).toString('hex')
+  const csrfToken = crypto.randomBytes(32).toString('hex')
+
+  const now = new Date()
   const session: SessionItem = {
     token,
     userId,
-    createdAt: new Date(),
-    expiresAt: new Date(Date.now() + durationHours * 60 * 60 * 1000), // Configurable duration (default 7 days)
+    createdAt: now,
+    expiresAt: new Date(Date.now() + sessionDuration),
+    lastActive: now,
     ip,
     userAgent,
+    rememberMe,
+    csrfToken,
   }
 
   sessionsCollection?.insert(session)
-  await addAuditLog('session_created', { userId, ip }, true)
+  await addAuditLog('session_created', { userId, ip, rememberMe }, true)
 
   return token
 }
@@ -233,23 +247,31 @@ export async function getSession(token: string): Promise<SessionItem | null> {
     return null
   }
 
+  // Update lastActive on every request
+  const now = new Date()
+  const timeSinceLastActivity = session.lastActive
+    ? (now.getTime() - new Date(session.lastActive).getTime()) /
+      (1000 * 60 * 60) // hours
+    : 24
+
+  // Update lastActive if it's been more than 1 minute
+  if (timeSinceLastActivity > 1 / 60) {
+    session.lastActive = now
+    sessionsCollection?.update(session)
+  }
+
   // Extend session on activity if enabled
-  if (SESSION_EXTEND_ON_ACTIVITY) {
-    const now = new Date()
-    const timeSinceLastActivity = session.lastActivity
-      ? (now.getTime() - new Date(session.lastActivity).getTime()) /
-        (1000 * 60 * 60) // hours
-      : 24
+  if (SESSION_EXTEND_ON_ACTIVITY && timeSinceLastActivity > 1) {
+    const customDuration = await getConfig('SESSION_DURATION_HOURS')
+    const durationHours = customDuration || SESSION_DURATION_HOURS
 
-    // Only extend if it's been more than 1 hour since last activity
-    if (timeSinceLastActivity > 1) {
-      const customDuration = await getConfig('SESSION_DURATION_HOURS')
-      const durationHours = customDuration || SESSION_DURATION_HOURS
+    // Remember me extends to 30 days, otherwise use configured duration
+    const sessionDuration = session.rememberMe
+      ? 30 * 24 * 60 * 60 * 1000
+      : durationHours * 60 * 60 * 1000
 
-      session.expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000)
-      session.lastActivity = now
-      sessionsCollection?.update(session)
-    }
+    session.expiresAt = new Date(Date.now() + sessionDuration)
+    sessionsCollection?.update(session)
   }
 
   return session
@@ -277,6 +299,83 @@ export async function cleanupExpiredSessions(): Promise<number> {
   })
 
   return expired.length
+}
+
+export async function getAllSessions(userId: string): Promise<SessionItem[]> {
+  await initDatabase()
+  const sessions =
+    sessionsCollection
+      ?.chain()
+      .find({ userId })
+      .simplesort('lastActive', true) // Sort by lastActive descending
+      .data() || []
+
+  return sessions
+}
+
+export async function revokeSession(token: string): Promise<void> {
+  await deleteSession(token)
+}
+
+export async function revokeAllSessionsExcept(
+  userId: string,
+  exceptToken: string,
+): Promise<number> {
+  await initDatabase()
+  const sessions =
+    sessionsCollection?.find({
+      userId,
+      token: { $ne: exceptToken },
+    }) || []
+
+  sessions.forEach((session) => {
+    sessionsCollection?.remove(session)
+  })
+
+  await addAuditLog(
+    'sessions_revoked',
+    { userId, count: sessions.length },
+    true,
+  )
+
+  return sessions.length
+}
+
+export async function refreshSession(
+  token: string,
+): Promise<SessionItem | null> {
+  await initDatabase()
+  const session = sessionsCollection?.findOne({ token })
+
+  if (!session) return null
+
+  // Check if expired
+  if (new Date() > new Date(session.expiresAt)) {
+    sessionsCollection?.remove(session)
+    return null
+  }
+
+  // Extend session
+  const customDuration = await getConfig('SESSION_DURATION_HOURS')
+  const durationHours = customDuration || SESSION_DURATION_HOURS
+
+  // Remember me extends to 30 days, otherwise use configured duration
+  const sessionDuration = session.rememberMe
+    ? 30 * 24 * 60 * 60 * 1000
+    : durationHours * 60 * 60 * 1000
+
+  const now = new Date()
+  session.expiresAt = new Date(Date.now() + sessionDuration)
+  session.lastActive = now
+
+  // Regenerate CSRF token on refresh for security
+  session.csrfToken = crypto.randomBytes(32).toString('hex')
+
+  sessionsCollection?.update(session)
+
+  await addAuditLog('session_refreshed', { userId: session.userId }, true)
+
+  return session
 }
 
 // Project cache operations

@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { FormSkeleton } from '@/components/skeletons'
 import type { Environment, SyncOperation } from '@/types/deployment'
 import {
   AlertTriangle,
@@ -13,9 +14,9 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function SyncPage() {
+function SyncContent() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [sourceEnv, setSourceEnv] = useState<Environment>('staging')
@@ -393,5 +394,13 @@ export default function SyncPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function SyncPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <SyncContent />
+    </Suspense>
   )
 }

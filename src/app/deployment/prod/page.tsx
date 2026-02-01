@@ -1,7 +1,8 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
-import { useCallback, useEffect, useState } from 'react'
+import { FormSkeleton } from '@/components/skeletons'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface ProductionStatus {
   configured: boolean
@@ -20,7 +21,7 @@ interface ActionResult {
   error?: string
 }
 
-export default function ProductionPage() {
+function ProductionContent() {
   const [status, setStatus] = useState<ProductionStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -859,5 +860,13 @@ export default function ProductionPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function ProductionPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <ProductionContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { PageShell } from '@/components/PageShell'
+import { FormSkeleton } from '@/components/skeletons'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,7 +25,7 @@ import {
   Trash2,
   Webhook,
 } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { Suspense, useCallback, useState } from 'react'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,7 +58,7 @@ const EVENT_TYPES = [
 // Main Page Component
 // ---------------------------------------------------------------------------
 
-export default function WebhooksPage() {
+function WebhooksContent() {
   // List state
   const [webhooks, setWebhooks] = useState<WebhookEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -646,5 +647,13 @@ export default function WebhooksPage() {
         </CardContent>
       </Card>
     </PageShell>
+  )
+}
+
+export default function WebhooksPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <WebhooksContent />
+    </Suspense>
   )
 }

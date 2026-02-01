@@ -26,6 +26,55 @@ export const databaseQuerySchema = z.object({
   timeout: z.number().min(1000).max(60000).optional(), // 1-60 seconds
 })
 
+// SQL injection prevention - dangerous keywords check
+const DANGEROUS_SQL_KEYWORDS_PROD = [
+  'DROP DATABASE',
+  'DROP SCHEMA',
+  'DROP TABLE',
+  'DROP INDEX',
+  'TRUNCATE',
+  'DELETE FROM pg_',
+  'DELETE FROM information_schema',
+  'ALTER USER',
+  'CREATE USER',
+  'DROP USER',
+  'GRANT',
+  'REVOKE',
+]
+
+export function validateSQLQuery(
+  query: string,
+  isProduction: boolean = false,
+): { valid: boolean; error?: string } {
+  // In production, block dangerous operations
+  if (isProduction) {
+    const upperQuery = query.toUpperCase()
+    for (const keyword of DANGEROUS_SQL_KEYWORDS_PROD) {
+      if (upperQuery.includes(keyword)) {
+        return {
+          valid: false,
+          error: `Dangerous SQL operation '${keyword}' is not allowed in production`,
+        }
+      }
+    }
+  }
+
+  // Check for comment-based SQL injection attempts
+  if (query.includes('--') || query.includes('/*') || query.includes('*/')) {
+    // Allow comments only if they're properly formatted
+    const hasValidComments =
+      /--\s+.+/.test(query) || /\/\*[\s\S]*?\*\//.test(query)
+    if (!hasValidComments && (query.includes('--') || query.includes('/*'))) {
+      return {
+        valid: false,
+        error: 'Invalid SQL comment syntax detected',
+      }
+    }
+  }
+
+  return { valid: true }
+}
+
 // Configuration schemas
 export const envUpdateSchema = z.object({
   key: z

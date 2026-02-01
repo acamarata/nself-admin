@@ -1,5 +1,6 @@
 import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
 import { getProjectPath } from '@/lib/paths'
+import { emitBuildProgress } from '@/lib/websocket/emitters'
 import { exec } from 'child_process'
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
@@ -61,7 +62,29 @@ export async function POST(_request: NextRequest) {
     // Run nself build in the backend project directory
     console.log('Executing nself build command...')
 
+    // Emit build start event
+    emitBuildProgress({
+      step: 'build',
+      status: 'in-progress',
+      progress: 0,
+      message: 'Starting build process...',
+      currentStep: 1,
+      totalSteps: 6,
+      timestamp: new Date().toISOString(),
+    })
+
     try {
+      // Step 1: Validating configuration
+      emitBuildProgress({
+        step: 'build',
+        status: 'in-progress',
+        progress: 10,
+        message: 'Validating configuration...',
+        currentStep: 1,
+        totalSteps: 6,
+        timestamp: new Date().toISOString(),
+      })
+
       // First try the nself build command with a shorter timeout
       const result = await execAsync(
         `echo "Y" | ${nselfCommand} build --force`,
@@ -85,6 +108,17 @@ export async function POST(_request: NextRequest) {
         console.log('stderr:', stderr)
       }
 
+      // Step 2: Generating docker-compose.yml
+      emitBuildProgress({
+        step: 'build',
+        status: 'in-progress',
+        progress: 40,
+        message: 'Generating docker-compose.yml...',
+        currentStep: 2,
+        totalSteps: 6,
+        timestamp: new Date().toISOString(),
+      })
+
       // Check if docker-compose.yml was created
       const dockerComposePath = path.join(
         backendProjectPath,
@@ -102,6 +136,28 @@ export async function POST(_request: NextRequest) {
         const serviceMatches = dockerComposeContent.match(/^ {2}\w+:/gm)
         const serviceCount = serviceMatches ? serviceMatches.length : 0
 
+        // Emit progress updates for remaining steps
+        emitBuildProgress({
+          step: 'build',
+          status: 'in-progress',
+          progress: 70,
+          message: 'Creating networks and pulling images...',
+          currentStep: 4,
+          totalSteps: 6,
+          timestamp: new Date().toISOString(),
+        })
+
+        // Final success
+        emitBuildProgress({
+          step: 'build',
+          status: 'complete',
+          progress: 100,
+          message: `Build complete! ${serviceCount} services configured.`,
+          currentStep: 6,
+          totalSteps: 6,
+          timestamp: new Date().toISOString(),
+        })
+
         return NextResponse.json({
           success: true,
           message: 'Project built successfully',
@@ -112,6 +168,18 @@ export async function POST(_request: NextRequest) {
         })
       } catch {
         console.error('docker-compose.yml not found after build')
+
+        // Emit failure event
+        emitBuildProgress({
+          step: 'build',
+          status: 'failed',
+          progress: 40,
+          message: 'Build failed: docker-compose.yml was not created',
+          currentStep: 2,
+          totalSteps: 6,
+          timestamp: new Date().toISOString(),
+        })
+
         return NextResponse.json(
           {
             error: 'Build failed',
@@ -143,6 +211,18 @@ export async function POST(_request: NextRequest) {
         const serviceCount = serviceMatches ? serviceMatches.length : 0
 
         console.log('Build appears successful despite exit code')
+
+        // Emit success event
+        emitBuildProgress({
+          step: 'build',
+          status: 'complete',
+          progress: 100,
+          message: `Build complete! ${serviceCount} services configured.`,
+          currentStep: 6,
+          totalSteps: 6,
+          timestamp: new Date().toISOString(),
+        })
+
         return NextResponse.json({
           success: true,
           message: 'Project built successfully',
@@ -152,7 +232,17 @@ export async function POST(_request: NextRequest) {
           serviceCount,
         })
       } catch {
-        // Build actually failed
+        // Build actually failed - emit failure event
+        emitBuildProgress({
+          step: 'build',
+          status: 'failed',
+          progress: 0,
+          message: execError.stderr || execError.message || 'Build failed',
+          currentStep: 1,
+          totalSteps: 6,
+          timestamp: new Date().toISOString(),
+        })
+
         return NextResponse.json(
           {
             error: 'Build failed',
@@ -169,6 +259,18 @@ export async function POST(_request: NextRequest) {
   } catch (error) {
     console.error('=== Fatal Error in build API ===')
     console.error('Error:', error)
+
+    // Emit failure event
+    emitBuildProgress({
+      step: 'build',
+      status: 'failed',
+      progress: 0,
+      message: error instanceof Error ? error.message : 'Fatal error',
+      currentStep: 1,
+      totalSteps: 6,
+      timestamp: new Date().toISOString(),
+    })
+
     return NextResponse.json(
       {
         error: 'Failed to build project',

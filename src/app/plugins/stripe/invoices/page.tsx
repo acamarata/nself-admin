@@ -1,5 +1,6 @@
 'use client'
 
+import { TableSkeleton } from '@/components/skeletons'
 import type { StripeInvoice } from '@/types/stripe'
 import {
   AlertCircle,
@@ -17,7 +18,7 @@ import {
   Search,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import useSWR from 'swr'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -131,7 +132,7 @@ function InvoiceRow({ invoice }: { invoice: StripeInvoice }) {
   )
 }
 
-export default function StripeInvoicesPage() {
+function StripeInvoicesContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [page, setPage] = useState(1)
@@ -344,5 +345,13 @@ export default function StripeInvoicesPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function StripeInvoicesPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <StripeInvoicesContent />
+    </Suspense>
   )
 }

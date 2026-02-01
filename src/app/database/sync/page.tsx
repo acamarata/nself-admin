@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { FormSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -28,7 +29,7 @@ import {
   Terminal,
   XCircle,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 interface SyncResult {
   success: boolean
@@ -38,7 +39,7 @@ interface SyncResult {
   direction?: string
 }
 
-export default function DatabaseSyncPage() {
+function DatabaseSyncContent() {
   const [isRunning, setIsRunning] = useState(false)
   const [syncDirection, setSyncDirection] = useState('pull')
   const [sourceEnv, setSourceEnv] = useState('staging')
@@ -295,5 +296,13 @@ export default function DatabaseSyncPage() {
         </Card>
       </div>
     </PageTemplate>
+  )
+}
+
+export default function DatabaseSyncPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <DatabaseSyncContent />
+    </Suspense>
   )
 }

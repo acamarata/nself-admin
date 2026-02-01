@@ -1,7 +1,8 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
-import { useCallback, useEffect, useState } from 'react'
+import { ListSkeleton } from '@/components/skeletons'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface Environment {
   name: string
@@ -23,7 +24,7 @@ interface ActionResult {
   error?: string
 }
 
-export default function EnvironmentsPage() {
+function EnvironmentsContent() {
   const [environments, setEnvironments] = useState<Environment[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -592,5 +593,13 @@ export default function EnvironmentsPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function EnvironmentsPage() {
+  return (
+    <Suspense fallback={<ListSkeleton />}>
+      <EnvironmentsContent />
+    </Suspense>
   )
 }

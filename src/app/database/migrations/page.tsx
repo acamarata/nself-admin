@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { TableSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -44,7 +45,7 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
 interface MigrationResult {
   success: boolean
@@ -54,7 +55,7 @@ interface MigrationResult {
   direction?: 'up' | 'down'
 }
 
-export default function DatabaseMigrationsPage() {
+function DatabaseMigrationsContent() {
   const [isRunning, setIsRunning] = useState(false)
   const [isFreshRunning, setIsFreshRunning] = useState(false)
   const [isLoadingStatus, setIsLoadingStatus] = useState(true)
@@ -850,5 +851,13 @@ export default function DatabaseMigrationsPage() {
         )}
       </div>
     </PageTemplate>
+  )
+}
+
+export default function DatabaseMigrationsPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <DatabaseMigrationsContent />
+    </Suspense>
   )
 }

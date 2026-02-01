@@ -107,7 +107,7 @@ export const Header = forwardRef<
         </CloseButton>
       </div>
       <div className="flex items-center gap-5">
-        <nav className="hidden md:block">
+        <nav className="hidden md:block" aria-label="Secondary navigation">
           <ul role="list" className="flex items-center gap-8">
             <TopLevelNavItem href="/">Dashboard</TopLevelNavItem>
             <TopLevelNavItem href="/docs">Documentation</TopLevelNavItem>

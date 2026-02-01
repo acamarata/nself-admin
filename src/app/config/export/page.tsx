@@ -1,6 +1,7 @@
 'use client'
 
 import { PageTemplate } from '@/components/PageTemplate'
+import { FormSkeleton } from '@/components/skeletons'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,7 +28,7 @@ import {
   Terminal,
   XCircle,
 } from 'lucide-react'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 
 const ENVIRONMENTS = [
   { value: 'local', label: 'Local' },
@@ -41,7 +42,7 @@ const FORMATS = [
   { value: 'yaml', label: 'YAML', extension: '.yaml' },
 ]
 
-export default function ConfigExportPage() {
+function ConfigExportContent() {
   const [environment, setEnvironment] = useState('local')
   const [format, setFormat] = useState('json')
   const [isExporting, setIsExporting] = useState(false)
@@ -262,5 +263,13 @@ export default function ConfigExportPage() {
         )}
       </div>
     </PageTemplate>
+  )
+}
+
+export default function ConfigExportPage() {
+  return (
+    <Suspense fallback={<FormSkeleton />}>
+      <ConfigExportContent />
+    </Suspense>
   )
 }

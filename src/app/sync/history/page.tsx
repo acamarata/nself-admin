@@ -1,6 +1,7 @@
 'use client'
 
 import { HeroPattern } from '@/components/HeroPattern'
+import { TableSkeleton } from '@/components/skeletons'
 import type { Environment, SyncOperation } from '@/types/deployment'
 import {
   ArrowLeft,
@@ -16,9 +17,9 @@ import {
   XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 
-export default function SyncHistoryPage() {
+function SyncHistoryContent() {
   const [loading, setLoading] = useState(true)
   const [syncHistory, setSyncHistory] = useState<SyncOperation[]>([])
   const [filterEnv, setFilterEnv] = useState<Environment | 'all'>('all')
@@ -338,5 +339,13 @@ export default function SyncHistoryPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function SyncHistoryPage() {
+  return (
+    <Suspense fallback={<TableSkeleton />}>
+      <SyncHistoryContent />
+    </Suspense>
   )
 }

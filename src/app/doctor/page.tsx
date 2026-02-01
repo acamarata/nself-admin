@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/Button'
+import { DashboardSkeleton } from '@/components/skeletons'
 import {
   AlertTriangle,
   CheckCircle,
@@ -13,7 +14,7 @@ import {
   Wrench,
   XCircle,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
 interface ContainerStatus {
   name: string
@@ -34,7 +35,7 @@ interface DoctorResult {
   recommendations: string[]
 }
 
-export default function DoctorPage() {
+function DoctorContent() {
   const [loading, setLoading] = useState(false)
   const [doctorResult, setDoctorResult] = useState<DoctorResult | null>(null)
   const [selectedContainer, setSelectedContainer] = useState<string | null>(
@@ -378,5 +379,13 @@ export default function DoctorPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function DoctorPage() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DoctorContent />
+    </Suspense>
   )
 }
