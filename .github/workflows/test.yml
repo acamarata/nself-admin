@@ -60,7 +60,6 @@ jobs:
   unit-test:
     name: Unit Tests
     runs-on: ubuntu-latest
-    continue-on-error: true  # Allow workflow to proceed even if tests fail
     steps:
       - uses: actions/checkout@v4
 

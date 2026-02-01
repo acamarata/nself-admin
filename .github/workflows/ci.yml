@@ -57,7 +57,6 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
-    continue-on-error: true  # Allow build to proceed even if tests fail
     steps:
       - uses: actions/checkout@v4
 
