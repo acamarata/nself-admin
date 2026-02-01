@@ -44,7 +44,7 @@ next-env.d.ts
 .backend/
 
 # Database files
-data/
+/data/
 *.db
 nadmin.db
 
@@ -78,7 +78,7 @@ docker-compose.*.yml
 .env.example
 /ssl/
 /certs/
-data/
+/data/
 backups/
 pg_data/
 
