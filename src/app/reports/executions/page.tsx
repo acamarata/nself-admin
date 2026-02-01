@@ -156,7 +156,7 @@ function ExecutionsContent() {
     setDownloadingId(executionId)
     try {
       const filename = `report-${executionId}-${new Date().toISOString().split('T')[0]}.${format}`
-      await download({ executionId, filename })
+      await download(executionId, filename)
     } finally {
       setDownloadingId(null)
     }

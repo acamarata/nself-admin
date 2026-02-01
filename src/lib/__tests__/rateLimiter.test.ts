@@ -1,8 +1,12 @@
 import { NextRequest } from 'next/server'
-import { clearRateLimit, getRateLimitInfo, isRateLimited } from '../rateLimiter'
+import {
+  clearAllRateLimits,
+  clearRateLimit,
+  getRateLimitInfo,
+  isRateLimited,
+} from '../rateLimiter'
 
-// TODO v0.5.1: Fix rate limiter mock/timing issues
-describe.skip('rateLimiter', () => {
+describe('rateLimiter', () => {
   const createRequest = (ip: string = '127.0.0.1') => {
     return new NextRequest('http://localhost:3021/api/test', {
       headers: {
@@ -13,7 +17,10 @@ describe.skip('rateLimiter', () => {
   }
 
   beforeEach(() => {
-    jest.useFakeTimers()
+    // Use modern fake timers which also mock Date.now()
+    jest.useFakeTimers({ advanceTimers: false })
+    // Clear all rate limits between tests
+    clearAllRateLimits()
   })
 
   afterEach(() => {

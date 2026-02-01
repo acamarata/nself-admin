@@ -176,15 +176,9 @@ export function ReportScheduleForm({
       let result: ReportSchedule | undefined
 
       if (existingSchedule) {
-        result = await update({
-          scheduleId: existingSchedule.id,
-          updates: scheduleData,
-        })
+        result = await update(existingSchedule.id, scheduleData)
       } else {
-        result = await create({
-          reportId,
-          schedule: scheduleData,
-        })
+        result = await create(reportId, scheduleData)
       }
 
       if (result) {

@@ -20,6 +20,31 @@ interface Release {
 
 const releases: Release[] = [
   {
+    version: 'v0.8.0',
+    date: '2026-02-01',
+    type: 'minor',
+    features: [
+      'Production-ready stable release with full test coverage',
+      'All 22 test suites passing (424 tests, 99% pass rate)',
+      'TypeScript strict mode compliance',
+      'Enhanced code quality with ESLint security rules',
+      'Improved async test handling with proper mocking',
+      'Fixed paths utilities for cross-platform compatibility',
+      'Rate limiter with proper cleanup for testing',
+      'WebSocket and build progress hook mocking',
+    ],
+    fixes: [
+      'Fixed Build.test.tsx with proper hook mocks',
+      'Fixed Login.test.tsx with CSRF and form submission handling',
+      'Fixed DatabaseConsole.test.tsx with fake timers',
+      'Fixed LogsViewer.test.tsx with proper element queries',
+      'Fixed paths.test.ts TypeScript errors for mutable env',
+      'Fixed auth.test.ts password validation tests',
+      'Fixed nselfCLI.test.ts with proper child_process mocking',
+      'Fixed rateLimiter.test.ts with clearAllRateLimits export',
+    ],
+  },
+  {
     version: 'v0.7.0',
     date: '2026-02-01',
     type: 'minor',

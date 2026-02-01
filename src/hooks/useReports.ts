@@ -96,24 +96,25 @@ export interface UpdateReportTemplateInput {
 }
 
 export interface CreateScheduleInput {
-  name: string
-  frequency: 'once' | 'daily' | 'weekly' | 'monthly'
-  cronExpression?: string
-  timezone?: string
-  parameters?: Record<string, unknown>
-  recipients?: string[]
-  format?: 'pdf' | 'csv' | 'xlsx' | 'html' | 'json'
+  frequency: 'once' | 'hourly' | 'daily' | 'weekly' | 'monthly'
+  dayOfWeek?: number
+  dayOfMonth?: number
+  time: string
+  timezone: string
+  format: 'pdf' | 'csv' | 'xlsx' | 'html' | 'json' | 'excel'
+  recipients: string[]
+  enabled: boolean
 }
 
 export interface UpdateScheduleInput {
-  name?: string
-  frequency?: 'once' | 'daily' | 'weekly' | 'monthly'
-  cronExpression?: string
+  frequency?: 'once' | 'hourly' | 'daily' | 'weekly' | 'monthly'
+  dayOfWeek?: number
+  dayOfMonth?: number
+  time?: string
   timezone?: string
-  parameters?: Record<string, unknown>
+  format?: 'pdf' | 'csv' | 'xlsx' | 'html' | 'json' | 'excel'
   recipients?: string[]
-  format?: 'pdf' | 'csv' | 'xlsx' | 'html' | 'json'
-  isActive?: boolean
+  enabled?: boolean
 }
 
 // ============================================================================

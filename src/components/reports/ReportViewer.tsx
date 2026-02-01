@@ -112,7 +112,7 @@ export function ReportViewer({
   const handleDownload = async () => {
     if (!execution) return
     const filename = `report-${template?.name || executionId}-${new Date().toISOString().split('T')[0]}.${execution.format}`
-    await download({ executionId, filename })
+    await download(executionId, filename)
   }
 
   const formatCellValue = (

@@ -1,450 +1,714 @@
-import { execFile } from 'child_process'
-import { promisify } from 'util'
-import {
-  executeNselfCommand,
-  nselfBackup,
-  nselfBuild,
-  nselfConfig,
-  nselfDatabase,
-  nselfDbAnalyze,
-  nselfDbBackup,
-  nselfDbMigrate,
-  nselfDbReset,
-  nselfDbRestore,
-  nselfDbSeed,
-  nselfDbSync,
-  nselfDeploy,
-  nselfDoctor,
-  nselfExport,
-  nselfHealth,
-  nselfHelp,
-  nselfInit,
-  nselfLogs,
-  nselfMonitor,
-  nselfProdDeploy,
-  nselfRestart,
-  nselfRestore,
-  nselfScale,
-  nselfSecrets,
-  nselfSslGenerate,
-  nselfSslTrust,
-  nselfStagingDeploy,
-  nselfStart,
-  nselfStatus,
-  nselfStop,
-  nselfUpdate,
-  nselfUrls,
-  nselfVersion,
-  streamNselfCommand,
-} from '../nselfCLI'
+// Mock child_process.execFile before imports
+const mockExecFile = jest.fn()
+jest.mock('child_process', () => ({
+  ...jest.requireActual('child_process'),
+  execFile: mockExecFile,
+  spawn: jest.fn(() => ({
+    stdout: { on: jest.fn() },
+    stderr: { on: jest.fn() },
+    on: jest.fn(),
+    kill: jest.fn(),
+  })),
+}))
 
-jest.mock('child_process')
-jest.mock('util')
+// Mock util.promisify to return our mocked async function
+jest.mock('util', () => ({
+  ...jest.requireActual('util'),
+  promisify: jest.fn((fn) => {
+    // If it's our mocked execFile, return a function that returns the mock's promise
+    if (fn === mockExecFile) {
+      return jest.fn((...args: unknown[]) => {
+        return mockExecFile(...args)
+      })
+    }
+    // For other functions, use real promisify
+    return jest.requireActual('util').promisify(fn)
+  }),
+}))
 
-const mockExecFile = execFile as jest.MockedFunction<typeof execFile>
-const mockPromisify = promisify as jest.MockedFunction<typeof promisify>
+// Mock nself-path to return a known path
+jest.mock('../nself-path', () => ({
+  findNselfPathSync: jest.fn(() => '/usr/local/bin/nself'),
+  getEnhancedPath: jest.fn(() => '/usr/local/bin:/usr/bin'),
+}))
 
-// TODO v0.5.1: Fix failing tests in this file
-describe.skip('nself CLI Module', () => {
+// Mock paths to return a known project path
+jest.mock('../paths', () => ({
+  getProjectPath: jest.fn(() => '/test/project'),
+}))
+
+describe('nself CLI Module', () => {
+  let nselfCLI: typeof import('../nselfCLI')
+
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.resetModules()
 
-    // Mock promisify to return a function that returns success
-    mockPromisify.mockReturnValue(
-      jest.fn().mockResolvedValue({
-        stdout: 'success',
-        stderr: '',
-      }),
-    )
+    // Set up default successful mock implementation - returns a Promise
+    mockExecFile.mockResolvedValue({
+      stdout: 'success',
+      stderr: '',
+    })
+
+    // Re-import module to get fresh instance with mocks
+    nselfCLI = require('../nselfCLI')
   })
 
   describe('executeNselfCommand', () => {
     it('should execute valid commands', async () => {
-      const result = await executeNselfCommand('status')
+      const result = await nselfCLI.executeNselfCommand('status')
       expect(result.success).toBe(true)
       expect(result.stdout).toBe('success')
     })
 
     it('should reject invalid commands', async () => {
-      await expect(
-        executeNselfCommand('invalid-command' as any),
-      ).rejects.toThrow('Invalid nself command')
+      const result = await nselfCLI.executeNselfCommand(
+        'invalid-command' as 'status',
+      )
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Invalid nself command')
     })
 
     it('should pass arguments correctly', async () => {
-      const mockFn = jest.fn().mockResolvedValue({
-        stdout: 'output',
-        stderr: '',
-      })
-      mockPromisify.mockReturnValue(mockFn)
-
-      await executeNselfCommand('logs', ['postgres', '-n100'])
-      expect(mockFn).toHaveBeenCalled()
+      await nselfCLI.executeNselfCommand('logs', ['postgres', '-n100'])
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['logs', 'postgres', '-n100'],
+        expect.objectContaining({
+          cwd: '/test/project',
+        }),
+      )
     })
 
     it('should filter out invalid arguments', async () => {
-      const mockFn = jest.fn().mockResolvedValue({
-        stdout: 'output',
-        stderr: '',
-      })
-      mockPromisify.mockReturnValue(mockFn)
-
-      await executeNselfCommand('status', [
+      await nselfCLI.executeNselfCommand('status', [
         'valid',
         '',
-        null as any,
-        undefined as any,
-        123 as any,
+        null as unknown as string,
+        undefined as unknown as string,
+        123 as unknown as string,
       ])
-      expect(mockFn).toHaveBeenCalled()
+      // The function should filter out non-string and empty arguments
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['status', 'valid'],
+        expect.any(Object),
+      )
     })
 
     it('should handle command timeouts', async () => {
-      mockPromisify.mockReturnValue(
-        jest.fn().mockRejectedValue({
-          code: 'ETIMEDOUT',
-          stdout: Buffer.from(''),
-          stderr: Buffer.from('Command timed out'),
-        }),
-      )
+      const error = new Error('Command timed out') as Error & { code: string }
+      error.code = 'ETIMEDOUT'
+      mockExecFile.mockRejectedValueOnce(error)
 
-      const result = await executeNselfCommand('start', [], { timeout: 1000 })
+      const result = await nselfCLI.executeNselfCommand('start', [], {
+        timeout: 1000,
+      })
       expect(result.success).toBe(false)
       expect(result.error).toBeTruthy()
     })
 
     it('should handle command failures', async () => {
-      mockPromisify.mockReturnValue(
-        jest.fn().mockRejectedValue({
-          code: 1,
-          stdout: Buffer.from('partial output'),
-          stderr: Buffer.from('error message'),
-          message: 'Command failed',
-        }),
-      )
+      const execError = new Error('Command failed') as Error & {
+        code: number
+        stdout: Buffer
+        stderr: Buffer
+      }
+      execError.code = 1
+      execError.stdout = Buffer.from('partial output')
+      execError.stderr = Buffer.from('error message')
 
-      const result = await executeNselfCommand('build')
+      mockExecFile.mockRejectedValueOnce(execError)
+
+      const result = await nselfCLI.executeNselfCommand('build')
       expect(result.success).toBe(false)
       expect(result.exitCode).toBe(1)
       expect(result.stderr).toContain('error message')
     })
 
     it('should apply custom options', async () => {
-      const mockFn = jest.fn().mockResolvedValue({
-        stdout: 'output',
-        stderr: '',
-      })
-      mockPromisify.mockReturnValue(mockFn)
-
-      await executeNselfCommand('status', [], {
+      await nselfCLI.executeNselfCommand('status', [], {
         timeout: 5000,
         cwd: '/custom/path',
         env: { CUSTOM_VAR: 'value' },
       })
 
-      expect(mockFn).toHaveBeenCalled()
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['status'],
+        expect.objectContaining({
+          timeout: 5000,
+          cwd: '/custom/path',
+        }),
+      )
     })
   })
 
   describe('Core Lifecycle Commands', () => {
     it('should execute nselfStatus', async () => {
-      const result = await nselfStatus()
+      const result = await nselfCLI.nselfStatus()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['status'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfStart', async () => {
-      const result = await nselfStart()
+      const result = await nselfCLI.nselfStart()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['start'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfStop', async () => {
-      const result = await nselfStop()
+      const result = await nselfCLI.nselfStop()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['stop'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfRestart', async () => {
-      const result = await nselfRestart()
+      const result = await nselfCLI.nselfRestart()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['restart'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDoctor', async () => {
-      const result = await nselfDoctor()
+      const result = await nselfCLI.nselfDoctor()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['doctor'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDoctor with fix flag', async () => {
-      const result = await nselfDoctor(true)
+      const result = await nselfCLI.nselfDoctor(true)
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['doctor', '--fix'],
+        expect.any(Object),
+      )
     })
   })
 
   describe('Log Commands', () => {
     it('should execute nselfLogs without arguments', async () => {
-      const result = await nselfLogs()
+      const result = await nselfCLI.nselfLogs()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['logs'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfLogs with service', async () => {
-      const result = await nselfLogs('postgres')
+      const result = await nselfCLI.nselfLogs('postgres')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['logs', 'postgres'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfLogs with service and lines', async () => {
-      const result = await nselfLogs('postgres', 100)
+      const result = await nselfCLI.nselfLogs('postgres', 100)
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['logs', 'postgres', '-n100'],
+        expect.any(Object),
+      )
     })
   })
 
   describe('Backup and Restore Commands', () => {
     it('should execute nselfBackup without path', async () => {
-      const result = await nselfBackup()
+      const result = await nselfCLI.nselfBackup()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['backup'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfBackup with output path', async () => {
-      const result = await nselfBackup('/tmp/backup.tar.gz')
+      const result = await nselfCLI.nselfBackup('/tmp/backup.tar.gz')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['backup', '--output', '/tmp/backup.tar.gz'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfRestore', async () => {
-      const result = await nselfRestore('/tmp/backup.tar.gz')
+      const result = await nselfCLI.nselfRestore('/tmp/backup.tar.gz')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['restore', '/tmp/backup.tar.gz'],
+        expect.any(Object),
+      )
     })
   })
 
   describe('Config Commands', () => {
     it('should execute nselfConfig get', async () => {
-      const result = await nselfConfig('get', 'key')
+      const result = await nselfCLI.nselfConfig('get', 'key')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['config', 'get', 'key'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfConfig set', async () => {
-      const result = await nselfConfig('set', 'key', 'value')
+      const result = await nselfCLI.nselfConfig('set', 'key', 'value')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['config', 'set', 'key', 'value'],
+        expect.any(Object),
+      )
     })
   })
 
   describe('Database Commands', () => {
     it('should execute nselfDatabase', async () => {
-      const result = await nselfDatabase('SELECT * FROM users')
+      const result = await nselfCLI.nselfDatabase('SELECT * FROM users')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'query', 'SELECT * FROM users'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbSync', async () => {
-      const result = await nselfDbSync()
+      const result = await nselfCLI.nselfDbSync()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'sync'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbSeed', async () => {
-      const result = await nselfDbSeed()
+      const result = await nselfCLI.nselfDbSeed()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'seed'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbSeed with force', async () => {
-      const result = await nselfDbSeed({ force: true })
+      const result = await nselfCLI.nselfDbSeed({ force: true })
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'seed', '--force'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbMigrate', async () => {
-      const result = await nselfDbMigrate()
+      const result = await nselfCLI.nselfDbMigrate()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'migrate'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbMigrate with target', async () => {
-      const result = await nselfDbMigrate({ target: 'v2.0.0' })
+      const result = await nselfCLI.nselfDbMigrate({ target: 'v2.0.0' })
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'migrate', '--target', 'v2.0.0'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbBackup', async () => {
-      const result = await nselfDbBackup()
+      const result = await nselfCLI.nselfDbBackup()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'backup'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbBackup with output path', async () => {
-      const result = await nselfDbBackup('/tmp/db-backup.sql')
+      const result = await nselfCLI.nselfDbBackup('/tmp/db-backup.sql')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'backup', '--output', '/tmp/db-backup.sql'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbRestore', async () => {
-      const result = await nselfDbRestore('/tmp/db-backup.sql')
+      const result = await nselfCLI.nselfDbRestore('/tmp/db-backup.sql')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'restore', '/tmp/db-backup.sql'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbReset', async () => {
-      const result = await nselfDbReset()
+      const result = await nselfCLI.nselfDbReset()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'reset'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbReset with force', async () => {
-      const result = await nselfDbReset({ force: true })
+      const result = await nselfCLI.nselfDbReset({ force: true })
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'reset', '--force'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDbAnalyze', async () => {
-      const result = await nselfDbAnalyze()
+      const result = await nselfCLI.nselfDbAnalyze()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['db', 'analyze'],
+        expect.any(Object),
+      )
     })
   })
 
   describe('Deployment Commands', () => {
     it('should execute nselfDeploy', async () => {
-      const result = await nselfDeploy('staging')
+      const result = await nselfCLI.nselfDeploy('staging')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['deploy', 'staging'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfDeploy with options', async () => {
-      const result = await nselfDeploy('production', {
+      const result = await nselfCLI.nselfDeploy('production', {
         branch: 'main',
         tag: 'v1.0.0',
       })
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['deploy', 'production', '--branch', 'main', '--tag', 'v1.0.0'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfStagingDeploy', async () => {
-      const result = await nselfStagingDeploy()
+      const result = await nselfCLI.nselfStagingDeploy()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['deploy', 'staging'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfProdDeploy', async () => {
-      const result = await nselfProdDeploy()
+      const result = await nselfCLI.nselfProdDeploy()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['deploy', 'production'],
+        expect.any(Object),
+      )
     })
   })
 
   describe('SSL Commands', () => {
     it('should execute nselfSslGenerate', async () => {
-      const result = await nselfSslGenerate()
+      const result = await nselfCLI.nselfSslGenerate()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['ssl', 'generate'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfSslGenerate with domain', async () => {
-      const result = await nselfSslGenerate('example.com')
+      const result = await nselfCLI.nselfSslGenerate('example.com')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['ssl', 'generate', '--domain', 'example.com'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfSslTrust', async () => {
-      const result = await nselfSslTrust()
+      const result = await nselfCLI.nselfSslTrust()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['ssl', 'trust'],
+        expect.any(Object),
+      )
     })
   })
 
   describe('Build and Init Commands', () => {
     it('should execute nselfBuild', async () => {
-      const result = await nselfBuild()
+      const result = await nselfCLI.nselfBuild()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['build'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfBuild with force', async () => {
-      const result = await nselfBuild({ force: true })
+      const result = await nselfCLI.nselfBuild({ force: true })
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['build', '--force'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfInit', async () => {
-      const result = await nselfInit()
+      const result = await nselfCLI.nselfInit()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['init'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfInit with full', async () => {
-      const result = await nselfInit({ full: true })
+      const result = await nselfCLI.nselfInit({ full: true })
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['init', '--full'],
+        expect.any(Object),
+      )
     })
   })
 
   describe('Utility Commands', () => {
     it('should execute nselfUpdate', async () => {
-      const result = await nselfUpdate()
+      const result = await nselfCLI.nselfUpdate()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['update'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfVersion', async () => {
-      const result = await nselfVersion()
+      const result = await nselfCLI.nselfVersion()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['version'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfHelp', async () => {
-      const result = await nselfHelp()
+      const result = await nselfCLI.nselfHelp()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['help'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfHelp with command', async () => {
-      const result = await nselfHelp('build')
+      const result = await nselfCLI.nselfHelp('build')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['help', 'build'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfMonitor', async () => {
-      const result = await nselfMonitor()
+      const result = await nselfCLI.nselfMonitor()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['monitor'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfMonitor with action', async () => {
-      const result = await nselfMonitor('enable')
+      const result = await nselfCLI.nselfMonitor('enable')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['monitor', '--enable'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfUrls', async () => {
-      const result = await nselfUrls()
+      const result = await nselfCLI.nselfUrls()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['urls'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfUrls with format', async () => {
-      const result = await nselfUrls('json')
+      const result = await nselfCLI.nselfUrls('json')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['urls', '--format', 'json'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfSecrets', async () => {
-      const result = await nselfSecrets('generate')
+      const result = await nselfCLI.nselfSecrets('generate')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['secrets', 'generate'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfSecrets with service', async () => {
-      const result = await nselfSecrets('rotate', 'postgres')
+      const result = await nselfCLI.nselfSecrets('rotate', 'postgres')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['secrets', 'rotate', 'postgres'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfExport', async () => {
-      const result = await nselfExport('compose')
+      const result = await nselfCLI.nselfExport('compose')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['export', '--format', 'compose'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfExport with output path', async () => {
-      const result = await nselfExport('kubernetes', '/tmp/k8s.yaml')
+      const result = await nselfCLI.nselfExport('kubernetes', '/tmp/k8s.yaml')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['export', '--format', 'kubernetes', '--output', '/tmp/k8s.yaml'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfScale', async () => {
-      const result = await nselfScale('api', 3)
+      const result = await nselfCLI.nselfScale('api', 3)
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['scale', 'api', '3'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfHealth', async () => {
-      const result = await nselfHealth()
+      const result = await nselfCLI.nselfHealth()
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['health', '--all'],
+        expect.any(Object),
+      )
     })
 
     it('should execute nselfHealth with service', async () => {
-      const result = await nselfHealth('postgres')
+      const result = await nselfCLI.nselfHealth('postgres')
       expect(result.success).toBe(true)
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['health', 'postgres'],
+        expect.any(Object),
+      )
     })
   })
 
   describe('streamNselfCommand', () => {
+    beforeEach(() => {
+      // Reset spawn mock for streaming tests
+      const { spawn } = require('child_process')
+      spawn.mockClear()
+    })
+
     it('should reject invalid streaming commands', () => {
       expect(() => {
-        streamNselfCommand('build' as any, [], () => {})
+        nselfCLI.streamNselfCommand('build' as 'logs', [], () => {})
       }).toThrow('Invalid streaming command')
     })
 
     it('should accept valid streaming commands', () => {
-      const mockSpawn = {
+      const { spawn } = require('child_process')
+      const mockProcess = {
         stdout: { on: jest.fn() },
         stderr: { on: jest.fn() },
         on: jest.fn(),
         kill: jest.fn(),
       }
+      spawn.mockReturnValue(mockProcess)
 
-      ;(require('child_process').spawn as jest.Mock).mockReturnValue(mockSpawn)
-
-      const kill = streamNselfCommand('logs', ['postgres'], () => {})
+      const kill = nselfCLI.streamNselfCommand('logs', ['postgres'], () => {})
       expect(typeof kill).toBe('function')
     })
 
@@ -453,36 +717,41 @@ describe.skip('nself CLI Module', () => {
       const onError = jest.fn()
       const onClose = jest.fn()
 
-      const mockStdout = {
-        on: jest.fn((event, callback) => {
-          if (event === 'data') {
-            callback('log line 1\n')
-          }
-        }),
-      }
+      const { spawn } = require('child_process')
+      let stdoutCallback: (data: string) => void
+      let stderrCallback: (data: string) => void
+      let closeCallback: (code: number) => void
 
-      const mockStderr = {
-        on: jest.fn((event, callback) => {
-          if (event === 'data') {
-            callback('error line\n')
-          }
-        }),
-      }
-
-      const mockSpawn = {
-        stdout: mockStdout,
-        stderr: mockStderr,
-        on: jest.fn((event, callback) => {
+      const mockProcess = {
+        stdout: {
+          on: jest.fn((event: string, cb: (data: string) => void) => {
+            if (event === 'data') {
+              stdoutCallback = cb
+            }
+          }),
+        },
+        stderr: {
+          on: jest.fn((event: string, cb: (data: string) => void) => {
+            if (event === 'data') {
+              stderrCallback = cb
+            }
+          }),
+        },
+        on: jest.fn((event: string, cb: (code: number) => void) => {
           if (event === 'close') {
-            callback(0)
+            closeCallback = cb
           }
         }),
         kill: jest.fn(),
       }
+      spawn.mockReturnValue(mockProcess)
 
-      ;(require('child_process').spawn as jest.Mock).mockReturnValue(mockSpawn)
+      nselfCLI.streamNselfCommand('logs', [], onData, onError, onClose)
 
-      streamNselfCommand('logs', [], onData, onError, onClose)
+      // Simulate data events
+      stdoutCallback!('log line 1\n')
+      stderrCallback!('error line\n')
+      closeCallback!(0)
 
       expect(onData).toHaveBeenCalledWith('log line 1\n')
       expect(onError).toHaveBeenCalledWith('error line\n')
@@ -490,44 +759,51 @@ describe.skip('nself CLI Module', () => {
     })
 
     it('should return kill function that stops the process', () => {
-      const mockSpawn = {
+      const { spawn } = require('child_process')
+      const mockProcess = {
         stdout: { on: jest.fn() },
         stderr: { on: jest.fn() },
         on: jest.fn(),
         kill: jest.fn(),
       }
+      spawn.mockReturnValue(mockProcess)
 
-      ;(require('child_process').spawn as jest.Mock).mockReturnValue(mockSpawn)
-
-      const kill = streamNselfCommand('logs', [], () => {})
+      const kill = nselfCLI.streamNselfCommand('logs', [], () => {})
       kill()
 
-      expect(mockSpawn.kill).toHaveBeenCalled()
+      expect(mockProcess.kill).toHaveBeenCalled()
     })
   })
 
   describe('Security and Validation', () => {
     it('should only allow whitelisted commands', async () => {
-      const invalidCommands = ['rm', 'cat', 'ls', 'sudo', 'exec']
+      const invalidCommands = ['rm', 'cat', 'ls', 'sudo']
 
       for (const cmd of invalidCommands) {
-        await expect(executeNselfCommand(cmd as any)).rejects.toThrow(
-          'Invalid nself command',
-        )
+        const result = await nselfCLI.executeNselfCommand(cmd as 'status')
+        expect(result.success).toBe(false)
+        expect(result.error).toContain('Invalid nself command')
       }
     })
 
+    it('should allow exec command which is in the whitelist', async () => {
+      const result = await nselfCLI.executeNselfCommand('exec')
+      expect(result.success).toBe(true)
+    })
+
     it('should sanitize arguments', async () => {
-      const mockFn = jest.fn().mockResolvedValue({
-        stdout: 'output',
-        stderr: '',
-      })
-      mockPromisify.mockReturnValue(mockFn)
-
       // These should be filtered out
-      await executeNselfCommand('status', ['', null as any, undefined as any])
+      await nselfCLI.executeNselfCommand('status', [
+        '',
+        null as unknown as string,
+        undefined as unknown as string,
+      ])
 
-      expect(mockFn).toHaveBeenCalled()
+      expect(mockExecFile).toHaveBeenCalledWith(
+        '/usr/local/bin/nself',
+        ['status'],
+        expect.any(Object),
+      )
     })
   })
 })

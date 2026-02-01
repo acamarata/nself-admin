@@ -147,7 +147,7 @@ export function ReportExecutionStatus({
     if (!execution?.fileUrl) return
 
     const filename = `report-${executionId}-${new Date().toISOString().split('T')[0]}.${execution.format}`
-    await download({ executionId, filename })
+    await download(executionId, filename)
   }
 
   const handleRetry = async () => {

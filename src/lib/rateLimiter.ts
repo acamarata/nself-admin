@@ -180,6 +180,13 @@ export function clearRateLimit(
   rateLimitStore.delete(key)
 }
 
+/**
+ * Clear all rate limits (for testing purposes)
+ */
+export function clearAllRateLimits(): void {
+  rateLimitStore.clear()
+}
+
 // Cleanup old entries periodically
 setInterval(() => {
   const now = Date.now()

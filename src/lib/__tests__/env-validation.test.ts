@@ -1,7 +1,6 @@
 import { checkRuntimeEnvironment, validateEnv } from '../env-validation'
 
-// TODO v0.5.1: Fix failing tests in this file
-describe.skip('Environment Validation', () => {
+describe('Environment Validation', () => {
   const originalEnv = process.env
 
   beforeEach(() => {
@@ -15,6 +14,8 @@ describe.skip('Environment Validation', () => {
 
   describe('validateEnv', () => {
     it('should validate with default values', () => {
+      // Clear PORT to test default value
+      delete process.env.PORT
       Object.defineProperty(process.env, 'NODE_ENV', {
         value: 'development',
         writable: true,
