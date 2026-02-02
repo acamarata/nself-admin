@@ -102,7 +102,8 @@ jobs:
             --exclude=.next \
             --exclude=.git \
             --exclude=data \
-            .
+            --warning=no-file-changed \
+            . || [ $? -eq 1 ]
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
