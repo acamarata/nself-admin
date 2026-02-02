@@ -1,6 +1,12 @@
 // Activity library for nself-admin
-// Provides mock activity data and API functions for activity feed management
+// Real-time event aggregation from audit logs, sessions, and system operations
 
+import {
+  addAuditLog,
+  getAllSessions,
+  getAuditLogs,
+  type AuditLogItem,
+} from '@/lib/database'
 import type {
   Activity,
   ActivityAction,
@@ -12,239 +18,335 @@ import type {
 } from '@/types/activity'
 
 // =============================================================================
-// Mock Data
+// Activity Event Tracking
 // =============================================================================
 
-const mockActors: Record<string, ActivityActor> = {
-  'user-1': {
-    id: 'user-1',
-    type: 'user',
-    name: 'Admin User',
-    email: 'admin@example.com',
-  },
-  'user-2': {
-    id: 'user-2',
-    type: 'user',
-    name: 'John Developer',
-    email: 'john@example.com',
-  },
-  'user-3': {
-    id: 'user-3',
-    type: 'user',
-    name: 'Sarah Lead',
-    email: 'sarah@example.com',
-  },
-  system: {
-    id: 'system',
-    type: 'system',
-    name: 'nself System',
-  },
-  workflow: {
-    id: 'workflow-1',
-    type: 'workflow',
-    name: 'Auto Backup Workflow',
-  },
+/**
+ * Log an activity event to the audit log
+ */
+export async function logActivity(
+  actor: ActivityActor,
+  action: ActivityAction,
+  resourceType: ActivityResourceType,
+  resourceId: string,
+  resourceName: string,
+  metadata?: Record<string, unknown>,
+  ipAddress?: string,
+  userAgent?: string,
+): Promise<void> {
+  await addAuditLog(
+    action,
+    {
+      actor,
+      resourceType,
+      resourceId,
+      resourceName,
+      metadata,
+      ipAddress,
+      userAgent,
+    },
+    true,
+    actor.id,
+  )
 }
 
-const mockActivities: Activity[] = [
-  {
-    id: 'act-1',
-    actor: mockActors['user-1'],
-    action: 'started',
-    resource: { id: 'svc-postgres', type: 'service', name: 'postgres' },
-    timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 min ago
-    ipAddress: '192.168.1.100',
-    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-  },
-  {
-    id: 'act-2',
-    actor: mockActors['user-2'],
-    action: 'login',
-    resource: { id: 'user-2', type: 'user', name: 'John Developer' },
-    timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-    ipAddress: '192.168.1.101',
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-  },
-  {
-    id: 'act-3',
-    actor: mockActors['user-1'],
-    action: 'config_changed',
-    resource: {
-      id: 'config-dev',
-      type: 'config',
-      name: 'Development Environment',
+/**
+ * Log a service action (start, stop, restart)
+ */
+export async function logServiceAction(
+  action: 'started' | 'stopped' | 'restarted',
+  serviceName: string,
+  userId: string = 'admin',
+  metadata?: Record<string, unknown>,
+  ipAddress?: string,
+): Promise<void> {
+  await logActivity(
+    {
+      id: userId,
+      type: 'user',
+      name: 'Admin User',
     },
-    changes: [
-      { field: 'POSTGRES_PORT', oldValue: '5432', newValue: '5433' },
-      { field: 'REDIS_ENABLED', oldValue: false, newValue: true },
-    ],
-    timestamp: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
-    ipAddress: '192.168.1.100',
-  },
-  {
-    id: 'act-4',
-    actor: mockActors['user-3'],
-    action: 'deployed',
-    resource: {
-      id: 'deploy-staging-1',
-      type: 'deployment',
-      name: 'Staging Deployment',
+    action,
+    'service',
+    `svc-${serviceName}`,
+    serviceName,
+    metadata,
+    ipAddress,
+  )
+}
+
+/**
+ * Log a deployment action
+ */
+export async function logDeployment(
+  environment: string,
+  version: string,
+  userId: string = 'admin',
+  metadata?: Record<string, unknown>,
+  ipAddress?: string,
+): Promise<void> {
+  await logActivity(
+    {
+      id: userId,
+      type: 'user',
+      name: 'Admin User',
     },
-    metadata: {
-      version: 'v0.4.4',
-      environment: 'staging',
-      duration: '45s',
+    'deployed',
+    'deployment',
+    `deploy-${environment}-${Date.now()}`,
+    `${environment} Deployment`,
+    {
+      version,
+      environment,
+      ...metadata,
     },
-    timestamp: new Date(Date.now() - 10800000).toISOString(), // 3 hours ago
-    ipAddress: '192.168.1.102',
-  },
-  {
-    id: 'act-5',
-    actor: mockActors['system'],
-    action: 'backup_created',
-    resource: {
-      id: 'backup-auto-1',
-      type: 'backup',
-      name: 'Auto Backup - postgres',
+    ipAddress,
+  )
+}
+
+/**
+ * Log a configuration change
+ */
+export async function logConfigChange(
+  configName: string,
+  changes: Array<{ field: string; oldValue: unknown; newValue: unknown }>,
+  userId: string = 'admin',
+  ipAddress?: string,
+): Promise<void> {
+  await addAuditLog(
+    'config_changed',
+    {
+      actor: {
+        id: userId,
+        type: 'user',
+        name: 'Admin User',
+      },
+      resourceType: 'config',
+      resourceId: `config-${configName}`,
+      resourceName: configName,
+      changes,
+      ipAddress,
     },
-    metadata: {
-      size: '256MB',
-      database: 'postgres',
-      type: 'scheduled',
+    true,
+    userId,
+  )
+}
+
+/**
+ * Log a backup action
+ */
+export async function logBackupAction(
+  action: 'backup_created' | 'backup_restored',
+  backupId: string,
+  backupName: string,
+  metadata?: Record<string, unknown>,
+  userId?: string,
+): Promise<void> {
+  const actor: ActivityActor = userId
+    ? {
+        id: userId,
+        type: 'user',
+        name: 'Admin User',
+      }
+    : {
+        id: 'system',
+        type: 'system',
+        name: 'nself System',
+      }
+
+  await logActivity(actor, action, 'backup', backupId, backupName, metadata)
+}
+
+/**
+ * Log a database operation
+ */
+export async function logDatabaseAction(
+  action: ActivityAction,
+  operation: string,
+  userId: string = 'admin',
+  metadata?: Record<string, unknown>,
+  ipAddress?: string,
+): Promise<void> {
+  await logActivity(
+    {
+      id: userId,
+      type: 'user',
+      name: 'Admin User',
     },
-    timestamp: new Date(Date.now() - 14400000).toISOString(), // 4 hours ago
-  },
-  {
-    id: 'act-6',
-    actor: mockActors['user-1'],
-    action: 'stopped',
-    resource: { id: 'svc-redis', type: 'service', name: 'redis' },
-    timestamp: new Date(Date.now() - 18000000).toISOString(), // 5 hours ago
-    ipAddress: '192.168.1.100',
-  },
-  {
-    id: 'act-7',
-    actor: mockActors['user-2'],
-    action: 'created',
-    resource: {
-      id: 'secret-api-key',
-      type: 'secret',
-      name: 'External API Key',
-    },
-    timestamp: new Date(Date.now() - 21600000).toISOString(), // 6 hours ago
-    ipAddress: '192.168.1.101',
-  },
-  {
-    id: 'act-8',
-    actor: mockActors['user-3'],
-    action: 'restarted',
-    resource: { id: 'svc-hasura', type: 'service', name: 'hasura' },
-    metadata: {
-      reason: 'Memory limit reached',
-    },
-    timestamp: new Date(Date.now() - 25200000).toISOString(), // 7 hours ago
-    ipAddress: '192.168.1.102',
-  },
-  {
-    id: 'act-9',
-    actor: mockActors['user-1'],
-    action: 'password_changed',
-    resource: { id: 'user-1', type: 'user', name: 'Admin User' },
-    timestamp: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
-    ipAddress: '192.168.1.100',
-  },
-  {
-    id: 'act-10',
-    actor: mockActors['workflow'],
-    action: 'backup_restored',
-    resource: {
-      id: 'backup-manual-1',
-      type: 'backup',
-      name: 'Manual Backup - postgres',
-    },
-    target: { id: 'db-postgres', type: 'database', name: 'postgres' },
-    metadata: {
-      backupDate: new Date(Date.now() - 172800000).toISOString(),
-      restorePoint: 'before-migration',
-    },
-    timestamp: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-  },
-  {
-    id: 'act-11',
-    actor: mockActors['user-2'],
-    action: 'logout',
-    resource: { id: 'user-2', type: 'user', name: 'John Developer' },
-    timestamp: new Date(Date.now() - 90000000).toISOString(), // 25 hours ago
-    ipAddress: '192.168.1.101',
-  },
-  {
-    id: 'act-12',
-    actor: mockActors['user-3'],
-    action: 'deployed',
-    resource: {
-      id: 'deploy-prod-1',
-      type: 'deployment',
-      name: 'Production Deployment',
-    },
-    metadata: {
-      version: 'v0.4.3',
-      environment: 'production',
-      duration: '62s',
-      approvedBy: 'Admin User',
-    },
-    timestamp: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-    ipAddress: '192.168.1.102',
-  },
-  {
-    id: 'act-13',
-    actor: mockActors['user-1'],
-    action: 'secret_accessed',
-    resource: {
-      id: 'secret-db-pass',
-      type: 'secret',
-      name: 'Database Password',
-    },
-    metadata: {
-      accessType: 'view',
-      reason: 'Manual verification',
-    },
-    timestamp: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-    ipAddress: '192.168.1.100',
-  },
-  {
-    id: 'act-14',
-    actor: mockActors['system'],
-    action: 'started',
-    resource: { id: 'svc-all', type: 'service', name: 'All Services' },
-    metadata: {
-      trigger: 'system-boot',
-      services: ['postgres', 'hasura', 'redis', 'nginx', 'minio'],
-    },
-    timestamp: new Date(Date.now() - 345600000).toISOString(), // 4 days ago
-  },
-  {
-    id: 'act-15',
-    actor: mockActors['user-3'],
-    action: 'rollback',
-    resource: {
-      id: 'deploy-prod-0',
-      type: 'deployment',
-      name: 'Production Rollback',
-    },
-    metadata: {
-      fromVersion: 'v0.4.2',
-      toVersion: 'v0.4.1',
-      reason: 'Critical bug in authentication',
-    },
-    timestamp: new Date(Date.now() - 432000000).toISOString(), // 5 days ago
-    ipAddress: '192.168.1.102',
-  },
-]
+    action,
+    'database',
+    `db-${operation}`,
+    operation,
+    metadata,
+    ipAddress,
+  )
+}
 
 // =============================================================================
-// Helper Functions
+// Audit Log to Activity Conversion
 // =============================================================================
 
+/**
+ * Convert audit log entry to Activity format
+ */
+function auditLogToActivity(log: AuditLogItem): Activity | null {
+  const details = log.details || {}
+
+  // Extract actor information
+  const actor: ActivityActor = details.actor || {
+    id: log.userId || 'system',
+    type: details.actor?.type || (log.userId ? 'user' : 'system'),
+    name:
+      details.actor?.name || (log.userId === 'admin' ? 'Admin User' : 'System'),
+    email: details.actor?.email,
+  }
+
+  // Determine resource type and action from audit log action
+  let resourceType: ActivityResourceType = 'service'
+  let action: ActivityAction = log.action as ActivityAction
+  let resourceId = details.resourceId || log.action
+  let resourceName = details.resourceName || log.action
+
+  // Map audit log actions to activity actions and resources
+  switch (log.action) {
+    case 'login_attempt':
+    case 'login_success':
+      action = 'login'
+      resourceType = 'user'
+      resourceId = log.userId || 'admin'
+      resourceName = actor.name
+      break
+
+    case 'session_created':
+      action = 'login'
+      resourceType = 'user'
+      resourceId = log.userId || details.userId || 'admin'
+      resourceName = actor.name
+      break
+
+    case 'session_deleted':
+    case 'session_revoked':
+      action = 'logout'
+      resourceType = 'user'
+      resourceId = log.userId || details.userId || 'admin'
+      resourceName = actor.name
+      break
+
+    case 'password_set':
+    case 'password_changed':
+      action = 'password_changed'
+      resourceType = 'user'
+      resourceId = log.userId || 'admin'
+      resourceName = actor.name
+      break
+
+    case 'sessions_revoked':
+      action = 'logout'
+      resourceType = 'user'
+      resourceId = details.userId || 'admin'
+      resourceName = `${details.count || 0} sessions`
+      break
+
+    case 'notification_created':
+      action = 'created'
+      resourceType = 'notification'
+      resourceId = details.notificationId || `notification-${log.timestamp}`
+      resourceName = details.title || 'Notification'
+      break
+
+    case 'notification_read':
+      action = 'viewed'
+      resourceType = 'notification'
+      resourceId = details.notificationId || 'notification'
+      resourceName = 'Notification'
+      break
+
+    case 'notification_deleted':
+      action = 'deleted'
+      resourceType = 'notification'
+      resourceId = details.notificationId || 'notification'
+      resourceName = 'Notification'
+      break
+
+    case 'config_changed':
+      action = 'config_changed'
+      resourceType = 'config'
+      resourceId = details.resourceId || 'config'
+      resourceName = details.resourceName || 'Configuration'
+      break
+
+    case 'started':
+    case 'stopped':
+    case 'restarted':
+      action = log.action as ActivityAction
+      resourceType = details.resourceType || 'service'
+      resourceId = details.resourceId || `svc-${resourceName}`
+      resourceName = details.resourceName || 'Service'
+      break
+
+    case 'deployed':
+      action = 'deployed'
+      resourceType = 'deployment'
+      resourceId = details.resourceId || `deploy-${Date.now()}`
+      resourceName = details.resourceName || 'Deployment'
+      break
+
+    case 'backup_created':
+    case 'backup_restored':
+      action = log.action as ActivityAction
+      resourceType = 'backup'
+      resourceId = details.resourceId || `backup-${Date.now()}`
+      resourceName = details.resourceName || 'Backup'
+      break
+
+    default:
+      // Check if it's a standard CRUD action
+      if (['created', 'updated', 'deleted', 'viewed'].includes(log.action)) {
+        action = log.action as ActivityAction
+        resourceType = details.resourceType || 'service'
+        resourceId = details.resourceId || log.action
+        resourceName = details.resourceName || log.action
+      } else {
+        // Unknown action type, skip
+        return null
+      }
+  }
+
+  const activity: Activity = {
+    id: `act-${log.timestamp.getTime()}`,
+    actor,
+    action,
+    resource: {
+      id: resourceId,
+      type: resourceType,
+      name: resourceName,
+    },
+    timestamp: log.timestamp.toISOString(),
+    ipAddress: details.ipAddress,
+    userAgent: details.userAgent,
+    metadata: details.metadata,
+  }
+
+  // Add changes if available
+  if (details.changes) {
+    activity.changes = details.changes
+  }
+
+  // Add target if available
+  if (details.target) {
+    activity.target = details.target
+  }
+
+  return activity
+}
+
+// =============================================================================
+// Activity Feed Query Functions
+// =============================================================================
+
+/**
+ * Check if activity matches filter criteria
+ */
 function matchesFilter(activity: Activity, filter: ActivityFilter): boolean {
   if (filter.actorId && activity.actor.id !== filter.actorId) {
     return false
@@ -312,6 +414,9 @@ function matchesFilter(activity: Activity, filter: ActivityFilter): boolean {
   return true
 }
 
+/**
+ * Generate timeline for activity stats
+ */
 function generateTimeline(
   activities: Activity[],
   days: number,
@@ -352,11 +457,17 @@ export async function getActivityFeed(
 }> {
   const { filter = {}, limit = 20, offset = 0, includeChanges = true } = options
 
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  // Fetch audit logs from database
+  // Get extra logs for filtering (fetch more than needed)
+  const auditLogs = await getAuditLogs(1000, 0)
+
+  // Convert audit logs to activities
+  const allActivities = auditLogs
+    .map((log) => auditLogToActivity(log))
+    .filter((activity): activity is Activity => activity !== null)
 
   // Filter activities
-  let filtered = mockActivities.filter((activity) =>
+  let filtered = allActivities.filter((activity) =>
     matchesFilter(activity, filter),
   )
 
@@ -385,11 +496,13 @@ export async function getActivityFeed(
  * Get a single activity by ID
  */
 export async function getActivityById(id: string): Promise<Activity | null> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  // Fetch audit logs and find matching activity
+  const auditLogs = await getAuditLogs(1000, 0)
+  const activities = auditLogs
+    .map((log) => auditLogToActivity(log))
+    .filter((activity): activity is Activity => activity !== null)
 
-  const activity = mockActivities.find((a) => a.id === id)
-  return activity || null
+  return activities.find((a) => a.id === id) || null
 }
 
 /**
@@ -398,9 +511,6 @@ export async function getActivityById(id: string): Promise<Activity | null> {
 export async function getActivityStats(
   tenantId?: string,
 ): Promise<ActivityStats> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100))
-
   const now = new Date()
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const weekStart = new Date(todayStart)
@@ -408,10 +518,18 @@ export async function getActivityStats(
   const monthStart = new Date(todayStart)
   monthStart.setMonth(monthStart.getMonth() - 1)
 
+  // Fetch all audit logs
+  const auditLogs = await getAuditLogs(1000, 0)
+
+  // Convert to activities
+  let activities = auditLogs
+    .map((log) => auditLogToActivity(log))
+    .filter((activity): activity is Activity => activity !== null)
+
   // Filter by tenant if provided
-  const activities = tenantId
-    ? mockActivities.filter((a) => a.tenantId === tenantId)
-    : mockActivities
+  if (tenantId) {
+    activities = activities.filter((a) => a.tenantId === tenantId)
+  }
 
   // Count activities by time period
   const totalToday = activities.filter(
@@ -471,10 +589,11 @@ export async function getActivityForResource(
   resourceType: ActivityResourceType,
   resourceId: string,
 ): Promise<Activity[]> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 75))
+  const auditLogs = await getAuditLogs(1000, 0)
 
-  return mockActivities
+  return auditLogs
+    .map((log) => auditLogToActivity(log))
+    .filter((activity): activity is Activity => activity !== null)
     .filter(
       (a) => a.resource.type === resourceType && a.resource.id === resourceId,
     )
@@ -488,10 +607,11 @@ export async function getActivityForResource(
  * Get activities by a specific actor
  */
 export async function getActivityByActor(actorId: string): Promise<Activity[]> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 75))
+  const auditLogs = await getAuditLogs(1000, 0)
 
-  return mockActivities
+  return auditLogs
+    .map((log) => auditLogToActivity(log))
+    .filter((activity): activity is Activity => activity !== null)
     .filter((a) => a.actor.id === actorId)
     .sort(
       (a, b) =>
@@ -503,12 +623,12 @@ export async function getActivityByActor(actorId: string): Promise<Activity[]> {
  * Search activities by query string
  */
 export async function searchActivity(query: string): Promise<Activity[]> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 100))
-
   const queryLower = query.toLowerCase()
+  const auditLogs = await getAuditLogs(1000, 0)
 
-  return mockActivities
+  return auditLogs
+    .map((log) => auditLogToActivity(log))
+    .filter((activity): activity is Activity => activity !== null)
     .filter((a) => {
       return (
         a.actor.name.toLowerCase().includes(queryLower) ||
@@ -532,12 +652,13 @@ export async function exportActivity(
   filter: ActivityFilter,
   format: 'json' | 'csv',
 ): Promise<string> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 150))
+  const auditLogs = await getAuditLogs(1000, 0)
 
-  const filtered = mockActivities.filter((activity) =>
-    matchesFilter(activity, filter),
-  )
+  const filtered = auditLogs
+    .map((log) => auditLogToActivity(log))
+    .filter((activity): activity is Activity => activity !== null)
+    .filter((activity) => matchesFilter(activity, filter))
+
   const sorted = filtered.sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   )
@@ -591,8 +712,48 @@ function escapeCSV(value: string): string {
   return value
 }
 
+/**
+ * Get recent sessions as activities
+ */
+export async function getSessionActivities(
+  userId: string = 'admin',
+): Promise<Activity[]> {
+  const sessions = await getAllSessions(userId)
+
+  return sessions.map((session) => ({
+    id: `act-session-${session.createdAt.getTime()}`,
+    actor: {
+      id: session.userId,
+      type: 'user' as const,
+      name: 'Admin User',
+    },
+    action: 'login' as ActivityAction,
+    resource: {
+      id: session.userId,
+      type: 'user' as ActivityResourceType,
+      name: 'Admin User',
+    },
+    timestamp: session.createdAt.toISOString(),
+    ipAddress: session.ip,
+    userAgent: session.userAgent,
+    metadata: {
+      rememberMe: session.rememberMe,
+      lastActive: session.lastActive.toISOString(),
+      expiresAt: session.expiresAt.toISOString(),
+    },
+  }))
+}
+
 // =============================================================================
 // Exports
 // =============================================================================
 
-export { mockActivities, mockActors }
+export {
+  type Activity,
+  type ActivityAction,
+  type ActivityActor,
+  type ActivityFeedOptions,
+  type ActivityFilter,
+  type ActivityResourceType,
+  type ActivityStats,
+}

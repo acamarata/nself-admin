@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface UseAsyncDataOptions {
   /**
@@ -17,7 +17,7 @@ interface UseAsyncDataOptions {
    * Dependencies that trigger a refetch when changed
    * @default []
    */
-  dependencies?: any[]
+  dependencies?: (string | number | boolean)[]
 }
 
 interface UseAsyncDataResult<T> {
@@ -50,7 +50,10 @@ export function useAsyncData<T>(
   const isMountedRef = useRef(true)
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  const fetchData = async () => {
+  const fetcherRef = useRef(fetcher)
+  fetcherRef.current = fetcher
+
+  const fetchData = useCallback(async () => {
     // Cancel any pending request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -63,7 +66,7 @@ export function useAsyncData<T>(
     setError(null)
 
     try {
-      const result = await fetcher()
+      const result = await fetcherRef.current()
 
       // Only update if component is still mounted
       if (isMountedRef.current) {
@@ -82,7 +85,7 @@ export function useAsyncData<T>(
         setLoading(false)
       }
     }
-  }
+  }, [])
 
   // Fetch on mount if enabled
   useEffect(() => {
@@ -109,9 +112,7 @@ export function useAsyncData<T>(
   useEffect(() => {
     if (pollingInterval && pollingInterval > 0) {
       pollingIntervalRef.current = setInterval(() => {
-        if (!loading) {
-          fetchData()
-        }
+        fetchData()
       }, pollingInterval)
 
       return () => {
@@ -120,7 +121,7 @@ export function useAsyncData<T>(
         }
       }
     }
-  }, [pollingInterval])
+  }, [pollingInterval, fetchData])
 
   return {
     data,
@@ -135,26 +136,27 @@ export function useAsyncData<T>(
  * Returns data immediately if available, never blocks
  */
 export function useStoreData<T>(selector: () => T, defaultValue: T): T {
+  const selectorRef = useRef(selector)
+  selectorRef.current = selector
+
   const [data, setData] = useState<T>(() => {
     try {
-      return selector() || defaultValue
+      return selectorRef.current() || defaultValue
     } catch {
       return defaultValue
     }
   })
 
   useEffect(() => {
-    // Subscribe to store changes
+    // Poll store changes at a reasonable interval
     const interval = setInterval(() => {
       try {
-        const newData = selector()
-        if (newData !== data) {
-          setData(newData)
-        }
+        const newData = selectorRef.current()
+        setData((prev) => (newData !== prev ? newData : prev))
       } catch {
-        // Ignore errors
+        // Ignore errors from unmounted stores
       }
-    }, 100) // Check every 100ms for changes
+    }, 5000)
 
     return () => clearInterval(interval)
   }, [])

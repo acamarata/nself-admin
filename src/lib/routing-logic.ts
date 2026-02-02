@@ -23,7 +23,7 @@ export function determineRoute(status: ProjectStatus): RoutingResult {
   // 1. Not initialized - no env file (blank directory)
   if (!status.hasEnvFile) {
     return {
-      route: '/init',
+      route: '/build',
       reason: 'No environment file found - project not initialized',
     }
   }
@@ -31,13 +31,13 @@ export function determineRoute(status: ProjectStatus): RoutingResult {
   // 2. Initialized but not built - has env but no docker-compose
   if (!status.hasDockerCompose) {
     return {
-      route: '/init',
+      route: '/build',
       reason: 'Environment file exists but project not built',
     }
   }
 
   // 3. Built but not running - has docker-compose but no containers
-  if (!status.servicesRunning || status.containerCount < 4) {
+  if (!status.servicesRunning) {
     return {
       route: '/start',
       reason: `Services not running (${status.containerCount} containers)`,
@@ -59,8 +59,8 @@ export async function getCorrectRoute(): Promise<RoutingResult> {
     const response = await fetch('/api/project/status')
     if (!response.ok) {
       return {
-        route: '/init',
-        reason: 'Failed to fetch project status - defaulting to init',
+        route: '/build',
+        reason: 'Failed to fetch project status - defaulting to build',
       }
     }
 
@@ -68,8 +68,8 @@ export async function getCorrectRoute(): Promise<RoutingResult> {
     return determineRoute(status)
   } catch (_error) {
     return {
-      route: '/init',
-      reason: 'Error checking project status - defaulting to init',
+      route: '/build',
+      reason: 'Error checking project status - defaulting to build',
     }
   }
 }
@@ -94,15 +94,21 @@ export async function ensureCorrectRoute(
     return false // No redirect needed
   }
 
-  // Special cases where current page is acceptable
+  // Allow all application sub-pages when services are running (target is dashboard)
   if (
     targetPath === '/' &&
-    ['/services', '/database', '/config', '/monitor'].some((path) =>
-      normalizedCurrentPath.startsWith(path),
-    )
+    normalizedCurrentPath !== '/login' &&
+    normalizedCurrentPath !== '/build' &&
+    normalizedCurrentPath !== '/start'
   ) {
     console.log(`✅ Acceptable route: ${currentPath} (services running)`)
-    return false // Allow sub-pages when services are running
+    return false // Allow all pages except setup pages when services are running
+  }
+
+  // Allow all /init/* wizard steps when target is /build (project not yet built)
+  if (targetPath === '/build' && normalizedCurrentPath.startsWith('/init')) {
+    console.log(`✅ Acceptable route: ${currentPath} (wizard in progress)`)
+    return false // Allow wizard pages during setup
   }
 
   // Redirect needed

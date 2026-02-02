@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { execFile, spawn } from 'child_process'
+import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
 
 const execFileAsync = promisify(execFile)
@@ -8,7 +8,8 @@ const execFileAsync = promisify(execFile)
 const VALID_CONTAINER_ID = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/
 const VALID_TAIL = /^\d{1,5}$/
 // eslint-disable-next-line security/detect-unsafe-regex
-const VALID_SINCE = /^(\d+[smhd]?|\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})?)?)$/
+const VALID_SINCE =
+  /^(\d+[smhd]?|\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})?)?)$/
 
 function validateContainerId(id: string | null): string | null {
   if (!id) return null
@@ -56,7 +57,14 @@ export async function GET(request: NextRequest) {
       const encoder = new TextEncoder()
       const stream = new ReadableStream({
         async start(controller) {
-          const args = ['logs', containerId, '--tail', tail, '--follow', '--timestamps']
+          const args = [
+            'logs',
+            containerId,
+            '--tail',
+            tail,
+            '--follow',
+            '--timestamps',
+          ]
 
           const dockerLogs = spawn('docker', args)
 

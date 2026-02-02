@@ -1,4 +1,5 @@
 import * as apiKeysApi from '@/lib/api-keys'
+import { auth } from '@/lib/auth-db'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -45,6 +46,17 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Validate session
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = await auth.validateSession(token)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
 
     // Validate required fields
@@ -68,7 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     // This returns the key AND the secret (one-time only)
-    const result = await apiKeysApi.createApiKey(body)
+    const result = await apiKeysApi.createApiKey(body, session.userId)
 
     return NextResponse.json(
       {

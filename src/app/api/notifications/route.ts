@@ -1,3 +1,4 @@
+import { auth } from '@/lib/auth-db'
 import { logger } from '@/lib/logger'
 import * as notificationsApi from '@/lib/notifications'
 import { NextRequest, NextResponse } from 'next/server'
@@ -16,6 +17,17 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now()
 
   try {
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = await auth.validateSession(token)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = session.userId
+
     const searchParams = request.nextUrl.searchParams
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
@@ -29,9 +41,6 @@ export async function GET(request: NextRequest) {
     const priority = searchParams.get(
       'priority',
     ) as notificationsApi.NotificationPriority | null
-
-    // TODO: Get actual user ID from session when multi-user is implemented
-    const userId = 'current-user'
 
     const result = await notificationsApi.getNotifications(userId, {
       limit,
@@ -81,6 +90,17 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
   try {
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = await auth.validateSession(token)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = session.userId
+
     const body = await request.json()
 
     // Validate required fields
@@ -112,9 +132,6 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       )
     }
-
-    // TODO: Get actual user ID from session when multi-user is implemented
-    const userId = 'current-user'
 
     const notification = await notificationsApi.createNotification({
       userId,
@@ -156,12 +173,20 @@ export async function POST(request: NextRequest) {
 /**
  * DELETE /api/notifications - Delete all notifications
  */
-export async function DELETE(_request: NextRequest) {
+export async function DELETE(request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    // TODO: Get actual user ID from session when multi-user is implemented
-    const userId = 'current-user'
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = await auth.validateSession(token)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = session.userId
 
     const count = await notificationsApi.deleteAllNotifications(userId)
 

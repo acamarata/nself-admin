@@ -1,50 +1,77 @@
-import { executeNselfCommand } from '@/lib/nselfCLI'
+import { provisionSSLCertificate } from '@/lib/tenant/ssl-automation'
+import { enforceTenantContext } from '@/lib/tenant/tenant-middleware'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteParams {
   params: Promise<{ id: string; domain: string }>
 }
 
-export async function POST(_request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id, domain } = await params
     const decodedDomain = decodeURIComponent(domain)
 
-    const result = await executeNselfCommand('tenant', [
-      'domain',
-      'ssl',
-      `--tenant=${id}`,
-      `--domain=${decodedDomain}`,
-      '--json',
-    ])
+    // Enforce tenant context
+    const tenantError = await enforceTenantContext(request, id)
+    if (tenantError) return tenantError
+
+    // Provision SSL certificate automatically
+    const result = await provisionSSLCertificate(id, decodedDomain)
 
     if (!result.success) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Failed to generate SSL certificate',
-          details: result.error || result.stderr || 'Unknown error',
+          error: 'Failed to provision SSL certificate',
+          details: result.error || 'Unknown error',
         },
         { status: 500 },
       )
     }
 
-    let sslData = { ssl: true, expiresAt: null }
-    try {
-      sslData = JSON.parse(result.stdout || '{}')
-    } catch {
-      // Use defaults
-    }
-
     return NextResponse.json({
       success: true,
-      data: sslData,
+      data: {
+        ssl: result.ssl,
+        expiresAt: result.expiresAt,
+        certificatePath: result.certificatePath,
+        keyPath: result.keyPath,
+      },
     })
   } catch (error) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to generate SSL certificate',
+        error: 'Failed to provision SSL certificate',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
+    )
+  }
+}
+
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id, domain } = await params
+    const decodedDomain = decodeURIComponent(domain)
+
+    // Enforce tenant context
+    const tenantError = await enforceTenantContext(request, id)
+    if (tenantError) return tenantError
+
+    // Get SSL status
+    const { getSSLStatus } = await import('@/lib/tenant/ssl-automation')
+    const status = await getSSLStatus(id, decodedDomain)
+
+    return NextResponse.json({
+      success: true,
+      data: status,
+    })
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to get SSL status',
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 },

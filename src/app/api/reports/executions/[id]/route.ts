@@ -1,4 +1,4 @@
-import * as reportsApi from '@/lib/reports'
+import * as reports from '@/lib/reports'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteContext {
@@ -9,7 +9,7 @@ interface RouteContext {
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
-    const execution = await reportsApi.getExecution(id)
+    const execution = await reports.getExecutionById(id)
 
     if (!execution) {
       return NextResponse.json(
@@ -20,7 +20,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      execution,
+      data: execution,
     })
   } catch (error) {
     return NextResponse.json(

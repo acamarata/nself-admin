@@ -1,4 +1,4 @@
-import * as reportsApi from '@/lib/reports'
+import * as reports from '@/lib/reports'
 import { ReportStatus } from '@/types/report'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       ? parseInt(searchParams.get('offset')!, 10)
       : undefined
 
-    const executions = await reportsApi.getExecutions({
+    const executions = await reports.getExecutions({
       reportId,
       status,
       limit,
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      executions,
+      data: executions,
     })
   } catch (error) {
     return NextResponse.json(

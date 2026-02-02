@@ -1,4 +1,4 @@
-import * as reportsApi from '@/lib/reports'
+import * as reports from '@/lib/reports'
 import { NextRequest, NextResponse } from 'next/server'
 
 // POST /api/reports/generate - Generate a report
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const execution = await reportsApi.generateReport({
+    const execution = await reports.generateReport({
       templateId: body.templateId,
       format: body.format,
       filters: body.filters,
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        execution,
+        data: execution,
       },
       { status: 201 },
     )

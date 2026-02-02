@@ -2,6 +2,7 @@
 
 import { navigation } from '@/lib/navigation'
 import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react'
+import { Search as SearchIcon, Zap } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useMobileNavigationStore } from './MobileNavigation'
@@ -80,16 +81,9 @@ export function Search() {
         className="group flex h-6 w-6 items-center justify-center sm:justify-start md:h-auto md:w-72 md:flex-none md:rounded-lg md:py-2.5 md:pr-3.5 md:pl-4 md:text-sm md:ring-1 md:ring-zinc-200 md:hover:ring-zinc-300 lg:w-96 dark:md:bg-zinc-800/75 dark:md:ring-white/5 dark:md:ring-inset dark:md:hover:bg-zinc-700/40 dark:md:hover:ring-zinc-500"
         onClick={() => setIsOpen(true)}
       >
-        <svg
-          viewBox="0 0 20 20"
-          fill="none"
-          aria-hidden="true"
-          className="h-5 w-5 flex-none fill-zinc-400 group-hover:fill-zinc-500 md:group-hover:fill-zinc-400 dark:fill-zinc-500"
-        >
-          <path d="M12.01 12a4.25 4.25 0 1 0-6.02 0l-3.197 3.197a1.5 1.5 0 0 0-.003 2.118 1.5 1.5 0 0 0 2.121.003L8.01 14.217A4.21 4.21 0 0 0 12.01 12Zm-3.507-1.493a2.25 2.25 0 1 1 0-4.5 2.25 2.25 0 0 1 0 4.5Z" />
-        </svg>
+        <SearchIcon className="h-5 w-5 flex-none text-zinc-400 group-hover:text-zinc-500 md:group-hover:text-zinc-400 dark:text-zinc-500" />
         <span className="sr-only sm:not-sr-only sm:ml-2 sm:text-zinc-500 md:hidden lg:inline-block sm:dark:text-zinc-400">
-          Search
+          Search Navigation
         </span>
         <kbd className="ml-auto hidden font-medium text-zinc-400 md:block dark:text-zinc-500">
           <kbd className="font-sans">⌘</kbd>
@@ -125,23 +119,40 @@ export function Search() {
               />
             </div>
             {results.length > 0 && (
-              <ul className="max-h-72 scroll-py-2 overflow-y-auto border-t border-zinc-200 py-2 text-sm text-zinc-800 dark:border-zinc-800 dark:text-zinc-200">
-                {results.map((result) => (
-                  <li key={result.url}>
-                    <button
-                      onClick={() => handleSelect(result.url)}
-                      className="block w-full px-4 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              <>
+                <div className="border-t border-zinc-200 px-4 py-2 dark:border-zinc-800">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                      Navigation Results
+                    </div>
+                    <a
+                      href="/search"
+                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
                     >
-                      <div className="font-medium">{result.title}</div>
-                      {result.description && (
-                        <div className="text-zinc-600 dark:text-zinc-400">
-                          {result.description}
-                        </div>
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                      <Zap className="h-3 w-3" />
+                      Advanced Search
+                    </a>
+                  </div>
+                </div>
+                <ul className="max-h-72 scroll-py-2 overflow-y-auto py-2 text-sm text-zinc-800 dark:text-zinc-200">
+                  {results.map((result) => (
+                    <li key={result.url}>
+                      <button
+                        type="button"
+                        onClick={() => handleSelect(result.url)}
+                        className="block w-full px-4 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        <div className="font-medium">{result.title}</div>
+                        {result.description && (
+                          <div className="text-zinc-600 dark:text-zinc-400">
+                            {result.description}
+                          </div>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
             {query && results.length === 0 && (
               <div className="border-t border-zinc-200 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">

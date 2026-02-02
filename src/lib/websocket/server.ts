@@ -63,8 +63,8 @@ export class WebSocketServer {
     this.io.on('connection', (socket: Socket) => {
       console.log(`Client connected: ${socket.id}`)
 
-      // Track presence
-      this.trackPresence(socket)
+      // Track presence (async, but we don't need to wait)
+      void this.trackPresence(socket)
 
       // Heartbeat handler
       socket.on(EventType.HEARTBEAT, () => {
@@ -103,8 +103,8 @@ export class WebSocketServer {
   /**
    * Track client presence
    */
-  private trackPresence(socket: Socket): void {
-    const userId = this.getUserIdFromSocket(socket)
+  private async trackPresence(socket: Socket): Promise<void> {
+    const userId = await this.getUserIdFromSocket(socket)
     const now = new Date().toISOString()
 
     const presenceInfo: PresenceInfo = {
@@ -334,12 +334,36 @@ export class WebSocketServer {
 
   /**
    * Extract user ID from socket
-   * In production, this would validate session token
+   * Validates session token from cookie or auth header
    */
-  private getUserIdFromSocket(socket: Socket): string {
-    // TODO: Validate session token from cookie or header
-    // For now, return a default user ID
-    return socket.handshake.auth?.userId || 'admin'
+  private async getUserIdFromSocket(socket: Socket): Promise<string> {
+    // SECURITY: Never trust client-provided userId without validation
+    // Only validate session token from cookie
+
+    // Extract session token from cookie
+    const cookies = socket.handshake.headers.cookie
+    if (cookies) {
+      const sessionMatch = cookies.match(/session=([^;]+)/)
+      if (sessionMatch) {
+        const sessionToken = sessionMatch[1]
+
+        // Validate session token against database
+        try {
+          const { auth } = await import('../auth-db')
+          const session = await auth.validateSession(sessionToken)
+
+          if (session && session.userId) {
+            return session.userId
+          }
+        } catch (error) {
+          console.error('WebSocket session validation error:', error)
+        }
+      }
+    }
+
+    // Default to 'admin' for single-user mode (when no valid session)
+    // This is intentional for the single-user architecture
+    return 'admin'
   }
 
   /**

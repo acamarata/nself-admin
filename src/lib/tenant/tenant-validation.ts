@@ -26,10 +26,15 @@ export const domainSchema = z
   .string()
   .min(4, 'Domain must be at least 4 characters')
   .max(253, 'Domain must be less than 253 characters')
-  .regex(
-    /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/,
-    'Invalid domain format',
-  )
+  .refine((val) => {
+    // Simple domain validation without complex regex
+    const parts = val.split('.')
+    if (parts.length < 2) return false
+    return parts.every(
+      (part) =>
+        /^[a-zA-Z0-9-]+$/.test(part) && part.length > 0 && part.length <= 63,
+    )
+  }, 'Invalid domain format')
 
 export const hexColorSchema = z
   .string()

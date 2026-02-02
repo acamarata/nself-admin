@@ -1,4 +1,4 @@
-import * as reportsApi from '@/lib/reports'
+import * as reports from '@/lib/reports'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteContext {
@@ -9,8 +9,7 @@ interface RouteContext {
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
-    const schedule = await reportsApi.getSchedule(id)
-
+    const schedule = await reports.getScheduleById(id)
     if (!schedule) {
       return NextResponse.json(
         { success: false, error: 'Schedule not found' },
@@ -20,16 +19,18 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      schedule,
+      data: schedule,
     })
   } catch (error) {
+    const statusCode =
+      error instanceof Error && error.message.includes('not found') ? 404 : 500
     return NextResponse.json(
       {
         success: false,
         error:
           error instanceof Error ? error.message : 'Failed to get schedule',
       },
-      { status: 500 },
+      { status: statusCode },
     )
   }
 }
@@ -39,15 +40,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
     const body = await request.json()
-
-    // Check if schedule exists
-    const existing = await reportsApi.getSchedule(id)
-    if (!existing) {
-      return NextResponse.json(
-        { success: false, error: 'Schedule not found' },
-        { status: 404 },
-      )
-    }
 
     // Validate frequency if provided
     if (body.frequency) {
@@ -77,7 +69,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       }
     }
 
-    const schedule = await reportsApi.updateSchedule(id, {
+    const schedule = await reports.updateSchedule(id, {
       frequency: body.frequency,
       dayOfWeek: body.dayOfWeek,
       dayOfMonth: body.dayOfMonth,
@@ -90,16 +82,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      schedule,
+      data: schedule,
     })
   } catch (error) {
+    const statusCode =
+      error instanceof Error && error.message.includes('not found') ? 404 : 500
     return NextResponse.json(
       {
         success: false,
         error:
           error instanceof Error ? error.message : 'Failed to update schedule',
       },
-      { status: 500 },
+      { status: statusCode },
     )
   }
 }
@@ -109,29 +103,22 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
 
-    // Check if schedule exists
-    const existing = await reportsApi.getSchedule(id)
-    if (!existing) {
-      return NextResponse.json(
-        { success: false, error: 'Schedule not found' },
-        { status: 404 },
-      )
-    }
-
-    await reportsApi.deleteSchedule(id)
+    await reports.deleteSchedule(id)
 
     return NextResponse.json({
       success: true,
       message: 'Schedule deleted successfully',
     })
   } catch (error) {
+    const statusCode =
+      error instanceof Error && error.message.includes('not found') ? 404 : 500
     return NextResponse.json(
       {
         success: false,
         error:
           error instanceof Error ? error.message : 'Failed to delete schedule',
       },
-      { status: 500 },
+      { status: statusCode },
     )
   }
 }

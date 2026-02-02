@@ -1,4 +1,4 @@
-import * as reportsApi from '@/lib/reports'
+import * as reports from '@/lib/reports'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteContext {
@@ -11,8 +11,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const { id } = await context.params
 
     // Get execution to verify it exists and is completed
-    const execution = await reportsApi.getExecution(id)
-
+    const execution = await reports.getExecutionById(id)
     if (!execution) {
       return NextResponse.json(
         { success: false, error: 'Execution not found' },
@@ -39,7 +38,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     }
 
     // Get the file data
-    const file = await reportsApi.getExecutionFile(id)
+    const file = await reports.getExecutionFile(id)
 
     if (!file) {
       return NextResponse.json(

@@ -3,7 +3,7 @@
 import { Chart } from '@/components/ui/chart'
 import { cn } from '@/lib/utils'
 import type { ChartType, Widget } from '@/types/dashboard'
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 
 interface ChartWidgetProps {
   widget: Widget
@@ -17,69 +17,19 @@ interface ChartData {
   colors?: string[]
 }
 
-// Mock data generator for different chart types
-function generateMockData(chartType: ChartType | undefined): ChartData {
-  switch (chartType) {
-    case 'pie':
-    case 'donut':
-      return {
-        data: [
-          { name: 'Category A', value: 400 },
-          { name: 'Category B', value: 300 },
-          { name: 'Category C', value: 200 },
-          { name: 'Category D', value: 150 },
-          { name: 'Category E', value: 100 },
-        ],
-        dataKey: 'value',
-      }
-    case 'bar':
-      return {
-        data: [
-          { name: 'Jan', value: 65 },
-          { name: 'Feb', value: 59 },
-          { name: 'Mar', value: 80 },
-          { name: 'Apr', value: 81 },
-          { name: 'May', value: 56 },
-          { name: 'Jun', value: 55 },
-        ],
-        xAxisKey: 'name',
-        dataKey: 'value',
-      }
-    case 'scatter':
-    case 'heatmap':
-      return {
-        data: Array.from({ length: 20 }, (_, i) => ({
-          x: Math.random() * 100,
-          y: Math.random() * 100,
-          name: `Point ${i + 1}`,
-        })),
-        xAxisKey: 'x',
-        dataKey: 'y',
-      }
-    case 'line':
-    case 'area':
-    default:
-      return {
-        data: [
-          { name: 'Mon', value: 120 },
-          { name: 'Tue', value: 150 },
-          { name: 'Wed', value: 180 },
-          { name: 'Thu', value: 140 },
-          { name: 'Fri', value: 200 },
-          { name: 'Sat', value: 190 },
-          { name: 'Sun', value: 170 },
-        ],
-        xAxisKey: 'name',
-        dataKey: 'value',
-      }
+// API fetcher with error handling
+const fetcher = async <T,>(url: string): Promise<T> => {
+  const res = await fetch(url)
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Request failed' }))
+    throw new Error(error.error || 'Failed to fetch')
   }
-}
-
-// Mock data fetcher
-async function fetchChartData(widget: Widget): Promise<ChartData> {
-  await new Promise((resolve) => setTimeout(resolve, 600))
-  const chartType = widget.config.visualization?.chartType
-  return generateMockData(chartType)
+  const data = await res.json()
+  if (data.success === false) {
+    throw new Error(data.error || 'Operation failed')
+  }
+  // If response has success:true wrapper, unwrap it
+  return data.success ? data.data : data
 }
 
 // Map our chart types to the Chart component types
@@ -107,54 +57,31 @@ function mapChartType(
 }
 
 export function ChartWidget({ widget, className }: ChartWidgetProps) {
-  const [chartData, setChartData] = useState<ChartData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
   const visualization = widget.config.visualization
   const chartType = visualization?.chartType || 'line'
+  const dataSource = widget.config.dataSource
 
-  useEffect(() => {
-    let mounted = true
+  // Validate data source configuration
+  const hasValidDataSource = dataSource?.endpoint && dataSource.type === 'api'
 
-    const loadData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const result = await fetchChartData(widget)
-        if (mounted) {
-          setChartData(result)
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load data')
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
-      }
-    }
+  // Use SWR for data fetching with refresh interval support
+  const {
+    data: chartData,
+    error,
+    isLoading,
+  } = useSWR<ChartData>(
+    hasValidDataSource ? dataSource.endpoint : null,
+    fetcher,
+    {
+      refreshInterval: dataSource?.refreshInterval
+        ? dataSource.refreshInterval * 1000
+        : 0,
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
+    },
+  )
 
-    loadData()
-
-    // Set up auto-refresh if configured
-    const refreshInterval = widget.config.dataSource?.refreshInterval
-    let intervalId: NodeJS.Timeout | undefined
-
-    if (refreshInterval && refreshInterval > 0) {
-      intervalId = setInterval(loadData, refreshInterval * 1000)
-    }
-
-    return () => {
-      mounted = false
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
-  }, [widget])
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div
         className={cn('flex h-full items-center justify-center p-4', className)}
@@ -170,13 +97,20 @@ export function ChartWidget({ widget, className }: ChartWidgetProps) {
         className={cn('flex h-full items-center justify-center p-4', className)}
       >
         <div className="text-center">
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-sm text-red-500">
+            {error instanceof Error ? error.message : 'Failed to load data'}
+          </p>
+          {!hasValidDataSource && (
+            <p className="mt-1 text-xs text-zinc-400">
+              Invalid data source configuration
+            </p>
+          )}
         </div>
       </div>
     )
   }
 
-  if (!chartData || chartData.data.length === 0) {
+  if (!chartData || !chartData.data || chartData.data.length === 0) {
     return (
       <div
         className={cn('flex h-full items-center justify-center p-4', className)}

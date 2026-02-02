@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 import type { Widget } from '@/types/dashboard'
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 
 interface MetricWidgetProps {
   widget: Widget
@@ -19,70 +19,40 @@ interface MetricData {
   prefix?: string
 }
 
-// Mock data fetcher - in real implementation this would call the data source
-async function fetchMetricData(widget: Widget): Promise<MetricData> {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  // Return mock data based on widget config
-  const mockValues: Record<string, MetricData> = {
-    default: {
-      value: 1234,
-      previousValue: 1100,
-      trend: 'up',
-      trendPercentage: 12.2,
-    },
+// API fetcher with error handling
+const fetcher = async <T,>(url: string): Promise<T> => {
+  const res = await fetch(url)
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Request failed' }))
+    throw new Error(error.error || 'Failed to fetch')
   }
-
-  return mockValues.default
+  const data = await res.json()
+  if (data.success === false) {
+    throw new Error(data.error || 'Operation failed')
+  }
+  // If response has success:true wrapper, unwrap it
+  return data.success ? data.data : data
 }
 
 export function MetricWidget({ widget, className }: MetricWidgetProps) {
-  const [data, setData] = useState<MetricData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
   const thresholds = widget.config.thresholds
+  const dataSource = widget.config.dataSource
 
-  useEffect(() => {
-    let mounted = true
+  // Validate data source configuration
+  const hasValidDataSource = dataSource?.endpoint && dataSource.type === 'api'
 
-    const loadData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const result = await fetchMetricData(widget)
-        if (mounted) {
-          setData(result)
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load data')
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    loadData()
-
-    // Set up auto-refresh if configured
-    const refreshInterval = widget.config.dataSource?.refreshInterval
-    let intervalId: NodeJS.Timeout | undefined
-
-    if (refreshInterval && refreshInterval > 0) {
-      intervalId = setInterval(loadData, refreshInterval * 1000)
-    }
-
-    return () => {
-      mounted = false
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
-  }, [widget])
+  // Use SWR for data fetching with refresh interval support
+  const { data, error, isLoading } = useSWR<MetricData>(
+    hasValidDataSource ? dataSource.endpoint : null,
+    fetcher,
+    {
+      refreshInterval: dataSource?.refreshInterval
+        ? dataSource.refreshInterval * 1000
+        : 0,
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
+    },
+  )
 
   // Determine color based on thresholds
   const getThresholdColor = (value: number | string): string => {
@@ -134,7 +104,7 @@ export function MetricWidget({ widget, className }: MetricWidgetProps) {
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div
         className={cn('flex h-full items-center justify-center p-6', className)}
@@ -153,7 +123,14 @@ export function MetricWidget({ widget, className }: MetricWidgetProps) {
         className={cn('flex h-full items-center justify-center p-6', className)}
       >
         <div className="text-center">
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-sm text-red-500">
+            {error instanceof Error ? error.message : 'Failed to load data'}
+          </p>
+          {!hasValidDataSource && (
+            <p className="mt-1 text-xs text-zinc-400">
+              Invalid data source configuration
+            </p>
+          )}
         </div>
       </div>
     )

@@ -1,4 +1,4 @@
-import * as reportsApi from '@/lib/reports'
+import * as reports from '@/lib/reports'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/reports/templates - List all report templates
@@ -7,11 +7,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const tenantId = searchParams.get('tenantId') || undefined
 
-    const templates = await reportsApi.getTemplates(tenantId)
+    const templates = await reports.getTemplates(tenantId)
 
     return NextResponse.json({
       success: true,
-      templates,
+      data: templates,
     })
   } catch (error) {
     return NextResponse.json(
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const template = await reportsApi.createTemplate({
+    const template = await reports.createTemplate({
       name: body.name,
       description: body.description,
       category: body.category,
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        template,
+        data: template,
       },
       { status: 201 },
     )

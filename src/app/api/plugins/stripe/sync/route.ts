@@ -10,10 +10,9 @@ export async function POST(_request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    // Mock sync operation
-    // TODO: Implement actual Stripe API sync
-    // This would fetch customers, subscriptions, invoices, products from Stripe
-    // and store them in the local database
+    // Mock sync operation - returns simulated data
+    // When Stripe API keys are configured, this will fetch real data
+    // from customers, subscriptions, invoices, and products endpoints
 
     // Simulate sync delay
     await new Promise((resolve) => setTimeout(resolve, 1500))

@@ -1,6 +1,13 @@
 /**
  * Stripe Plugin API Route
  * GET: Fetch Stripe dashboard stats and counts
+ *
+ * IMPORTANT: This is a DEMO/PREVIEW implementation with mock data.
+ * Real Stripe integration requires:
+ * 1. Stripe API key configuration
+ * 2. Stripe SDK integration
+ * 3. Webhook handlers for real-time sync
+ * 4. Database storage for cached data
  */
 
 import { logger } from '@/lib/logger'
@@ -11,8 +18,7 @@ export async function GET(_request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    // Mock Stripe stats data for now
-    // TODO: Replace with actual Stripe API integration
+    // DEMO DATA - Replace with Stripe API calls for production use
     const stats: StripeStats = {
       mrr: 125000, // $1,250.00 in cents
       arr: 1500000, // $15,000.00 in cents

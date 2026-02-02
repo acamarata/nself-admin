@@ -1,13 +1,9 @@
-import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
+import { nselfBuild } from '@/lib/nselfCLI'
 import { getProjectPath } from '@/lib/paths'
 import { emitBuildProgress } from '@/lib/websocket/emitters'
-import { exec } from 'child_process'
 import fs from 'fs/promises'
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
-import { promisify } from 'util'
-
-const execAsync = promisify(exec)
 
 export async function POST(_request: NextRequest) {
   try {
@@ -16,10 +12,6 @@ export async function POST(_request: NextRequest) {
 
     console.log('=== Starting nself build ===')
     console.log('Backend project path:', backendProjectPath)
-
-    // Find nself CLI using the centralized utility
-    const nselfCommand = await findNselfPath()
-    console.log('Using nself from:', nselfCommand)
 
     // Ensure the backend project directory exists
     try {
@@ -85,28 +77,21 @@ export async function POST(_request: NextRequest) {
         timestamp: new Date().toISOString(),
       })
 
-      // First try the nself build command with a shorter timeout
-      const result = await execAsync(
-        `echo "Y" | ${nselfCommand} build --force`,
-        {
-          cwd: backendProjectPath,
-          env: {
-            ...process.env,
-            PATH: getEnhancedPath(),
-          },
-          maxBuffer: 10 * 1024 * 1024, // 10MB buffer for output
-          timeout: 30000, // 30 second timeout - if it hangs, we'll generate manually
-          shell: '/bin/bash',
-        },
-      )
-
-      const { stdout, stderr } = result
+      // Run nself build using secure CLI wrapper
+      const result = await nselfBuild({ force: true })
 
       console.log('=== Build Output ===')
-      console.log('stdout:', stdout)
-      if (stderr) {
-        console.log('stderr:', stderr)
+      console.log('stdout:', result.stdout)
+      if (result.stderr) {
+        console.log('stderr:', result.stderr)
       }
+
+      // Check if build failed
+      if (!result.success) {
+        throw new Error(result.error || result.stderr || 'Build command failed')
+      }
+
+      const stdout = result.stdout || ''
 
       // Step 2: Generating docker-compose.yml
       emitBuildProgress({
@@ -189,12 +174,9 @@ export async function POST(_request: NextRequest) {
           { status: 500 },
         )
       }
-    } catch (execError: any) {
+    } catch (buildError: any) {
       console.error('=== Build Error ===')
-      console.error('Error code:', execError.code)
-      console.error('Error message:', execError.message)
-      console.error('stdout:', execError.stdout)
-      console.error('stderr:', execError.stderr)
+      console.error('Error message:', buildError.message)
 
       // Check if docker-compose.yml exists despite error (sometimes nself returns non-zero but succeeds)
       const dockerComposePath = path.join(
@@ -210,7 +192,7 @@ export async function POST(_request: NextRequest) {
         const serviceMatches = dockerComposeContent.match(/^ {2}\w+:/gm)
         const serviceCount = serviceMatches ? serviceMatches.length : 0
 
-        console.log('Build appears successful despite exit code')
+        console.log('Build appears successful despite error')
 
         // Emit success event
         emitBuildProgress({
@@ -226,9 +208,7 @@ export async function POST(_request: NextRequest) {
         return NextResponse.json({
           success: true,
           message: 'Project built successfully',
-          output:
-            execError.stdout ||
-            `Build completed. ${serviceCount} services configured.`,
+          output: `Build completed. ${serviceCount} services configured.`,
           serviceCount,
         })
       } catch {
@@ -237,7 +217,7 @@ export async function POST(_request: NextRequest) {
           step: 'build',
           status: 'failed',
           progress: 0,
-          message: execError.stderr || execError.message || 'Build failed',
+          message: buildError.message || 'Build failed',
           currentStep: 1,
           totalSteps: 6,
           timestamp: new Date().toISOString(),
@@ -246,11 +226,7 @@ export async function POST(_request: NextRequest) {
         return NextResponse.json(
           {
             error: 'Build failed',
-            details:
-              execError.stderr ||
-              execError.message ||
-              'Unknown error during build',
-            output: execError.stdout,
+            details: buildError.message || 'Unknown error during build',
           },
           { status: 500 },
         )

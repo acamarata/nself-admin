@@ -1,3 +1,14 @@
+/**
+ * AWS Connection API
+ *
+ * IMPORTANT: This is a STUB/PLACEHOLDER implementation.
+ * Real AWS integration requires:
+ * 1. AWS SDK installation and configuration
+ * 2. STS AssumeRole or credential validation
+ * 3. Secure credential storage (not in database, use AWS Secrets Manager)
+ * 4. IAM permissions verification
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -11,8 +22,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Mock connection - in production, this would validate AWS credentials
-    // and store them securely
+    // STUB - No actual AWS validation occurs
+    // Production implementation must validate credentials via AWS STS
 
     return NextResponse.json({
       success: true,

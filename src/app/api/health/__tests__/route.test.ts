@@ -1,28 +1,56 @@
-import { exec } from 'child_process'
 import fs from 'fs/promises'
-import { GET, HEAD } from '../route'
 
+jest.mock('fs/promises', () => ({
+  writeFile: jest.fn(),
+  unlink: jest.fn(),
+  access: jest.fn(),
+  readFile: jest.fn(),
+  constants: {
+    R_OK: 4,
+    W_OK: 2,
+  },
+}))
 jest.mock('child_process')
-jest.mock('fs/promises')
+
+// Create the mock inside the factory and store it on global
+jest.mock('util', () => {
+  const mockFn = jest.fn()
+  // Store mock on global so we can access it in tests
+  const g = global as typeof global & { __mockExecAsync: jest.Mock }
+  g.__mockExecAsync = mockFn
+  return {
+    promisify: jest.fn(() => mockFn),
+  }
+})
+
 jest.mock('@/lib/nself-path', () => ({
   getEnhancedPath: jest.fn(() => '/usr/bin:/bin'),
 }))
 
-// TODO v0.5.1: Fix failing tests in this file
-describe.skip('GET /api/health', () => {
+// Import AFTER mocks are set up
+import { GET, HEAD } from '../route'
+
+// Helper to get the mock
+const getMockExecAsync = () =>
+  (global as typeof global & { __mockExecAsync: jest.Mock }).__mockExecAsync
+
+describe('GET /api/health', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
   it('returns healthy status when all checks pass', async () => {
-    ;(exec as unknown as jest.Mock).mockImplementation(
-      (cmd, opts, callback) => {
-        if (typeof opts === 'function') {
-          callback = opts
-        }
-        callback(null, 'Docker version 20.10.0', '')
-      },
-    )
+    // Mock execAsync to return success for different commands
+    getMockExecAsync().mockImplementation((cmd: string) => {
+      if (cmd.includes('docker version')) {
+        return Promise.resolve({ stdout: 'Docker version 20.10.0', stderr: '' })
+      } else if (cmd.includes('ping')) {
+        return Promise.resolve({ stdout: 'PING google.com', stderr: '' })
+      } else if (cmd.includes('nself')) {
+        return Promise.resolve({ stdout: 'v0.5.0', stderr: '' })
+      }
+      return Promise.resolve({ stdout: 'OK', stderr: '' })
+    })
     ;(fs.writeFile as jest.Mock).mockResolvedValue(undefined)
     ;(fs.unlink as jest.Mock).mockResolvedValue(undefined)
     ;(fs.access as jest.Mock).mockResolvedValue(undefined)
@@ -41,14 +69,8 @@ describe.skip('GET /api/health', () => {
   })
 
   it('returns unhealthy status when Docker is down', async () => {
-    ;(exec as unknown as jest.Mock).mockImplementation(
-      (cmd, opts, callback) => {
-        if (typeof opts === 'function') {
-          callback = opts
-        }
-        callback(new Error('Docker not running'), '', 'error')
-      },
-    )
+    // Mock execAsync to throw error for docker command
+    getMockExecAsync().mockRejectedValue(new Error('Docker not running'))
     ;(fs.writeFile as jest.Mock).mockResolvedValue(undefined)
     ;(fs.unlink as jest.Mock).mockResolvedValue(undefined)
     ;(fs.access as jest.Mock).mockResolvedValue(undefined)
@@ -65,14 +87,10 @@ describe.skip('GET /api/health', () => {
   })
 
   it('returns unhealthy status when filesystem is inaccessible', async () => {
-    ;(exec as unknown as jest.Mock).mockImplementation(
-      (cmd, opts, callback) => {
-        if (typeof opts === 'function') {
-          callback = opts
-        }
-        callback(null, 'Docker version 20.10.0', '')
-      },
-    )
+    getMockExecAsync().mockResolvedValue({
+      stdout: 'Docker version 20.10.0',
+      stderr: '',
+    })
     ;(fs.writeFile as jest.Mock).mockRejectedValue(
       new Error('Permission denied'),
     )
@@ -89,14 +107,7 @@ describe.skip('GET /api/health', () => {
   })
 
   it('includes resource usage in response', async () => {
-    ;(exec as unknown as jest.Mock).mockImplementation(
-      (cmd, opts, callback) => {
-        if (typeof opts === 'function') {
-          callback = opts
-        }
-        callback(null, 'OK', '')
-      },
-    )
+    getMockExecAsync().mockResolvedValue({ stdout: 'OK', stderr: '' })
     ;(fs.writeFile as jest.Mock).mockResolvedValue(undefined)
     ;(fs.unlink as jest.Mock).mockResolvedValue(undefined)
     ;(fs.access as jest.Mock).mockResolvedValue(undefined)
@@ -113,14 +124,7 @@ describe.skip('GET /api/health', () => {
   })
 
   it('includes uptime in response', async () => {
-    ;(exec as unknown as jest.Mock).mockImplementation(
-      (cmd, opts, callback) => {
-        if (typeof opts === 'function') {
-          callback = opts
-        }
-        callback(null, 'OK', '')
-      },
-    )
+    getMockExecAsync().mockResolvedValue({ stdout: 'OK', stderr: '' })
     ;(fs.writeFile as jest.Mock).mockResolvedValue(undefined)
     ;(fs.unlink as jest.Mock).mockResolvedValue(undefined)
     ;(fs.access as jest.Mock).mockResolvedValue(undefined)
@@ -142,14 +146,10 @@ describe('HEAD /api/health', () => {
   })
 
   it('returns 200 when Docker is accessible', async () => {
-    ;(exec as unknown as jest.Mock).mockImplementation(
-      (cmd, opts, callback) => {
-        if (typeof opts === 'function') {
-          callback = opts
-        }
-        callback(null, 'Docker version 20.10.0', '')
-      },
-    )
+    getMockExecAsync().mockResolvedValue({
+      stdout: 'Docker version 20.10.0',
+      stderr: '',
+    })
 
     const response = await HEAD()
 
@@ -157,14 +157,7 @@ describe('HEAD /api/health', () => {
   })
 
   it('returns 503 when Docker is not accessible', async () => {
-    ;(exec as unknown as jest.Mock).mockImplementation(
-      (cmd, opts, callback) => {
-        if (typeof opts === 'function') {
-          callback = opts
-        }
-        callback(new Error('Docker not running'), '', 'error')
-      },
-    )
+    getMockExecAsync().mockRejectedValue(new Error('Docker not running'))
 
     const response = await HEAD()
 

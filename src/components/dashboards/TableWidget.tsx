@@ -12,7 +12,8 @@ import {
 import { cn } from '@/lib/utils'
 import type { Widget } from '@/types/dashboard'
 import { ArrowUpDown } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import useSWR from 'swr'
 
 interface TableWidgetProps {
   widget: Widget
@@ -29,62 +30,19 @@ interface TableData {
   rows: Array<Record<string, unknown>>
 }
 
-// Mock data fetcher
-async function fetchTableData(_widget: Widget): Promise<TableData> {
-  await new Promise((resolve) => setTimeout(resolve, 500))
-
-  return {
-    columns: [
-      { key: 'name', label: 'Name', type: 'text', sortable: true },
-      { key: 'status', label: 'Status', type: 'badge' },
-      { key: 'value', label: 'Value', type: 'number', sortable: true },
-      { key: 'updated', label: 'Updated', type: 'date', sortable: true },
-    ],
-    rows: [
-      {
-        id: 1,
-        name: 'Service A',
-        status: 'active',
-        value: 1234,
-        updated: '2024-01-15',
-      },
-      {
-        id: 2,
-        name: 'Service B',
-        status: 'warning',
-        value: 856,
-        updated: '2024-01-14',
-      },
-      {
-        id: 3,
-        name: 'Service C',
-        status: 'active',
-        value: 2341,
-        updated: '2024-01-15',
-      },
-      {
-        id: 4,
-        name: 'Service D',
-        status: 'error',
-        value: 123,
-        updated: '2024-01-13',
-      },
-      {
-        id: 5,
-        name: 'Service E',
-        status: 'active',
-        value: 4521,
-        updated: '2024-01-15',
-      },
-      {
-        id: 6,
-        name: 'Service F',
-        status: 'inactive',
-        value: 0,
-        updated: '2024-01-10',
-      },
-    ],
+// API fetcher with error handling
+const fetcher = async <T,>(url: string): Promise<T> => {
+  const res = await fetch(url)
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Request failed' }))
+    throw new Error(error.error || 'Failed to fetch')
   }
+  const data = await res.json()
+  if (data.success === false) {
+    throw new Error(data.error || 'Operation failed')
+  }
+  // If response has success:true wrapper, unwrap it
+  return data.success ? data.data : data
 }
 
 // Badge variant mapping for status values
@@ -93,57 +51,41 @@ const statusVariants: Record<
   'default' | 'secondary' | 'destructive' | 'outline'
 > = {
   active: 'default',
+  running: 'default',
+  success: 'default',
   warning: 'secondary',
+  pending: 'secondary',
   error: 'destructive',
+  failed: 'destructive',
   inactive: 'outline',
+  stopped: 'outline',
 }
 
 export function TableWidget({ widget, className }: TableWidgetProps) {
-  const [tableData, setTableData] = useState<TableData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
-  useEffect(() => {
-    let mounted = true
+  const dataSource = widget.config.dataSource
 
-    const loadData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const result = await fetchTableData(widget)
-        if (mounted) {
-          setTableData(result)
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Failed to load data')
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
-      }
-    }
+  // Validate data source configuration
+  const hasValidDataSource = dataSource?.endpoint && dataSource.type === 'api'
 
-    loadData()
-
-    // Set up auto-refresh if configured
-    const refreshInterval = widget.config.dataSource?.refreshInterval
-    let intervalId: NodeJS.Timeout | undefined
-
-    if (refreshInterval && refreshInterval > 0) {
-      intervalId = setInterval(loadData, refreshInterval * 1000)
-    }
-
-    return () => {
-      mounted = false
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
-  }, [widget])
+  // Use SWR for data fetching with refresh interval support
+  const {
+    data: tableData,
+    error,
+    isLoading,
+  } = useSWR<TableData>(
+    hasValidDataSource ? dataSource.endpoint : null,
+    fetcher,
+    {
+      refreshInterval: dataSource?.refreshInterval
+        ? dataSource.refreshInterval * 1000
+        : 0,
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
+    },
+  )
 
   // Sort rows
   const sortedRows = useMemo(() => {
@@ -208,7 +150,7 @@ export function TableWidget({ widget, className }: TableWidgetProps) {
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className={cn('h-full overflow-auto p-4', className)}>
         <div className="space-y-3">
@@ -230,13 +172,20 @@ export function TableWidget({ widget, className }: TableWidgetProps) {
         className={cn('flex h-full items-center justify-center p-4', className)}
       >
         <div className="text-center">
-          <p className="text-sm text-red-500">{error}</p>
+          <p className="text-sm text-red-500">
+            {error instanceof Error ? error.message : 'Failed to load data'}
+          </p>
+          {!hasValidDataSource && (
+            <p className="mt-1 text-xs text-zinc-400">
+              Invalid data source configuration
+            </p>
+          )}
         </div>
       </div>
     )
   }
 
-  if (!tableData || tableData.rows.length === 0) {
+  if (!tableData || !tableData.rows || tableData.rows.length === 0) {
     return (
       <div
         className={cn('flex h-full items-center justify-center p-4', className)}

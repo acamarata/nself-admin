@@ -583,6 +583,15 @@ export const deleteReportTemplate = async (id: string): Promise<void> => {
   await deleteTemplate(id)
 }
 
+export const getTemplateById = getReportTemplateById
+export const getScheduleById = async (id: string): Promise<ReportSchedule> => {
+  const schedule = await getSchedule(id)
+  if (!schedule) {
+    throw new Error(`Schedule not found: ${id}`)
+  }
+  return schedule
+}
+
 // Execution aliases
 export const getReportExecutions = async (
   reportId?: string,
@@ -600,6 +609,8 @@ export const getReportExecution = async (
   }
   return execution
 }
+
+export const getExecutionById = getReportExecution
 
 // Download function for client-side use
 export const downloadReport = async (executionId: string): Promise<Blob> => {

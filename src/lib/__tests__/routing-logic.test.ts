@@ -9,7 +9,7 @@ global.fetch = jest.fn()
 
 describe('routing-logic', () => {
   describe('determineRoute', () => {
-    it('routes to /init when no env file', () => {
+    it('routes to /build when no env file', () => {
       const status: ProjectStatus = {
         hasEnvFile: false,
         hasDockerCompose: false,
@@ -19,11 +19,11 @@ describe('routing-logic', () => {
 
       const result = determineRoute(status)
 
-      expect(result.route).toBe('/init')
+      expect(result.route).toBe('/build')
       expect(result.reason).toContain('not initialized')
     })
 
-    it('routes to /init when env exists but no docker-compose', () => {
+    it('routes to /build when env exists but no docker-compose', () => {
       const status: ProjectStatus = {
         hasEnvFile: true,
         hasDockerCompose: false,
@@ -33,7 +33,7 @@ describe('routing-logic', () => {
 
       const result = determineRoute(status)
 
-      expect(result.route).toBe('/init')
+      expect(result.route).toBe('/build')
       expect(result.reason).toContain('not built')
     })
 
@@ -51,7 +51,7 @@ describe('routing-logic', () => {
       expect(result.reason).toContain('not running')
     })
 
-    it('routes to /start when too few containers running', () => {
+    it('routes to / when services running (regardless of container count)', () => {
       const status: ProjectStatus = {
         hasEnvFile: true,
         hasDockerCompose: true,
@@ -61,8 +61,8 @@ describe('routing-logic', () => {
 
       const result = determineRoute(status)
 
-      expect(result.route).toBe('/start')
-      expect(result.reason).toContain('2 containers')
+      expect(result.route).toBe('/')
+      expect(result.reason).toContain('running')
     })
 
     it('routes to / when services running', () => {
@@ -99,23 +99,23 @@ describe('routing-logic', () => {
       expect(result.route).toBe('/')
     })
 
-    it('defaults to /init on fetch error', async () => {
+    it('defaults to /build on fetch error', async () => {
       ;(global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'))
 
       const result = await getCorrectRoute()
 
-      expect(result.route).toBe('/init')
+      expect(result.route).toBe('/build')
       expect(result.reason).toContain('Error')
     })
 
-    it('defaults to /init on bad response', async () => {
+    it('defaults to /build on bad response', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
       })
 
       const result = await getCorrectRoute()
 
-      expect(result.route).toBe('/init')
+      expect(result.route).toBe('/build')
       expect(result.reason).toContain('Failed to fetch')
     })
   })
@@ -163,7 +163,7 @@ describe('routing-logic', () => {
       const redirected = await ensureCorrectRoute('/dashboard', navigate)
 
       expect(redirected).toBe(true)
-      expect(navigate).toHaveBeenCalledWith('/init')
+      expect(navigate).toHaveBeenCalledWith('/build')
     })
 
     it('allows sub-pages when services running', async () => {

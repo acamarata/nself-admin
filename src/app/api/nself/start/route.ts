@@ -1,10 +1,6 @@
-import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
+import { nselfStart, nselfStatus } from '@/lib/nselfCLI'
 import { getProjectPath } from '@/lib/paths'
-import { execFile } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
-import { promisify } from 'util'
-
-const execFileAsync = promisify(execFile)
 
 export async function POST(_request: NextRequest) {
   try {
@@ -12,22 +8,32 @@ export async function POST(_request: NextRequest) {
     console.log('Starting nself services in:', projectPath)
     console.log('NODE_ENV:', process.env.NODE_ENV)
 
-    // Find nself CLI using the centralized utility
-    const nselfPath = await findNselfPath()
-    console.log('Using nself from:', nselfPath)
+    // Run nself start using secure CLI wrapper
+    const result = await nselfStart()
 
-    const { stdout, stderr } = await execFileAsync(
-      '/bin/sh',
-      ['-c', `cd "${projectPath}" && "${nselfPath}" start`],
-      {
-        env: {
-          ...process.env,
-          PATH: getEnhancedPath(),
-          NSELF_PROJECT_PATH: projectPath,
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: result.error || 'Start command failed',
+          details: result.stderr || result.error || 'Unknown error',
+          output: {
+            stdout: result.stdout ? result.stdout.split('\n') : [],
+            stderr: result.stderr ? result.stderr.split('\n') : [],
+          },
+          suggestions: [
+            'Check if Docker is running',
+            'Ensure no other services are using required ports',
+            'Run nself doctor to diagnose issues',
+            'Check project configuration in .env.local',
+          ],
         },
-        timeout: 300000, // 5 minute timeout
-      },
-    )
+        { status: 500 },
+      )
+    }
+
+    const stdout = result.stdout || ''
+    const stderr = result.stderr || ''
 
     // Parse the output to extract service information
     const lines = stdout.split('\n').filter((line) => line.trim())
@@ -62,46 +68,39 @@ export async function POST(_request: NextRequest) {
       }
     })
 
-    // Additional service status check
+    // Additional service status check using secure CLI wrapper
     try {
-      const { stdout: statusOutput } = await execFileAsync(
-        '/bin/sh',
-        ['-c', `cd "${projectPath}" && "${nselfPath}" status`],
-        {
-          env: {
-            ...process.env,
-            PATH: getEnhancedPath(),
-            NSELF_PROJECT_PATH: projectPath,
-          },
-          timeout: 30000,
-        },
-      )
+      const statusResult = await nselfStatus()
 
-      // Parse status output for more detailed service info
-      const statusLines = statusOutput.split('\n').filter((line) => line.trim())
-      statusLines.forEach((line: string) => {
-        if (line.includes('running') || line.includes('healthy')) {
-          const parts = line.split(/\s+/)
-          if (parts.length > 1) {
-            const serviceName = parts[0]
-            const status = line.includes('healthy') ? 'healthy' : 'running'
+      if (statusResult.success && statusResult.stdout) {
+        // Parse status output for more detailed service info
+        const statusLines = statusResult.stdout
+          .split('\n')
+          .filter((line) => line.trim())
+        statusLines.forEach((line: string) => {
+          if (line.includes('running') || line.includes('healthy')) {
+            const parts = line.split(/\s+/)
+            if (parts.length > 1) {
+              const serviceName = parts[0]
+              const status = line.includes('healthy') ? 'healthy' : 'running'
 
-            // Update existing service or add new one
-            const existingService = services.find(
-              (s: any) => s.name === serviceName,
-            )
-            if (existingService) {
-              existingService.status = status
-            } else {
-              services.push({
-                name: serviceName,
-                status: status,
-                message: line.trim(),
-              })
+              // Update existing service or add new one
+              const existingService = services.find(
+                (s: any) => s.name === serviceName,
+              )
+              if (existingService) {
+                existingService.status = status
+              } else {
+                services.push({
+                  name: serviceName,
+                  status: status,
+                  message: line.trim(),
+                })
+              }
             }
           }
-        }
-      })
+        })
+      }
     } catch (statusError: any) {
       console.warn('Could not get detailed status:', statusError?.message)
     }
@@ -117,18 +116,10 @@ export async function POST(_request: NextRequest) {
       },
     })
   } catch (error) {
-    const execError = error as {
-      message?: string
-      stdout?: string
-      stderr?: string
-    }
     console.error('nself start error:', error)
-    console.error('Error message:', execError.message)
-    console.error('Error stdout:', execError.stdout)
-    console.error('Error stderr:', execError.stderr)
 
     // Parse error output for user-friendly messages
-    const errorMessage = execError.message || 'Start failed'
+    const errorMessage = error instanceof Error ? error.message : 'Start failed'
     const isTimeout = errorMessage.includes('timeout')
     const isPortConflict =
       errorMessage.includes('port') && errorMessage.includes('already')
@@ -145,23 +136,8 @@ export async function POST(_request: NextRequest) {
         'Port conflict detected - some required ports may already be in use'
     } else if (isMissingDependency) {
       userMessage = 'nself CLI not found - please ensure nself is installed'
-    } else if (execError.stdout || execError.stderr) {
-      const errorOutput = execError.stderr || execError.stdout || ''
-      const lines = errorOutput
-        .split('\n')
-        .filter((line: string) => line.trim())
-      const errorLines = lines.filter(
-        (line: string) =>
-          line.includes('error') ||
-          line.includes('Error') ||
-          line.includes('failed') ||
-          line.includes('Failed') ||
-          line.includes('cannot') ||
-          line.includes('Cannot'),
-      )
-      if (errorLines.length > 0) {
-        userMessage = errorLines[0]
-      }
+    } else {
+      userMessage = errorMessage
     }
 
     return NextResponse.json(
@@ -169,10 +145,6 @@ export async function POST(_request: NextRequest) {
         success: false,
         message: userMessage,
         error: errorMessage,
-        output: {
-          stdout: execError.stdout ? execError.stdout.split('\n') : [],
-          stderr: execError.stderr ? execError.stderr.split('\n') : [],
-        },
         suggestions: [
           'Check if Docker is running',
           'Ensure no other services are using required ports',

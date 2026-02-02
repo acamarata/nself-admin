@@ -1,17 +1,24 @@
-import * as reportsApi from '@/lib/reports'
+import * as reports from '@/lib/reports'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/reports/schedules - List all report schedules
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const reportId = searchParams.get('reportId') || undefined
+    const reportId = searchParams.get('reportId')
 
-    const schedules = await reportsApi.getSchedules(reportId)
+    if (!reportId) {
+      return NextResponse.json(
+        { success: false, error: 'reportId is required' },
+        { status: 400 },
+      )
+    }
+
+    const schedules = await reports.getSchedules(reportId)
 
     return NextResponse.json({
       success: true,
-      schedules,
+      data: schedules,
     })
   } catch (error) {
     return NextResponse.json(
@@ -111,8 +118,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const schedule = await reportsApi.createSchedule({
-      reportId: body.reportId,
+    const schedule = await reports.createSchedule(body.reportId, {
       frequency: body.frequency,
       dayOfWeek: body.dayOfWeek,
       dayOfMonth: body.dayOfMonth,
@@ -126,7 +132,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        schedule,
+        data: schedule,
       },
       { status: 201 },
     )

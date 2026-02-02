@@ -1,4 +1,4 @@
-import * as reportsApi from '@/lib/reports'
+import * as reports from '@/lib/reports'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface RouteContext {
@@ -9,8 +9,7 @@ interface RouteContext {
 export async function GET(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
-    const template = await reportsApi.getTemplate(id)
-
+    const template = await reports.getTemplateById(id)
     if (!template) {
       return NextResponse.json(
         { success: false, error: 'Template not found' },
@@ -20,16 +19,18 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      template,
+      data: template,
     })
   } catch (error) {
+    const statusCode =
+      error instanceof Error && error.message.includes('not found') ? 404 : 500
     return NextResponse.json(
       {
         success: false,
         error:
           error instanceof Error ? error.message : 'Failed to get template',
       },
-      { status: 500 },
+      { status: statusCode },
     )
   }
 }
@@ -40,16 +41,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const { id } = await context.params
     const body = await request.json()
 
-    // Check if template exists
-    const existing = await reportsApi.getTemplate(id)
-    if (!existing) {
-      return NextResponse.json(
-        { success: false, error: 'Template not found' },
-        { status: 404 },
-      )
-    }
-
-    const template = await reportsApi.updateTemplate(id, {
+    const template = await reports.updateTemplate(id, {
       name: body.name,
       description: body.description,
       category: body.category,
@@ -63,16 +55,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     return NextResponse.json({
       success: true,
-      template,
+      data: template,
     })
   } catch (error) {
+    const statusCode =
+      error instanceof Error && error.message.includes('not found') ? 404 : 500
     return NextResponse.json(
       {
         success: false,
         error:
           error instanceof Error ? error.message : 'Failed to update template',
       },
-      { status: 500 },
+      { status: statusCode },
     )
   }
 }
@@ -82,36 +76,22 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params
 
-    // Check if template exists
-    const existing = await reportsApi.getTemplate(id)
-    if (!existing) {
-      return NextResponse.json(
-        { success: false, error: 'Template not found' },
-        { status: 404 },
-      )
-    }
-
-    const deleted = await reportsApi.deleteTemplate(id)
-
-    if (!deleted) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to delete template' },
-        { status: 500 },
-      )
-    }
+    await reports.deleteTemplate(id)
 
     return NextResponse.json({
       success: true,
       message: 'Template deleted successfully',
     })
   } catch (error) {
+    const statusCode =
+      error instanceof Error && error.message.includes('not found') ? 404 : 500
     return NextResponse.json(
       {
         success: false,
         error:
           error instanceof Error ? error.message : 'Failed to delete template',
       },
-      { status: 500 },
+      { status: statusCode },
     )
   }
 }

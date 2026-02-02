@@ -1,3 +1,11 @@
+import type {
+  Organization,
+  OrgMember,
+  Team,
+  Tenant,
+  TenantDomain,
+  TenantMember,
+} from '@/types/tenant'
 import crypto from 'crypto'
 import fs from 'fs'
 import Loki from 'lokijs'
@@ -33,6 +41,17 @@ let configCollection: Collection<ConfigItem> | null = null
 let sessionsCollection: Collection<SessionItem> | null = null
 let projectCacheCollection: Collection<ProjectCacheItem> | null = null
 let auditLogCollection: Collection<AuditLogItem> | null = null
+let tenantsCollection: Collection<Tenant> | null = null
+let organizationsCollection: Collection<Organization> | null = null
+let tenantMembersCollection: Collection<TenantMember> | null = null
+let orgMembersCollection: Collection<OrgMember> | null = null
+let teamsCollection: Collection<Team> | null = null
+let tenantDomainsCollection: Collection<TenantDomain> | null = null
+// Collaboration collections (v0.7.0)
+let userPresenceCollection: Collection<UserPresenceItem> | null = null
+let documentStateCollection: Collection<DocumentStateItem> | null = null
+let collaborationCursorCollection: Collection<CollaborationCursorItem> | null =
+  null
 
 // Type definitions
 export interface ConfigItem {
@@ -65,6 +84,54 @@ export interface AuditLogItem {
   timestamp: Date
   success: boolean
   userId?: string
+}
+
+// Collaboration types (v0.7.0)
+export interface UserPresenceItem {
+  userId: string
+  userName: string
+  status: 'online' | 'away' | 'offline'
+  currentPage?: string
+  currentDocument?: string
+  lastSeen: Date
+  metadata?: {
+    avatarUrl?: string
+    color?: string
+  }
+}
+
+export interface DocumentStateItem {
+  documentId: string
+  content: string
+  version: number
+  lockedBy?: string
+  lastModified: Date
+  operations: Array<{
+    operationId: string
+    userId: string
+    type: 'insert' | 'delete' | 'replace'
+    position: { line: number; column: number }
+    text?: string
+    length?: number
+    version: number
+    timestamp: Date
+  }>
+}
+
+export interface CollaborationCursorItem {
+  userId: string
+  userName: string
+  documentId: string
+  position: {
+    line: number
+    column: number
+  }
+  selection?: {
+    start: { line: number; column: number }
+    end: { line: number; column: number }
+  }
+  color: string
+  lastUpdated: Date
 }
 
 // Initialize database with race condition protection
@@ -124,6 +191,76 @@ export async function initDatabase(): Promise<void> {
               indices: ['action', 'timestamp'],
               ttl: 30 * 24 * 60 * 60 * 1000, // 30 days TTL
               ttlInterval: 60 * 60 * 1000, // Check every hour
+            })
+
+          // Multi-tenancy collections
+          tenantsCollection =
+            db!.getCollection('tenants') ||
+            db!.addCollection('tenants', {
+              unique: ['id', 'slug'],
+              indices: ['id', 'slug', 'status', 'ownerId'],
+            })
+
+          organizationsCollection =
+            db!.getCollection('organizations') ||
+            db!.addCollection('organizations', {
+              unique: ['id'],
+              indices: ['id', 'tenantId', 'slug', 'parentId'],
+            })
+
+          tenantMembersCollection =
+            db!.getCollection('tenantMembers') ||
+            db!.addCollection('tenantMembers', {
+              unique: ['id'],
+              indices: ['id', 'tenantId', 'userId', 'email'],
+            })
+
+          orgMembersCollection =
+            db!.getCollection('orgMembers') ||
+            db!.addCollection('orgMembers', {
+              unique: ['id'],
+              indices: ['id', 'orgId', 'userId', 'email'],
+            })
+
+          teamsCollection =
+            db!.getCollection('teams') ||
+            db!.addCollection('teams', {
+              unique: ['id'],
+              indices: ['id', 'orgId'],
+            })
+
+          tenantDomainsCollection =
+            db!.getCollection('tenantDomains') ||
+            db!.addCollection('tenantDomains', {
+              unique: ['id', 'domain'],
+              indices: ['id', 'tenantId', 'domain', 'verified'],
+            })
+
+          // Collaboration collections (v0.7.0)
+          userPresenceCollection =
+            db!.getCollection('userPresence') ||
+            db!.addCollection('userPresence', {
+              unique: ['userId'],
+              indices: ['userId', 'status'],
+              ttl: 5 * 60 * 1000, // 5 minutes TTL for presence
+              ttlInterval: 60000, // Check every minute
+            })
+
+          documentStateCollection =
+            db!.getCollection('documentState') ||
+            db!.addCollection('documentState', {
+              unique: ['documentId'],
+              indices: ['documentId', 'version'],
+              ttl: 24 * 60 * 60 * 1000, // 24 hours TTL
+              ttlInterval: 60 * 60 * 1000, // Check every hour
+            })
+
+          collaborationCursorCollection =
+            db!.getCollection('collaborationCursor') ||
+            db!.addCollection('collaborationCursor', {
+              indices: ['userId', 'documentId'],
+              ttl: 30000, // 30 seconds TTL for cursors
+              ttlInterval: 10000, // Check every 10 seconds
             })
 
           isInitialized = true
@@ -475,6 +612,643 @@ export async function getNselfInstallPath(): Promise<string> {
 // Export the database instance for advanced operations
 export function getDatabase(): Loki | null {
   return db
+}
+
+// =============================================================================
+// Tenant Operations
+// =============================================================================
+
+export async function createTenant(tenant: Tenant): Promise<Tenant> {
+  await initDatabase()
+  const inserted = tenantsCollection?.insert(tenant)
+  if (!inserted) throw new Error('Failed to create tenant')
+  await addAuditLog('tenant_created', { tenantId: tenant.id }, true)
+  return inserted
+}
+
+export async function getTenant(id: string): Promise<Tenant | null> {
+  await initDatabase()
+  return tenantsCollection?.findOne({ id }) || null
+}
+
+export async function getTenantBySlug(slug: string): Promise<Tenant | null> {
+  await initDatabase()
+  return tenantsCollection?.findOne({ slug }) || null
+}
+
+export async function listTenants(): Promise<Tenant[]> {
+  await initDatabase()
+  return tenantsCollection?.find() || []
+}
+
+export async function updateTenant(
+  id: string,
+  updates: Partial<Tenant>,
+): Promise<Tenant | null> {
+  await initDatabase()
+  const tenant = tenantsCollection?.findOne({ id })
+  if (!tenant) return null
+
+  Object.assign(tenant, updates, { updatedAt: new Date().toISOString() })
+  tenantsCollection?.update(tenant)
+  await addAuditLog('tenant_updated', { tenantId: id }, true)
+  return tenant
+}
+
+export async function deleteTenant(id: string): Promise<void> {
+  await initDatabase()
+  const tenant = tenantsCollection?.findOne({ id })
+  if (tenant) {
+    tenantsCollection?.remove(tenant)
+    await addAuditLog('tenant_deleted', { tenantId: id }, true)
+  }
+}
+
+// =============================================================================
+// Organization Operations (with tenant isolation)
+// =============================================================================
+
+export async function createOrganization(
+  org: Organization,
+): Promise<Organization> {
+  await initDatabase()
+  const inserted = organizationsCollection?.insert(org)
+  if (!inserted) throw new Error('Failed to create organization')
+  await addAuditLog(
+    'organization_created',
+    { tenantId: org.tenantId, orgId: org.id },
+    true,
+  )
+  return inserted
+}
+
+export async function getOrganization(
+  id: string,
+  tenantId?: string,
+): Promise<Organization | null> {
+  await initDatabase()
+  const query: any = { id }
+  if (tenantId) query.tenantId = tenantId
+  return organizationsCollection?.findOne(query) || null
+}
+
+export async function listOrganizations(
+  tenantId?: string,
+): Promise<Organization[]> {
+  await initDatabase()
+  const query = tenantId ? { tenantId } : {}
+  return organizationsCollection?.find(query) || []
+}
+
+export async function listOrganizationsByParent(
+  parentId: string,
+  tenantId?: string,
+): Promise<Organization[]> {
+  await initDatabase()
+  const query: any = { parentId }
+  if (tenantId) query.tenantId = tenantId
+  return organizationsCollection?.find(query) || []
+}
+
+export async function updateOrganization(
+  id: string,
+  updates: Partial<Organization>,
+  tenantId?: string,
+): Promise<Organization | null> {
+  await initDatabase()
+  const query: any = { id }
+  if (tenantId) query.tenantId = tenantId
+
+  const org = organizationsCollection?.findOne(query)
+  if (!org) return null
+
+  Object.assign(org, updates, { updatedAt: new Date().toISOString() })
+  organizationsCollection?.update(org)
+  await addAuditLog(
+    'organization_updated',
+    { tenantId: org.tenantId, orgId: id },
+    true,
+  )
+  return org
+}
+
+export async function deleteOrganization(
+  id: string,
+  tenantId?: string,
+): Promise<void> {
+  await initDatabase()
+  const query: any = { id }
+  if (tenantId) query.tenantId = tenantId
+
+  const org = organizationsCollection?.findOne(query)
+  if (org) {
+    organizationsCollection?.remove(org)
+    await addAuditLog(
+      'organization_deleted',
+      { tenantId: org.tenantId, orgId: id },
+      true,
+    )
+  }
+}
+
+// =============================================================================
+// Tenant Member Operations
+// =============================================================================
+
+export async function createTenantMember(
+  member: TenantMember,
+): Promise<TenantMember> {
+  await initDatabase()
+  const inserted = tenantMembersCollection?.insert(member)
+  if (!inserted) throw new Error('Failed to add tenant member')
+  await addAuditLog(
+    'tenant_member_added',
+    { tenantId: member.tenantId, userId: member.userId },
+    true,
+  )
+  return inserted
+}
+
+export async function getTenantMember(
+  id: string,
+  tenantId: string,
+): Promise<TenantMember | null> {
+  await initDatabase()
+  return tenantMembersCollection?.findOne({ id, tenantId }) || null
+}
+
+export async function listTenantMembers(
+  tenantId: string,
+): Promise<TenantMember[]> {
+  await initDatabase()
+  return tenantMembersCollection?.find({ tenantId }) || []
+}
+
+export async function updateTenantMember(
+  id: string,
+  tenantId: string,
+  updates: Partial<TenantMember>,
+): Promise<TenantMember | null> {
+  await initDatabase()
+  const member = tenantMembersCollection?.findOne({ id, tenantId })
+  if (!member) return null
+
+  Object.assign(member, updates)
+  tenantMembersCollection?.update(member)
+  await addAuditLog(
+    'tenant_member_updated',
+    { tenantId, userId: member.userId },
+    true,
+  )
+  return member
+}
+
+export async function deleteTenantMember(
+  id: string,
+  tenantId: string,
+): Promise<void> {
+  await initDatabase()
+  const member = tenantMembersCollection?.findOne({ id, tenantId })
+  if (member) {
+    tenantMembersCollection?.remove(member)
+    await addAuditLog(
+      'tenant_member_removed',
+      { tenantId, userId: member.userId },
+      true,
+    )
+  }
+}
+
+// =============================================================================
+// Organization Member Operations
+// =============================================================================
+
+export async function createOrgMember(member: OrgMember): Promise<OrgMember> {
+  await initDatabase()
+  const inserted = orgMembersCollection?.insert(member)
+  if (!inserted) throw new Error('Failed to add org member')
+  await addAuditLog(
+    'org_member_added',
+    { orgId: member.orgId, userId: member.userId },
+    true,
+  )
+  return inserted
+}
+
+export async function getOrgMember(
+  id: string,
+  orgId: string,
+): Promise<OrgMember | null> {
+  await initDatabase()
+  return orgMembersCollection?.findOne({ id, orgId }) || null
+}
+
+export async function listOrgMembers(orgId: string): Promise<OrgMember[]> {
+  await initDatabase()
+  return orgMembersCollection?.find({ orgId }) || []
+}
+
+export async function updateOrgMember(
+  id: string,
+  orgId: string,
+  updates: Partial<OrgMember>,
+): Promise<OrgMember | null> {
+  await initDatabase()
+  const member = orgMembersCollection?.findOne({ id, orgId })
+  if (!member) return null
+
+  Object.assign(member, updates)
+  orgMembersCollection?.update(member)
+  await addAuditLog(
+    'org_member_updated',
+    { orgId, userId: member.userId },
+    true,
+  )
+  return member
+}
+
+export async function deleteOrgMember(
+  id: string,
+  orgId: string,
+): Promise<void> {
+  await initDatabase()
+  const member = orgMembersCollection?.findOne({ id, orgId })
+  if (member) {
+    orgMembersCollection?.remove(member)
+    await addAuditLog(
+      'org_member_removed',
+      { orgId, userId: member.userId },
+      true,
+    )
+  }
+}
+
+// =============================================================================
+// Team Operations
+// =============================================================================
+
+export async function createTeam(team: Team): Promise<Team> {
+  await initDatabase()
+  const inserted = teamsCollection?.insert(team)
+  if (!inserted) throw new Error('Failed to create team')
+  await addAuditLog(
+    'team_created',
+    { orgId: team.orgId, teamId: team.id },
+    true,
+  )
+  return inserted
+}
+
+export async function getTeam(id: string, orgId: string): Promise<Team | null> {
+  await initDatabase()
+  return teamsCollection?.findOne({ id, orgId }) || null
+}
+
+export async function listTeams(orgId: string): Promise<Team[]> {
+  await initDatabase()
+  return teamsCollection?.find({ orgId }) || []
+}
+
+export async function updateTeam(
+  id: string,
+  orgId: string,
+  updates: Partial<Team>,
+): Promise<Team | null> {
+  await initDatabase()
+  const team = teamsCollection?.findOne({ id, orgId })
+  if (!team) return null
+
+  Object.assign(team, updates)
+  teamsCollection?.update(team)
+  await addAuditLog('team_updated', { orgId, teamId: id }, true)
+  return team
+}
+
+export async function deleteTeam(id: string, orgId: string): Promise<void> {
+  await initDatabase()
+  const team = teamsCollection?.findOne({ id, orgId })
+  if (team) {
+    teamsCollection?.remove(team)
+    await addAuditLog('team_deleted', { orgId, teamId: id }, true)
+  }
+}
+
+// =============================================================================
+// Tenant Domain Operations
+// =============================================================================
+
+export async function createTenantDomain(
+  domain: TenantDomain,
+): Promise<TenantDomain> {
+  await initDatabase()
+  const inserted = tenantDomainsCollection?.insert(domain)
+  if (!inserted) throw new Error('Failed to add domain')
+  await addAuditLog(
+    'domain_added',
+    { tenantId: domain.tenantId, domain: domain.domain },
+    true,
+  )
+  return inserted
+}
+
+export async function getTenantDomain(
+  domain: string,
+  tenantId: string,
+): Promise<TenantDomain | null> {
+  await initDatabase()
+  return tenantDomainsCollection?.findOne({ domain, tenantId }) || null
+}
+
+export async function listTenantDomains(
+  tenantId: string,
+): Promise<TenantDomain[]> {
+  await initDatabase()
+  return tenantDomainsCollection?.find({ tenantId }) || []
+}
+
+export async function updateTenantDomain(
+  domain: string,
+  tenantId: string,
+  updates: Partial<TenantDomain>,
+): Promise<TenantDomain | null> {
+  await initDatabase()
+  const domainRecord = tenantDomainsCollection?.findOne({ domain, tenantId })
+  if (!domainRecord) return null
+
+  Object.assign(domainRecord, updates)
+  tenantDomainsCollection?.update(domainRecord)
+  await addAuditLog('domain_updated', { tenantId, domain }, true)
+  return domainRecord
+}
+
+export async function deleteTenantDomain(
+  domain: string,
+  tenantId: string,
+): Promise<void> {
+  await initDatabase()
+  const domainRecord = tenantDomainsCollection?.findOne({ domain, tenantId })
+  if (domainRecord) {
+    tenantDomainsCollection?.remove(domainRecord)
+    await addAuditLog('domain_removed', { tenantId, domain }, true)
+  }
+}
+
+// =============================================================================
+// Collaboration Operations (v0.7.0)
+// =============================================================================
+
+/**
+ * Update or create user presence
+ */
+export async function updateUserPresence(
+  presence: UserPresenceItem,
+): Promise<void> {
+  await initDatabase()
+  const existing = userPresenceCollection?.findOne({ userId: presence.userId })
+
+  if (existing) {
+    Object.assign(existing, presence, { lastSeen: new Date() })
+    userPresenceCollection?.update(existing)
+  } else {
+    userPresenceCollection?.insert({ ...presence, lastSeen: new Date() })
+  }
+}
+
+/**
+ * Get all online users
+ */
+export async function getOnlineUsers(): Promise<UserPresenceItem[]> {
+  await initDatabase()
+  return (
+    userPresenceCollection?.find({
+      status: { $in: ['online', 'away'] },
+    }) || []
+  )
+}
+
+/**
+ * Get presence for specific user
+ */
+export async function getUserPresence(
+  userId: string,
+): Promise<UserPresenceItem | null> {
+  await initDatabase()
+  return userPresenceCollection?.findOne({ userId }) || null
+}
+
+/**
+ * Remove user presence (on disconnect)
+ */
+export async function removeUserPresence(userId: string): Promise<void> {
+  await initDatabase()
+  const presence = userPresenceCollection?.findOne({ userId })
+  if (presence) {
+    presence.status = 'offline'
+    presence.lastSeen = new Date()
+    userPresenceCollection?.update(presence)
+  }
+}
+
+/**
+ * Get or create document state
+ */
+export async function getDocumentState(
+  documentId: string,
+): Promise<DocumentStateItem | null> {
+  await initDatabase()
+  return documentStateCollection?.findOne({ documentId }) || null
+}
+
+/**
+ * Create new document state
+ */
+export async function createDocumentState(
+  documentId: string,
+  content: string,
+): Promise<DocumentStateItem> {
+  await initDatabase()
+  const docState: DocumentStateItem = {
+    documentId,
+    content,
+    version: 0,
+    lastModified: new Date(),
+    operations: [],
+  }
+  const inserted = documentStateCollection?.insert(docState)
+  if (!inserted) throw new Error('Failed to create document state')
+  return inserted
+}
+
+/**
+ * Apply operation to document (Operational Transformation)
+ */
+export async function applyDocumentOperation(
+  documentId: string,
+  operation: {
+    operationId: string
+    userId: string
+    type: 'insert' | 'delete' | 'replace'
+    position: { line: number; column: number }
+    text?: string
+    length?: number
+    version: number
+  },
+): Promise<DocumentStateItem | null> {
+  await initDatabase()
+  const docState = documentStateCollection?.findOne({ documentId })
+  if (!docState) return null
+
+  // Add operation to history
+  docState.operations.push({
+    ...operation,
+    timestamp: new Date(),
+  })
+
+  // Increment version
+  docState.version += 1
+  docState.lastModified = new Date()
+
+  // Apply operation to content (simplified OT)
+  docState.content = applyOperationToContent(
+    docState.content,
+    operation.type,
+    operation.position,
+    operation.text,
+    operation.length,
+  )
+
+  documentStateCollection?.update(docState)
+  return docState
+}
+
+/**
+ * Helper function to apply operation to content
+ * This is a simplified Operational Transformation implementation
+ */
+function applyOperationToContent(
+  content: string,
+  type: 'insert' | 'delete' | 'replace',
+  position: { line: number; column: number },
+  text?: string,
+  length?: number,
+): string {
+  const lines = content.split('\n')
+
+  if (position.line >= lines.length) {
+    // Extend lines if necessary
+    while (lines.length <= position.line) {
+      lines.push('')
+    }
+  }
+
+  const line = lines[position.line]
+  const before = line.substring(0, position.column)
+  const after = line.substring(position.column)
+
+  switch (type) {
+    case 'insert':
+      lines[position.line] = before + (text || '') + after
+      break
+    case 'delete':
+      lines[position.line] = before + after.substring(length || 0)
+      break
+    case 'replace':
+      lines[position.line] =
+        before + (text || '') + after.substring(length || 0)
+      break
+  }
+
+  return lines.join('\n')
+}
+
+/**
+ * Lock document for editing
+ */
+export async function lockDocument(
+  documentId: string,
+  userId: string,
+): Promise<boolean> {
+  await initDatabase()
+  const docState = documentStateCollection?.findOne({ documentId })
+  if (!docState) return false
+
+  if (docState.lockedBy && docState.lockedBy !== userId) {
+    return false // Already locked by another user
+  }
+
+  docState.lockedBy = userId
+  documentStateCollection?.update(docState)
+  return true
+}
+
+/**
+ * Unlock document
+ */
+export async function unlockDocument(
+  documentId: string,
+  userId: string,
+): Promise<boolean> {
+  await initDatabase()
+  const docState = documentStateCollection?.findOne({ documentId })
+  if (!docState) return false
+
+  if (docState.lockedBy !== userId) {
+    return false // Can't unlock if you don't own the lock
+  }
+
+  docState.lockedBy = undefined
+  documentStateCollection?.update(docState)
+  return true
+}
+
+/**
+ * Update cursor position for user
+ */
+export async function updateCursorPosition(
+  cursor: CollaborationCursorItem,
+): Promise<void> {
+  await initDatabase()
+  const existing = collaborationCursorCollection
+    ?.chain()
+    .find({ userId: cursor.userId, documentId: cursor.documentId })
+    .data()[0]
+
+  if (existing) {
+    Object.assign(existing, cursor, { lastUpdated: new Date() })
+    collaborationCursorCollection?.update(existing)
+  } else {
+    collaborationCursorCollection?.insert({
+      ...cursor,
+      lastUpdated: new Date(),
+    })
+  }
+}
+
+/**
+ * Get all cursors for a document
+ */
+export async function getDocumentCursors(
+  documentId: string,
+): Promise<CollaborationCursorItem[]> {
+  await initDatabase()
+  return collaborationCursorCollection?.find({ documentId }) || []
+}
+
+/**
+ * Remove cursor (on user disconnect or leave document)
+ */
+export async function removeCursor(
+  userId: string,
+  documentId: string,
+): Promise<void> {
+  await initDatabase()
+  const cursor = collaborationCursorCollection
+    ?.chain()
+    .find({ userId, documentId })
+    .data()[0]
+  if (cursor) {
+    collaborationCursorCollection?.remove(cursor)
+  }
 }
 
 // Initialize on module load

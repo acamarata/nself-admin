@@ -69,7 +69,8 @@ volumes/
 
 # Logs
 *.log
-logs/
+/logs/
+!/src/app/**/logs/
 
 # nself project files (when used for development)
 docker-compose.yml

@@ -1,3 +1,4 @@
+import { auth } from '@/lib/auth-db'
 import { logger } from '@/lib/logger'
 import * as notificationsApi from '@/lib/notifications'
 import { NextRequest, NextResponse } from 'next/server'
@@ -5,12 +6,20 @@ import { NextRequest, NextResponse } from 'next/server'
 /**
  * GET /api/notifications/preferences - Get notification preferences
  */
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    // TODO: Get actual user ID from session when multi-user is implemented
-    const userId = 'current-user'
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = await auth.validateSession(token)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = session.userId
 
     const preferences = await notificationsApi.getPreferences(userId)
 
@@ -56,6 +65,17 @@ export async function PUT(request: NextRequest) {
   const startTime = Date.now()
 
   try {
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = await auth.validateSession(token)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = session.userId
+
     const body = await request.json()
 
     // Validate quiet hours format if provided
@@ -123,9 +143,6 @@ export async function PUT(request: NextRequest) {
         )
       }
     }
-
-    // TODO: Get actual user ID from session when multi-user is implemented
-    const userId = 'current-user'
 
     const preferences = await notificationsApi.updatePreferences(userId, {
       enabled: body.enabled,

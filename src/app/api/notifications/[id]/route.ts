@@ -1,3 +1,4 @@
+import { auth } from '@/lib/auth-db'
 import { logger } from '@/lib/logger'
 import * as notificationsApi from '@/lib/notifications'
 import { NextRequest, NextResponse } from 'next/server'
@@ -9,10 +10,21 @@ interface RouteParams {
 /**
  * GET /api/notifications/[id] - Get a single notification
  */
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const startTime = Date.now()
 
   try {
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = await auth.validateSession(token)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = session.userId
+
     const { id } = await params
 
     if (!id) {
@@ -21,9 +33,6 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
         { status: 400 },
       )
     }
-
-    // TODO: Get actual user ID from session when multi-user is implemented
-    const userId = 'current-user'
 
     const notification = await notificationsApi.getNotification(id, userId)
 
@@ -66,6 +75,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const startTime = Date.now()
 
   try {
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = await auth.validateSession(token)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = session.userId
+
     const { id } = await params
 
     if (!id) {
@@ -87,9 +107,6 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         { status: 400 },
       )
     }
-
-    // TODO: Get actual user ID from session when multi-user is implemented
-    const userId = 'current-user'
 
     const notification = await notificationsApi.updateNotification(id, userId, {
       read: body.read,
@@ -129,10 +146,21 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 /**
  * DELETE /api/notifications/[id] - Delete a notification
  */
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const startTime = Date.now()
 
   try {
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = await auth.validateSession(token)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = session.userId
+
     const { id } = await params
 
     if (!id) {
@@ -141,9 +169,6 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
         { status: 400 },
       )
     }
-
-    // TODO: Get actual user ID from session when multi-user is implemented
-    const userId = 'current-user'
 
     const deleted = await notificationsApi.deleteNotification(id, userId)
 

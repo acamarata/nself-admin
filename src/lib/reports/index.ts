@@ -1,6 +1,6 @@
 /**
  * Reports library for nself-admin
- * Provides mock report templates, executions, and API functions
+ * Server-side functions use backend, client-side uses API calls
  */
 
 import type {
@@ -15,20 +15,32 @@ import type {
   ReportStatus,
   ReportTemplate,
 } from '@/types/report'
-import { api } from '../api-client'
 
-const BASE_URL = '/api/reports'
+// Server-side backend (only available server-side)
+let backend: typeof import('./backend') | null = null
+
+// Lazy load backend only on server-side
+async function getBackend() {
+  if (typeof window !== 'undefined') {
+    throw new Error('Backend functions can only be called server-side')
+  }
+
+  if (!backend) {
+    backend = await import('./backend')
+  }
+
+  return backend
+}
 
 // ============================================================================
-// Mock Data
+// Default Templates (for reference and seeding)
 // ============================================================================
 
 /**
- * Mock report templates for common reports
+ * Default report templates for common reports (type doesn't enforce strict typing)
  */
-export const mockTemplates: ReportTemplate[] = [
+export const defaultTemplates: any[] = [
   {
-    id: 'tpl-1',
     name: 'Service Health Report',
     description:
       'Overview of all service health metrics including uptime, response times, and error rates',
@@ -90,7 +102,8 @@ export const mockTemplates: ReportTemplate[] = [
     updatedAt: '2026-01-01T00:00:00Z',
   },
   {
-    id: 'tpl-2',
+    // Template ID will be assigned by database
+    // id: 'tpl-2',
     name: 'User Activity Report',
     description:
       'Detailed analysis of user activity including logins, actions, and session data',
@@ -143,7 +156,8 @@ export const mockTemplates: ReportTemplate[] = [
     updatedAt: '2026-01-01T00:00:00Z',
   },
   {
-    id: 'tpl-3',
+    // Template ID will be assigned by database
+    // id: 'tpl-3',
     name: 'Database Performance Report',
     description:
       'Database performance metrics including query times, connection pools, and resource usage',
@@ -214,7 +228,8 @@ export const mockTemplates: ReportTemplate[] = [
     updatedAt: '2026-01-01T00:00:00Z',
   },
   {
-    id: 'tpl-4',
+    // Template ID will be assigned by database
+    // id: 'tpl-4',
     name: 'Security Audit Report',
     description:
       'Comprehensive security audit including access attempts, permission changes, and threat detection',
@@ -290,7 +305,8 @@ export const mockTemplates: ReportTemplate[] = [
     updatedAt: '2026-01-01T00:00:00Z',
   },
   {
-    id: 'tpl-5',
+    // Template ID will be assigned by database
+    // id: 'tpl-5',
     name: 'Resource Usage Report',
     description:
       'System resource utilization including CPU, memory, disk, and network usage over time',
@@ -360,7 +376,8 @@ export const mockTemplates: ReportTemplate[] = [
     updatedAt: '2026-01-01T00:00:00Z',
   },
   {
-    id: 'tpl-6',
+    // Template ID will be assigned by database
+    // id: 'tpl-6',
     name: 'API Usage Report',
     description:
       'API endpoint usage statistics including request counts, response times, and error rates',
@@ -442,122 +459,8 @@ export const mockTemplates: ReportTemplate[] = [
   },
 ]
 
-/**
- * Mock report executions
- */
-export const mockExecutions: ReportExecution[] = [
-  {
-    id: 'exec-1',
-    reportId: 'tpl-1',
-    status: 'completed',
-    format: 'pdf',
-    fileUrl: '/api/reports/download/exec-1',
-    fileSize: 245678,
-    rowCount: 12,
-    startedAt: '2026-01-28T10:00:00Z',
-    completedAt: '2026-01-28T10:00:15Z',
-    expiresAt: '2026-02-04T10:00:15Z',
-    createdBy: 'admin',
-  },
-  {
-    id: 'exec-2',
-    reportId: 'tpl-2',
-    status: 'completed',
-    format: 'excel',
-    fileUrl: '/api/reports/download/exec-2',
-    fileSize: 512000,
-    rowCount: 1250,
-    startedAt: '2026-01-28T09:30:00Z',
-    completedAt: '2026-01-28T09:30:45Z',
-    expiresAt: '2026-02-04T09:30:45Z',
-    createdBy: 'admin',
-  },
-  {
-    id: 'exec-3',
-    reportId: 'tpl-3',
-    scheduleId: 'sched-1',
-    status: 'completed',
-    format: 'csv',
-    fileUrl: '/api/reports/download/exec-3',
-    fileSize: 89234,
-    rowCount: 500,
-    startedAt: '2026-01-28T00:00:00Z',
-    completedAt: '2026-01-28T00:00:30Z',
-    expiresAt: '2026-02-04T00:00:30Z',
-    createdBy: 'system',
-  },
-  {
-    id: 'exec-4',
-    reportId: 'tpl-4',
-    status: 'failed',
-    format: 'pdf',
-    error: 'Database connection timeout',
-    startedAt: '2026-01-27T15:00:00Z',
-    createdBy: 'admin',
-  },
-  {
-    id: 'exec-5',
-    reportId: 'tpl-5',
-    status: 'generating',
-    format: 'json',
-    startedAt: '2026-01-28T10:30:00Z',
-    createdBy: 'admin',
-  },
-]
-
-/**
- * Mock report schedules
- */
-export const mockSchedules: ReportSchedule[] = [
-  {
-    id: 'sched-1',
-    reportId: 'tpl-1',
-    frequency: 'daily',
-    time: '08:00',
-    timezone: 'America/New_York',
-    format: 'pdf',
-    recipients: ['admin@example.com', 'ops@example.com'],
-    enabled: true,
-    lastRun: '2026-01-28T08:00:00Z',
-    nextRun: '2026-01-29T08:00:00Z',
-  },
-  {
-    id: 'sched-2',
-    reportId: 'tpl-3',
-    frequency: 'weekly',
-    dayOfWeek: 1,
-    time: '09:00',
-    timezone: 'America/New_York',
-    format: 'excel',
-    recipients: ['dba@example.com'],
-    enabled: true,
-    lastRun: '2026-01-27T09:00:00Z',
-    nextRun: '2026-02-03T09:00:00Z',
-  },
-  {
-    id: 'sched-3',
-    reportId: 'tpl-4',
-    frequency: 'monthly',
-    dayOfMonth: 1,
-    time: '06:00',
-    timezone: 'America/New_York',
-    format: 'pdf',
-    recipients: ['security@example.com', 'compliance@example.com'],
-    enabled: true,
-    lastRun: '2026-01-01T06:00:00Z',
-    nextRun: '2026-02-01T06:00:00Z',
-  },
-  {
-    id: 'sched-4',
-    reportId: 'tpl-5',
-    frequency: 'hourly',
-    time: '00',
-    timezone: 'UTC',
-    format: 'json',
-    recipients: ['monitoring@example.com'],
-    enabled: false,
-  },
-]
+// Note: Executions and schedules are now stored in database
+// No mock data needed - all data comes from LokiJS backend
 
 // ============================================================================
 // Input Types
@@ -572,6 +475,8 @@ export interface CreateReportTemplateInput {
   defaultFilters?: ReportFilter[]
   defaultSort?: ReportSort[]
   visualization?: ReportTemplate['visualization']
+  tenantId?: string
+  createdBy: string
 }
 
 export interface UpdateReportTemplateInput {
@@ -600,7 +505,9 @@ export interface CreateScheduleInput {
   timezone: string
   format: ReportFormat
   recipients: string[]
-  enabled?: boolean
+  enabled: boolean
+  lastRun?: string
+  nextRun?: string
 }
 
 export interface UpdateScheduleInput {
@@ -615,77 +522,58 @@ export interface UpdateScheduleInput {
 }
 
 // ============================================================================
-// Template API Functions
+// Template Functions (Server-side)
 // ============================================================================
 
 /**
- * Get all report templates, optionally filtered by category
+ * Get all report templates, optionally filtered by tenantId
  */
-export async function getReportTemplates(
-  category?: string,
+export async function getTemplates(
+  tenantId?: string,
 ): Promise<ReportTemplate[]> {
-  const url = category
-    ? `${BASE_URL}/templates?category=${encodeURIComponent(category)}`
-    : `${BASE_URL}/templates`
-  const response = await api.get(url)
-  const data = await response.json()
-  if (!data.success)
-    throw new Error(data.error || 'Failed to get report templates')
-  return data.data
+  const be = await getBackend()
+  return be.getTemplates(tenantId)
 }
 
 /**
  * Get a report template by ID
  */
-export async function getReportTemplateById(
-  id: string,
-): Promise<ReportTemplate> {
-  const response = await api.get(`${BASE_URL}/templates/${id}`)
-  const data = await response.json()
-  if (!data.success)
-    throw new Error(data.error || 'Failed to get report template')
-  return data.data
+export async function getTemplateById(id: string): Promise<ReportTemplate> {
+  const be = await getBackend()
+  return be.getTemplateById(id)
 }
 
 /**
  * Create a new report template
  */
-export async function createReportTemplate(
+export async function createTemplate(
   input: CreateReportTemplateInput,
 ): Promise<ReportTemplate> {
-  const response = await api.post(`${BASE_URL}/templates`, input)
-  const data = await response.json()
-  if (!data.success)
-    throw new Error(data.error || 'Failed to create report template')
-  return data.data
+  const be = await getBackend()
+  return be.createTemplate(input)
 }
 
 /**
  * Update an existing report template
  */
-export async function updateReportTemplate(
+export async function updateTemplate(
   id: string,
   updates: UpdateReportTemplateInput,
 ): Promise<ReportTemplate> {
-  const response = await api.put(`${BASE_URL}/templates/${id}`, updates)
-  const data = await response.json()
-  if (!data.success)
-    throw new Error(data.error || 'Failed to update report template')
-  return data.data
+  const be = await getBackend()
+  return be.updateTemplate(id, updates)
 }
 
 /**
  * Delete a report template
  */
-export async function deleteReportTemplate(id: string): Promise<void> {
-  const response = await api.delete(`${BASE_URL}/templates/${id}`)
-  const data = await response.json()
-  if (!data.success)
-    throw new Error(data.error || 'Failed to delete report template')
+export async function deleteTemplate(id: string): Promise<void> {
+  const be = await getBackend()
+  return be.deleteTemplate(id)
 }
 
 // ============================================================================
-// Report Generation API Functions
+// Report Generation Functions (Server-side)
 // ============================================================================
 
 /**
@@ -693,64 +581,44 @@ export async function deleteReportTemplate(id: string): Promise<void> {
  */
 export async function generateReport(
   input: GenerateReportInput,
+  createdBy: string,
 ): Promise<ReportExecution> {
-  const response = await api.post(`${BASE_URL}/generate`, input)
-  const data = await response.json()
-  if (!data.success) throw new Error(data.error || 'Failed to generate report')
-  return data.data
+  const be = await getBackend()
+  return be.generateReport({ ...input, createdBy })
 }
 
 /**
  * Get a report execution by ID
  */
-export async function getReportExecution(id: string): Promise<ReportExecution> {
-  const response = await api.get(`${BASE_URL}/executions/${id}`)
-  const data = await response.json()
-  if (!data.success)
-    throw new Error(data.error || 'Failed to get report execution')
-  return data.data
+export async function getExecutionById(id: string): Promise<ReportExecution> {
+  const be = await getBackend()
+  return be.getExecutionById(id)
 }
 
 /**
- * Get report executions, optionally filtered by report ID and options
+ * Get report executions, optionally filtered by options
  */
-export async function getReportExecutions(
-  reportId?: string,
+export async function getExecutions(
   options?: GetReportExecutionsOptions,
 ): Promise<ReportExecution[]> {
-  const params = new URLSearchParams()
-  if (reportId) params.set('reportId', reportId)
-  if (options?.status) params.set('status', options.status)
-  if (options?.format) params.set('format', options.format)
-  if (options?.limit) params.set('limit', options.limit.toString())
-  if (options?.offset) params.set('offset', options.offset.toString())
-
-  const queryString = params.toString()
-  const url = queryString
-    ? `${BASE_URL}/executions?${queryString}`
-    : `${BASE_URL}/executions`
-  const response = await api.get(url)
-  const data = await response.json()
-  if (!data.success)
-    throw new Error(data.error || 'Failed to get report executions')
-  return data.data
+  const be = await getBackend()
+  return be.getExecutions(options)
 }
 
 /**
- * Download a report by execution ID
- * Returns a Blob for client-side download handling
+ * Get execution file for download
  */
-export async function downloadReport(executionId: string): Promise<Blob> {
-  const response = await api.get(`${BASE_URL}/download/${executionId}`)
-  if (!response.ok) {
-    const data = await response.json()
-    throw new Error(data.error || 'Failed to download report')
-  }
-  return response.blob()
+export async function getExecutionFile(id: string): Promise<{
+  data: Uint8Array
+  contentType: string
+  filename: string
+} | null> {
+  const be = await getBackend()
+  return be.getExecutionFile(id)
 }
 
 // ============================================================================
-// Schedule API Functions
+// Schedule Functions (Server-side)
 // ============================================================================
 
 /**
@@ -759,10 +627,16 @@ export async function downloadReport(executionId: string): Promise<Blob> {
 export async function getSchedules(
   reportId: string,
 ): Promise<ReportSchedule[]> {
-  const response = await api.get(`${BASE_URL}/templates/${reportId}/schedules`)
-  const data = await response.json()
-  if (!data.success) throw new Error(data.error || 'Failed to get schedules')
-  return data.data
+  const be = await getBackend()
+  return be.getSchedules(reportId)
+}
+
+/**
+ * Get a schedule by ID
+ */
+export async function getScheduleById(id: string): Promise<ReportSchedule> {
+  const be = await getBackend()
+  return be.getScheduleById(id)
 }
 
 /**
@@ -772,13 +646,8 @@ export async function createSchedule(
   reportId: string,
   schedule: CreateScheduleInput,
 ): Promise<ReportSchedule> {
-  const response = await api.post(
-    `${BASE_URL}/templates/${reportId}/schedules`,
-    schedule,
-  )
-  const data = await response.json()
-  if (!data.success) throw new Error(data.error || 'Failed to create schedule')
-  return data.data
+  const be = await getBackend()
+  return be.createSchedule(reportId, schedule)
 }
 
 /**
@@ -788,33 +657,36 @@ export async function updateSchedule(
   scheduleId: string,
   updates: UpdateScheduleInput,
 ): Promise<ReportSchedule> {
-  const response = await api.put(`${BASE_URL}/schedules/${scheduleId}`, updates)
-  const data = await response.json()
-  if (!data.success) throw new Error(data.error || 'Failed to update schedule')
-  return data.data
+  const be = await getBackend()
+  return be.updateSchedule(scheduleId, updates)
 }
 
 /**
  * Delete a schedule
  */
 export async function deleteSchedule(scheduleId: string): Promise<void> {
-  const response = await api.delete(`${BASE_URL}/schedules/${scheduleId}`)
-  const data = await response.json()
-  if (!data.success) throw new Error(data.error || 'Failed to delete schedule')
+  const be = await getBackend()
+  return be.deleteSchedule(scheduleId)
 }
 
 // ============================================================================
-// Stats API Function
+// Stats Functions (Server-side)
 // ============================================================================
 
 /**
  * Get report statistics
  */
 export async function getReportStats(): Promise<ReportStats> {
-  const response = await api.get(`${BASE_URL}/stats`)
-  const data = await response.json()
-  if (!data.success) throw new Error(data.error || 'Failed to get report stats')
-  return data.data
+  const be = await getBackend()
+  return be.getReportStats()
+}
+
+/**
+ * Seed default templates
+ */
+export async function seedDefaultTemplates(): Promise<void> {
+  const be = await getBackend()
+  return be.seedDefaultTemplates()
 }
 
 // ============================================================================
@@ -823,31 +695,28 @@ export async function getReportStats(): Promise<ReportStats> {
 
 export const reportsApi = {
   // Templates
-  getTemplates: getReportTemplates,
-  getTemplateById: getReportTemplateById,
-  createTemplate: createReportTemplate,
-  updateTemplate: updateReportTemplate,
-  deleteTemplate: deleteReportTemplate,
+  getTemplates,
+  getTemplateById,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate,
 
   // Generation & Executions
-  generate: generateReport,
-  getExecution: getReportExecution,
-  getExecutions: getReportExecutions,
-  download: downloadReport,
+  generateReport,
+  getExecutionById,
+  getExecutions,
+  getExecutionFile,
 
   // Schedules
   getSchedules,
+  getScheduleById,
   createSchedule,
   updateSchedule,
   deleteSchedule,
 
   // Stats
-  getStats: getReportStats,
-}
+  getReportStats,
 
-// Export mock data for testing and development
-export const mockData = {
-  templates: mockTemplates,
-  executions: mockExecutions,
-  schedules: mockSchedules,
+  // Seed
+  seedDefaultTemplates,
 }

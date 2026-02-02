@@ -1,10 +1,10 @@
-import { findNselfPath } from '@/lib/nself-path'
+import { nselfDoctor } from '@/lib/nselfCLI'
 import { getProjectPath } from '@/lib/paths'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
 import { promisify } from 'util'
 
-const execAsync = promisify(exec)
+const execFileAsync = promisify(execFile)
 
 export async function POST(_request: NextRequest) {
   try {
@@ -12,25 +12,29 @@ export async function POST(_request: NextRequest) {
     const body = await _request.json().catch(() => ({}))
     const shouldFix = body.fix === true
 
-    // Find nself CLI
-    const nselfPath = await findNselfPath()
+    // Run nself doctor command using secure CLI wrapper
+    const result = await nselfDoctor(shouldFix)
 
-    // Run nself doctor command
-    const command = shouldFix
-      ? `${nselfPath} doctor --fix`
-      : `${nselfPath} doctor`
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          error: 'Doctor command failed',
+          details: result.error || result.stderr || 'Unknown error',
+          output: result.stdout,
+        },
+        { status: 500 },
+      )
+    }
 
-    const { stdout, stderr: _stderr } = await execAsync(command, {
-      cwd: projectPath,
-      env: process.env,
-      timeout: 30000, // 30 second timeout
-    })
+    const stdout = result.stdout || ''
 
-    // Also get container status
-    const { stdout: psOutput } = await execAsync(
-      'docker ps -a --format "{{.Names}}|{{.Status}}|{{.RestartCount}}"',
+    // Also get container status using execFile (secure)
+    const { stdout: psOutput } = await execFileAsync(
+      'docker',
+      ['ps', '-a', '--format', '{{.Names}}|{{.Status}}|{{.RestartCount}}'],
       {
         cwd: projectPath,
+        timeout: 10000,
       },
     )
 
@@ -57,8 +61,9 @@ export async function POST(_request: NextRequest) {
         let logs: string[] = []
         if (status !== 'running' || health === 'unhealthy') {
           try {
-            const { stdout: logOutput } = await execAsync(
-              `docker logs ${name} --tail 10 2>&1`,
+            const { stdout: logOutput } = await execFileAsync(
+              'docker',
+              ['logs', name, '--tail', '10'],
               { timeout: 5000 },
             )
             logs = logOutput.split('\n').filter((l) => l.trim())

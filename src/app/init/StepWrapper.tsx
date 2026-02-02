@@ -3,8 +3,8 @@
 import { HeroPattern } from '@/components/HeroPattern'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { LogOut, RotateCcw } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { ProgressSteps } from './ProgressSteps'
 
 interface StepWrapperProps {
@@ -13,7 +13,35 @@ interface StepWrapperProps {
 
 export function StepWrapper({ children }: StepWrapperProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const [resetting, _setResetting] = useState(false)
+  const [stepValidated, setStepValidated] = useState(false)
+
+  // Validate that prior wizard steps were visited before allowing direct URL access
+  useEffect(() => {
+    const stepMatch = pathname.match(/\/init\/(\d+)/)
+    if (!stepMatch) {
+      setStepValidated(true)
+      return
+    }
+
+    const currentStep = parseInt(stepMatch[1], 10)
+    if (currentStep <= 1) {
+      setStepValidated(true)
+      return
+    }
+
+    const stored = localStorage.getItem('wizard_visited_steps')
+    const visitedSteps: number[] = stored ? JSON.parse(stored) : []
+
+    // Step 1 must have been visited to access any later step
+    if (!visitedSteps.includes(1)) {
+      router.replace('/init/1')
+      return
+    }
+
+    setStepValidated(true)
+  }, [pathname, router])
 
   const handleReset = () => {
     if (
@@ -115,7 +143,7 @@ export function StepWrapper({ children }: StepWrapperProps) {
 
             {/* Content */}
             <div className="relative rounded-2xl p-8">
-              <div className="space-y-6">{children}</div>
+              <div className="space-y-6">{stepValidated ? children : null}</div>
             </div>
           </div>
         </div>

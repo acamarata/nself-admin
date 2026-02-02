@@ -1,7 +1,9 @@
 /**
  * API Keys library for managing API key operations
+ * REAL IMPLEMENTATION - Uses cryptographically secure keys and database storage
  */
 
+import { getDatabase, initDatabase } from '@/lib/database'
 import type {
   ApiKey,
   ApiKeyLog,
@@ -13,236 +15,136 @@ import type {
   CreateApiKeyInput,
   CreateApiKeyResult,
 } from '@/types/api-key'
+import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
+import type { Collection } from 'lokijs'
 
 // =============================================================================
-// Mock Data
+// Database Collections
 // =============================================================================
 
-const mockApiKeys: ApiKey[] = [
-  {
-    id: 'key-1',
-    name: 'Production API Key',
-    description: 'Main production API access for external integrations',
-    keyPrefix: 'nself_pk',
-    keyHash: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.SdVa5YzBLCFH9O',
-    status: 'active',
-    scope: 'admin',
-    rateLimit: { requests: 1000, window: 3600 },
-    allowedOrigins: ['https://app.example.com', 'https://api.example.com'],
-    usageCount: 15420,
-    lastUsedAt: new Date().toISOString(),
-    lastUsedIp: '192.168.1.100',
-    createdBy: 'admin',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-15T00:00:00Z',
-  },
-  {
-    id: 'key-2',
-    name: 'Development Key',
-    description: 'Development and testing purposes',
-    keyPrefix: 'nself_dk',
-    keyHash: '$2b$12$xKv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.SdVa5YzBLCFH9P',
-    status: 'active',
-    scope: 'write',
-    rateLimit: { requests: 500, window: 3600 },
-    allowedIps: ['127.0.0.1', '::1', '192.168.1.0/24'],
-    usageCount: 8750,
-    lastUsedAt: new Date(Date.now() - 3600000).toISOString(),
-    lastUsedIp: '127.0.0.1',
-    createdBy: 'developer',
-    createdAt: '2026-01-05T10:30:00Z',
-    updatedAt: '2026-01-20T14:15:00Z',
-  },
-  {
-    id: 'key-3',
-    name: 'Read-Only Analytics Key',
-    description: 'Analytics dashboard read access',
-    keyPrefix: 'nself_ro',
-    keyHash: '$2b$12$aKv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.SdVa5YzBLCFH9Q',
-    status: 'active',
-    scope: 'read',
-    rateLimit: { requests: 2000, window: 3600 },
-    permissions: [
-      { resource: 'analytics', actions: ['read'] },
-      { resource: 'reports', actions: ['read'] },
-    ],
-    usageCount: 42100,
-    lastUsedAt: new Date(Date.now() - 300000).toISOString(),
-    lastUsedIp: '10.0.0.50',
-    createdBy: 'admin',
-    createdAt: '2025-12-15T08:00:00Z',
-    updatedAt: '2026-01-10T09:30:00Z',
-  },
-  {
-    id: 'key-4',
-    name: 'CI/CD Pipeline Key',
-    description: 'Automated deployment pipeline access',
-    keyPrefix: 'nself_ci',
-    keyHash: '$2b$12$bKv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.SdVa5YzBLCFH9R',
-    status: 'active',
-    scope: 'custom',
-    rateLimit: { requests: 100, window: 60 },
-    permissions: [
-      { resource: 'deployments', actions: ['create', 'read', 'execute'] },
-      { resource: 'builds', actions: ['create', 'read'] },
-      { resource: 'logs', actions: ['read'] },
-    ],
-    allowedIps: ['203.0.113.0/24'],
-    expiresAt: '2026-06-01T00:00:00Z',
-    usageCount: 1250,
-    lastUsedAt: new Date(Date.now() - 7200000).toISOString(),
-    lastUsedIp: '203.0.113.10',
-    createdBy: 'devops',
-    createdAt: '2026-01-10T16:45:00Z',
-    updatedAt: '2026-01-25T11:20:00Z',
-  },
-  {
-    id: 'key-5',
-    name: 'Legacy Integration Key',
-    description: 'Deprecated - scheduled for removal',
-    keyPrefix: 'nself_lg',
-    keyHash: '$2b$12$cKv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.SdVa5YzBLCFH9S',
-    status: 'inactive',
-    scope: 'write',
-    rateLimit: { requests: 200, window: 3600 },
-    usageCount: 95000,
-    lastUsedAt: '2026-01-01T12:00:00Z',
-    lastUsedIp: '172.16.0.5',
-    createdBy: 'admin',
-    createdAt: '2025-06-01T00:00:00Z',
-    updatedAt: '2026-01-01T12:00:00Z',
-  },
-]
+let apiKeysCollection: Collection<ApiKey> | null = null
+let apiKeyUsageCollection: Collection<ApiKeyUsage> | null = null
+let apiKeyLogsCollection: Collection<ApiKeyLog> | null = null
+let apiKeyRateLimitCollection: Collection<{
+  keyId: string
+  requests: number[]
+  resetAt: string
+}> | null = null
 
-const mockUsageData: ApiKeyUsage[] = [
-  {
-    id: 'usage-1',
-    keyId: 'key-1',
-    endpoint: '/api/data/export',
-    method: 'GET',
-    statusCode: 200,
-    responseTime: 45,
-    ipAddress: '192.168.1.100',
-    userAgent: 'Mozilla/5.0 (compatible; IntegrationBot/1.0)',
-    requestSize: 128,
-    responseSize: 15420,
-    timestamp: new Date(Date.now() - 60000).toISOString(),
-  },
-  {
-    id: 'usage-2',
-    keyId: 'key-1',
-    endpoint: '/api/data/import',
-    method: 'POST',
-    statusCode: 201,
-    responseTime: 120,
-    ipAddress: '192.168.1.100',
-    userAgent: 'Mozilla/5.0 (compatible; IntegrationBot/1.0)',
-    requestSize: 8450,
-    responseSize: 256,
-    timestamp: new Date(Date.now() - 120000).toISOString(),
-  },
-  {
-    id: 'usage-3',
-    keyId: 'key-2',
-    endpoint: '/api/users',
-    method: 'GET',
-    statusCode: 200,
-    responseTime: 32,
-    ipAddress: '127.0.0.1',
-    userAgent: 'curl/7.79.1',
-    requestSize: 64,
-    responseSize: 2048,
-    timestamp: new Date(Date.now() - 180000).toISOString(),
-  },
-  {
-    id: 'usage-4',
-    keyId: 'key-3',
-    endpoint: '/api/analytics/dashboard',
-    method: 'GET',
-    statusCode: 200,
-    responseTime: 78,
-    ipAddress: '10.0.0.50',
-    userAgent: 'AnalyticsDashboard/2.1',
-    requestSize: 96,
-    responseSize: 45678,
-    timestamp: new Date(Date.now() - 240000).toISOString(),
-  },
-  {
-    id: 'usage-5',
-    keyId: 'key-1',
-    endpoint: '/api/data/query',
-    method: 'POST',
-    statusCode: 429,
-    responseTime: 5,
-    ipAddress: '192.168.1.100',
-    userAgent: 'Mozilla/5.0 (compatible; IntegrationBot/1.0)',
-    requestSize: 512,
-    responseSize: 128,
-    timestamp: new Date(Date.now() - 300000).toISOString(),
-  },
-]
+/**
+ * Initialize API key collections in database
+ */
+async function initApiKeyCollections(): Promise<void> {
+  await initDatabase()
+  const db = getDatabase()
 
-const mockLogs: ApiKeyLog[] = [
-  {
-    id: 'log-1',
-    keyId: 'key-1',
-    action: 'used',
-    details: { endpoint: '/api/data/export', statusCode: 200 },
-    ipAddress: '192.168.1.100',
-    timestamp: new Date(Date.now() - 60000).toISOString(),
-  },
-  {
-    id: 'log-2',
-    keyId: 'key-1',
-    action: 'rate_limited',
-    details: {
-      endpoint: '/api/data/query',
-      currentRequests: 1001,
-      limit: 1000,
-    },
-    ipAddress: '192.168.1.100',
-    timestamp: new Date(Date.now() - 300000).toISOString(),
-  },
-  {
-    id: 'log-3',
-    keyId: 'key-2',
-    action: 'updated',
-    details: { field: 'rateLimit', oldValue: 300, newValue: 500 },
-    ipAddress: '127.0.0.1',
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: 'log-4',
-    keyId: 'key-5',
-    action: 'deactivated',
-    details: { reason: 'Scheduled deprecation' },
-    ipAddress: '10.0.0.1',
-    timestamp: '2026-01-01T12:00:00Z',
-  },
-  {
-    id: 'log-5',
-    keyId: 'key-4',
-    action: 'created',
-    details: { scope: 'custom', permissions: 3 },
-    ipAddress: '10.0.0.1',
-    timestamp: '2026-01-10T16:45:00Z',
-  },
-]
+  if (!db) {
+    throw new Error('Database not initialized')
+  }
+
+  // API Keys collection
+  apiKeysCollection =
+    db.getCollection('apiKeys') ||
+    db.addCollection('apiKeys', {
+      unique: ['id'],
+      indices: ['id', 'keyPrefix', 'status', 'tenantId'],
+    })
+
+  // API Key Usage collection
+  apiKeyUsageCollection =
+    db.getCollection('apiKeyUsage') ||
+    db.addCollection('apiKeyUsage', {
+      unique: ['id'],
+      indices: ['keyId', 'timestamp'],
+      ttl: 90 * 24 * 60 * 60 * 1000, // 90 days retention
+      ttlInterval: 60 * 60 * 1000, // Check hourly
+    })
+
+  // API Key Logs collection
+  apiKeyLogsCollection =
+    db.getCollection('apiKeyLogs') ||
+    db.addCollection('apiKeyLogs', {
+      unique: ['id'],
+      indices: ['keyId', 'action', 'timestamp'],
+      ttl: 90 * 24 * 60 * 60 * 1000, // 90 days retention
+      ttlInterval: 60 * 60 * 1000, // Check hourly
+    })
+
+  // Rate limit tracking collection
+  apiKeyRateLimitCollection =
+    db.getCollection('apiKeyRateLimit') ||
+    db.addCollection('apiKeyRateLimit', {
+      unique: ['keyId'],
+      indices: ['keyId', 'resetAt'],
+    })
+}
 
 // =============================================================================
-// Utility Functions
+// Cryptographic Utility Functions
 // =============================================================================
 
 /**
+ * Generate a cryptographically secure API key
+ * Format: prefix_secret
+ * - prefix: 8 chars for identification (nself_XX)
+ * - secret: 40 chars cryptographically random
+ * Total: ~48 characters
+ */
+function generateSecureApiKey(prefix: string): string {
+  // Generate 30 bytes of random data (40 chars in base62)
+  const randomBytes = crypto.randomBytes(30)
+
+  // Convert to base62 (alphanumeric only)
+  const base62Chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let secret = ''
+
+  for (let i = 0; i < randomBytes.length; i++) {
+    const byte = randomBytes[i]
+    secret += base62Chars[byte % base62Chars.length]
+  }
+
+  // Ensure exactly 40 characters
+  secret = secret.substring(0, 40)
+
+  return `${prefix}_${secret}`
+}
+
+/**
  * Generate an 8-character prefix for API keys
+ * Format: nself_XX where XX are random lowercase letters
  */
 export function generateKeyPrefix(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-  let prefix = 'nself_'
+  const chars = 'abcdefghijklmnopqrstuvwxyz'
+  const randomBytes = crypto.randomBytes(2)
+
+  let suffix = ''
   for (let i = 0; i < 2; i++) {
-    prefix += chars.charAt(Math.floor(Math.random() * chars.length))
+    suffix += chars[randomBytes[i] % chars.length]
   }
-  return prefix
+
+  return `nself_${suffix}`
+}
+
+/**
+ * Hash an API key using bcrypt
+ * Uses cost factor of 12 (2^12 = 4096 iterations)
+ */
+async function hashApiKey(key: string): Promise<string> {
+  const salt = await bcrypt.genSalt(12)
+  return bcrypt.hash(key, salt)
+}
+
+/**
+ * Verify an API key against its hash
+ */
+async function verifyApiKey(key: string, hash: string): Promise<boolean> {
+  try {
+    return await bcrypt.compare(key, hash)
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -255,22 +157,52 @@ export function maskApiKey(key: string): string {
 }
 
 /**
- * Generate a secure random API key
+ * Generate a unique ID
  */
-function generateSecretKey(prefix: string): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let key = prefix + '_'
-  for (let i = 0; i < 32; i++) {
-    key += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return key
+function generateId(): string {
+  return `key_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
 }
 
 /**
- * Generate a mock bcrypt hash (in production, use actual bcrypt)
+ * Generate a unique usage ID
  */
-function generateMockHash(): string {
-  return `$2b$12$${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`
+function generateUsageId(): string {
+  return `usage_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`
+}
+
+/**
+ * Generate a unique log ID
+ */
+function generateLogId(): string {
+  return `log_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`
+}
+
+// =============================================================================
+// Logging Functions
+// =============================================================================
+
+/**
+ * Add a log entry for API key actions
+ */
+async function addApiKeyLog(
+  keyId: string,
+  action: ApiKeyLog['action'],
+  details?: Record<string, unknown>,
+  ipAddress?: string,
+): Promise<void> {
+  await initApiKeyCollections()
+
+  const log: ApiKeyLog = {
+    id: generateLogId(),
+    keyId,
+    action,
+    details,
+    ipAddress,
+    timestamp: new Date().toISOString(),
+  }
+
+  apiKeyLogsCollection?.insert(log)
+  getDatabase()?.saveDatabase()
 }
 
 // =============================================================================
@@ -281,41 +213,72 @@ function generateMockHash(): string {
  * Get all API keys, optionally filtered by tenant
  */
 export async function getApiKeys(tenantId?: string): Promise<ApiKey[]> {
-  // Simulate async operation
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  await initApiKeyCollections()
+
+  let keys: ApiKey[]
 
   if (tenantId) {
-    return mockApiKeys.filter((key) => key.tenantId === tenantId)
+    keys = apiKeysCollection?.find({ tenantId }) || []
+  } else {
+    keys = apiKeysCollection?.find() || []
   }
-  return [...mockApiKeys]
+
+  // Check for expired keys and update status
+  const now = new Date()
+  let updated = false
+
+  for (const key of keys) {
+    if (
+      key.status === 'active' &&
+      key.expiresAt &&
+      new Date(key.expiresAt) < now
+    ) {
+      key.status = 'expired'
+      key.updatedAt = now.toISOString()
+      apiKeysCollection?.update(key)
+      updated = true
+    }
+  }
+
+  if (updated) {
+    getDatabase()?.saveDatabase()
+  }
+
+  return keys
 }
 
 /**
  * Get a single API key by ID
  */
 export async function getApiKeyById(id: string): Promise<ApiKey | null> {
-  await new Promise((resolve) => setTimeout(resolve, 50))
-  return mockApiKeys.find((key) => key.id === id) || null
+  await initApiKeyCollections()
+  return apiKeysCollection?.findOne({ id }) || null
 }
 
 /**
- * Create a new API key
+ * Create a new API key with cryptographically secure generation
  */
 export async function createApiKey(
   input: CreateApiKeyInput,
+  createdBy: string = 'admin',
 ): Promise<CreateApiKeyResult> {
-  await new Promise((resolve) => setTimeout(resolve, 150))
+  await initApiKeyCollections()
 
+  // Generate secure prefix and key
   const prefix = generateKeyPrefix()
-  const secretKey = generateSecretKey(prefix)
+  const secretKey = generateSecureApiKey(prefix)
+
+  // Hash the key for storage (NEVER store plaintext)
+  const keyHash = await hashApiKey(secretKey)
+
   const now = new Date().toISOString()
 
   const newKey: ApiKey = {
-    id: `key-${Date.now()}`,
+    id: generateId(),
     name: input.name,
     description: input.description,
     keyPrefix: prefix,
-    keyHash: generateMockHash(),
+    keyHash,
     status: 'active',
     scope: input.scope,
     permissions: input.permissions,
@@ -324,12 +287,18 @@ export async function createApiKey(
     allowedOrigins: input.allowedOrigins,
     expiresAt: input.expiresAt,
     usageCount: 0,
-    createdBy: 'current-user',
+    createdBy,
     createdAt: now,
     updatedAt: now,
   }
 
-  mockApiKeys.push(newKey)
+  apiKeysCollection?.insert(newKey)
+  getDatabase()?.saveDatabase()
+
+  await addApiKeyLog(newKey.id, 'created', {
+    scope: newKey.scope,
+    name: newKey.name,
+  })
 
   return {
     key: newKey,
@@ -356,31 +325,47 @@ export async function updateApiKey(
     >
   >,
 ): Promise<ApiKey | null> {
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  await initApiKeyCollections()
 
-  const index = mockApiKeys.findIndex((key) => key.id === id)
-  if (index === -1) return null
+  const key = apiKeysCollection?.findOne({ id })
+  if (!key) return null
 
-  mockApiKeys[index] = {
-    ...mockApiKeys[index],
-    ...updates,
-    updatedAt: new Date().toISOString(),
+  // Track what changed for logging
+  const changes: Record<string, unknown> = {}
+  for (const [field, value] of Object.entries(updates)) {
+    if (JSON.stringify(key[field as keyof ApiKey]) !== JSON.stringify(value)) {
+      changes[field] = { old: key[field as keyof ApiKey], new: value }
+    }
   }
 
-  return mockApiKeys[index]
+  // Apply updates
+  Object.assign(key, updates)
+  key.updatedAt = new Date().toISOString()
+
+  apiKeysCollection?.update(key)
+  getDatabase()?.saveDatabase()
+
+  await addApiKeyLog(id, 'updated', changes)
+
+  return key
 }
 
 /**
  * Revoke an API key (sets status to revoked)
  */
 export async function revokeApiKey(id: string): Promise<boolean> {
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  await initApiKeyCollections()
 
-  const key = mockApiKeys.find((k) => k.id === id)
+  const key = apiKeysCollection?.findOne({ id })
   if (!key) return false
 
   key.status = 'revoked'
   key.updatedAt = new Date().toISOString()
+
+  apiKeysCollection?.update(key)
+  getDatabase()?.saveDatabase()
+
+  await addApiKeyLog(id, 'revoked', { previousStatus: key.status })
 
   return true
 }
@@ -389,18 +374,249 @@ export async function revokeApiKey(id: string): Promise<boolean> {
  * Delete an API key permanently
  */
 export async function deleteApiKey(id: string): Promise<boolean> {
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  await initApiKeyCollections()
 
-  const index = mockApiKeys.findIndex((key) => key.id === id)
-  if (index === -1) return false
+  const key = apiKeysCollection?.findOne({ id })
+  if (!key) return false
 
-  mockApiKeys.splice(index, 1)
+  // Remove the key
+  apiKeysCollection?.remove(key)
+
+  // Clean up associated data
+  const usageRecords = apiKeyUsageCollection?.find({ keyId: id }) || []
+  usageRecords.forEach((record) => apiKeyUsageCollection?.remove(record))
+
+  const logs = apiKeyLogsCollection?.find({ keyId: id }) || []
+  logs.forEach((log) => apiKeyLogsCollection?.remove(log))
+
+  const rateLimit = apiKeyRateLimitCollection?.findOne({ keyId: id })
+  if (rateLimit) {
+    apiKeyRateLimitCollection?.remove(rateLimit)
+  }
+
+  getDatabase()?.saveDatabase()
+
   return true
 }
 
+/**
+ * Rotate an API key (generates new key, keeps same permissions)
+ */
+export async function rotateApiKey(id: string): Promise<CreateApiKeyResult> {
+  await initApiKeyCollections()
+
+  const oldKey = apiKeysCollection?.findOne({ id })
+  if (!oldKey) {
+    throw new Error('API key not found')
+  }
+
+  // Generate new secure key
+  const prefix = generateKeyPrefix()
+  const secretKey = generateSecureApiKey(prefix)
+  const keyHash = await hashApiKey(secretKey)
+
+  // Update key with new credentials
+  oldKey.keyPrefix = prefix
+  oldKey.keyHash = keyHash
+  oldKey.updatedAt = new Date().toISOString()
+  oldKey.lastUsedAt = undefined
+  oldKey.lastUsedIp = undefined
+  oldKey.usageCount = 0
+
+  apiKeysCollection?.update(oldKey)
+  getDatabase()?.saveDatabase()
+
+  await addApiKeyLog(id, 'updated', { action: 'rotated' })
+
+  return {
+    key: oldKey,
+    secretKey, // Return new key to user
+  }
+}
+
 // =============================================================================
-// Usage and Analytics Functions
+// Validation Functions
 // =============================================================================
+
+/**
+ * Validate an API key (check if it exists and is active)
+ * This is the REAL validation that checks the hash
+ */
+export async function validateApiKey(
+  key: string,
+): Promise<{ valid: boolean; key?: ApiKey; error?: string }> {
+  await initApiKeyCollections()
+
+  if (!key || key.length < 10) {
+    return { valid: false, error: 'Invalid key format' }
+  }
+
+  // Extract prefix from key
+  const parts = key.split('_')
+  if (parts.length < 2) {
+    return { valid: false, error: 'Invalid key format' }
+  }
+
+  const prefix = `${parts[0]}_${parts[1]}`
+
+  // Find key by prefix
+  const apiKey = apiKeysCollection?.findOne({ keyPrefix: prefix })
+
+  if (!apiKey) {
+    return { valid: false, error: 'API key not found' }
+  }
+
+  // Verify the hash
+  const isValid = await verifyApiKey(key, apiKey.keyHash)
+  if (!isValid) {
+    return { valid: false, error: 'Invalid API key' }
+  }
+
+  // Check status
+  if (apiKey.status === 'revoked') {
+    return { valid: false, error: 'API key has been revoked' }
+  }
+
+  if (apiKey.status === 'inactive') {
+    return { valid: false, error: 'API key is inactive' }
+  }
+
+  // Check expiration
+  if (
+    apiKey.status === 'expired' ||
+    (apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date())
+  ) {
+    // Auto-update status to expired
+    if (apiKey.status !== 'expired') {
+      apiKey.status = 'expired'
+      apiKey.updatedAt = new Date().toISOString()
+      apiKeysCollection?.update(apiKey)
+      getDatabase()?.saveDatabase()
+    }
+    return { valid: false, error: 'API key has expired' }
+  }
+
+  // Update last used tracking
+  apiKey.lastUsedAt = new Date().toISOString()
+  apiKey.usageCount++
+  apiKeysCollection?.update(apiKey)
+  getDatabase()?.saveDatabase()
+
+  return { valid: true, key: apiKey }
+}
+
+/**
+ * Check if request is within rate limits
+ */
+export async function checkRateLimit(
+  keyId: string,
+): Promise<{ allowed: boolean; resetAt?: string; current?: number }> {
+  await initApiKeyCollections()
+
+  const apiKey = apiKeysCollection?.findOne({ id: keyId })
+  if (!apiKey || !apiKey.rateLimit) {
+    return { allowed: true }
+  }
+
+  const { requests: limit, window } = apiKey.rateLimit
+  const now = new Date()
+
+  const rateLimitRecord = apiKeyRateLimitCollection?.findOne({ keyId })
+
+  if (!rateLimitRecord) {
+    // Create new rate limit record
+    const newRecord = apiKeyRateLimitCollection?.insert({
+      keyId,
+      requests: [now.getTime()],
+      resetAt: new Date(now.getTime() + window * 1000).toISOString(),
+    })
+    getDatabase()?.saveDatabase()
+    return { allowed: true, resetAt: newRecord?.resetAt || '', current: 1 }
+  }
+
+  // Check if window has expired
+  const resetAt = new Date(rateLimitRecord.resetAt)
+  if (now > resetAt) {
+    // Reset window
+    rateLimitRecord.requests = [now.getTime()]
+    rateLimitRecord.resetAt = new Date(
+      now.getTime() + window * 1000,
+    ).toISOString()
+    apiKeyRateLimitCollection?.update(rateLimitRecord)
+    getDatabase()?.saveDatabase()
+    return { allowed: true, resetAt: rateLimitRecord.resetAt, current: 1 }
+  }
+
+  // Filter requests within current window
+  const windowStart = now.getTime() - window * 1000
+  const recentRequests = rateLimitRecord.requests.filter(
+    (timestamp) => timestamp > windowStart,
+  )
+
+  if (recentRequests.length >= limit) {
+    await addApiKeyLog(keyId, 'rate_limited', {
+      currentRequests: recentRequests.length,
+      limit,
+    })
+    return {
+      allowed: false,
+      resetAt: rateLimitRecord.resetAt,
+      current: recentRequests.length,
+    }
+  }
+
+  // Add current request
+  recentRequests.push(now.getTime())
+  rateLimitRecord.requests = recentRequests
+  apiKeyRateLimitCollection?.update(rateLimitRecord)
+  getDatabase()?.saveDatabase()
+
+  return {
+    allowed: true,
+    resetAt: rateLimitRecord.resetAt,
+    current: recentRequests.length,
+  }
+}
+
+// =============================================================================
+// Usage Tracking Functions
+// =============================================================================
+
+/**
+ * Record API key usage
+ */
+export async function recordApiKeyUsage(
+  keyId: string,
+  endpoint: string,
+  method: string,
+  statusCode: number,
+  responseTime: number,
+  ipAddress: string,
+  userAgent?: string,
+  requestSize?: number,
+  responseSize?: number,
+): Promise<void> {
+  await initApiKeyCollections()
+
+  const usage: ApiKeyUsage = {
+    id: generateUsageId(),
+    keyId,
+    endpoint,
+    method,
+    statusCode,
+    responseTime,
+    ipAddress,
+    userAgent,
+    requestSize,
+    responseSize,
+    timestamp: new Date().toISOString(),
+  }
+
+  apiKeyUsageCollection?.insert(usage)
+  getDatabase()?.saveDatabase()
+
+  await addApiKeyLog(keyId, 'used', { endpoint, statusCode }, ipAddress)
+}
 
 /**
  * Get usage data for an API key
@@ -414,22 +630,29 @@ export async function getApiKeyUsage(
     endDate?: string
   },
 ): Promise<ApiKeyUsage[]> {
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  await initApiKeyCollections()
 
-  let usage = mockUsageData.filter((u) => u.keyId === keyId)
+  let query: any = { keyId }
 
-  if (options?.startDate) {
-    usage = usage.filter((u) => u.timestamp >= options.startDate!)
+  if (options?.startDate || options?.endDate) {
+    query.timestamp = {}
+    if (options.startDate) {
+      query.timestamp.$gte = options.startDate
+    }
+    if (options.endDate) {
+      query.timestamp.$lte = options.endDate
+    }
   }
 
-  if (options?.endDate) {
-    usage = usage.filter((u) => u.timestamp <= options.endDate!)
-  }
+  const usage = apiKeyUsageCollection
+    ?.chain()
+    .find(query)
+    .simplesort('timestamp', true) // Sort by timestamp descending
+    .offset(options?.offset || 0)
+    .limit(options?.limit || 50)
+    .data()
 
-  const offset = options?.offset || 0
-  const limit = options?.limit || 50
-
-  return usage.slice(offset, offset + limit)
+  return usage || []
 }
 
 /**
@@ -438,9 +661,9 @@ export async function getApiKeyUsage(
 export async function getApiKeyUsageStats(
   keyId: string,
 ): Promise<ApiKeyUsageStats> {
-  await new Promise((resolve) => setTimeout(resolve, 150))
+  await initApiKeyCollections()
 
-  const usage = mockUsageData.filter((u) => u.keyId === keyId)
+  const usage = apiKeyUsageCollection?.find({ keyId }) || []
   const successful = usage.filter(
     (u) => u.statusCode >= 200 && u.statusCode < 400,
   )
@@ -468,13 +691,21 @@ export async function getApiKeyUsageStats(
     .sort((a, b) => b.count - a.count)
     .slice(0, 10)
 
-  // Generate mock hourly data
+  // Generate hourly data from actual usage
   const requestsByHour: { hour: string; count: number }[] = []
+  const hourCounts: Record<string, number> = {}
+
+  for (const u of usage) {
+    const hour = new Date(u.timestamp).toISOString().slice(0, 13)
+    hourCounts[hour] = (hourCounts[hour] || 0) + 1
+  }
+
+  // Fill in last 24 hours
   for (let i = 23; i >= 0; i--) {
     const hour = new Date(Date.now() - i * 3600000).toISOString().slice(0, 13)
     requestsByHour.push({
       hour,
-      count: Math.floor(Math.random() * 100) + 10,
+      count: hourCounts[hour] || 0,
     })
   }
 
@@ -485,9 +716,9 @@ export async function getApiKeyUsageStats(
 
   return {
     keyId,
-    totalRequests: usage.length * 100, // Simulated larger dataset
-    successfulRequests: successful.length * 100,
-    failedRequests: failed.length * 100,
+    totalRequests: usage.length,
+    successfulRequests: successful.length,
+    failedRequests: failed.length,
     averageResponseTime: Math.round(avgResponseTime),
     requestsByEndpoint: endpointCounts,
     requestsByStatus: statusCounts,
@@ -503,24 +734,38 @@ export async function getApiKeyUsageStats(
 export async function getApiKeyRateLimit(
   keyId: string,
 ): Promise<ApiKeyRateLimit | null> {
-  await new Promise((resolve) => setTimeout(resolve, 50))
+  await initApiKeyCollections()
 
-  const key = mockApiKeys.find((k) => k.id === keyId)
+  const key = apiKeysCollection?.findOne({ id: keyId })
   if (!key || !key.rateLimit) return null
 
-  // Simulate current usage
-  const currentRequests = Math.floor(Math.random() * key.rateLimit.requests)
-  const resetAt = new Date(
-    Date.now() + Math.floor(Math.random() * key.rateLimit.window * 1000),
-  ).toISOString()
+  const rateLimitRecord = apiKeyRateLimitCollection?.findOne({ keyId })
+
+  if (!rateLimitRecord) {
+    return {
+      keyId,
+      currentRequests: 0,
+      limit: key.rateLimit.requests,
+      window: key.rateLimit.window,
+      resetAt: new Date(Date.now() + key.rateLimit.window * 1000).toISOString(),
+      isLimited: false,
+    }
+  }
+
+  // Filter requests within current window
+  const now = new Date()
+  const windowStart = now.getTime() - key.rateLimit.window * 1000
+  const recentRequests = rateLimitRecord.requests.filter(
+    (timestamp) => timestamp > windowStart,
+  )
 
   return {
     keyId,
-    currentRequests,
+    currentRequests: recentRequests.length,
     limit: key.rateLimit.requests,
     window: key.rateLimit.window,
-    resetAt,
-    isLimited: currentRequests >= key.rateLimit.requests,
+    resetAt: rateLimitRecord.resetAt,
+    isLimited: recentRequests.length >= key.rateLimit.requests,
   }
 }
 
@@ -535,63 +780,22 @@ export async function getApiKeyLogs(
     action?: ApiKeyLog['action']
   },
 ): Promise<ApiKeyLog[]> {
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  await initApiKeyCollections()
 
-  let logs = mockLogs.filter((log) => log.keyId === keyId)
-
+  let query: any = { keyId }
   if (options?.action) {
-    logs = logs.filter((log) => log.action === options.action)
+    query.action = options.action
   }
 
-  const offset = options?.offset || 0
-  const limit = options?.limit || 50
+  const logs = apiKeyLogsCollection
+    ?.chain()
+    .find(query)
+    .simplesort('timestamp', true) // Sort by timestamp descending
+    .offset(options?.offset || 0)
+    .limit(options?.limit || 50)
+    .data()
 
-  return logs.slice(offset, offset + limit)
-}
-
-// =============================================================================
-// Validation Functions
-// =============================================================================
-
-/**
- * Validate an API key (check if it exists and is active)
- */
-export async function validateApiKey(
-  key: string,
-): Promise<{ valid: boolean; key?: ApiKey; error?: string }> {
-  await new Promise((resolve) => setTimeout(resolve, 50))
-
-  if (!key || key.length < 10) {
-    return { valid: false, error: 'Invalid key format' }
-  }
-
-  const prefix = key.substring(0, 8)
-  const apiKey = mockApiKeys.find((k) => k.keyPrefix === prefix)
-
-  if (!apiKey) {
-    return { valid: false, error: 'API key not found' }
-  }
-
-  if (apiKey.status === 'revoked') {
-    return { valid: false, error: 'API key has been revoked' }
-  }
-
-  if (apiKey.status === 'inactive') {
-    return { valid: false, error: 'API key is inactive' }
-  }
-
-  if (
-    apiKey.status === 'expired' ||
-    (apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date())
-  ) {
-    return { valid: false, error: 'API key has expired' }
-  }
-
-  // Update last used
-  apiKey.lastUsedAt = new Date().toISOString()
-  apiKey.usageCount++
-
-  return { valid: true, key: apiKey }
+  return logs || []
 }
 
 // =============================================================================
@@ -602,7 +806,9 @@ export async function validateApiKey(
  * Get overall API key statistics
  */
 export async function getApiKeyStats(): Promise<ApiKeyStats> {
-  await new Promise((resolve) => setTimeout(resolve, 100))
+  await initApiKeyCollections()
+
+  const keys = apiKeysCollection?.find() || []
 
   const byScope: Record<ApiKeyScope, number> = {
     read: 0,
@@ -615,7 +821,7 @@ export async function getApiKeyStats(): Promise<ApiKeyStats> {
   let expiredKeys = 0
   let revokedKeys = 0
 
-  for (const key of mockApiKeys) {
+  for (const key of keys) {
     byScope[key.scope]++
 
     if (key.status === 'active') activeKeys++
@@ -623,24 +829,38 @@ export async function getApiKeyStats(): Promise<ApiKeyStats> {
     else if (key.status === 'revoked') revokedKeys++
   }
 
-  // Calculate total requests in last 24h (simulated)
-  const totalRequests24h = mockApiKeys.reduce(
-    (sum, key) => sum + Math.floor(key.usageCount * 0.1),
-    0,
-  )
+  // Calculate total requests in last 24h from actual usage
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const recentUsage =
+    apiKeyUsageCollection?.find({
+      timestamp: { $gte: twentyFourHoursAgo.toISOString() },
+    }) || []
 
-  // Top keys by usage
-  const topKeys = [...mockApiKeys]
-    .filter((k) => k.status === 'active')
-    .sort((a, b) => b.usageCount - a.usageCount)
+  const totalRequests24h = recentUsage.length
+
+  // Top keys by recent usage
+  const usageByKey: Record<string, number> = {}
+  for (const usage of recentUsage) {
+    usageByKey[usage.keyId] = (usageByKey[usage.keyId] || 0) + 1
+  }
+
+  const topKeysWithRequests: { key: ApiKey; requests: number }[] = []
+  for (const [keyId, requests] of Object.entries(usageByKey)) {
+    const key = apiKeysCollection?.findOne({ id: keyId })
+    if (key) {
+      topKeysWithRequests.push({
+        key: { ...key }, // Spread to remove LokiObj properties
+        requests,
+      })
+    }
+  }
+
+  const topKeys = topKeysWithRequests
+    .sort((a, b) => b.requests - a.requests)
     .slice(0, 5)
-    .map((key) => ({
-      key,
-      requests: Math.floor(key.usageCount * 0.1), // 24h requests
-    }))
 
   return {
-    totalKeys: mockApiKeys.length,
+    totalKeys: keys.length,
     activeKeys,
     expiredKeys,
     revokedKeys,
@@ -661,10 +881,13 @@ export const apiKeysApi = {
   update: updateApiKey,
   revoke: revokeApiKey,
   delete: deleteApiKey,
+  rotate: rotateApiKey,
   getUsage: getApiKeyUsage,
   getUsageStats: getApiKeyUsageStats,
   getRateLimit: getApiKeyRateLimit,
   getLogs: getApiKeyLogs,
   validate: validateApiKey,
   getStats: getApiKeyStats,
+  checkRateLimit,
+  recordUsage: recordApiKeyUsage,
 }

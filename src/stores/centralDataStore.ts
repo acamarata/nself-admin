@@ -376,7 +376,11 @@ export const useCentralDataStore = create<CentralDataStore>()(
                   total: 0,
                   percentage: 0,
                 },
-                storage: { used: 0, total: 50, percentage: 0 }, // TODO: Get from Docker
+                storage: data.metrics?.totalStorage || {
+                  used: 0,
+                  total: 50,
+                  percentage: 0,
+                },
                 network: data.metrics?.totalNetwork || {
                   rx: 0,
                   tx: 0,

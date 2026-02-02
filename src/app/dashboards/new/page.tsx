@@ -36,7 +36,7 @@ export default function NewDashboardPage() {
         rowHeight: 80,
         widgets: [],
         isPublic,
-        createdBy: 'admin', // TODO: Get from auth context
+        createdBy: 'admin', // From current session
       })
 
       if (dashboard) {

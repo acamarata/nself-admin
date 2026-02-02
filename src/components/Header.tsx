@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import Link from 'next/link'
 import { forwardRef } from 'react'
 
+import { AdvancedSearch } from '@/components/AdvancedSearch'
 import { Button } from '@/components/Button'
 import { LogoContent } from '@/components/Logo'
 import {
@@ -12,7 +13,7 @@ import {
   useIsInsideMobileNavigation,
   useMobileNavigationStore,
 } from '@/components/MobileNavigation'
-import { MobileSearch, Search } from '@/components/Search'
+import { MobileSearch } from '@/components/Search'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { useAuth } from '@/contexts/AuthContext'
 import { CloseButton } from '@headlessui/react'
@@ -41,6 +42,7 @@ function LogoutButton() {
 
   return (
     <button
+      type="button"
       onClick={logout}
       className="rounded-full bg-red-600/10 px-3 py-1 text-sm font-medium text-red-600 ring-1 ring-red-600/20 transition-colors ring-inset hover:bg-red-600/20 hover:ring-red-600/30 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-400/20 dark:hover:bg-red-400/10 dark:hover:text-red-300 dark:hover:ring-red-300"
     >
@@ -99,7 +101,7 @@ export const Header = forwardRef<
             'bg-zinc-900/7.5 dark:bg-white/7.5',
         )}
       />
-      <Search />
+      <AdvancedSearch />
       <div className="flex items-center gap-5 lg:hidden">
         <MobileNavigation />
         <CloseButton as={Link} href="/" aria-label="Home">
@@ -108,11 +110,11 @@ export const Header = forwardRef<
       </div>
       <div className="flex items-center gap-5">
         <nav className="hidden md:block" aria-label="Secondary navigation">
-          <ul role="list" className="flex items-center gap-8">
+          <div className="flex items-center gap-8">
             <TopLevelNavItem href="/">Dashboard</TopLevelNavItem>
             <TopLevelNavItem href="/docs">Documentation</TopLevelNavItem>
             <TopLevelNavItem href="/support">Support</TopLevelNavItem>
-          </ul>
+          </div>
         </nav>
         <div className="hidden md:block md:h-5 md:w-px md:bg-zinc-900/10 md:dark:bg-white/15" />
         <div className="flex gap-4">

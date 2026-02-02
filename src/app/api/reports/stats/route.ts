@@ -1,14 +1,14 @@
-import * as reportsApi from '@/lib/reports'
+import * as reports from '@/lib/reports'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/reports/stats - Get report statistics
 export async function GET(_request: NextRequest) {
   try {
-    const stats = await reportsApi.getReportStats()
+    const stats = await reports.getReportStats()
 
     return NextResponse.json({
       success: true,
-      stats,
+      data: stats,
     })
   } catch (error) {
     return NextResponse.json(

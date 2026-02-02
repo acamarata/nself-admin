@@ -1,3 +1,4 @@
+import { auth } from '@/lib/auth-db'
 import { logger } from '@/lib/logger'
 import * as notificationsApi from '@/lib/notifications'
 import { NextRequest, NextResponse } from 'next/server'
@@ -9,10 +10,21 @@ interface RouteParams {
 /**
  * POST /api/notifications/[id]/read - Mark a notification as read
  */
-export async function POST(_request: NextRequest, { params }: RouteParams) {
+export async function POST(request: NextRequest, { params }: RouteParams) {
   const startTime = Date.now()
 
   try {
+    const token = request.cookies.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = await auth.validateSession(token)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = session.userId
+
     const { id } = await params
 
     if (!id) {
@@ -21,9 +33,6 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
         { status: 400 },
       )
     }
-
-    // TODO: Get actual user ID from session when multi-user is implemented
-    const userId = 'current-user'
 
     const notification = await notificationsApi.markAsRead(id, userId)
 

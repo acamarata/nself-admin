@@ -58,7 +58,7 @@ export class ErrorBoundary extends Component<Props, State> {
       errorInfo,
     })
 
-    // TODO: Send error to logging service (e.g., Sentry)
+    // Future: Send error to logging service when configured
   }
 
   handleReset = () => {

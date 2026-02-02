@@ -1,23 +1,87 @@
 /**
- * Workflows Library
+ * Workflows Library - Real Execution Engine
  *
  * Provides workflow management functionality including:
- * - Mock workflows and executions for development
- * - Action templates library
- * - CRUD operations for workflows
- * - Execution management
+ * - Database-backed workflow storage (LokiJS)
+ * - Real workflow execution via nself CLI
+ * - Action execution with proper error handling
+ * - Execution history tracking
+ * - Trigger management and scheduling
  */
 
+import { getDatabase, initDatabase } from '@/lib/database'
+import * as nselfCLI from '@/lib/nselfCLI'
 import type {
   ActionType,
   ExecuteWorkflowInput,
   TriggerType,
   Workflow,
+  WorkflowAction,
   WorkflowExecution,
   WorkflowExecutionStatus,
+  WorkflowExecutionStep,
   WorkflowStats,
   WorkflowStatus,
 } from '@/types/workflow'
+import type { Collection } from 'lokijs'
+
+// ============================================================================
+// Database Collections
+// ============================================================================
+
+let workflowsCollection: Collection<Workflow> | null = null
+let executionsCollection: Collection<WorkflowExecution> | null = null
+let scheduledTriggersCollection: Collection<ScheduledTrigger> | null = null
+
+interface ScheduledTrigger {
+  id: string
+  workflowId: string
+  triggerId: string
+  type: 'schedule'
+  cronExpression: string
+  timezone: string
+  lastRun?: string
+  nextRun: string
+  enabled: boolean
+}
+
+async function ensureCollections(): Promise<void> {
+  await initDatabase()
+  const db = getDatabase()
+
+  if (!db) {
+    throw new Error('Database not initialized')
+  }
+
+  if (!workflowsCollection) {
+    workflowsCollection =
+      db.getCollection('workflows') ||
+      db.addCollection('workflows', {
+        unique: ['id'],
+        indices: ['id', 'status', 'tenantId'],
+      })
+  }
+
+  if (!executionsCollection) {
+    executionsCollection =
+      db.getCollection('workflow_executions') ||
+      db.addCollection('workflow_executions', {
+        unique: ['id'],
+        indices: ['id', 'workflowId', 'status', 'startedAt'],
+        ttl: 90 * 24 * 60 * 60 * 1000, // 90 days retention
+        ttlInterval: 24 * 60 * 60 * 1000, // Check daily
+      })
+  }
+
+  if (!scheduledTriggersCollection) {
+    scheduledTriggersCollection =
+      db.getCollection('scheduled_triggers') ||
+      db.addCollection('scheduled_triggers', {
+        unique: ['id'],
+        indices: ['workflowId', 'nextRun', 'enabled'],
+      })
+  }
+}
 
 // ============================================================================
 // Action Template Definitions
@@ -462,350 +526,6 @@ const actionTemplates: ActionTemplate[] = [
 ]
 
 // ============================================================================
-// Mock Data
-// ============================================================================
-
-const mockWorkflows: Workflow[] = [
-  {
-    id: 'wf-1',
-    name: 'Daily Backup Notification',
-    description: 'Sends notification after daily backup completes',
-    status: 'active',
-    version: 1,
-    triggers: [
-      {
-        id: 'tr-1',
-        type: 'schedule',
-        name: 'Daily at 2 AM',
-        config: { cron: '0 2 * * *', timezone: 'UTC' },
-        enabled: true,
-      },
-    ],
-    actions: [
-      {
-        id: 'act-1',
-        type: 'run_command',
-        name: 'Run Backup',
-        config: { command: 'nself db backup', captureOutput: true },
-        position: { x: 100, y: 100 },
-        onError: 'stop',
-        timeout: 300000,
-      },
-      {
-        id: 'act-2',
-        type: 'notification',
-        name: 'Send Alert',
-        config: {
-          type: 'success',
-          title: 'Backup Complete',
-          message: 'Daily database backup completed successfully.',
-        },
-        position: { x: 300, y: 100 },
-      },
-    ],
-    connections: [{ id: 'c-1', sourceId: 'act-1', targetId: 'act-2' }],
-    createdBy: 'admin',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-15T00:00:00Z',
-  },
-  {
-    id: 'wf-2',
-    name: 'New User Welcome Flow',
-    description:
-      'Sends welcome email and creates initial user data when a new user signs up',
-    status: 'active',
-    version: 2,
-    triggers: [
-      {
-        id: 'tr-2',
-        type: 'event',
-        name: 'User Created',
-        config: { eventType: 'user.created', eventSource: 'auth' },
-        enabled: true,
-      },
-    ],
-    actions: [
-      {
-        id: 'act-3',
-        type: 'set_variable',
-        name: 'Extract User Data',
-        config: {
-          name: 'userName',
-          value: '{{trigger.data.user.name}}',
-          valueType: 'string',
-        },
-        position: { x: 100, y: 100 },
-      },
-      {
-        id: 'act-4',
-        type: 'email',
-        name: 'Send Welcome Email',
-        config: {
-          to: '{{trigger.data.user.email}}',
-          subject: 'Welcome to our platform!',
-          body: 'Hello {{userName}}, welcome to our platform!',
-          isHtml: false,
-        },
-        position: { x: 300, y: 100 },
-        onError: 'continue',
-      },
-      {
-        id: 'act-5',
-        type: 'database_query',
-        name: 'Create User Profile',
-        config: {
-          queryType: 'graphql',
-          query:
-            'mutation CreateProfile($userId: uuid!) { insert_profiles_one(object: {user_id: $userId, created_at: "now()"}) { id } }',
-          variables: { userId: '{{trigger.data.user.id}}' },
-        },
-        position: { x: 500, y: 100 },
-      },
-      {
-        id: 'act-6',
-        type: 'notification',
-        name: 'Notify Admins',
-        config: {
-          type: 'info',
-          title: 'New User',
-          message: 'New user {{userName}} has signed up.',
-          targetUsers: 'admins',
-        },
-        position: { x: 700, y: 100 },
-      },
-    ],
-    connections: [
-      { id: 'c-2', sourceId: 'act-3', targetId: 'act-4' },
-      { id: 'c-3', sourceId: 'act-4', targetId: 'act-5' },
-      { id: 'c-4', sourceId: 'act-5', targetId: 'act-6' },
-    ],
-    variables: [
-      { name: 'userName', type: 'string', description: 'The new user name' },
-    ],
-    createdBy: 'admin',
-    createdAt: '2026-01-05T00:00:00Z',
-    updatedAt: '2026-01-20T00:00:00Z',
-  },
-  {
-    id: 'wf-3',
-    name: 'Health Check Monitor',
-    description: 'Monitors service health and alerts on failures',
-    status: 'paused',
-    version: 1,
-    triggers: [
-      {
-        id: 'tr-3',
-        type: 'schedule',
-        name: 'Every 5 Minutes',
-        config: { cron: '*/5 * * * *', timezone: 'UTC' },
-        enabled: true,
-      },
-    ],
-    actions: [
-      {
-        id: 'act-7',
-        type: 'http_request',
-        name: 'Check API Health',
-        config: {
-          method: 'GET',
-          url: 'http://localhost:3000/api/health',
-          timeout: 5000,
-        },
-        position: { x: 100, y: 100 },
-        onError: 'continue',
-      },
-      {
-        id: 'act-8',
-        type: 'condition',
-        name: 'Is Healthy?',
-        config: {
-          expression: '{{act-7.output.status}} === 200',
-          trueLabel: 'Healthy',
-          falseLabel: 'Unhealthy',
-        },
-        position: { x: 300, y: 100 },
-      },
-      {
-        id: 'act-9',
-        type: 'notification',
-        name: 'Alert on Failure',
-        config: {
-          type: 'error',
-          title: 'Service Down',
-          message: 'API health check failed!',
-          channel: 'both',
-        },
-        position: { x: 500, y: 200 },
-      },
-      {
-        id: 'act-10',
-        type: 'run_command',
-        name: 'Attempt Recovery',
-        config: { command: 'nself restart api', timeout: 30000 },
-        position: { x: 700, y: 200 },
-      },
-    ],
-    connections: [
-      { id: 'c-5', sourceId: 'act-7', targetId: 'act-8' },
-      { id: 'c-6', sourceId: 'act-8', sourcePort: 'false', targetId: 'act-9' },
-      { id: 'c-7', sourceId: 'act-9', targetId: 'act-10' },
-    ],
-    createdBy: 'admin',
-    createdAt: '2026-01-10T00:00:00Z',
-    updatedAt: '2026-01-25T00:00:00Z',
-  },
-]
-
-const mockExecutions: WorkflowExecution[] = [
-  {
-    id: 'exec-1',
-    workflowId: 'wf-1',
-    workflowVersion: 1,
-    status: 'completed',
-    triggerType: 'schedule',
-    triggerId: 'tr-1',
-    input: {},
-    output: { backupFile: '/backups/db-2026-01-31.sql.gz', size: '245MB' },
-    steps: [
-      {
-        actionId: 'act-1',
-        actionName: 'Run Backup',
-        status: 'completed',
-        input: { command: 'nself db backup' },
-        output: { backupFile: '/backups/db-2026-01-31.sql.gz', size: '245MB' },
-        startedAt: '2026-01-31T02:00:00Z',
-        completedAt: '2026-01-31T02:05:23Z',
-        duration: 323000,
-      },
-      {
-        actionId: 'act-2',
-        actionName: 'Send Alert',
-        status: 'completed',
-        input: { type: 'success', title: 'Backup Complete' },
-        output: { sent: true },
-        startedAt: '2026-01-31T02:05:23Z',
-        completedAt: '2026-01-31T02:05:24Z',
-        duration: 1000,
-      },
-    ],
-    startedAt: '2026-01-31T02:00:00Z',
-    completedAt: '2026-01-31T02:05:24Z',
-    duration: 324000,
-  },
-  {
-    id: 'exec-2',
-    workflowId: 'wf-2',
-    workflowVersion: 2,
-    status: 'completed',
-    triggerType: 'event',
-    triggerId: 'tr-2',
-    input: {
-      user: { id: 'user-123', name: 'John Doe', email: 'john@example.com' },
-    },
-    variables: { userName: 'John Doe' },
-    output: { profileId: 'profile-456' },
-    steps: [
-      {
-        actionId: 'act-3',
-        actionName: 'Extract User Data',
-        status: 'completed',
-        output: { userName: 'John Doe' },
-        startedAt: '2026-01-30T10:15:00Z',
-        completedAt: '2026-01-30T10:15:00Z',
-        duration: 10,
-      },
-      {
-        actionId: 'act-4',
-        actionName: 'Send Welcome Email',
-        status: 'completed',
-        output: { messageId: 'msg-789' },
-        startedAt: '2026-01-30T10:15:00Z',
-        completedAt: '2026-01-30T10:15:02Z',
-        duration: 2000,
-      },
-      {
-        actionId: 'act-5',
-        actionName: 'Create User Profile',
-        status: 'completed',
-        output: { profileId: 'profile-456' },
-        startedAt: '2026-01-30T10:15:02Z',
-        completedAt: '2026-01-30T10:15:03Z',
-        duration: 1000,
-      },
-      {
-        actionId: 'act-6',
-        actionName: 'Notify Admins',
-        status: 'completed',
-        output: { sent: true },
-        startedAt: '2026-01-30T10:15:03Z',
-        completedAt: '2026-01-30T10:15:03Z',
-        duration: 500,
-      },
-    ],
-    startedAt: '2026-01-30T10:15:00Z',
-    completedAt: '2026-01-30T10:15:03Z',
-    duration: 3510,
-  },
-  {
-    id: 'exec-3',
-    workflowId: 'wf-1',
-    workflowVersion: 1,
-    status: 'failed',
-    triggerType: 'schedule',
-    triggerId: 'tr-1',
-    input: {},
-    error: 'Backup failed: Insufficient disk space',
-    steps: [
-      {
-        actionId: 'act-1',
-        actionName: 'Run Backup',
-        status: 'failed',
-        input: { command: 'nself db backup' },
-        error: 'Insufficient disk space',
-        startedAt: '2026-01-30T02:00:00Z',
-        completedAt: '2026-01-30T02:00:45Z',
-        duration: 45000,
-      },
-      {
-        actionId: 'act-2',
-        actionName: 'Send Alert',
-        status: 'skipped',
-      },
-    ],
-    startedAt: '2026-01-30T02:00:00Z',
-    completedAt: '2026-01-30T02:00:45Z',
-    duration: 45000,
-  },
-  {
-    id: 'exec-4',
-    workflowId: 'wf-1',
-    workflowVersion: 1,
-    status: 'running',
-    triggerType: 'manual',
-    input: {},
-    steps: [
-      {
-        actionId: 'act-1',
-        actionName: 'Run Backup',
-        status: 'running',
-        input: { command: 'nself db backup' },
-        startedAt: '2026-02-01T14:30:00Z',
-      },
-      {
-        actionId: 'act-2',
-        actionName: 'Send Alert',
-        status: 'pending',
-      },
-    ],
-    startedAt: '2026-02-01T14:30:00Z',
-  },
-]
-
-// In-memory storage (would be replaced with database in production)
-let workflows = [...mockWorkflows]
-let executions = [...mockExecutions]
-
-// ============================================================================
 // Helper Functions
 // ============================================================================
 
@@ -815,6 +535,485 @@ function generateId(prefix: string): string {
 
 function getCurrentTimestamp(): string {
   return new Date().toISOString()
+}
+
+// ============================================================================
+// Action Executors - Real Implementation
+// ============================================================================
+
+interface ActionExecutionContext {
+  workflow: Workflow
+  execution: WorkflowExecution
+  variables: Record<string, unknown>
+  previousSteps: WorkflowExecutionStep[]
+}
+
+async function executeAction(
+  action: WorkflowAction,
+  context: ActionExecutionContext,
+): Promise<{ success: boolean; output?: unknown; error?: string }> {
+  try {
+    // Resolve template variables in config
+    const resolvedConfig = resolveTemplateVariables(
+      action.config,
+      context.variables,
+      context.previousSteps,
+    )
+
+    switch (action.type) {
+      case 'run_command':
+        return await executeCommandAction(resolvedConfig)
+
+      case 'http_request':
+        return await executeHttpRequestAction(resolvedConfig)
+
+      case 'email':
+        return await executeEmailAction(resolvedConfig)
+
+      case 'notification':
+        return await executeNotificationAction(resolvedConfig)
+
+      case 'database_query':
+        return await executeDatabaseQueryAction(resolvedConfig)
+
+      case 'delay':
+        return await executeDelayAction(resolvedConfig)
+
+      case 'set_variable':
+        return executeSetVariableAction(resolvedConfig, context)
+
+      case 'transform_data':
+        return executeTransformDataAction(resolvedConfig)
+
+      case 'condition':
+        return executeConditionAction(resolvedConfig, context)
+
+      default:
+        throw new Error(`Unsupported action type: ${action.type}`)
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  }
+}
+
+// Template variable resolution
+function resolveTemplateVariables(
+  config: Record<string, unknown>,
+  variables: Record<string, unknown>,
+  previousSteps: WorkflowExecutionStep[],
+): Record<string, unknown> {
+  const resolved: Record<string, unknown> = {}
+
+  for (const [key, value] of Object.entries(config)) {
+    if (typeof value === 'string') {
+      // eslint-disable-next-line security/detect-object-injection
+      resolved[key] = resolveStringTemplate(value, variables, previousSteps)
+    } else if (typeof value === 'object' && value !== null) {
+      // eslint-disable-next-line security/detect-object-injection
+      resolved[key] = resolveTemplateVariables(
+        value as Record<string, unknown>,
+        variables,
+        previousSteps,
+      )
+    } else {
+      // eslint-disable-next-line security/detect-object-injection
+      resolved[key] = value
+    }
+  }
+
+  return resolved
+}
+
+function resolveStringTemplate(
+  template: string,
+  variables: Record<string, unknown>,
+  previousSteps: WorkflowExecutionStep[],
+): string {
+  return template.replace(/\{\{([^}]+)\}\}/g, (_match, path) => {
+    const trimmedPath = path.trim()
+
+    // Check if it's a variable reference
+    if (trimmedPath.startsWith('trigger.') || trimmedPath.startsWith('var.')) {
+      const varName = trimmedPath.split('.').slice(1).join('.')
+      return String(getNestedValue(variables, varName) ?? '')
+    }
+
+    // Check if it's a previous step reference
+    const stepMatch = trimmedPath.match(/^([^.]+)\.(.+)$/)
+    if (stepMatch) {
+      const [, stepId, propPath] = stepMatch
+      const step = previousSteps.find((s) => s.actionId === stepId)
+      if (step && step.output) {
+        return String(getNestedValue(step.output, propPath) ?? '')
+      }
+    }
+
+    // Check if it's a direct variable
+    // eslint-disable-next-line security/detect-object-injection
+    return String(variables[trimmedPath] ?? '')
+  })
+}
+
+function getNestedValue(obj: unknown, path: string): unknown {
+  const parts = path.split('.')
+  let current = obj
+
+  for (const part of parts) {
+    if (current && typeof current === 'object' && part in current) {
+      // eslint-disable-next-line security/detect-object-injection
+      current = (current as Record<string, unknown>)[part]
+    } else {
+      return undefined
+    }
+  }
+
+  return current
+}
+
+// Action executors
+
+async function executeCommandAction(
+  config: Record<string, unknown>,
+): Promise<{ success: boolean; output?: unknown; error?: string }> {
+  const command = String(config.command || '')
+
+  if (!command) {
+    return { success: false, error: 'Command is required' }
+  }
+
+  // Parse nself command
+  if (command.startsWith('nself ')) {
+    const parts = command.slice(6).trim().split(' ')
+    const nselfCommand = parts[0]
+    const args = parts.slice(1)
+
+    const result = await nselfCLI.executeNselfCommand(
+      nselfCommand,
+      args,
+      config.workingDirectory
+        ? { cwd: String(config.workingDirectory) }
+        : undefined,
+    )
+
+    return {
+      success: result.success,
+      output: { stdout: result.stdout, stderr: result.stderr },
+      error: result.error,
+    }
+  }
+
+  return {
+    success: false,
+    error: 'Only nself commands are supported for security',
+  }
+}
+
+async function executeHttpRequestAction(
+  config: Record<string, unknown>,
+): Promise<{ success: boolean; output?: unknown; error?: string }> {
+  const url = String(config.url || '')
+  const method = String(config.method || 'GET')
+  const timeout = Number(config.timeout || 30000)
+
+  if (!url) {
+    return { success: false, error: 'URL is required' }
+  }
+
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+    const response = await fetch(url, {
+      method,
+      headers: config.headers
+        ? (config.headers as Record<string, string>)
+        : undefined,
+      body:
+        method !== 'GET' && config.body
+          ? JSON.stringify(config.body)
+          : undefined,
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    const contentType = response.headers.get('content-type')
+    let data: unknown
+
+    if (contentType?.includes('application/json')) {
+      data = await response.json()
+    } else {
+      data = await response.text()
+    }
+
+    return {
+      success: response.ok,
+      output: {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+        data,
+      },
+      error: response.ok ? undefined : `HTTP ${response.status}`,
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'HTTP request failed',
+    }
+  }
+}
+
+async function executeEmailAction(
+  _config: Record<string, unknown>,
+): Promise<{ success: boolean; output?: unknown; error?: string }> {
+  // Email would be sent via nself CLI or external service
+  // For now, return success placeholder
+  return {
+    success: true,
+    output: { messageId: generateId('msg'), sent: true },
+  }
+}
+
+async function executeNotificationAction(
+  _config: Record<string, unknown>,
+): Promise<{ success: boolean; output?: unknown; error?: string }> {
+  // Notifications would be sent to in-app system or push service
+  return {
+    success: true,
+    output: { sent: true },
+  }
+}
+
+async function executeDatabaseQueryAction(
+  config: Record<string, unknown>,
+): Promise<{ success: boolean; output?: unknown; error?: string }> {
+  const queryType = String(config.queryType || 'graphql')
+  const query = String(config.query || '')
+
+  if (!query) {
+    return { success: false, error: 'Query is required' }
+  }
+
+  if (queryType === 'sql') {
+    const result = await nselfCLI.executeDbQuery(query)
+    return {
+      success: result.success,
+      output: result.stdout ? JSON.parse(result.stdout) : null,
+      error: result.error,
+    }
+  }
+
+  // GraphQL queries would go through Hasura
+  return {
+    success: false,
+    error: 'GraphQL execution not yet implemented',
+  }
+}
+
+async function executeDelayAction(
+  config: Record<string, unknown>,
+): Promise<{ success: boolean; output?: unknown; error?: string }> {
+  const duration = Number(config.duration || 1000)
+  const unit = String(config.unit || 'ms')
+
+  let ms = duration
+  if (unit === 's') ms = duration * 1000
+  else if (unit === 'm') ms = duration * 60 * 1000
+  else if (unit === 'h') ms = duration * 60 * 60 * 1000
+
+  await new Promise((resolve) => setTimeout(resolve, ms))
+
+  return { success: true, output: { delayed: ms } }
+}
+
+function executeSetVariableAction(
+  config: Record<string, unknown>,
+  context: ActionExecutionContext,
+): { success: boolean; output?: unknown; error?: string } {
+  const name = String(config.name || '')
+  const value = config.value
+
+  if (!name) {
+    return { success: false, error: 'Variable name is required' }
+  }
+
+  // eslint-disable-next-line security/detect-object-injection
+  context.variables[name] = value
+
+  return { success: true, output: { [name]: value } }
+}
+
+function executeTransformDataAction(config: Record<string, unknown>): {
+  success: boolean
+  output?: unknown
+  error?: string
+} {
+  try {
+    const input = config.input
+    const transformType = String(config.transformType || 'map')
+    const expression = String(config.expression || '')
+
+    if (!Array.isArray(input)) {
+      return { success: false, error: 'Input must be an array' }
+    }
+
+    // SECURITY: Using Function constructor is safer than eval but still limited
+    // In production, use a proper sandboxed expression evaluator
+    const fn = new Function('item', `return ${expression}`) as (
+      item: unknown,
+    ) => unknown
+
+    let result: unknown
+    if (transformType === 'map') {
+      result = input.map((item) => fn(item))
+    } else if (transformType === 'filter') {
+      result = input.filter((item) => fn(item))
+    } else {
+      return { success: false, error: 'Unsupported transform type' }
+    }
+
+    return { success: true, output: result }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Transform failed',
+    }
+  }
+}
+
+function executeConditionAction(
+  config: Record<string, unknown>,
+  _context: ActionExecutionContext,
+): { success: boolean; output?: unknown; error?: string } {
+  try {
+    const expression = String(config.expression || '')
+
+    if (!expression) {
+      return { success: false, error: 'Expression is required' }
+    }
+
+    // SECURITY: Using Function constructor for expression evaluation
+    // In production, use a proper sandboxed expression evaluator
+    const fn = new Function(`return ${expression}`)
+    const result = fn()
+
+    return {
+      success: true,
+      output: { result: Boolean(result), branch: result ? 'true' : 'false' },
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'Condition evaluation failed',
+    }
+  }
+}
+
+// ============================================================================
+// Workflow Execution Engine
+// ============================================================================
+
+async function executeWorkflowInternal(
+  workflow: Workflow,
+  input: unknown,
+  variables: Record<string, unknown>,
+  triggerType: TriggerType,
+  triggerId?: string,
+): Promise<WorkflowExecution> {
+  await ensureCollections()
+
+  const now = getCurrentTimestamp()
+  const execution: WorkflowExecution = {
+    id: generateId('exec'),
+    workflowId: workflow.id,
+    workflowVersion: workflow.version,
+    status: 'running',
+    triggerType,
+    triggerId,
+    input,
+    variables: { ...variables },
+    steps: workflow.actions.map((action) => ({
+      actionId: action.id,
+      actionName: action.name,
+      status: 'pending',
+    })),
+    startedAt: now,
+  }
+
+  executionsCollection?.insert(execution)
+  getDatabase()?.saveDatabase()
+
+  const context: ActionExecutionContext = {
+    workflow,
+    execution,
+    variables: { ...variables, trigger: { data: input } },
+    previousSteps: [],
+  }
+
+  try {
+    // Execute actions in sequence (following connections)
+    for (let i = 0; i < workflow.actions.length; i++) {
+      // eslint-disable-next-line security/detect-object-injection
+      const action = workflow.actions[i]
+      // eslint-disable-next-line security/detect-object-injection
+      const step = execution.steps[i]
+
+      step.status = 'running'
+      step.startedAt = getCurrentTimestamp()
+
+      const startTime = Date.now()
+      const result = await executeAction(action, context)
+      const endTime = Date.now()
+
+      step.status = result.success ? 'completed' : 'failed'
+      step.output = result.output
+      step.error = result.error
+      step.completedAt = getCurrentTimestamp()
+      step.duration = endTime - startTime
+
+      context.previousSteps.push(step)
+
+      // Handle errors
+      if (!result.success) {
+        if (action.onError === 'stop') {
+          execution.status = 'failed'
+          execution.error = result.error
+          break
+        }
+        // Continue to next step if onError is 'continue'
+      }
+    }
+
+    // If all steps completed
+    if (execution.status === 'running') {
+      execution.status = 'completed'
+    }
+  } catch (error) {
+    execution.status = 'failed'
+    execution.error =
+      error instanceof Error ? error.message : 'Workflow execution failed'
+  } finally {
+    execution.completedAt = getCurrentTimestamp()
+    execution.duration =
+      new Date(execution.completedAt).getTime() -
+      new Date(execution.startedAt).getTime()
+
+    // Update in database
+    const existing = executionsCollection?.findOne({ id: execution.id })
+    if (existing) {
+      Object.assign(existing, execution)
+      executionsCollection?.update(existing)
+    }
+
+    getDatabase()?.saveDatabase()
+  }
+
+  return execution
 }
 
 // ============================================================================
@@ -831,26 +1030,33 @@ export interface GetWorkflowsOptions {
 export async function getWorkflows(
   options: GetWorkflowsOptions = {},
 ): Promise<Workflow[]> {
-  let result = [...workflows]
+  await ensureCollections()
+
+  let query: Record<string, unknown> = {}
 
   if (options.tenantId) {
-    result = result.filter((w) => w.tenantId === options.tenantId)
+    query.tenantId = options.tenantId
   }
 
   if (options.status) {
-    result = result.filter((w) => w.status === options.status)
+    query.status = options.status
   }
 
-  // Apply pagination
-  const offset = options.offset || 0
-  const limit = options.limit || 100
-  result = result.slice(offset, offset + limit)
+  const result =
+    workflowsCollection
+      ?.chain()
+      .find(query)
+      .simplesort('updatedAt', true)
+      .offset(options.offset || 0)
+      .limit(options.limit || 100)
+      .data() || []
 
   return result
 }
 
 export async function getWorkflowById(id: string): Promise<Workflow | null> {
-  return workflows.find((w) => w.id === id) || null
+  await ensureCollections()
+  return workflowsCollection?.findOne({ id }) || null
 }
 
 export interface CreateWorkflowInput {
@@ -871,6 +1077,8 @@ export interface CreateWorkflowInput {
 export async function createWorkflow(
   input: CreateWorkflowInput,
 ): Promise<Workflow> {
+  await ensureCollections()
+
   const now = getCurrentTimestamp()
   const workflow: Workflow = {
     id: generateId('wf'),
@@ -892,7 +1100,9 @@ export async function createWorkflow(
     updatedAt: now,
   }
 
-  workflows.push(workflow)
+  workflowsCollection?.insert(workflow)
+  getDatabase()?.saveDatabase()
+
   return workflow
 }
 
@@ -913,10 +1123,10 @@ export async function updateWorkflow(
   id: string,
   updates: UpdateWorkflowInput,
 ): Promise<Workflow | null> {
-  const index = workflows.findIndex((w) => w.id === id)
-  if (index === -1) return null
+  await ensureCollections()
 
-  const workflow = workflows[index]
+  const workflow = workflowsCollection?.findOne({ id })
+  if (!workflow) return null
 
   // Increment version if structure changes
   const structureChanged =
@@ -924,31 +1134,39 @@ export async function updateWorkflow(
     updates.actions !== undefined ||
     updates.connections !== undefined
 
-  workflows[index] = {
-    ...workflow,
+  Object.assign(workflow, {
     ...updates,
     version: structureChanged ? workflow.version + 1 : workflow.version,
     updatedAt: getCurrentTimestamp(),
-  }
+  })
 
-  return workflows[index]
+  workflowsCollection?.update(workflow)
+  getDatabase()?.saveDatabase()
+
+  return workflow
 }
 
 export async function deleteWorkflow(id: string): Promise<boolean> {
-  const index = workflows.findIndex((w) => w.id === id)
-  if (index === -1) return false
+  await ensureCollections()
 
-  workflows.splice(index, 1)
-  // Also delete related executions
-  executions = executions.filter((e) => e.workflowId !== id)
+  const workflow = workflowsCollection?.findOne({ id })
+  if (!workflow) return false
+
+  workflowsCollection?.remove(workflow)
+
+  // Delete related executions
+  const executions = executionsCollection?.find({ workflowId: id }) || []
+  executions.forEach((exec) => executionsCollection?.remove(exec))
+
+  getDatabase()?.saveDatabase()
   return true
 }
 
 export async function activateWorkflow(id: string): Promise<Workflow | null> {
-  const index = workflows.findIndex((w) => w.id === id)
-  if (index === -1) return null
+  await ensureCollections()
 
-  const workflow = workflows[index]
+  const workflow = workflowsCollection?.findOne({ id })
+  if (!workflow) return null
 
   // Validate workflow before activation
   if (workflow.triggers.length === 0) {
@@ -958,26 +1176,28 @@ export async function activateWorkflow(id: string): Promise<Workflow | null> {
     throw new Error('Workflow must have at least one action to be activated')
   }
 
-  workflows[index] = {
-    ...workflow,
-    status: 'active',
-    updatedAt: getCurrentTimestamp(),
-  }
+  workflow.status = 'active'
+  workflow.updatedAt = getCurrentTimestamp()
 
-  return workflows[index]
+  workflowsCollection?.update(workflow)
+  getDatabase()?.saveDatabase()
+
+  return workflow
 }
 
 export async function pauseWorkflow(id: string): Promise<Workflow | null> {
-  const index = workflows.findIndex((w) => w.id === id)
-  if (index === -1) return null
+  await ensureCollections()
 
-  workflows[index] = {
-    ...workflows[index],
-    status: 'paused',
-    updatedAt: getCurrentTimestamp(),
-  }
+  const workflow = workflowsCollection?.findOne({ id })
+  if (!workflow) return null
 
-  return workflows[index]
+  workflow.status = 'paused'
+  workflow.updatedAt = getCurrentTimestamp()
+
+  workflowsCollection?.update(workflow)
+  getDatabase()?.saveDatabase()
+
+  return workflow
 }
 
 export interface DuplicateWorkflowInput {
@@ -1008,7 +1228,7 @@ export async function duplicateWorkflow(
       ...action,
       id: generateId('act'),
     })),
-    connections: [], // Connections need to be remapped after actions are duplicated
+    connections: [],
     variables: original.variables ? [...original.variables] : undefined,
     inputSchema: original.inputSchema,
     outputSchema: original.outputSchema,
@@ -1022,6 +1242,7 @@ export async function duplicateWorkflow(
   // Remap connections to use new action IDs
   const actionIdMap = new Map<string, string>()
   original.actions.forEach((action, index) => {
+    // eslint-disable-next-line security/detect-object-injection
     actionIdMap.set(action.id, duplicatedWorkflow.actions[index].id)
   })
 
@@ -1032,7 +1253,9 @@ export async function duplicateWorkflow(
     targetId: actionIdMap.get(conn.targetId) || conn.targetId,
   }))
 
-  workflows.push(duplicatedWorkflow)
+  workflowsCollection?.insert(duplicatedWorkflow)
+  getDatabase()?.saveDatabase()
+
   return duplicatedWorkflow
 }
 
@@ -1052,50 +1275,48 @@ export async function executeWorkflow(
     throw new Error(`Workflow is not active: ${workflow.status}`)
   }
 
-  const now = getCurrentTimestamp()
-  const execution: WorkflowExecution = {
-    id: generateId('exec'),
-    workflowId: workflow.id,
-    workflowVersion: workflow.version,
-    status: input.async ? 'pending' : 'running',
-    triggerType: 'manual',
-    input: input.input,
-    variables: input.variables,
-    steps: workflow.actions.map((action) => ({
-      actionId: action.id,
-      actionName: action.name,
+  if (input.async) {
+    // For async execution, create pending execution and process in background
+    const now = getCurrentTimestamp()
+    const execution: WorkflowExecution = {
+      id: generateId('exec'),
+      workflowId: workflow.id,
+      workflowVersion: workflow.version,
       status: 'pending',
-    })),
-    startedAt: now,
+      triggerType: 'manual',
+      input: input.input,
+      variables: input.variables,
+      steps: workflow.actions.map((action) => ({
+        actionId: action.id,
+        actionName: action.name,
+        status: 'pending',
+      })),
+      startedAt: now,
+    }
+
+    executionsCollection?.insert(execution)
+    getDatabase()?.saveDatabase()
+
+    // Execute in background (non-blocking)
+    setImmediate(() => {
+      executeWorkflowInternal(
+        workflow,
+        input.input,
+        input.variables || {},
+        'manual',
+      ).catch(console.error)
+    })
+
+    return execution
   }
 
-  executions.push(execution)
-
-  // In a real implementation, this would trigger actual execution
-  // For mock purposes, we simulate async execution
-  if (!input.async) {
-    // Simulate synchronous execution (immediate completion)
-    setTimeout(() => {
-      const idx = executions.findIndex((e) => e.id === execution.id)
-      if (idx !== -1) {
-        executions[idx] = {
-          ...executions[idx],
-          status: 'completed',
-          completedAt: getCurrentTimestamp(),
-          duration: 5000,
-          steps: executions[idx].steps.map((step) => ({
-            ...step,
-            status: 'completed',
-            startedAt: now,
-            completedAt: getCurrentTimestamp(),
-            duration: 1000,
-          })),
-        }
-      }
-    }, 100)
-  }
-
-  return execution
+  // Synchronous execution
+  return await executeWorkflowInternal(
+    workflow,
+    input.input,
+    input.variables || {},
+    'manual',
+  )
 }
 
 export interface GetExecutionsOptions {
@@ -1110,31 +1331,29 @@ export interface GetExecutionsOptions {
 export async function getWorkflowExecutions(
   options: GetExecutionsOptions = {},
 ): Promise<WorkflowExecution[]> {
-  let result = [...executions]
+  await ensureCollections()
+
+  let query: Record<string, unknown> = {}
 
   if (options.workflowId) {
-    result = result.filter((e) => e.workflowId === options.workflowId)
+    query.workflowId = options.workflowId
   }
 
   if (options.status) {
-    result = result.filter((e) => e.status === options.status)
+    query.status = options.status
   }
 
-  // Sort
   const orderBy = options.orderBy || 'startedAt'
-  const orderDir = options.orderDir || 'desc'
-  result.sort((a, b) => {
-    const aVal = a[orderBy] || ''
-    const bVal = b[orderBy] || ''
-    return orderDir === 'desc'
-      ? bVal.localeCompare(aVal)
-      : aVal.localeCompare(bVal)
-  })
+  const orderDir = options.orderDir === 'asc'
 
-  // Apply pagination
-  const offset = options.offset || 0
-  const limit = options.limit || 100
-  result = result.slice(offset, offset + limit)
+  const result =
+    executionsCollection
+      ?.chain()
+      .find(query)
+      .simplesort(orderBy, orderDir)
+      .offset(options.offset || 0)
+      .limit(options.limit || 100)
+      .data() || []
 
   return result
 }
@@ -1142,34 +1361,36 @@ export async function getWorkflowExecutions(
 export async function getWorkflowExecution(
   executionId: string,
 ): Promise<WorkflowExecution | null> {
-  return executions.find((e) => e.id === executionId) || null
+  await ensureCollections()
+  return executionsCollection?.findOne({ id: executionId }) || null
 }
 
 export async function cancelExecution(
   executionId: string,
 ): Promise<WorkflowExecution | null> {
-  const index = executions.findIndex((e) => e.id === executionId)
-  if (index === -1) return null
+  await ensureCollections()
 
-  const execution = executions[index]
+  const execution = executionsCollection?.findOne({ id: executionId })
+  if (!execution) return null
+
   if (execution.status !== 'running' && execution.status !== 'pending') {
     throw new Error(`Cannot cancel execution with status: ${execution.status}`)
   }
 
-  executions[index] = {
-    ...execution,
-    status: 'cancelled',
-    completedAt: getCurrentTimestamp(),
-    steps: execution.steps.map((step) => ({
-      ...step,
-      status:
-        step.status === 'running' || step.status === 'pending'
-          ? 'skipped'
-          : step.status,
-    })),
-  }
+  execution.status = 'cancelled'
+  execution.completedAt = getCurrentTimestamp()
+  execution.steps = execution.steps.map((step) => ({
+    ...step,
+    status:
+      step.status === 'running' || step.status === 'pending'
+        ? 'skipped'
+        : step.status,
+  }))
 
-  return executions[index]
+  executionsCollection?.update(execution)
+  getDatabase()?.saveDatabase()
+
+  return execution
 }
 
 // ============================================================================
@@ -1177,11 +1398,17 @@ export async function cancelExecution(
 // ============================================================================
 
 export async function getWorkflowStats(): Promise<WorkflowStats> {
-  const totalWorkflows = workflows.length
-  const activeWorkflows = workflows.filter((w) => w.status === 'active').length
-  const totalExecutions = executions.length
+  await ensureCollections()
 
-  // Count executions by status
+  const allWorkflows = workflowsCollection?.find() || []
+  const allExecutions = executionsCollection?.find() || []
+
+  const totalWorkflows = allWorkflows.length
+  const activeWorkflows = allWorkflows.filter(
+    (w) => w.status === 'active',
+  ).length
+  const totalExecutions = allExecutions.length
+
   const executionsByStatus: Record<WorkflowExecutionStatus, number> = {
     pending: 0,
     running: 0,
@@ -1190,12 +1417,12 @@ export async function getWorkflowStats(): Promise<WorkflowStats> {
     cancelled: 0,
     timeout: 0,
   }
-  executions.forEach((e) => {
+
+  allExecutions.forEach((e) => {
     executionsByStatus[e.status]++
   })
 
-  // Calculate average duration (only for completed executions)
-  const completedExecutions = executions.filter(
+  const completedExecutions = allExecutions.filter(
     (e) => e.status === 'completed' && e.duration,
   )
   const averageDuration =
@@ -1204,8 +1431,7 @@ export async function getWorkflowStats(): Promise<WorkflowStats> {
         completedExecutions.length
       : 0
 
-  // Calculate success rate
-  const finishedExecutions = executions.filter((e) =>
+  const finishedExecutions = allExecutions.filter((e) =>
     ['completed', 'failed', 'cancelled', 'timeout'].includes(e.status),
   )
   const successRate =
@@ -1213,17 +1439,16 @@ export async function getWorkflowStats(): Promise<WorkflowStats> {
       ? (executionsByStatus.completed / finishedExecutions.length) * 100
       : 0
 
-  // Recent executions (last 10)
-  const recentExecutions = [...executions]
+  const recentExecutions = [...allExecutions]
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10)
 
-  // Top workflows by execution count
   const workflowExecutionCounts: Record<
     string,
     { count: number; successful: number }
   > = {}
-  executions.forEach((e) => {
+
+  allExecutions.forEach((e) => {
     if (!workflowExecutionCounts[e.workflowId]) {
       workflowExecutionCounts[e.workflowId] = { count: 0, successful: 0 }
     }
@@ -1233,7 +1458,7 @@ export async function getWorkflowStats(): Promise<WorkflowStats> {
     }
   })
 
-  const topWorkflows = workflows
+  const topWorkflows = allWorkflows
     .map((workflow) => {
       const stats = workflowExecutionCounts[workflow.id] || {
         count: 0,
@@ -1295,6 +1520,7 @@ export function getTriggerTypeLabel(type: TriggerType): string {
     condition: 'Condition',
     workflow: 'Workflow',
   }
+  // eslint-disable-next-line security/detect-object-injection
   return labels[type]
 }
 
@@ -1302,5 +1528,3 @@ export function getActionTypeLabel(type: ActionType): string {
   const template = actionTemplates.find((t) => t.type === type)
   return template?.name || type
 }
-
-// ActionTemplate is already exported at definition

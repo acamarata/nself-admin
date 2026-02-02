@@ -35,6 +35,13 @@ export const navigation: Array<NavGroup> = [
         description: 'System overview and metrics',
       },
       {
+        title: 'Search',
+        href: '/search',
+        icon: 'search',
+        badge: { text: 'NEW', color: 'emerald' },
+        description: 'Advanced search across all data',
+      },
+      {
         title: 'Services',
         href: '/services',
         icon: 'box',

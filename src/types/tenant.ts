@@ -170,6 +170,7 @@ export type OrgRole = 'owner' | 'admin' | 'member' | 'viewer'
 /**
  * Organization entity within a tenant.
  * Allows logical grouping of teams and members.
+ * Supports hierarchical structure with parent-child relationships.
  */
 export interface Organization {
   id: string
@@ -177,6 +178,7 @@ export interface Organization {
   name: string
   slug: string
   description?: string
+  parentId?: string // For hierarchical organizations
   createdAt: string
   updatedAt: string
   settings: OrgSettings

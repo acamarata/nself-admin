@@ -1,10 +1,6 @@
-import { findNselfPath, getEnhancedPath } from '@/lib/nself-path'
+import { nselfInit } from '@/lib/nselfCLI'
 import { getProjectPath } from '@/lib/paths'
-import { exec } from 'child_process'
 import { NextRequest, NextResponse } from 'next/server'
-import { promisify } from 'util'
-
-const execAsync = promisify(exec)
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,50 +11,42 @@ export async function POST(request: NextRequest) {
     console.log('Project path:', projectPath)
     console.log('Project name:', projectName)
 
-    // Find nself CLI
-    const nselfPath = await findNselfPath()
-
-    // Run nself init --full (no arguments needed)
+    // Run nself init --full using secure CLI wrapper
     console.log('Running nself init --full...')
 
-    try {
-      const { stdout, stderr } = await execAsync(`${nselfPath} init --full`, {
-        cwd: projectPath,
-        env: {
-          ...process.env,
-          PATH: getEnhancedPath(),
-        },
-        timeout: 10000, // 10 seconds
-      })
+    const result = await nselfInit({ full: true })
 
-      console.log('Init output:', stdout)
-      if (stderr && !stderr.includes('warning')) {
-        console.error('Init stderr:', stderr)
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Project initialized successfully',
-        output: stdout,
-      })
-    } catch (execError: any) {
-      // nself init might already have files, which is ok
-      console.log('Init command output:', execError.message)
-
+    if (!result.success) {
       // Check if it's just because files already exist
-      if (
-        execError.message.includes('already exists') ||
-        execError.message.includes('.env')
-      ) {
+      const errorMsg = result.error || result.stderr || ''
+      if (errorMsg.includes('already exists') || errorMsg.includes('.env')) {
         return NextResponse.json({
           success: true,
           message: 'Project already initialized',
-          output: execError.stdout || '',
+          output: result.stdout || '',
         })
       }
 
-      throw execError
+      return NextResponse.json(
+        {
+          error: 'Failed to initialize project',
+          details: errorMsg || 'Unknown error',
+          output: result.stdout,
+        },
+        { status: 500 },
+      )
     }
+
+    console.log('Init output:', result.stdout)
+    if (result.stderr && !result.stderr.includes('warning')) {
+      console.error('Init stderr:', result.stderr)
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Project initialized successfully',
+      output: result.stdout || '',
+    })
   } catch (error) {
     console.error('Error initializing project:', error)
     return NextResponse.json(

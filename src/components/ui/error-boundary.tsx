@@ -7,6 +7,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { reportError } from '@/lib/error-logging'
 import { formatErrorForLogging, getErrorMessage } from '@/lib/errors/utils'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { Component, ErrorInfo, ReactNode } from 'react'
@@ -58,7 +59,8 @@ export class ErrorBoundary extends Component<Props, State> {
       errorInfo,
     })
 
-    // TODO: Send error to logging service (e.g., Sentry)
+    // Send error to logging service
+    void reportError(error, errorInfo)
   }
 
   handleReset = () => {
